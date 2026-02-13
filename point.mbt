@@ -7,6 +7,10 @@ pub fn Point::new(x : Double, y : Double) -> Point {
   { x, y }
 }
 
+pub fn Point::lendir(length : Double, direction : Double) -> Point {
+  Point::new(@math.cos(direction) * length, @math.sin(direction) * length)
+}
+
 pub fn Point::zero() -> Point {
   { x: 0.0, y: 0.0 }
 }
@@ -56,4 +60,8 @@ pub fn Point::lerp(self : Point, other : Point, t : Double) -> Point {
 
 pub fn Point::is_zero(self : Point) -> Bool {
   self.x == 0.0 && self.y == 0.0
+}
+
+pub fn Point::eq(self : Point, other : Point) -> Bool {
+  self.x == other.x && self.y == other.y
 }

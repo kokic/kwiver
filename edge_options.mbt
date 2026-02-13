@@ -89,3 +89,207 @@ pub fn EdgeOptions::with_level(self : EdgeOptions, level : Int) -> EdgeOptions {
     style: self.style,
   }
 }
+
+pub fn EdgeOptions::with_label_alignment_left(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: LabelAlignment::Left,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_label_alignment_centre(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: LabelAlignment::Centre,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_label_alignment_right(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: LabelAlignment::Right,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_label_alignment_over(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: LabelAlignment::Over,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_shape_bezier(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: EdgeShape::Bezier,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_shape_arc(self : EdgeOptions) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: EdgeShape::Arc,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_label_position(self : EdgeOptions, label_position : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_offset(self : EdgeOptions, offset : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_curve(self : EdgeOptions, curve : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_radius(self : EdgeOptions, radius : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_angle(self : EdgeOptions, angle : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_shorten(self : EdgeOptions, source : Int, target : Int) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: { source, target },
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
