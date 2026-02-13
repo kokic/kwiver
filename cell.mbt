@@ -66,6 +66,14 @@ pub enum CellData {
   Edge(Edge)
 }
 
+pub fn CellData::from_vertex(vertex : Vertex) -> CellData {
+  CellData::Vertex(vertex)
+}
+
+pub fn CellData::from_edge(edge : Edge) -> CellData {
+  CellData::Edge(edge)
+}
+
 pub fn CellData::id(self : CellData) -> Int {
   match self {
     CellData::Vertex(vertex) => vertex.cell.id
