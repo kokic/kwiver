@@ -41,6 +41,15 @@ fn Quiver::cell_level_or_default(self : Quiver, cell_id : Int, default~ : Int = 
   }
 }
 
+fn Quiver::order_ids(self : Quiver, ids : Array[Int]) -> Array[Int] {
+  let ordered = ids.copy()
+  ordered.sort_by((a, b) => {
+    let level_cmp = self.cell_level_or_default(a) - self.cell_level_or_default(b)
+    if level_cmp != 0 { level_cmp } else { a - b }
+  })
+  ordered
+}
+
 pub fn Quiver::add(self : Quiver, cell : CellData) -> Unit {
   let cell_id = cell.id()
   let level = cell.level()
@@ -110,7 +119,18 @@ pub fn Quiver::all_cell_ids(self : Quiver) -> Array[Int] {
       ids.push(cell_id)
     }
   })
-  ids
+  self.order_ids(ids)
+}
+
+pub fn Quiver::all_cells(self : Quiver) -> Array[CellData] {
+  let cells : Array[CellData] = []
+  for cell_id in self.all_cell_ids() {
+    match self.cells.get(cell_id) {
+      Some(cell) => cells.push(cell)
+      None => ()
+    }
+  }
+  cells
 }
 
 pub fn Quiver::contains_cell(self : Quiver, cell_id : Int) -> Bool {
@@ -178,9 +198,7 @@ pub fn Quiver::transitive_dependencies(
       closure.remove(root)
     }
   }
-  let ordered = Array::from_iter(closure.keys())
-  ordered.sort_by((a, b) => self.cell_level_or_default(a) - self.cell_level_or_default(b))
-  ordered
+  self.order_ids(Array::from_iter(closure.keys()))
 }
 
 pub fn Quiver::transitive_reverse_dependencies(
@@ -206,9 +224,41 @@ pub fn Quiver::transitive_reverse_dependencies(
       }
     })
   }
-  let ordered = Array::from_iter(closure.keys())
-  ordered.sort_by((a, b) => self.cell_level_or_default(a) - self.cell_level_or_default(b))
-  ordered
+  self.order_ids(Array::from_iter(closure.keys()))
+}
+
+pub fn Quiver::connected_components(self : Quiver, roots : Array[Int]) -> Array[Int] {
+  let closure : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  let queue : Array[Int] = []
+
+  for cell_id in roots {
+    if !closure.contains(cell_id) {
+      closure.set(cell_id, true)
+      queue.push(cell_id)
+    }
+  }
+
+  let mut index = 0
+  while index < queue.length() {
+    let current = queue[index]
+    index = index + 1
+
+    self.dependencies_of(current).each((dependency, _) => {
+      if !closure.contains(dependency) {
+        closure.set(dependency, true)
+        queue.push(dependency)
+      }
+    })
+
+    self.reverse_dependencies_of(current).each((dependency, _) => {
+      if !closure.contains(dependency) {
+        closure.set(dependency, true)
+        queue.push(dependency)
+      }
+    })
+  }
+
+  self.order_ids(Array::from_iter(closure.keys()))
 }
 
 pub fn Quiver::connect(self : Quiver, source : Int, target : Int, edge_id : Int) -> Unit {

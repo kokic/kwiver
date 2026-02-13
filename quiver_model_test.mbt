@@ -4,11 +4,17 @@ fn sort_ids(ids : Array[Int]) -> Array[Int] {
   out
 }
 
+fn cell_ids(cells : Array[CellData]) -> Array[Int] {
+  let ids = cells.map((cell) => cell.id())
+  sort_ids(ids)
+}
+
 test "quiver add and contains" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   inspect(quiver.contains_cell(1), content="true")
   inspect(quiver.all_cell_ids().length(), content="1")
+  inspect(cell_ids(quiver.all_cells()), content="[1]")
 }
 
 test "quiver remove cascades through dependencies" {
@@ -32,6 +38,7 @@ test "quiver remove cascades through dependencies" {
 
   quiver.flush(5)
   inspect(sort_ids(quiver.all_cell_ids()), content="[2]")
+  inspect(cell_ids(quiver.all_cells()), content="[2]")
 }
 
 test "quiver transitive closures" {
@@ -67,4 +74,5 @@ test "quiver transitive closures" {
     sort_ids(quiver.transitive_reverse_dependencies([4])),
     content="[1, 2, 3, 4]",
   )
+  inspect(sort_ids(quiver.connected_components([1])), content="[1, 2, 3, 4]")
 }

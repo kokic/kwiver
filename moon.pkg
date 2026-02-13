@@ -1,6 +1,11 @@
 import {
   "moonbitlang/core/list",
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/base64",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/bytes",
+  "moonbitlang/core/math",
 }
 
 options(
