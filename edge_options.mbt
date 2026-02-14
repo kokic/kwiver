@@ -294,6 +294,23 @@ pub fn EdgeOptions::with_shorten(self : EdgeOptions, source : Int, target : Int)
   }
 }
 
+pub fn EdgeOptions::with_colour(self : EdgeOptions, colour : Colour) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour,
+    edge_alignment: self.edge_alignment,
+    style: self.style,
+  }
+}
+
 pub fn EdgeOptions::with_style_tail(
   self : EdgeOptions,
   name : String,
