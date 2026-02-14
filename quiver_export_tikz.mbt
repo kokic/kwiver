@@ -116,6 +116,14 @@ fn tikz_mod(x : Double, y : Double) -> Double {
   if r < 0.0 { r + y } else { r }
 }
 
+fn tikz_round_to_int(x : Double) -> Int {
+  if x >= 0.0 {
+    @math.floor(x + 0.5).to_int()
+  } else {
+    -@math.floor(-x + 0.5).to_int()
+  }
+}
+
 fn tikz_direction_option(source : Vertex, target : Vertex) -> String? {
   let dx = target.x - source.x
   let dy = target.y - source.y
@@ -205,12 +213,16 @@ fn tikz_edge_is_empty(edge : Edge) -> Bool {
   is_arrow && no_head && no_body && no_tail
 }
 
+fn tikz_shared_colour(edge : Edge) -> Bool {
+  tikz_colour_eq(edge.options.colour, edge.cell.label_colour) && edge.cell.label_colour.is_not_black()
+}
+
 fn tikz_append_colour_options(
   options : Array[String],
   edge : Edge,
   edge_is_empty : Bool,
 ) -> Bool {
-  if tikz_colour_eq(edge.options.colour, edge.cell.label_colour) && edge.cell.label_colour.is_not_black() {
+  if tikz_shared_colour(edge) {
     options.push(["color=", tikz_colour_spec(edge.cell.label_colour)].join(""))
     false
   } else {
@@ -249,13 +261,86 @@ fn tikz_edge_coord_part(vertex : Vertex?) -> (Int, Int) {
   }
 }
 
+fn tikz_resolve_vertex(
+  start_id : Int,
+  vertices_by_id : @hashmap.HashMap[Int, Vertex],
+  edges_by_id : @hashmap.HashMap[Int, Edge],
+  pick_source : Bool,
+) -> Vertex? {
+  let mut current = start_id
+  let mut i = 0
+  let limit = edges_by_id.length() + 1
+  while i <= limit {
+    match vertices_by_id.get(current) {
+      Some(vertex) => return Some(vertex)
+      None => ()
+    }
+
+    match edges_by_id.get(current) {
+      Some(edge) => current = if pick_source { edge.source } else { edge.target }
+      None => return None
+    }
+    i = i + 1
+  }
+  None
+}
+
+fn tikz_edge_name(edge_id : Int) -> String {
+  ["e", edge_id.to_string()].join("")
+}
+
+fn tikz_edge_reference_name(edge_id : Int, phantom : Bool) -> String {
+  let base = tikz_edge_name(edge_id)
+  if phantom { [base, "p"].join("") } else { base }
+}
+
+fn tikz_named_placeholder(name : String) -> String {
+  ["\"\"{name=", name, ", anchor=center, inner sep=0}"].join("")
+}
+
+fn tikz_vertex_reference(vertex : Vertex, min_x : Int, min_y : Int) -> String {
+  [(vertex.y - min_y + 1).to_string(), "-", (vertex.x - min_x + 1).to_string()].join("")
+}
+
+fn tikz_cell_reference(
+  cell_id : Int,
+  min_x : Int,
+  min_y : Int,
+  phantom : Bool,
+  vertices_by_id : @hashmap.HashMap[Int, Vertex],
+  edges_by_id : @hashmap.HashMap[Int, Edge],
+) -> String? {
+  match vertices_by_id.get(cell_id) {
+    Some(vertex) => Some(tikz_vertex_reference(vertex, min_x, min_y))
+    None => match edges_by_id.get(cell_id) {
+      Some(edge) => Some(tikz_edge_reference_name(edge.cell.id, phantom))
+      None => None
+    }
+  }
+}
+
+fn tikz_edge_angle_deg(source : Vertex, target : Vertex) -> Double {
+  let dx = target.x - source.x
+  let dy = target.y - source.y
+  @math.atan2(dy.to_double(), dx.to_double()) * 180.0 / @math.PI
+}
+
 fn tikz_compare_edges(
   vertices_by_id : @hashmap.HashMap[Int, Vertex],
+  edges_by_id : @hashmap.HashMap[Int, Edge],
   a : Edge,
   b : Edge,
 ) -> Int {
-  let (a_source_y, a_source_x) = tikz_edge_coord_part(vertices_by_id.get(a.source))
-  let (b_source_y, b_source_x) = tikz_edge_coord_part(vertices_by_id.get(b.source))
+  if a.options.level != b.options.level {
+    return a.options.level - b.options.level
+  }
+
+  let (a_source_y, a_source_x) = tikz_edge_coord_part(
+    tikz_resolve_vertex(a.source, vertices_by_id, edges_by_id, true),
+  )
+  let (b_source_y, b_source_x) = tikz_edge_coord_part(
+    tikz_resolve_vertex(b.source, vertices_by_id, edges_by_id, true),
+  )
   if a_source_y != b_source_y {
     return a_source_y - b_source_y
   }
@@ -263,8 +348,12 @@ fn tikz_compare_edges(
     return a_source_x - b_source_x
   }
 
-  let (a_target_y, a_target_x) = tikz_edge_coord_part(vertices_by_id.get(a.target))
-  let (b_target_y, b_target_x) = tikz_edge_coord_part(vertices_by_id.get(b.target))
+  let (a_target_y, a_target_x) = tikz_edge_coord_part(
+    tikz_resolve_vertex(a.target, vertices_by_id, edges_by_id, false),
+  )
+  let (b_target_y, b_target_x) = tikz_edge_coord_part(
+    tikz_resolve_vertex(b.target, vertices_by_id, edges_by_id, false),
+  )
   if a_target_y != b_target_y {
     return a_target_y - b_target_y
   }
@@ -272,6 +361,16 @@ fn tikz_compare_edges(
     return a_target_x - b_target_x
   }
   a.cell.id - b.cell.id
+}
+
+fn tikz_is_arrow_body_decoration(style_body : String) -> Bool {
+  match style_body {
+    "barred" => true
+    "double barred" => true
+    "bullet solid" => true
+    "bullet hollow" => true
+    _ => false
+  }
 }
 
 fn tikz_append_label_options(options : Array[String], edge : Edge, label_content : String) -> Unit {
@@ -292,6 +391,14 @@ fn tikz_append_label_options(options : Array[String], edge : Edge, label_content
       options.push(
         ["pos=", (edge.options.label_position.to_double() / 100.0).to_string()].join(""),
       )
+    }
+
+    if edge.options.style.name == "arrow" && tikz_is_arrow_body_decoration(edge.options.style.body.name) {
+      match edge.options.label_alignment {
+        LabelAlignment::Left => options.push("inner sep=.8ex")
+        LabelAlignment::Right => options.push("inner sep=.8ex")
+        _ => ()
+      }
     }
   }
 }
@@ -359,7 +466,7 @@ fn tikz_append_style_options(options : Array[String], edge : Edge, edge_is_empty
   }
 }
 
-fn tikz_append_geometry_options(options : Array[String], edge : Edge) -> Unit {
+fn tikz_append_shift_and_curve_options(options : Array[String], edge : Edge) -> Unit {
   if edge.options.offset != 0 {
     let side = if edge.options.offset > 0 { "right" } else { "left" }
     let abs_offset = Int::abs(edge.options.offset)
@@ -375,6 +482,10 @@ fn tikz_append_geometry_options(options : Array[String], edge : Edge) -> Unit {
     let curve_height_pt = edge.options.curve.to_double() * 6.0
     options.push(["curve={height=", curve_height_pt.to_string(), "pt}"].join(""))
   }
+}
+
+fn tikz_append_geometry_options(options : Array[String], edge : Edge) -> Unit {
+  tikz_append_shift_and_curve_options(options, edge)
 
   if edge.options.shorten.source != 0 || edge.options.shorten.target != 0 {
     let source = edge.options.shorten.source.to_double() / 100.0
@@ -383,16 +494,80 @@ fn tikz_append_geometry_options(options : Array[String], edge : Edge) -> Unit {
   }
 }
 
+fn tikz_append_phantom_geometry_options(options : Array[String], edge : Edge) -> Unit {
+  tikz_append_shift_and_curve_options(options, edge)
+}
+
+fn tikz_append_arrow_body_decorations(options : Array[String], edge : Edge) -> Unit {
+  if edge.options.style.name != "arrow" {
+    return
+  }
+
+  let midpoint_numerator = edge.options.shorten.source + (100 - edge.options.shorten.target)
+  let has_custom_midpoint = midpoint_numerator != 100
+  let midpoint = midpoint_numerator.to_double() / 200.0
+
+  let with_midpoint = (parameters : Array[String]) => {
+    if has_custom_midpoint {
+      parameters.push(["pos=", midpoint.to_string()].join(""))
+    }
+  }
+
+  let with_edge_colour = (parameters : Array[String]) => {
+    if edge.options.colour.is_not_black() {
+      parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+    }
+  }
+
+  match edge.options.style.body.name {
+    "barred" => {
+      let parameters : Array[String] = ["marking"]
+      with_midpoint(parameters)
+      with_edge_colour(parameters)
+      options.push(tikz_decoration_option("\\shortmid", parameters))
+    }
+    "double barred" => {
+      let parameters : Array[String] = ["marking"]
+      with_midpoint(parameters)
+      with_edge_colour(parameters)
+      options.push(tikz_decoration_option("\\shortmid\\shortmid", parameters))
+    }
+    "bullet solid" => {
+      let parameters : Array[String] = ["marking"]
+      with_midpoint(parameters)
+      with_edge_colour(parameters)
+      options.push(tikz_decoration_option("\\bullet", parameters))
+    }
+    "bullet hollow" => {
+      let background_parameters : Array[String] = [
+        "marking",
+        "text=\\pgfkeysvalueof{/tikz/commutative diagrams/background color}",
+      ]
+      with_midpoint(background_parameters)
+      options.push(tikz_decoration_option("\\bullet", background_parameters))
+
+      let outline_parameters : Array[String] = ["marking"]
+      with_midpoint(outline_parameters)
+      with_edge_colour(outline_parameters)
+      options.push(tikz_decoration_option("\\circ", outline_parameters))
+    }
+    _ => ()
+  }
+}
+
 fn tikz_append_loop_options(
   options : Array[String],
   edge : Edge,
-  source_row : Int,
-  source_col : Int,
-  target_row : Int,
-  target_col : Int,
+  source_vertex : Vertex?,
+  target_vertex : Vertex?,
 ) -> Unit {
-  if source_row != target_row || source_col != target_col {
+  if edge.source != edge.target {
     return
+  }
+
+  match (source_vertex, target_vertex) {
+    (Some(_), Some(_)) => ()
+    _ => return
   }
 
   options.push("loop")
@@ -408,11 +583,75 @@ fn tikz_append_loop_options(
   options.push(["distance=", distance.to_string(), "mm"].join(""))
 }
 
+fn tikz_decoration_option(content : String, parameters : Array[String]) -> String {
+  if parameters.is_empty() {
+    ["\"", content, "\""].join("")
+  } else {
+    ["\"", content, "\"{", parameters.join(", "), "}"].join("")
+  }
+}
+
+fn tikz_append_non_arrow_style_options(
+  options : Array[String],
+  edge : Edge,
+  shared_colour : Bool,
+  source : Vertex?,
+  target : Vertex?,
+) -> Unit {
+  let angle_deg = match (source, target) {
+    (Some(source_vertex), Some(target_vertex)) => tikz_edge_angle_deg(source_vertex, target_vertex)
+    _ => 0.0
+  }
+  let decoration_text = !shared_colour && edge.options.style.name != "arrow" &&
+    edge.options.colour.is_not_black()
+
+  match edge.options.style.name {
+    "adjunction" => {
+      let rotate = -tikz_round_to_int(angle_deg)
+      let parameters : Array[String] = ["anchor=center"]
+      if decoration_text {
+        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+      }
+      if rotate != 0 {
+        parameters.push(["rotate=", rotate.to_string()].join(""))
+      }
+      options.push("draw=none")
+      options.push(tikz_decoration_option("\\dashv", parameters))
+    }
+    "corner" => {
+      let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
+      let parameters : Array[String] = ["anchor=center", "pos=0.125"]
+      if decoration_text {
+        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+      }
+      if rotate != 0 {
+        parameters.push(["rotate=", rotate.to_string()].join(""))
+      }
+      options.push("draw=none")
+      options.push(tikz_decoration_option("\\lrcorner", parameters))
+    }
+    "corner-inverse" => {
+      let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
+      let parameters : Array[String] = ["anchor=center", "pos=0.125"]
+      if decoration_text {
+        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+      }
+      if rotate != 0 {
+        parameters.push(["rotate=", rotate.to_string()].join(""))
+      }
+      options.push("draw=none")
+      options.push(tikz_decoration_option("\\ulcorner", parameters))
+    }
+    _ => ()
+  }
+}
+
 pub fn Quiver::export_tikz_cd(
   self : Quiver,
   settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
 ) -> String {
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
+  let edges_by_id : @hashmap.HashMap[Int, Edge] = @hashmap.new()
   let edges : Array[Edge] = []
 
   let mut has_vertex = false
@@ -438,7 +677,10 @@ pub fn Quiver::export_tikz_cd(
           max_y = Int::max(max_y, vertex.y)
         }
       }
-      CellData::Edge(edge) => edges.push(edge)
+      CellData::Edge(edge) => {
+        edges_by_id.set(edge.cell.id, edge)
+        edges.push(edge)
+      }
     }
   }
 
@@ -453,31 +695,74 @@ pub fn Quiver::export_tikz_cd(
     vertex_id_by_coord.set(tikz_coord_key(vertex.x, vertex.y), id)
   })
 
-  edges.sort_by((a, b) => tikz_compare_edges(vertices_by_id, a, b))
+  edges.sort_by((a, b) => tikz_compare_edges(vertices_by_id, edges_by_id, a, b))
+
+  let referenced_edges : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  let phantom_referenced_edges : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  for edge in edges {
+    if edges_by_id.contains(edge.source) {
+      referenced_edges.set(edge.source, true)
+      if !edge.options.edge_alignment.source {
+        phantom_referenced_edges.set(edge.source, true)
+      }
+    }
+    if edges_by_id.contains(edge.target) {
+      referenced_edges.set(edge.target, true)
+      if !edge.options.edge_alignment.target {
+        phantom_referenced_edges.set(edge.target, true)
+      }
+    }
+  }
 
   let outgoing_arrows : @hashmap.HashMap[Int, Array[String]] = @hashmap.new()
   for edge in edges {
-    match (vertices_by_id.get(edge.source), vertices_by_id.get(edge.target)) {
-      (Some(source), Some(target)) => {
-        let source_row = source.y - min_y + 1
-        let source_col = source.x - min_x + 1
-        let target_row = target.y - min_y + 1
-        let target_col = target.x - min_x + 1
+    match (
+      tikz_cell_reference(
+        edge.source,
+        min_x,
+        min_y,
+        !edge.options.edge_alignment.source,
+        vertices_by_id,
+        edges_by_id,
+      ),
+      tikz_cell_reference(
+        edge.target,
+        min_x,
+        min_y,
+        !edge.options.edge_alignment.target,
+        vertices_by_id,
+        edges_by_id,
+      ),
+    ) {
+      (Some(source_ref), Some(target_ref)) => {
+        let source_vertex = vertices_by_id.get(edge.source)
+        let target_vertex = vertices_by_id.get(edge.target)
+        let source_anchor = tikz_resolve_vertex(edge.source, vertices_by_id, edges_by_id, true)
+        let target_anchor = tikz_resolve_vertex(edge.target, vertices_by_id, edges_by_id, false)
 
         let arrow_options : Array[String] = []
-        match tikz_direction_option(source, target) {
-          Some(direction) => arrow_options.push(direction)
-          None => {
-            arrow_options.push(
-              ["from=", source_row.to_string(), "-", source_col.to_string()].join(""),
-            )
-            arrow_options.push(
-              ["to=", target_row.to_string(), "-", target_col.to_string()].join(""),
-            )
+        if referenced_edges.contains(edge.cell.id) {
+          arrow_options.push(tikz_named_placeholder(tikz_edge_name(edge.cell.id)))
+        }
+
+        match (source_vertex, target_vertex) {
+          (Some(source), Some(target)) => {
+            match tikz_direction_option(source, target) {
+              Some(direction) => arrow_options.push(direction)
+              None => {
+                arrow_options.push(["from=", source_ref].join(""))
+                arrow_options.push(["to=", target_ref].join(""))
+              }
+            }
+          }
+          _ => {
+            arrow_options.push(["from=", source_ref].join(""))
+            arrow_options.push(["to=", target_ref].join(""))
           }
         }
 
         let edge_is_empty = tikz_edge_is_empty(edge)
+        let shared_colour = tikz_shared_colour(edge)
         let explicit_label_colour = tikz_append_colour_options(
           arrow_options,
           edge,
@@ -485,20 +770,44 @@ pub fn Quiver::export_tikz_cd(
         )
         let label_content = tikz_edge_label_content(edge, explicit_label_colour)
         tikz_append_label_options(arrow_options, edge, label_content)
+        tikz_append_arrow_body_decorations(arrow_options, edge)
         tikz_append_geometry_options(arrow_options, edge)
         tikz_append_loop_options(
           arrow_options,
           edge,
-          source_row,
-          source_col,
-          target_row,
-          target_col,
+          source_vertex,
+          target_vertex,
+        )
+        tikz_append_non_arrow_style_options(
+          arrow_options,
+          edge,
+          shared_colour,
+          source_anchor,
+          target_anchor,
         )
         tikz_append_style_options(arrow_options, edge, edge_is_empty)
 
         let arrow = ["\\arrow[", arrow_options.join(", "), "]"].join("")
-        let list = outgoing_arrows.get_or_init(edge.source, () => [])
-        list.push(arrow)
+        match source_anchor {
+          Some(anchor) => {
+            let list = outgoing_arrows.get_or_init(anchor.cell.id, () => [])
+            list.push(arrow)
+            if phantom_referenced_edges.contains(edge.cell.id) {
+              let phantom_options : Array[String] = []
+              phantom_options.push(
+                tikz_named_placeholder(tikz_edge_reference_name(edge.cell.id, true)),
+              )
+              phantom_options.push("phantom")
+              phantom_options.push(["from=", source_ref].join(""))
+              phantom_options.push(["to=", target_ref].join(""))
+              phantom_options.push("start anchor=center")
+              phantom_options.push("end anchor=center")
+              tikz_append_phantom_geometry_options(phantom_options, edge)
+              list.push(["\\arrow[", phantom_options.join(", "), "]"].join(""))
+            }
+          }
+          None => ()
+        }
       }
       _ => ()
     }

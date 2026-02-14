@@ -311,6 +311,95 @@ pub fn EdgeOptions::with_colour(self : EdgeOptions, colour : Colour) -> EdgeOpti
   }
 }
 
+pub fn EdgeOptions::with_edge_alignment(
+  self : EdgeOptions,
+  source : Bool,
+  target : Bool,
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: { source, target },
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_edge_alignment_source(
+  self : EdgeOptions,
+  source : Bool,
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: {
+      source,
+      target: self.edge_alignment.target,
+    },
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_edge_alignment_target(
+  self : EdgeOptions,
+  target : Bool,
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: {
+      source: self.edge_alignment.source,
+      target,
+    },
+    style: self.style,
+  }
+}
+
+pub fn EdgeOptions::with_style_name(self : EdgeOptions, name : String) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: {
+      name,
+      tail: self.style.tail,
+      body: self.style.body,
+      head: self.style.head,
+    },
+  }
+}
+
 pub fn EdgeOptions::with_style_tail(
   self : EdgeOptions,
   name : String,

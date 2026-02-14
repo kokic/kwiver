@@ -36,7 +36,7 @@ test "tikz-cd export normalises coordinates to 1-indexed grid" {
   inspect(out.contains("\\arrow[drr, \"g\"]"), content="true")
 }
 
-test "tikz-cd export ignores higher edges between non-vertices" {
+test "tikz-cd export supports edge-to-vertex via named edge references" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
@@ -63,7 +63,45 @@ test "tikz-cd export ignores higher edges between non-vertices" {
 
   let out = quiver.export_tikz_cd()
   inspect(out.contains("\"f\""), content="true")
-  inspect(out.contains("\"alpha\""), content="false")
+  inspect(out.contains("\"alpha\""), content="true")
+  inspect(out.contains("\"\"{name=e3, anchor=center, inner sep=0}"), content="true")
+  inspect(out.contains("from=e3, to=1-2"), content="true")
+}
+
+test "tikz-cd export supports non-edge-aligned references via phantom anchors" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "f",
+    1,
+    2,
+    EdgeOptions::at_level(1),
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let options = EdgeOptions::at_level(2).with_edge_alignment_source(false)
+  quiver.add(CellData::from_edge(Edge::new(
+    4,
+    "alpha",
+    3,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(3, 2, 4)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("from=e3p, to=1-2"), content="true")
+  inspect(
+    out.contains(
+      "\"\"{name=e3p, anchor=center, inner sep=0}, phantom, from=1-1, to=1-2, start anchor=center, end anchor=center",
+    ),
+    content="true",
+  )
 }
 
 test "tikz-cd export maps basic arrow style options" {
@@ -113,6 +151,102 @@ test "tikz-cd export maps hook and harpoon side options" {
 
   let out = quiver.export_tikz_cd()
   inspect(out.contains("\\arrow[r, \"k\", hook', harpoon']"), content="true")
+}
+
+test "tikz-cd export maps barred arrow body decoration" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_style_body("barred")
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("\"\\shortmid\"{marking}"), content="true")
+}
+
+test "tikz-cd export maps double barred arrow body decoration with midpoint" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1)
+    .with_style_body("double barred")
+    .with_shorten(20, 10)
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("\"\\shortmid\\shortmid\"{marking, pos=0.55}"), content="true")
+}
+
+test "tikz-cd export maps bullet solid arrow body decoration" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1)
+    .with_style_body("bullet solid")
+    .with_colour(Colour::new(0, 100, 50, 1.0))
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(
+    out.contains("\"\\bullet\"{marking, text={rgb,255:red,255;green,0;blue,0}}"),
+    content="true",
+  )
+}
+
+test "tikz-cd export maps bullet hollow arrow body decoration" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1)
+    .with_style_body("bullet hollow")
+    .with_colour(Colour::new(0, 100, 50, 1.0))
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(
+    out.contains("\"\\bullet\"{marking, text=\\pgfkeysvalueof{/tikz/commutative diagrams/background color}}"),
+    content="true",
+  )
+  inspect(
+    out.contains("\"\\circ\"{marking, text={rgb,255:red,255;green,0;blue,0}}"),
+    content="true",
+  )
 }
 
 test "tikz-cd export maps offset curve and shorten options" {
@@ -298,6 +432,113 @@ test "tikz-cd export loop supports negative radius" {
   inspect(out.contains("in=302.5"), content="true")
   inspect(out.contains("out=237.5"), content="true")
   inspect(out.contains("distance=7.5mm"), content="true")
+}
+
+test "tikz-cd export maps adjunction style" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_style_name("adjunction")
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("\\arrow[r, draw=none, \"\\dashv\"{anchor=center}]"), content="true")
+}
+
+test "tikz-cd export maps non-arrow edge colour to decoration text" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1)
+    .with_style_name("adjunction")
+    .with_colour(Colour::new(0, 100, 50, 1.0))
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::new(240, 100, 50, 1.0),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(
+    out.contains("\\arrow[r, draw=none, \"\\dashv\"{anchor=center, text={rgb,255:red,255;green,0;blue,0}}]"),
+    content="true",
+  )
+}
+
+test "tikz-cd export non-arrow shared colour avoids decoration text override" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let green = Colour::new(120, 100, 50, 1.0)
+  let options = EdgeOptions::at_level(1).with_style_name("adjunction").with_colour(green)
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    green,
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("color={rgb,255:red,0;green,255;blue,0}"), content="true")
+  inspect(out.contains("\"\\dashv\"{anchor=center, text={rgb,255:red,0;green,255;blue,0}}"), content="false")
+}
+
+test "tikz-cd export maps corner style" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_style_name("corner")
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("\\arrow[r, draw=none, \"\\lrcorner\"{anchor=center, pos=0.125, rotate=45}]"), content="true")
+}
+
+test "tikz-cd export maps corner-inverse style" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_style_name("corner-inverse")
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let out = quiver.export_tikz_cd()
+  inspect(out.contains("\\arrow[r, draw=none, \"\\ulcorner\"{anchor=center, pos=0.125, rotate=45}]"), content="true")
 }
 
 test "tikz-cd export supports wrapping options" {
