@@ -269,12 +269,12 @@ pub fn ArrowCurveModel::path_svg(
   }
   let parts : Array[String] = []
   parts.push("M")
-  parts.push("${points[0].x}")
-  parts.push("${points[0].y}")
+  parts.push(points[0].x.to_string())
+  parts.push(points[0].y.to_string())
   for i in 1..<points.length() {
     parts.push("L")
-    parts.push("${points[i].x}")
-    parts.push("${points[i].y}")
+    parts.push(points[i].x.to_string())
+    parts.push(points[i].y.to_string())
   }
   parts.join(" ")
 }

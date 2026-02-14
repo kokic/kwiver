@@ -133,6 +133,10 @@ pub fn Quiver::all_cells(self : Quiver) -> Array[CellData] {
   cells
 }
 
+pub fn Quiver::is_empty(self : Quiver) -> Bool {
+  self.all_cell_ids().is_empty()
+}
+
 pub fn Quiver::contains_cell(self : Quiver, cell_id : Int) -> Bool {
   self.cells.contains(cell_id) && !self.deleted.contains(cell_id)
 }

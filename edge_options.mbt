@@ -293,3 +293,81 @@ pub fn EdgeOptions::with_shorten(self : EdgeOptions, source : Int, target : Int)
     style: self.style,
   }
 }
+
+pub fn EdgeOptions::with_style_tail(
+  self : EdgeOptions,
+  name : String,
+  side~ : String = "",
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: {
+      name: self.style.name,
+      tail: { name, side },
+      body: self.style.body,
+      head: self.style.head,
+    },
+  }
+}
+
+pub fn EdgeOptions::with_style_body(
+  self : EdgeOptions,
+  name : String,
+  side~ : String = "",
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: {
+      name: self.style.name,
+      tail: self.style.tail,
+      body: { name, side },
+      head: self.style.head,
+    },
+  }
+}
+
+pub fn EdgeOptions::with_style_head(
+  self : EdgeOptions,
+  name : String,
+  side~ : String = "",
+) -> EdgeOptions {
+  {
+    label_alignment: self.label_alignment,
+    label_position: self.label_position,
+    offset: self.offset,
+    curve: self.curve,
+    radius: self.radius,
+    angle: self.angle,
+    shorten: self.shorten,
+    level: self.level,
+    shape: self.shape,
+    colour: self.colour,
+    edge_alignment: self.edge_alignment,
+    style: {
+      name: self.style.name,
+      tail: self.style.tail,
+      body: self.style.body,
+      head: { name, side },
+    },
+  }
+}
