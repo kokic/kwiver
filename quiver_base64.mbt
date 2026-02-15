@@ -214,10 +214,33 @@ fn base64_share_url_fragment(input : String) -> String {
   }
 }
 
-fn base64_share_first_line(input : String) -> String {
-  match input.find("\n") {
-    Some(index) => input.unsafe_substring(start=0, end=index)
-    None => input
+fn base64_trimmed(line : String) -> String {
+  line.trim().to_string()
+}
+
+fn base64_extract_html_comment_reference(line : String) -> String? {
+  match line.find("<!--") {
+    Some(start) => {
+      let after = line.unsafe_substring(start=start + 4, end=line.length())
+      match after.find("-->") {
+        Some(end) => Some(base64_trimmed(after.unsafe_substring(start=0, end=end)))
+        None => None
+      }
+    }
+    None => None
+  }
+}
+
+fn base64_extract_iframe_src_reference(line : String) -> String? {
+  match line.find("src=\"") {
+    Some(start) => {
+      let after = line.unsafe_substring(start=start + 5, end=line.length())
+      match after.find("\"") {
+        Some(end) => Some(after.unsafe_substring(start=0, end=end))
+        None => None
+      }
+    }
+    None => None
   }
 }
 
@@ -226,21 +249,39 @@ pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
     return None
   }
 
-  let first_line = base64_share_first_line(input)
-  if first_line.has_prefix("% ") {
-    return Some(first_line.unsafe_substring(start=2, end=first_line.length()))
-  }
-  if first_line.has_prefix("// ") {
-    return Some(first_line.unsafe_substring(start=3, end=first_line.length()))
-  }
-  if first_line.has_prefix("<!-- ") {
-    match first_line.find(" -->") {
-      Some(index) => return Some(first_line.unsafe_substring(start=5, end=index))
+  let mut fallback : String? = None
+  for raw_line_view in input.split("\n") {
+    let line = base64_trimmed(raw_line_view.to_string())
+    if line == "" {
+      continue
+    }
+    if fallback is None {
+      fallback = Some(line)
+    }
+
+    if line.has_prefix("% ") {
+      return Some(base64_trimmed(line.unsafe_substring(start=2, end=line.length())))
+    }
+    if line.has_prefix("// ") {
+      return Some(base64_trimmed(line.unsafe_substring(start=3, end=line.length())))
+    }
+    match base64_extract_html_comment_reference(line) {
+      Some(reference) =>
+        if reference != "" {
+          return Some(reference)
+        }
+      None => ()
+    }
+    match base64_extract_iframe_src_reference(line) {
+      Some(reference) =>
+        if reference != "" {
+          return Some(reference)
+        }
       None => ()
     }
   }
 
-  Some(first_line)
+  fallback
 }
 
 pub fn Quiver::parse_base64_share_url(

@@ -275,6 +275,30 @@ test "base64 share reference extraction supports tikz fletcher and html headers"
   }
 }
 
+test "base64 share reference extraction supports wrapped markdown and iframe src" {
+  let payload = "abc123"
+  let wrapped = [
+    "```latex\n",
+    "  % https://q.uiver.app#q=",
+    payload,
+    "\n\\begin{tikzcd}\n```",
+  ].join("")
+  let iframe_only = [
+    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=",
+    payload,
+    "&embed\" width=\"400\" height=\"400\"></iframe>",
+  ].join("")
+
+  match Quiver::extract_base64_share_reference(wrapped) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    None => abort("expected wrapped reference")
+  }
+  match Quiver::extract_base64_share_reference(iframe_only) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""))
+    None => abort("expected iframe reference")
+  }
+}
+
 test "base64 import share text roundtrip from exporter outputs" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -314,6 +338,33 @@ test "base64 import share text roundtrip from exporter outputs" {
   let imported_html = Quiver::import_base64_share_text(html_output)
   inspect(imported_html.quiver.all_cell_ids(), content="[1, 2, 3]")
   match imported_html.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+}
+
+test "base64 import share text works from wrapped markdown and iframe-only source" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+
+  let wrapped = [
+    "```latex\n",
+    "  % https://q.uiver.app#q=",
+    payload,
+    "\n\\begin{tikzcd}\n```",
+  ].join("")
+  let imported_wrapped = Quiver::import_base64_share_text(wrapped)
+  inspect(imported_wrapped.quiver.all_cell_ids(), content="[1]")
+
+  let iframe_only = [
+    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=",
+    payload,
+    "&embed\" width=\"400\" height=\"400\"></iframe>",
+  ].join("")
+  let imported_iframe = Quiver::import_base64_share_text(iframe_only)
+  inspect(imported_iframe.quiver.all_cell_ids(), content="[1]")
+  match imported_iframe.renderer {
     Some(value) => inspect(value, content="svg")
     None => abort("expected renderer")
   }
