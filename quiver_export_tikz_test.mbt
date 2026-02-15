@@ -123,8 +123,8 @@ test "tikz-cd export supports edge-to-vertex via named edge references" {
   let out = quiver.export_tikz_cd()
   inspect(out.contains("\"f\""), content="true")
   inspect(out.contains("\"alpha\""), content="true")
-  inspect(out.contains("\"\"{name=e3, anchor=center, inner sep=0}"), content="true")
-  inspect(out.contains("from=e3, to=1-2"), content="true")
+  inspect(out.contains("\"\"{name=0, anchor=center, inner sep=0}"), content="true")
+  inspect(out.contains("from=0, to=1-2"), content="true")
 }
 
 test "tikz-cd export metadata records dependencies and incompatibilities" {
@@ -227,10 +227,10 @@ test "tikz-cd export supports non-edge-aligned references via phantom anchors" {
   quiver.connect(3, 2, 4)
 
   let out = quiver.export_tikz_cd()
-  inspect(out.contains("from=e3p, to=1-2"), content="true")
+  inspect(out.contains("from=0p, to=1-2"), content="true")
   inspect(
     out.contains(
-      "\"\"{name=e3p, anchor=center, inner sep=0}, phantom, from=1-1, to=1-2, start anchor=center, end anchor=center",
+      "\"\"{name=0p, anchor=center, inner sep=0}, phantom, from=1-1, to=1-2, start anchor=center, end anchor=center",
     ),
     content="true",
   )
@@ -752,4 +752,27 @@ test "tikz-cd export supports wrapping options" {
   inspect(out.has_prefix("% "), content="true")
   inspect(out.contains("\n\\[\\begin{tikzcd}[ampersand replacement=\\&,cramped]"), content="true")
   inspect(out.has_suffix("\\end{tikzcd}\\]"), content="true")
+}
+
+test "tikz-cd export maps equal non-normal seps to sep shorthand" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "X", 0, 0)))
+  let options = TikzCdExportOptions::default()
+    .with_sep_em(2.70)
+
+  let out = quiver.export_tikz_cd(options=options)
+  inspect(out.contains("\\begin{tikzcd}[sep=large]"), content="true")
+  inspect(out.contains("column sep="), content="false")
+  inspect(out.contains("row sep="), content="false")
+}
+
+test "tikz-cd export maps distinct seps to column and row options" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "X", 0, 0)))
+  let options = TikzCdExportOptions::default()
+    .with_column_sep_em(2.25)
+    .with_row_sep_em(0.90)
+
+  let out = quiver.export_tikz_cd(options=options)
+  inspect(out.contains("\\begin{tikzcd}[column sep=2.25em,row sep=small]"), content="true")
 }

@@ -5,6 +5,15 @@ pub struct TikzCdExportSettings {
   standalone : Bool
 }
 
+pub struct TikzCdSepOptions {
+  column_hundredths : Int
+  row_hundredths : Int
+}
+
+pub struct TikzCdExportOptions {
+  sep : TikzCdSepOptions
+}
+
 pub struct TikzCdExportMetadata {
   tikz_incompatibilities : Array[String]
   dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]]
@@ -72,8 +81,68 @@ pub fn TikzCdExportSettings::with_standalone(
   }
 }
 
-fn tikz_coord_key(x : Int, y : Int) -> String {
-  [x.to_string(), ",", y.to_string()].join("")
+pub fn TikzCdSepOptions::default() -> TikzCdSepOptions {
+  { column_hundredths: 180, row_hundredths: 180 }
+}
+
+pub fn TikzCdSepOptions::with_column_em(
+  self : TikzCdSepOptions,
+  value : Double,
+) -> TikzCdSepOptions {
+  {
+    column_hundredths: tikz_round_to_int(value * 100.0),
+    row_hundredths: self.row_hundredths,
+  }
+}
+
+pub fn TikzCdSepOptions::with_row_em(
+  self : TikzCdSepOptions,
+  value : Double,
+) -> TikzCdSepOptions {
+  {
+    column_hundredths: self.column_hundredths,
+    row_hundredths: tikz_round_to_int(value * 100.0),
+  }
+}
+
+pub fn TikzCdSepOptions::with_em(
+  _self : TikzCdSepOptions,
+  value : Double,
+) -> TikzCdSepOptions {
+  let hundredths = tikz_round_to_int(value * 100.0)
+  { column_hundredths: hundredths, row_hundredths: hundredths }
+}
+
+pub fn TikzCdExportOptions::default() -> TikzCdExportOptions {
+  { sep: TikzCdSepOptions::default() }
+}
+
+pub fn TikzCdExportOptions::with_sep(
+  _self : TikzCdExportOptions,
+  sep : TikzCdSepOptions,
+) -> TikzCdExportOptions {
+  { sep, }
+}
+
+pub fn TikzCdExportOptions::with_column_sep_em(
+  self : TikzCdExportOptions,
+  value : Double,
+) -> TikzCdExportOptions {
+  { sep: self.sep.with_column_em(value) }
+}
+
+pub fn TikzCdExportOptions::with_row_sep_em(
+  self : TikzCdExportOptions,
+  value : Double,
+) -> TikzCdExportOptions {
+  { sep: self.sep.with_row_em(value) }
+}
+
+pub fn TikzCdExportOptions::with_sep_em(
+  _self : TikzCdExportOptions,
+  value : Double,
+) -> TikzCdExportOptions {
+  { sep: TikzCdSepOptions::default().with_em(value) }
 }
 
 fn tikz_escape_label(label : String) -> String {
@@ -119,7 +188,7 @@ fn tikz_format_label(label : String) -> String {
   }
 }
 
-fn tikz_begin_line(settings : TikzCdExportSettings) -> String {
+fn tikz_begin_line(settings : TikzCdExportSettings, options_config : TikzCdExportOptions) -> String {
   let options : Array[String] = []
   if settings.ampersand_replacement {
     options.push("ampersand replacement=\\&")
@@ -127,11 +196,50 @@ fn tikz_begin_line(settings : TikzCdExportSettings) -> String {
   if settings.cramped {
     options.push("cramped")
   }
+  let column_sep = tikz_sep_option_name(options_config.sep.column_hundredths)
+  let row_sep = tikz_sep_option_name(options_config.sep.row_hundredths)
+  if column_sep == row_sep {
+    if column_sep != "normal" {
+      options.push(["sep=", column_sep].join(""))
+    }
+  } else {
+    if column_sep != "normal" {
+      options.push(["column sep=", column_sep].join(""))
+    }
+    if row_sep != "normal" {
+      options.push(["row sep=", row_sep].join(""))
+    }
+  }
 
   if options.is_empty() {
     "\\begin{tikzcd}"
   } else {
     ["\\begin{tikzcd}[", options.join(","), "]"].join("")
+  }
+}
+
+fn tikz_fixed_2(value : Int) -> String {
+  let sign = if value < 0 { "-" } else { "" }
+  let abs_value = Int::abs(value)
+  let whole = abs_value / 100
+  let frac = abs_value % 100
+  let frac_string = if frac < 10 {
+    ["0", frac.to_string()].join("")
+  } else {
+    frac.to_string()
+  }
+  [sign, whole.to_string(), ".", frac_string].join("")
+}
+
+fn tikz_sep_option_name(value : Int) -> String {
+  match value {
+    45 => "tiny"
+    90 => "small"
+    135 => "scriptsize"
+    180 => "normal"
+    270 => "large"
+    360 => "huge"
+    _ => [tikz_fixed_2(value), "em"].join("")
   }
 }
 
@@ -339,13 +447,8 @@ fn tikz_resolve_vertex(
   None
 }
 
-fn tikz_edge_name(edge_id : Int) -> String {
-  ["e", edge_id.to_string()].join("")
-}
-
-fn tikz_edge_reference_name(edge_id : Int, phantom : Bool) -> String {
-  let base = tikz_edge_name(edge_id)
-  if phantom { [base, "p"].join("") } else { base }
+fn tikz_edge_reference_name(base_name : String, phantom : Bool) -> String {
+  if phantom { [base_name, "p"].join("") } else { base_name }
 }
 
 fn tikz_named_placeholder(name : String) -> String {
@@ -362,12 +465,12 @@ fn tikz_cell_reference(
   min_y : Int,
   phantom : Bool,
   vertices_by_id : @hashmap.HashMap[Int, Vertex],
-  edges_by_id : @hashmap.HashMap[Int, Edge],
+  edge_export_name_by_id : @hashmap.HashMap[Int, String],
 ) -> String? {
   match vertices_by_id.get(cell_id) {
     Some(vertex) => Some(tikz_vertex_reference(vertex, min_x, min_y))
-    None => match edges_by_id.get(cell_id) {
-      Some(edge) => Some(tikz_edge_reference_name(edge.cell.id, phantom))
+    None => match edge_export_name_by_id.get(cell_id) {
+      Some(edge_name) => Some(tikz_edge_reference_name(edge_name, phantom))
       None => None
     }
   }
@@ -823,6 +926,7 @@ fn tikz_finalize_metadata(
 pub fn Quiver::export_tikz_cd_result(
   self : Quiver,
   settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
 ) -> TikzCdExportResult {
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
   let edges_by_id : @hashmap.HashMap[Int, Edge] = @hashmap.new()
@@ -858,7 +962,7 @@ pub fn Quiver::export_tikz_cd_result(
     }
   }
 
-  let begin_line = tikz_begin_line(settings)
+  let begin_line = tikz_begin_line(settings, options)
   let tikz_incompatibilities : @hashmap.HashMap[String, Bool] = @hashmap.new()
   let dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]] = @hashmap.new()
   if !has_vertex {
@@ -868,11 +972,6 @@ pub fn Quiver::export_tikz_cd_result(
       metadata: tikz_finalize_metadata(tikz_incompatibilities, dependencies),
     }
   }
-
-  let vertex_id_by_coord : @hashmap.HashMap[String, Int] = @hashmap.new()
-  vertices_by_id.each((id, vertex) => {
-    vertex_id_by_coord.set(tikz_coord_key(vertex.x, vertex.y), id)
-  })
 
   edges.sort_by((a, b) => tikz_compare_edges(vertices_by_id, edges_by_id, a, b))
 
@@ -893,6 +992,15 @@ pub fn Quiver::export_tikz_cd_result(
     }
   }
 
+  let edge_export_name_by_id : @hashmap.HashMap[Int, String] = @hashmap.new()
+  let mut edge_name_index = 0
+  for edge in edges {
+    if referenced_edges.contains(edge.cell.id) {
+      edge_export_name_by_id.set(edge.cell.id, edge_name_index.to_string())
+      edge_name_index = edge_name_index + 1
+    }
+  }
+
   let arrow_lines : Array[String] = []
   for edge in edges {
     match (
@@ -902,7 +1010,7 @@ pub fn Quiver::export_tikz_cd_result(
         min_y,
         !edge.options.edge_alignment.source,
         vertices_by_id,
-        edges_by_id,
+        edge_export_name_by_id,
       ),
       tikz_cell_reference(
         edge.target,
@@ -910,7 +1018,7 @@ pub fn Quiver::export_tikz_cd_result(
         min_y,
         !edge.options.edge_alignment.target,
         vertices_by_id,
-        edges_by_id,
+        edge_export_name_by_id,
       ),
     ) {
       (Some(source_ref), Some(target_ref)) => {
@@ -933,7 +1041,10 @@ pub fn Quiver::export_tikz_cd_result(
 
         let arrow_options : Array[String] = []
         if referenced_edges.contains(edge.cell.id) {
-          arrow_options.push(tikz_named_placeholder(tikz_edge_name(edge.cell.id)))
+          match edge_export_name_by_id.get(edge.cell.id) {
+            Some(edge_name) => arrow_options.push(tikz_named_placeholder(edge_name))
+            None => ()
+          }
         }
 
         match (source_vertex, target_vertex) {
@@ -1023,17 +1134,22 @@ pub fn Quiver::export_tikz_cd_result(
         let arrow = ["\\arrow[", arrow_options.join(", "), "]"].join("")
         arrow_lines.push(arrow)
         if phantom_referenced_edges.contains(edge.cell.id) {
-          let phantom_options : Array[String] = []
-          phantom_options.push(
-            tikz_named_placeholder(tikz_edge_reference_name(edge.cell.id, true)),
-          )
-          phantom_options.push("phantom")
-          phantom_options.push(["from=", source_ref].join(""))
-          phantom_options.push(["to=", target_ref].join(""))
-          phantom_options.push("start anchor=center")
-          phantom_options.push("end anchor=center")
-          tikz_append_phantom_geometry_options(phantom_options, edge)
-          arrow_lines.push(["\\arrow[", phantom_options.join(", "), "]"].join(""))
+          match edge_export_name_by_id.get(edge.cell.id) {
+            Some(edge_name) => {
+              let phantom_options : Array[String] = []
+              phantom_options.push(
+                tikz_named_placeholder(tikz_edge_reference_name(edge_name, true)),
+              )
+              phantom_options.push("phantom")
+              phantom_options.push(["from=", source_ref].join(""))
+              phantom_options.push(["to=", target_ref].join(""))
+              phantom_options.push("start anchor=center")
+              phantom_options.push("end anchor=center")
+              tikz_append_phantom_geometry_options(phantom_options, edge)
+              arrow_lines.push(["\\arrow[", phantom_options.join(", "), "]"].join(""))
+            }
+            None => ()
+          }
         }
       }
       _ => ()
@@ -1104,6 +1220,7 @@ pub fn Quiver::export_tikz_cd_result(
 pub fn Quiver::export_tikz_cd(
   self : Quiver,
   settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
 ) -> String {
-  self.export_tikz_cd_result(settings=settings).data
+  self.export_tikz_cd_result(settings=settings, options=options).data
 }
