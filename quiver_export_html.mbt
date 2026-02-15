@@ -118,6 +118,23 @@ fn html_embed_url(
   )
 }
 
+fn html_embed_extract_src(input : String) -> String? {
+  for raw_line_view in input.split("\n") {
+    let line = raw_line_view.to_string()
+    match line.find("src=\"") {
+      Some(start) => {
+        let after = line.unsafe_substring(start=start + 5, end=line.length())
+        match after.find("\"") {
+          Some(end) => return Some(after.unsafe_substring(start=0, end=end))
+          None => ()
+        }
+      }
+      None => ()
+    }
+  }
+  None
+}
+
 pub fn Quiver::export_html_embed(
   self : Quiver,
   settings : HtmlEmbedExportSettings,
@@ -154,7 +171,14 @@ pub fn Quiver::import_html_embed_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+  let reference = match html_embed_extract_src(input) {
+    Some(url) => url
+    None => match Quiver::extract_base64_share_reference(input) {
+      Some(value) => value
+      None => input
+    }
+  }
+  Quiver::import_base64_share_url_result(reference, default_renderer=default_renderer)
 }
 
 pub fn Quiver::import_html_embed(

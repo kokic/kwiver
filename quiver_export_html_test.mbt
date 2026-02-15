@@ -202,7 +202,19 @@ test "quiver html import wrapper roundtrips from embed output and preserves meta
     Some(value) => inspect(value, content="https://example.com/macros.tex")
     None => abort("expected macro_url")
   }
+  inspect(imported.embed, content="true")
 
   let imported_quiver = Quiver::import_html_embed(out)
   inspect(imported_quiver.all_cell_ids(), content="[1, 2, 3]")
+}
+
+test "quiver html import wrapper falls back to comment when iframe src is absent" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let comment_only = ["<!-- https://q.uiver.app#q=", payload, " -->"].join("")
+
+  let imported = Quiver::import_html_embed_result(comment_only)
+  inspect(imported.quiver.all_cell_ids(), content="[1]")
+  inspect(imported.embed, content="false")
 }
