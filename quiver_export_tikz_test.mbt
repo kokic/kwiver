@@ -18,6 +18,26 @@ fn has_dependency_reason(
   }
 }
 
+fn tikz_test_find_edge_by_label(quiver : Quiver, label : String) -> Edge? {
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(edge) => if edge.cell.label == label { return Some(edge) }
+      _ => ()
+    }
+  }
+  None
+}
+
+fn tikz_test_find_vertex_id_by_label(quiver : Quiver, label : String) -> Int? {
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) => if vertex.cell.label == label { return Some(vertex.cell.id) }
+      _ => ()
+    }
+  }
+  None
+}
+
 test "tikz-cd export basic vertex grid and arrow" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -892,4 +912,62 @@ test "tikz-cd import wrapper roundtrips from exported text and preserves metadat
 
   let imported_quiver = Quiver::import_tikz_cd(out)
   inspect(imported_quiver.all_cell_ids(), content="[1, 2, 3]")
+}
+
+test "tikz-cd import minimal parser supports handwritten matrix and right arrow" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = Quiver::import_tikz_cd_result(input)
+  inspect(imported.macro_url is None, content="true")
+  inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(imported.quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(imported.quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+test "tikz-cd import minimal parser supports diagonal direction shorthand" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[dr, \"g\"] & B \\\\\n",
+    "C & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "D") {
+    Some(value) => value
+    None => abort("expected vertex D")
+  }
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge g")
+  }
 }

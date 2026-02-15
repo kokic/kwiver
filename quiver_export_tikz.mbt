@@ -1426,11 +1426,281 @@ pub fn Quiver::export_tikz_cd(
   ).data
 }
 
+fn tikz_trim_left(input : String) -> String {
+  let mut start = 0
+  while start < input.length() {
+    let ch = input.unsafe_get(start)
+    if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
+      start = start + 1
+      continue
+    }
+    break
+  }
+  if start == 0 {
+    input
+  } else {
+    input.unsafe_substring(start=start, end=input.length())
+  }
+}
+
+fn tikz_extract_environment_body(input : String) -> String? {
+  let begin_token = "\\begin{tikzcd}"
+  let end_token = "\\end{tikzcd}"
+  match input.find(begin_token) {
+    Some(begin_index) => {
+      let after_begin = input.unsafe_substring(
+        start=begin_index + begin_token.length(),
+        end=input.length(),
+      )
+      let mut rest = tikz_trim_left(after_begin)
+      if rest.has_prefix("[") {
+        let mut depth = 0
+        let mut i = 0
+        while i < rest.length() {
+          let ch = rest.unsafe_get(i)
+          if ch == '[' {
+            depth = depth + 1
+          } else if ch == ']' {
+            depth = depth - 1
+            if depth == 0 {
+              rest = rest.unsafe_substring(start=i + 1, end=rest.length())
+              break
+            }
+          }
+          i = i + 1
+        }
+      }
+      match rest.find(end_token) {
+        Some(end_index) =>
+          Some(rest.unsafe_substring(start=0, end=end_index))
+        None => None
+      }
+    }
+    None => None
+  }
+}
+
+fn tikz_split_rows(body : String) -> Array[String] {
+  let rows : Array[String] = []
+  for row in body.split("\\\\") {
+    rows.push(row.to_string())
+  }
+  rows
+}
+
+fn tikz_split_cells(row : String) -> Array[String] {
+  let cells : Array[String] = []
+  for cell in row.split("&") {
+    cells.push(cell.to_string())
+  }
+  cells
+}
+
+fn tikz_is_direction_token(token : String) -> Bool {
+  if token == "" {
+    return false
+  }
+  for ch in token {
+    if ch != 'r' && ch != 'l' && ch != 'u' && ch != 'd' {
+      return false
+    }
+  }
+  true
+}
+
+fn tikz_extract_first_quoted(value : String) -> String? {
+  match value.find("\"") {
+    Some(start) => {
+      let rest = value.unsafe_substring(start=start + 1, end=value.length())
+      match rest.find("\"") {
+        Some(end) => Some(rest.unsafe_substring(start=0, end=end))
+        None => None
+      }
+    }
+    None => None
+  }
+}
+
+fn tikz_cell_label_text(cell : String) -> String {
+  let trimmed = cell.trim().to_string()
+  match trimmed.find("\\arrow[") {
+    Some(index) => trimmed.unsafe_substring(start=0, end=index).trim().to_string()
+    None => trimmed
+  }
+}
+
+fn tikz_collect_cell_arrows(cell : String) -> Array[(String, String)] {
+  let arrows : Array[(String, String)] = []
+  let mut rest = cell
+  while true {
+    match rest.find("\\arrow[") {
+      Some(start) => {
+        let after_arrow = rest.unsafe_substring(
+          start=start + "\\arrow[".length(),
+          end=rest.length(),
+        )
+        match after_arrow.find("]") {
+          Some(end) => {
+            let raw_options = after_arrow.unsafe_substring(start=0, end=end)
+            let options : Array[String] = []
+            for option in raw_options.split(",") {
+              options.push(option.trim().to_string())
+            }
+
+            let mut direction : String? = None
+            let mut label = ""
+            for option in options {
+              if direction is None && tikz_is_direction_token(option) {
+                direction = Some(option)
+              }
+              match tikz_extract_first_quoted(option) {
+                Some(value) =>
+                  if label == "" {
+                    label = value
+                  }
+                None => ()
+              }
+            }
+
+            match direction {
+              Some(dir) => arrows.push((dir, label))
+              None => ()
+            }
+
+            rest = after_arrow.unsafe_substring(start=end + 1, end=after_arrow.length())
+          }
+          None => break
+        }
+      }
+      None => break
+    }
+  }
+  arrows
+}
+
+fn tikz_direction_delta(direction : String) -> (Int, Int) {
+  let mut dx = 0
+  let mut dy = 0
+  for ch in direction {
+    if ch == 'r' {
+      dx = dx + 1
+    } else if ch == 'l' {
+      dx = dx - 1
+    } else if ch == 'd' {
+      dy = dy + 1
+    } else if ch == 'u' {
+      dy = dy - 1
+    }
+  }
+  (dx, dy)
+}
+
+fn tikz_grid_key(x : Int, y : Int) -> String {
+  ["x=", x.to_string(), ",y=", y.to_string()].join("")
+}
+
+fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
+  let body = match tikz_extract_environment_body(input) {
+    Some(value) => value
+    None => abort("missing tikzcd environment")
+  }
+
+  let rows = tikz_split_rows(body)
+  let quiver = Quiver::new()
+  let vertex_by_key : Map[String, Int] = Map::new()
+  let vertex_x_by_id : Map[Int, Int] = Map::new()
+  let vertex_y_by_id : Map[Int, Int] = Map::new()
+  let pending_arrows : Array[(Int, String, String)] = []
+  let mut next_id = 1
+
+  let mut y = 0
+  for row_raw in rows {
+    let row = row_raw.trim().to_string()
+    if row == "" {
+      continue
+    }
+    let cells = tikz_split_cells(row)
+    let mut x = 0
+    for cell_raw in cells {
+      let cell = cell_raw.trim().to_string()
+      let label = tikz_cell_label_text(cell)
+      let vertex_id = next_id
+      next_id = next_id + 1
+      quiver.add(CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)))
+      vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
+      vertex_x_by_id.set(vertex_id, x)
+      vertex_y_by_id.set(vertex_id, y)
+      for arrow in tikz_collect_cell_arrows(cell) {
+        let (direction, arrow_label) = arrow
+        pending_arrows.push((vertex_id, direction, arrow_label))
+      }
+      x = x + 1
+    }
+    y = y + 1
+  }
+
+  for pending in pending_arrows {
+    let (source_id, direction, label) = pending
+    let source_x = match vertex_x_by_id.get(source_id) {
+      Some(value) => value
+      None => continue
+    }
+    let source_y = match vertex_y_by_id.get(source_id) {
+      Some(value) => value
+      None => continue
+    }
+    let (dx, dy) = tikz_direction_delta(direction)
+    let target_x = source_x + dx
+    let target_y = source_y + dy
+    let target_id = match vertex_by_key.get(tikz_grid_key(target_x, target_y)) {
+      Some(value) => value
+      None => continue
+    }
+
+    let edge_id = next_id
+    next_id = next_id + 1
+    quiver.add(
+      CellData::from_edge(
+        Edge::new(edge_id, label, source_id, target_id, EdgeOptions::at_level(1), Colour::black()),
+      ),
+    )
+    quiver.connect(source_id, target_id, edge_id)
+  }
+
+  quiver
+}
+
+fn tikz_has_share_reference_hint(input : String) -> Bool {
+  for raw_line in input.split("\n") {
+    let line = raw_line.to_string().trim().to_string()
+    if line == "" {
+      continue
+    }
+    if line.has_prefix("% ") ||
+      line.has_prefix("// ") ||
+      line.contains("<!--") ||
+      line.contains("src=") {
+      return true
+    }
+  }
+  false
+}
+
 pub fn Quiver::import_tikz_cd_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+  let looks_like_tikz = input.contains("\\begin{tikzcd}") && input.contains("\\end{tikzcd}")
+  if looks_like_tikz && !tikz_has_share_reference_hint(input) {
+    {
+      quiver: Quiver::import_tikz_cd_minimal(input),
+      macro_url: None,
+      renderer: None,
+      embed: false,
+    }
+  } else {
+    Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+  }
 }
 
 pub fn Quiver::import_tikz_cd(
