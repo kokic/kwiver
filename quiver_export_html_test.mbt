@@ -218,3 +218,37 @@ test "quiver html import wrapper falls back to comment when iframe src is absent
   inspect(imported.quiver.all_cell_ids(), content="[1]")
   inspect(imported.embed, content="false")
 }
+
+test "quiver html import wrapper supports single-quoted iframe src" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let iframe = [
+    "<iframe src='https://q.uiver.app#r=svg&q=",
+    payload,
+    "&embed'></iframe>",
+  ].join("")
+
+  let imported = Quiver::import_html_embed_result(iframe)
+  inspect(imported.quiver.all_cell_ids(), content="[1]")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  inspect(imported.embed, content="true")
+}
+
+test "quiver html import wrapper supports spaced src assignment" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let iframe = [
+    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width='400'></iframe>",
+  ].join("")
+
+  let imported = Quiver::import_html_embed_result(iframe)
+  inspect(imported.quiver.all_cell_ids(), content="[1]")
+  inspect(imported.embed, content="true")
+}

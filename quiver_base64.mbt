@@ -239,16 +239,47 @@ fn base64_extract_html_comment_reference(line : String) -> String? {
 }
 
 fn base64_extract_iframe_src_reference(line : String) -> String? {
-  match line.find("src=\"") {
-    Some(start) => {
-      let after = line.unsafe_substring(start=start + 5, end=line.length())
-      match after.find("\"") {
-        Some(end) => Some(after.unsafe_substring(start=0, end=end))
-        None => None
+  let single_quote = Int::to_byte(39)
+  let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
+  let bytes = @utf8.encode(line)
+  let mut i = 0
+  while i + 2 < bytes.length() {
+    if bytes.unsafe_get(i) == b's' &&
+      bytes.unsafe_get(i + 1) == b'r' &&
+      bytes.unsafe_get(i + 2) == b'c' {
+      let mut j = i + 3
+      while j < bytes.length() && is_space(bytes.unsafe_get(j)) {
+        j = j + 1
+      }
+      if j >= bytes.length() || bytes.unsafe_get(j) != b'=' {
+        i = i + 1
+        continue
+      }
+      j = j + 1
+      while j < bytes.length() && is_space(bytes.unsafe_get(j)) {
+        j = j + 1
+      }
+      if j >= bytes.length() {
+        i = i + 1
+        continue
+      }
+      let quote = bytes.unsafe_get(j)
+      if quote != b'"' && quote != single_quote {
+        i = i + 1
+        continue
+      }
+      j = j + 1
+      let value_start = j
+      while j < bytes.length() && bytes.unsafe_get(j) != quote {
+        j = j + 1
+      }
+      if j < bytes.length() {
+        return Some(line.unsafe_substring(start=value_start, end=j))
       }
     }
-    None => None
+    i = i + 1
   }
+  None
 }
 
 pub fn Quiver::extract_base64_share_reference(input : String) -> String? {

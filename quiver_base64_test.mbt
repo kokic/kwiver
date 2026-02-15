@@ -351,6 +351,29 @@ test "base64 share reference extraction supports wrapped markdown and iframe src
   }
 }
 
+test "base64 share reference extraction supports single-quoted and spaced iframe src" {
+  let payload = "abc123"
+  let single_quoted = [
+    "<iframe src='https://q.uiver.app#r=svg&q=",
+    payload,
+    "&embed'></iframe>",
+  ].join("")
+  let spaced_assignment = [
+    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width='400'></iframe>",
+  ].join("")
+
+  match Quiver::extract_base64_share_reference(single_quoted) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""))
+    None => abort("expected single-quoted iframe reference")
+  }
+  match Quiver::extract_base64_share_reference(spaced_assignment) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload, "&embed"].join(""))
+    None => abort("expected spaced-assignment iframe reference")
+  }
+}
+
 test "base64 import share text roundtrip from exporter outputs" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -425,6 +448,34 @@ test "base64 import share text works from wrapped markdown and iframe-only sourc
     None => abort("expected renderer")
   }
   inspect(imported_iframe.embed, content="true")
+}
+
+test "base64 import share text supports single-quoted and spaced iframe src" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+
+  let single_quoted = [
+    "<iframe src='https://q.uiver.app#r=svg&q=",
+    payload,
+    "&embed'></iframe>",
+  ].join("")
+  let imported_single = Quiver::import_base64_share_text(single_quoted)
+  inspect(imported_single.quiver.all_cell_ids(), content="[1]")
+  match imported_single.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  inspect(imported_single.embed, content="true")
+
+  let spaced_assignment = [
+    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width='400'></iframe>",
+  ].join("")
+  let imported_spaced = Quiver::import_base64_share_text(spaced_assignment)
+  inspect(imported_spaced.quiver.all_cell_ids(), content="[1]")
+  inspect(imported_spaced.embed, content="true")
 }
 
 test "panic base64 import share url without payload" {
