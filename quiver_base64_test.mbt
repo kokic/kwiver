@@ -392,6 +392,56 @@ test "base64 share url parser supports query-style url without hash" {
   inspect(parsed.embed, content="true")
 }
 
+test "base64 share url parser merges fragment and query with query priority" {
+  let quiver_fragment = Quiver::new()
+  quiver_fragment.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload_fragment = quiver_fragment.export_base64_v0()
+
+  let quiver_query = Quiver::new()
+  quiver_query.add(CellData::from_vertex(Vertex::new_black(1, "B", 0, 0)))
+  let payload_query = quiver_query.export_base64_v0()
+
+  let link = [
+    "https://q.uiver.app/?q=",
+    payload_query,
+    "&r=canvas#q=",
+    payload_fragment,
+    "&r=svg&embed",
+  ].join("")
+
+  let parsed = Quiver::parse_base64_share_url(link)
+  match parsed.payload {
+    Some(value) => inspect(value == payload_query, content="true")
+    None => abort("expected payload")
+  }
+  // Query `r=canvas` should override fragment `r=svg` and collapse to default `None`.
+  inspect(parsed.renderer is None, content="true")
+  // `embed` from fragment should still be preserved when query does not override it.
+  inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser keeps fragment payload and query macro_url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = [
+    "https://q.uiver.app/?macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex#q=",
+    payload,
+    "&embed",
+  ].join("")
+
+  let parsed = Quiver::parse_base64_share_url(link)
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+  inspect(parsed.embed, content="true")
+}
+
 test "base64 import share url roundtrip works for full link and payload-only" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))

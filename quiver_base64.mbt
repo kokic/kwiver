@@ -188,6 +188,33 @@ fn base64_share_url_fragment(input : String) -> String {
   }
 }
 
+fn base64_share_url_query(input : String) -> String {
+  match input.find("?") {
+    Some(query_start) => {
+      let end = match input.find("#") {
+        Some(hash_start) =>
+          if hash_start > query_start {
+            hash_start
+          } else {
+            input.length()
+          }
+        None => input.length()
+      }
+      input.unsafe_substring(start=query_start + 1, end=end)
+    }
+    None => ""
+  }
+}
+
+fn base64_normalise_fragment(value : String) -> String {
+  let amp = value.replace_all(old="&amp;", new="&")
+  if amp.has_prefix("?") {
+    amp.unsafe_substring(start=1, end=amp.length())
+  } else {
+    amp
+  }
+}
+
 fn base64_trimmed(line : String) -> String {
   line.trim().to_string()
 }
@@ -289,59 +316,33 @@ pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
   fallback
 }
 
-pub fn Quiver::parse_base64_share_url(
-  input : String,
-  default_renderer? : String = "canvas",
-) -> Base64ShareUrlParts {
-  let is_url = input.contains("://")
-  let has_hash = input.contains("#")
-  if !has_hash && !is_url {
-    let is_fragment_query = input.has_prefix("q=") ||
-      input.has_prefix("r=") ||
-      input.has_prefix("macro_url=") ||
-      input.has_prefix("embed") ||
-      input.contains("&")
-    if !is_fragment_query {
-      return { payload: Some(input), macro_url: None, renderer: None, embed: false }
-    }
-  }
-  let fragment_raw = if has_hash {
-    base64_share_url_fragment(input)
-  } else if is_url {
-    match input.find("?") {
-      Some(index) => input.unsafe_substring(start=index + 1, end=input.length())
-      None => ""
-    }
-  } else {
-    input
-  }
-  let fragment_amp = fragment_raw.replace_all(old="&amp;", new="&")
-  let fragment = if fragment_amp.has_prefix("?") {
-    fragment_amp.unsafe_substring(start=1, end=fragment_amp.length())
-  } else {
-    fragment_amp
+fn base64_parse_share_segment(
+  segment : String,
+  allow_bare_payload : Bool,
+  payload : String?,
+  macro_url : String?,
+  renderer_raw : String?,
+  embed : Bool,
+) -> (String?, String?, String?, Bool) {
+  if segment == "" {
+    return (payload, macro_url, renderer_raw, embed)
   }
 
-  if fragment == "" {
-    return { payload: None, macro_url: None, renderer: None, embed: false }
+  let mut payload = payload
+  let mut macro_url = macro_url
+  let mut renderer_raw = renderer_raw
+  let mut embed = embed
+
+  if !segment.contains("=") {
+    if segment == "embed" {
+      embed = true
+    } else if allow_bare_payload {
+      payload = Some(segment)
+    }
+    return (payload, macro_url, renderer_raw, embed)
   }
 
-  if !fragment.contains("=") {
-    if fragment == "embed" {
-      return { payload: None, macro_url: None, renderer: None, embed: true }
-    }
-    if is_url {
-      return { payload: None, macro_url: None, renderer: None, embed: false }
-    }
-    return { payload: Some(fragment), macro_url: None, renderer: None, embed: false }
-  }
-
-  let mut payload : String? = None
-  let mut macro_url : String? = None
-  let mut renderer_raw : String? = None
-  let mut embed = false
-
-  for pair_view in fragment.split("&") {
+  for pair_view in segment.split("&") {
     let pair = pair_view.to_string()
     if pair == "" {
       continue
@@ -367,6 +368,95 @@ pub fn Quiver::parse_base64_share_url(
       }
       None => ()
     }
+  }
+
+  (payload, macro_url, renderer_raw, embed)
+}
+
+pub fn Quiver::parse_base64_share_url(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareUrlParts {
+  let is_url = input.contains("://")
+  let has_hash = input.contains("#")
+  if !has_hash && !is_url {
+    let is_fragment_query = input.has_prefix("q=") ||
+      input.has_prefix("r=") ||
+      input.has_prefix("macro_url=") ||
+      input.has_prefix("embed") ||
+      input.contains("&")
+    if !is_fragment_query {
+      return { payload: Some(input), macro_url: None, renderer: None, embed: false }
+    }
+  }
+
+  let mut payload : String? = None
+  let mut macro_url : String? = None
+  let mut renderer_raw : String? = None
+  let mut embed = false
+
+  if is_url {
+    let fragment = if has_hash {
+      base64_normalise_fragment(base64_share_url_fragment(input))
+    } else {
+      ""
+    }
+    let query = base64_normalise_fragment(base64_share_url_query(input))
+    if fragment == "" && query == "" {
+      return { payload: None, macro_url: None, renderer: None, embed: false }
+    }
+
+    let parsed_fragment = base64_parse_share_segment(
+      fragment,
+      false,
+      payload,
+      macro_url,
+      renderer_raw,
+      embed,
+    )
+    let (payload_after_fragment, macro_after_fragment, renderer_after_fragment, embed_after_fragment) =
+      parsed_fragment
+
+    let parsed_query = base64_parse_share_segment(
+      query,
+      false,
+      payload_after_fragment,
+      macro_after_fragment,
+      renderer_after_fragment,
+      embed_after_fragment,
+    )
+    let (payload_after_query, macro_after_query, renderer_after_query, embed_after_query) =
+      parsed_query
+
+    payload = payload_after_query
+    macro_url = macro_after_query
+    renderer_raw = renderer_after_query
+    embed = embed_after_query
+  } else {
+    let fragment_raw = if has_hash {
+      base64_share_url_fragment(input)
+    } else {
+      input
+    }
+    let fragment = base64_normalise_fragment(fragment_raw)
+    if fragment == "" {
+      return { payload: None, macro_url: None, renderer: None, embed: false }
+    }
+
+    let parsed = base64_parse_share_segment(
+      fragment,
+      true,
+      payload,
+      macro_url,
+      renderer_raw,
+      embed,
+    )
+    let (payload_after_fragment, macro_after_fragment, renderer_after_fragment, embed_after_fragment) =
+      parsed
+    payload = payload_after_fragment
+    macro_url = macro_after_fragment
+    renderer_raw = renderer_after_fragment
+    embed = embed_after_fragment
   }
 
   let renderer = match renderer_raw {
