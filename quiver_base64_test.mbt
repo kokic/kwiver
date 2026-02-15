@@ -53,3 +53,39 @@ test "base64 v0 roundtrip preserves edge options" {
     None => abort("expected edge")
   }
 }
+
+test "base64 share url encodes macro_url for non-empty quiver" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some("https://example.com/macros.tex"),
+  )
+  inspect(
+    link == [
+      "https://q.uiver.app#q=",
+      payload,
+      "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+    ].join(""),
+    content="true",
+  )
+}
+
+test "base64 share url for empty quiver returns base only" {
+  let quiver = Quiver::new()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some("https://example.com/macros.tex"),
+  )
+  inspect(link, content="https://q.uiver.app")
+}
+
+test "base64 share url without base returns payload" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(None, Some("https://example.com/macros.tex"))
+  inspect(link, content=payload)
+}

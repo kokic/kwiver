@@ -87,16 +87,11 @@ fn html_embed_url(
   settings : HtmlEmbedExportSettings,
   options : HtmlEmbedExportOptions,
 ) -> String {
-  let base_url = match options.share_base_url {
-    Some(url) => url
-    None => settings.base_url
+  let share_base_url = match options.share_base_url {
+    Some(url) => Some(url)
+    None => Some(settings.base_url)
   }
-  export_share_link(
-    quiver.export_base64_v0(),
-    quiver.is_empty(),
-    Some(base_url),
-    options.macro_url,
-  )
+  quiver.export_base64_share_url(share_base_url, options.macro_url)
 }
 
 pub fn Quiver::export_html_embed(

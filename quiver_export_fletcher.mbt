@@ -166,7 +166,6 @@ fn fletcher_wrap_output(
   options : FletcherExportOptions,
   lines : Array[String],
 ) -> String {
-  let payload = quiver.export_base64_v0()
   let body = lines.join("\n")
   let diagram = if body == "" {
     "diagram({\n})"
@@ -180,7 +179,7 @@ fn fletcher_wrap_output(
   }
   [
     "// ",
-    export_share_link(payload, quiver.is_empty(), options.share_base_url, options.macro_url),
+    quiver.export_base64_share_url(options.share_base_url, options.macro_url),
     "\n#",
     wrapped,
   ].join("")

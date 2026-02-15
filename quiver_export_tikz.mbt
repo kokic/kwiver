@@ -298,7 +298,6 @@ fn tikz_wrap_output(
   options_config : TikzCdExportOptions,
   tikzcd : String,
 ) -> String {
-  let payload = quiver.export_base64_v0()
   let wrapped = if settings.standalone {
     [
       "\\documentclass[tikz]{standalone}\n\\usepackage{quiver}\n\\begin{document}\n",
@@ -312,9 +311,7 @@ fn tikz_wrap_output(
   }
   [
     "% ",
-    export_share_link(
-      payload,
-      quiver.is_empty(),
+    quiver.export_base64_share_url(
       options_config.share_base_url,
       options_config.macro_url,
     ),
