@@ -858,3 +858,38 @@ test "tikz-cd export maps distinct seps to column and row options" {
   let out = quiver.export_tikz_cd(options=options)
   inspect(out.contains("\\begin{tikzcd}[column sep=2.25em,row sep=small]"), content="true")
 }
+
+test "tikz-cd import wrapper roundtrips from exported text and preserves metadata" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "f",
+    1,
+    2,
+    EdgeOptions::at_level(1),
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let options = TikzCdExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let out = quiver.export_tikz_cd(options=options)
+
+  let imported = Quiver::import_tikz_cd_result(out)
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match imported.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+
+  let imported_quiver = Quiver::import_tikz_cd(out)
+  inspect(imported_quiver.all_cell_ids(), content="[1, 2, 3]")
+}

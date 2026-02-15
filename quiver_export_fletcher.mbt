@@ -324,3 +324,20 @@ pub fn Quiver::export_fletcher(
 
   fletcher_wrap_output(self, settings, options, lines)
 }
+
+pub fn Quiver::import_fletcher_result(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareImportResult raise {
+  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+}
+
+pub fn Quiver::import_fletcher(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Quiver raise {
+  Quiver::import_fletcher_result(
+    input,
+    default_renderer=default_renderer,
+  ).quiver
+}

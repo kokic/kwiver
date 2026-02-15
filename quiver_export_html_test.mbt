@@ -170,3 +170,39 @@ test "quiver html export without_share_base_url restores settings base url" {
     content=expected,
   )
 }
+
+test "quiver html import wrapper roundtrips from embed output and preserves metadata" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "f",
+    1,
+    2,
+    EdgeOptions::at_level(1),
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
+  let options = HtmlEmbedExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let out = quiver.export_html_embed(settings, options=options)
+
+  let imported = Quiver::import_html_embed_result(out)
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match imported.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+
+  let imported_quiver = Quiver::import_html_embed(out)
+  inspect(imported_quiver.all_cell_ids(), content="[1, 2, 3]")
+}

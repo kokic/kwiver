@@ -149,3 +149,20 @@ pub fn Quiver::export_html_embed(
     "\" style=\"border-radius: 8px; border: none;\"></iframe>",
   ].join("")
 }
+
+pub fn Quiver::import_html_embed_result(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareImportResult raise {
+  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+}
+
+pub fn Quiver::import_html_embed(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Quiver raise {
+  Quiver::import_html_embed_result(
+    input,
+    default_renderer=default_renderer,
+  ).quiver
+}

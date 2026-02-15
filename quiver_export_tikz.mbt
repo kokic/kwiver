@@ -1425,3 +1425,20 @@ pub fn Quiver::export_tikz_cd(
     definitions=definitions,
   ).data
 }
+
+pub fn Quiver::import_tikz_cd_result(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareImportResult raise {
+  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+}
+
+pub fn Quiver::import_tikz_cd(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Quiver raise {
+  Quiver::import_tikz_cd_result(
+    input,
+    default_renderer=default_renderer,
+  ).quiver
+}
