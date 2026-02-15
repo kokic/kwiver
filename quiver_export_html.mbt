@@ -8,6 +8,11 @@ pub struct HtmlEmbedExportSettings {
   embed_padding : Int
 }
 
+pub struct HtmlEmbedExportOptions {
+  share_base_url : String?
+  macro_url : String?
+}
+
 pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSettings {
   {
     base_url,
@@ -18,6 +23,30 @@ pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSet
     diagram_height: 400,
     embed_padding: 24,
   }
+}
+
+pub fn HtmlEmbedExportOptions::default() -> HtmlEmbedExportOptions {
+  { share_base_url: None, macro_url: None }
+}
+
+pub fn HtmlEmbedExportOptions::with_share_base_url(
+  self : HtmlEmbedExportOptions,
+  base_url : String,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: Some(base_url), macro_url: self.macro_url }
+}
+
+pub fn HtmlEmbedExportOptions::with_macro_url(
+  self : HtmlEmbedExportOptions,
+  macro_url : String,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: self.share_base_url, macro_url: Some(macro_url) }
+}
+
+pub fn HtmlEmbedExportOptions::without_macro_url(
+  self : HtmlEmbedExportOptions,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: self.share_base_url, macro_url: None }
 }
 
 pub fn HtmlEmbedExportSettings::with_fixed_size(
@@ -53,19 +82,29 @@ pub fn HtmlEmbedExportSettings::with_dynamic_size(
   }
 }
 
-fn html_embed_url(quiver : Quiver, base_url : String) -> String {
-  if quiver.is_empty() {
-    base_url
-  } else {
-    base_url + "#q=" + quiver.export_base64_v0()
+fn html_embed_url(
+  quiver : Quiver,
+  settings : HtmlEmbedExportSettings,
+  options : HtmlEmbedExportOptions,
+) -> String {
+  let base_url = match options.share_base_url {
+    Some(url) => url
+    None => settings.base_url
   }
+  export_share_link(
+    quiver.export_base64_v0(),
+    quiver.is_empty(),
+    Some(base_url),
+    options.macro_url,
+  )
 }
 
 pub fn Quiver::export_html_embed(
   self : Quiver,
   settings : HtmlEmbedExportSettings,
+  options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
-  let url = html_embed_url(self, settings.base_url)
+  let url = html_embed_url(self, settings, options)
   let src = if self.is_empty() {
     url + "#embed"
   } else {

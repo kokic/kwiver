@@ -13,6 +13,35 @@ pub fn FletcherExportSettings::with_centre_diagram(
   { centre_diagram: value }
 }
 
+pub struct FletcherExportOptions {
+  share_base_url : String?
+  macro_url : String?
+}
+
+pub fn FletcherExportOptions::default() -> FletcherExportOptions {
+  { share_base_url: None, macro_url: None }
+}
+
+pub fn FletcherExportOptions::with_share_base_url(
+  self : FletcherExportOptions,
+  base_url : String,
+) -> FletcherExportOptions {
+  { share_base_url: Some(base_url), macro_url: self.macro_url }
+}
+
+pub fn FletcherExportOptions::with_macro_url(
+  self : FletcherExportOptions,
+  macro_url : String,
+) -> FletcherExportOptions {
+  { share_base_url: self.share_base_url, macro_url: Some(macro_url) }
+}
+
+pub fn FletcherExportOptions::without_macro_url(
+  self : FletcherExportOptions,
+) -> FletcherExportOptions {
+  { share_base_url: self.share_base_url, macro_url: None }
+}
+
 fn fletcher_coords(vertex : Vertex) -> String {
   ["(", vertex.x.to_string(), ", ", vertex.y.to_string(), ")"].join("")
 }
@@ -134,8 +163,10 @@ fn fletcher_arrow_marks(edge : Edge) -> (String, Array[String]) {
 fn fletcher_wrap_output(
   quiver : Quiver,
   settings : FletcherExportSettings,
+  options : FletcherExportOptions,
   lines : Array[String],
 ) -> String {
+  let payload = quiver.export_base64_v0()
   let body = lines.join("\n")
   let diagram = if body == "" {
     "diagram({\n})"
@@ -147,12 +178,18 @@ fn fletcher_wrap_output(
   } else {
     diagram
   }
-  ["// ", quiver.export_base64_v0(), "\n#", wrapped].join("")
+  [
+    "// ",
+    export_share_link(payload, quiver.is_empty(), options.share_base_url, options.macro_url),
+    "\n#",
+    wrapped,
+  ].join("")
 }
 
 pub fn Quiver::export_fletcher(
   self : Quiver,
   settings~ : FletcherExportSettings = FletcherExportSettings::default(),
+  options~ : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
   let vertices : Array[Vertex] = []
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
@@ -262,5 +299,5 @@ pub fn Quiver::export_fletcher(
     }
   }
 
-  fletcher_wrap_output(self, settings, lines)
+  fletcher_wrap_output(self, settings, options, lines)
 }

@@ -33,6 +33,30 @@ test "fletcher export supports centred diagram wrapper" {
   inspect(out.has_suffix("\n}))"), content="true")
 }
 
+test "fletcher export supports share URL comment with encoded macro_url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let options = FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_macro_url("https://example.com/macros.tex")
+
+  let out = quiver.export_fletcher(options=options)
+  inspect(out.has_prefix("// https://q.uiver.app#q="), content="true")
+  inspect(out.contains("&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"), content="true")
+}
+
+test "fletcher export share URL omits q and macro_url for empty quiver" {
+  let quiver = Quiver::new()
+  let options = FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_macro_url("https://example.com/macros.tex")
+
+  let out = quiver.export_fletcher(options=options)
+  inspect(out.has_prefix("// https://q.uiver.app\n"), content="true")
+  inspect(out.contains("#q="), content="false")
+  inspect(out.contains("macro_url="), content="false")
+}
+
 test "fletcher export maps label options, styles, and colours" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))

@@ -47,6 +47,30 @@ test "tikz-cd export prepends base64 comment line" {
   inspect(out.contains("\n\\begin{tikzcd}"), content="true")
 }
 
+test "tikz-cd export supports share URL comment with encoded macro_url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let options = TikzCdExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_macro_url("https://example.com/macros.tex")
+
+  let out = quiver.export_tikz_cd(options=options)
+  inspect(out.has_prefix("% https://q.uiver.app#q="), content="true")
+  inspect(out.contains("&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"), content="true")
+}
+
+test "tikz-cd export share URL omits q and macro_url for empty quiver" {
+  let quiver = Quiver::new()
+  let options = TikzCdExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_macro_url("https://example.com/macros.tex")
+
+  let out = quiver.export_tikz_cd(options=options)
+  inspect(out.has_prefix("% https://q.uiver.app\n"), content="true")
+  inspect(out.contains("#q="), content="false")
+  inspect(out.contains("macro_url="), content="false")
+}
+
 test "tikz-cd export normalises coordinates to 1-indexed grid" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", -1, 0)))
@@ -384,7 +408,7 @@ test "tikz-cd export maps bullet solid arrow body decoration" {
 
   let out = quiver.export_tikz_cd()
   inspect(
-    out.contains("\"\\bullet\"{marking, text={rgb,255:red,255;green,0;blue,0}}"),
+    out.contains("\"\\bullet\"{marking, text=red}"),
     content="true",
   )
 }
@@ -413,7 +437,7 @@ test "tikz-cd export maps bullet hollow arrow body decoration" {
     content="true",
   )
   inspect(
-    out.contains("\"\\circ\"{marking, text={rgb,255:red,255;green,0;blue,0}}"),
+    out.contains("\"\\circ\"{marking, text=red}"),
     content="true",
   )
 }
@@ -461,8 +485,8 @@ test "tikz-cd export separates edge and label colours" {
   quiver.connect(1, 2, 3)
 
   let out = quiver.export_tikz_cd()
-  inspect(out.contains("draw={rgb,255:red,255;green,0;blue,0}"), content="true")
-  inspect(out.contains("\"c\"{text={rgb,255:red,0;green,0;blue,255}}"), content="true")
+  inspect(out.contains("draw=red"), content="true")
+  inspect(out.contains("\"c\"{text=blue}"), content="true")
   inspect(out.contains("color={rgb,255:red,255;green,0;blue,0}"), content="false")
 }
 
@@ -522,6 +546,29 @@ test "tikz-cd export colours vertex labels" {
 
   let out = quiver.export_tikz_cd()
   inspect(out.contains("\\textcolor{rgb,255:red,255;green,0;blue,255}{V}"), content="true")
+}
+
+test "tikz-cd export uses named colours from definitions" {
+  let quiver = Quiver::new()
+  let named = Colour::new(30, 100, 50, 1.0)
+  quiver.add(CellData::from_vertex(Vertex::new(1, "V", 0, 0, named)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_colour(named)
+  quiver.add(CellData::from_edge(Edge::new(
+    3,
+    "f",
+    1,
+    2,
+    options,
+    Colour::black(),
+  )))
+  quiver.connect(1, 2, 3)
+
+  let definitions = TikzCdExportDefinitions::default().with_colour("myorange", named)
+  let out = quiver.export_tikz_cd(definitions=definitions)
+  inspect(out.contains("\\textcolor{myorange}{V}"), content="true")
+  inspect(out.contains("draw=myorange"), content="true")
 }
 
 test "tikz-cd export sorts edges by source and target position" {
@@ -673,7 +720,7 @@ test "tikz-cd export maps non-arrow edge colour to decoration text" {
 
   let out = quiver.export_tikz_cd()
   inspect(
-    out.contains("\\arrow[r, draw=none, \"\\dashv\"{anchor=center, text={rgb,255:red,255;green,0;blue,0}}]"),
+    out.contains("\\arrow[r, draw=none, \"\\dashv\"{anchor=center, text=red}]"),
     content="true",
   )
 }

@@ -12,6 +12,12 @@ pub struct TikzCdSepOptions {
 
 pub struct TikzCdExportOptions {
   sep : TikzCdSepOptions
+  share_base_url : String?
+  macro_url : String?
+}
+
+pub struct TikzCdExportDefinitions {
+  colours : @hashmap.HashMap[String, Colour]
 }
 
 pub struct TikzCdExportMetadata {
@@ -114,35 +120,78 @@ pub fn TikzCdSepOptions::with_em(
 }
 
 pub fn TikzCdExportOptions::default() -> TikzCdExportOptions {
-  { sep: TikzCdSepOptions::default() }
+  { sep: TikzCdSepOptions::default(), share_base_url: None, macro_url: None }
 }
 
 pub fn TikzCdExportOptions::with_sep(
-  _self : TikzCdExportOptions,
+  self : TikzCdExportOptions,
   sep : TikzCdSepOptions,
 ) -> TikzCdExportOptions {
-  { sep, }
+  { sep, share_base_url: self.share_base_url, macro_url: self.macro_url }
 }
 
 pub fn TikzCdExportOptions::with_column_sep_em(
   self : TikzCdExportOptions,
   value : Double,
 ) -> TikzCdExportOptions {
-  { sep: self.sep.with_column_em(value) }
+  {
+    sep: self.sep.with_column_em(value),
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+  }
 }
 
 pub fn TikzCdExportOptions::with_row_sep_em(
   self : TikzCdExportOptions,
   value : Double,
 ) -> TikzCdExportOptions {
-  { sep: self.sep.with_row_em(value) }
+  {
+    sep: self.sep.with_row_em(value),
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+  }
 }
 
 pub fn TikzCdExportOptions::with_sep_em(
-  _self : TikzCdExportOptions,
+  self : TikzCdExportOptions,
   value : Double,
 ) -> TikzCdExportOptions {
-  { sep: TikzCdSepOptions::default().with_em(value) }
+  {
+    sep: TikzCdSepOptions::default().with_em(value),
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+  }
+}
+
+pub fn TikzCdExportOptions::with_share_base_url(
+  self : TikzCdExportOptions,
+  base_url : String,
+) -> TikzCdExportOptions {
+  { sep: self.sep, share_base_url: Some(base_url), macro_url: self.macro_url }
+}
+
+pub fn TikzCdExportOptions::with_macro_url(
+  self : TikzCdExportOptions,
+  macro_url : String,
+) -> TikzCdExportOptions {
+  { sep: self.sep, share_base_url: self.share_base_url, macro_url: Some(macro_url) }
+}
+
+pub fn TikzCdExportOptions::without_macro_url(self : TikzCdExportOptions) -> TikzCdExportOptions {
+  { sep: self.sep, share_base_url: self.share_base_url, macro_url: None }
+}
+
+pub fn TikzCdExportDefinitions::default() -> TikzCdExportDefinitions {
+  { colours: @hashmap.new() }
+}
+
+pub fn TikzCdExportDefinitions::with_colour(
+  self : TikzCdExportDefinitions,
+  name : String,
+  colour : Colour,
+) -> TikzCdExportDefinitions {
+  self.colours.set(name, colour)
+  self
 }
 
 fn tikz_escape_label(label : String) -> String {
@@ -243,7 +292,13 @@ fn tikz_sep_option_name(value : Int) -> String {
   }
 }
 
-fn tikz_wrap_output(quiver : Quiver, settings : TikzCdExportSettings, tikzcd : String) -> String {
+fn tikz_wrap_output(
+  quiver : Quiver,
+  settings : TikzCdExportSettings,
+  options_config : TikzCdExportOptions,
+  tikzcd : String,
+) -> String {
+  let payload = quiver.export_base64_v0()
   let wrapped = if settings.standalone {
     [
       "\\documentclass[tikz]{standalone}\n\\usepackage{quiver}\n\\begin{document}\n",
@@ -255,7 +310,17 @@ fn tikz_wrap_output(quiver : Quiver, settings : TikzCdExportSettings, tikzcd : S
   } else {
     tikzcd
   }
-  ["% ", quiver.export_base64_v0(), "\n", wrapped].join("")
+  [
+    "% ",
+    export_share_link(
+      payload,
+      quiver.is_empty(),
+      options_config.share_base_url,
+      options_config.macro_url,
+    ),
+    "\n",
+    wrapped,
+  ].join("")
 }
 
 fn tikz_indent_lines(content : String) -> String {
@@ -356,10 +421,71 @@ fn tikz_colour_spec(colour : Colour) -> String {
   ].join("")
 }
 
-fn tikz_coloured_text(label : String, colour : Colour) -> String {
+fn tikz_builtin_colour_name(colour : Colour) -> String? {
+  if colour.l == 0 {
+    return Some("black")
+  }
+  if colour.l == 100 {
+    return Some("white")
+  }
+  if colour.a != 1.0 {
+    return None
+  }
+
+  if colour.h == 0 && colour.s == 100 && colour.l == 50 {
+    return Some("red")
+  }
+  if colour.h == 120 && colour.s == 100 && colour.l == 25 {
+    return Some("green")
+  }
+  if colour.h == 240 && colour.s == 100 && colour.l == 50 {
+    return Some("blue")
+  }
+  None
+}
+
+fn tikz_wrap_colour_name(name : String, parenthesise : Bool) -> String {
+  if parenthesise {
+    ["{", name, "}"].join("")
+  } else {
+    name
+  }
+}
+
+fn tikz_colour_latex(
+  colour : Colour,
+  definitions : TikzCdExportDefinitions,
+  parenthesise : Bool,
+) -> String {
+  match tikz_builtin_colour_name(colour) {
+    Some(name) => return tikz_wrap_colour_name(name, parenthesise)
+    None => ()
+  }
+
+  let colour_names = Array::from_iter(definitions.colours.keys())
+  colour_names.sort()
+  for name in colour_names {
+    match definitions.colours.get(name) {
+      Some(defined_colour) => {
+        if tikz_colour_eq(defined_colour, colour) {
+          return tikz_wrap_colour_name(name, parenthesise)
+        }
+      }
+      None => ()
+    }
+  }
+
+  tikz_colour_spec(colour)
+}
+
+fn tikz_coloured_text(
+  label : String,
+  colour : Colour,
+  definitions : TikzCdExportDefinitions,
+) -> String {
   [
     "\\textcolor",
-    tikz_colour_spec(colour),
+    tikz_colour_latex(colour, definitions, true),
     "{",
     tikz_format_label(label),
     "}",
@@ -387,13 +513,14 @@ fn tikz_append_colour_options(
   options : Array[String],
   edge : Edge,
   edge_is_empty : Bool,
+  definitions : TikzCdExportDefinitions,
 ) -> Bool {
   if tikz_shared_colour(edge) {
-    options.push(["color=", tikz_colour_spec(edge.cell.label_colour)].join(""))
+    options.push(["color=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(""))
     false
   } else {
     if !edge_is_empty && edge.options.style.name == "arrow" && edge.options.colour.is_not_black() {
-      options.push(["draw=", tikz_colour_spec(edge.options.colour)].join(""))
+      options.push(["draw=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
     }
     edge.cell.label_colour.is_not_black()
   }
@@ -406,11 +533,11 @@ fn tikz_edge_label_content(edge : Edge, _explicit_colour : Bool) -> String {
   tikz_format_label(edge.cell.label)
 }
 
-fn tikz_vertex_label(vertex : Vertex) -> String {
+fn tikz_vertex_label(vertex : Vertex, definitions : TikzCdExportDefinitions) -> String {
   if vertex.cell.label == "" {
     ""
   } else if vertex.cell.label_colour.is_not_black() {
-    tikz_coloured_text(vertex.cell.label, vertex.cell.label_colour)
+    tikz_coloured_text(vertex.cell.label, vertex.cell.label_colour, definitions)
   } else {
     tikz_format_label(vertex.cell.label)
   }
@@ -598,6 +725,7 @@ fn tikz_append_label_options(
   edge : Edge,
   label_content : String,
   explicit_label_colour : Bool,
+  definitions : TikzCdExportDefinitions,
 ) -> Unit {
   if label_content != "" {
     let label_parameters : Array[String] = []
@@ -630,7 +758,7 @@ fn tikz_append_label_options(
     }
 
     if explicit_label_colour && edge.cell.label_colour.is_not_black() {
-      label_parameters.push(["text=", tikz_colour_spec(edge.cell.label_colour)].join(""))
+      label_parameters.push(["text=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(""))
     }
 
     options.push(tikz_label_option(label_content, swap, label_parameters))
@@ -732,7 +860,11 @@ fn tikz_append_phantom_geometry_options(options : Array[String], edge : Edge) ->
   tikz_append_shift_and_curve_options(options, edge)
 }
 
-fn tikz_append_arrow_body_decorations(options : Array[String], edge : Edge) -> Unit {
+fn tikz_append_arrow_body_decorations(
+  options : Array[String],
+  edge : Edge,
+  definitions : TikzCdExportDefinitions,
+) -> Unit {
   if edge.options.style.name != "arrow" {
     return
   }
@@ -749,7 +881,7 @@ fn tikz_append_arrow_body_decorations(options : Array[String], edge : Edge) -> U
 
   let with_edge_colour = (parameters : Array[String]) => {
     if edge.options.colour.is_not_black() {
-      parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+      parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
     }
   }
 
@@ -831,6 +963,7 @@ fn tikz_append_non_arrow_style_options(
   shared_colour : Bool,
   source : Point?,
   target : Point?,
+  definitions : TikzCdExportDefinitions,
 ) -> Unit {
   let angle_deg = if edge.source == edge.target {
     edge.options.angle.to_double()
@@ -848,7 +981,7 @@ fn tikz_append_non_arrow_style_options(
       let rotate = -tikz_round_to_int(angle_deg)
       let parameters : Array[String] = ["anchor=center"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -860,7 +993,7 @@ fn tikz_append_non_arrow_style_options(
       let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
       let parameters : Array[String] = ["anchor=center", "pos=0.125"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -872,7 +1005,7 @@ fn tikz_append_non_arrow_style_options(
       let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
       let parameters : Array[String] = ["anchor=center", "pos=0.125"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_spec(edge.options.colour)].join(""))
+        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -927,6 +1060,7 @@ pub fn Quiver::export_tikz_cd_result(
   self : Quiver,
   settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
   options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
   let edges_by_id : @hashmap.HashMap[Int, Edge] = @hashmap.new()
@@ -968,7 +1102,7 @@ pub fn Quiver::export_tikz_cd_result(
   if !has_vertex {
     let empty = [begin_line, "\n\\end{tikzcd}"].join("")
     return {
-      data: tikz_wrap_output(self, settings, empty),
+      data: tikz_wrap_output(self, settings, options, empty),
       metadata: tikz_finalize_metadata(tikz_incompatibilities, dependencies),
     }
   }
@@ -1073,10 +1207,17 @@ pub fn Quiver::export_tikz_cd_result(
           arrow_options,
           edge,
           edge_is_empty,
+          definitions,
         )
         let label_content = tikz_edge_label_content(edge, explicit_label_colour)
-        tikz_append_label_options(arrow_options, edge, label_content, explicit_label_colour)
-        tikz_append_arrow_body_decorations(arrow_options, edge)
+        tikz_append_label_options(
+          arrow_options,
+          edge,
+          label_content,
+          explicit_label_colour,
+          definitions,
+        )
+        tikz_append_arrow_body_decorations(arrow_options, edge, definitions)
         tikz_append_geometry_options(arrow_options, edge)
         tikz_append_loop_options(
           arrow_options,
@@ -1090,6 +1231,7 @@ pub fn Quiver::export_tikz_cd_result(
           shared_colour,
           source_origin,
           target_origin,
+          definitions,
         )
         tikz_append_style_options(arrow_options, edge, edge_is_empty)
 
@@ -1190,7 +1332,7 @@ pub fn Quiver::export_tikz_cd_result(
         matrix_parts.push(tikz_repeat(ampersand, x - prev_x))
         matrix_parts.push(" ")
       }
-      matrix_parts.push(tikz_vertex_label(vertex))
+      matrix_parts.push(tikz_vertex_label(vertex, definitions))
       prev_x = x
       first_in_row = false
     }
@@ -1212,7 +1354,7 @@ pub fn Quiver::export_tikz_cd_result(
     [begin_line, "\n", indented_body, "\n\\end{tikzcd}"].join("")
   }
   {
-    data: tikz_wrap_output(self, settings, tikzcd),
+    data: tikz_wrap_output(self, settings, options, tikzcd),
     metadata: tikz_finalize_metadata(tikz_incompatibilities, dependencies),
   }
 }
@@ -1221,6 +1363,11 @@ pub fn Quiver::export_tikz_cd(
   self : Quiver,
   settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
   options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> String {
-  self.export_tikz_cd_result(settings=settings, options=options).data
+  self.export_tikz_cd_result(
+    settings=settings,
+    options=options,
+    definitions=definitions,
+  ).data
 }
