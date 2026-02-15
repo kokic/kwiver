@@ -212,6 +212,46 @@ test "base64 share url parser supports hash embed without payload" {
   inspect(parsed.embed, content="true")
 }
 
+test "base64 share url parser supports hash question prefix and html ampersands" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = [
+    "https://q.uiver.app#?r=svg&q=",
+    payload,
+    "&amp;macro_url=https%3A%2F%2Fexample.com%2Fmy+macros.tex&amp;embed",
+  ].join("")
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  match parsed.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/my macros.tex")
+    None => abort("expected macro_url")
+  }
+  inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser supports query-style url without hash" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = ["https://q.uiver.app?q=", payload, "&embed"].join("")
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  inspect(parsed.embed, content="true")
+}
+
 test "base64 import share url roundtrip works for full link and payload-only" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))

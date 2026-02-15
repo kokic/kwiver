@@ -194,6 +194,11 @@ fn base64_percent_decode_component(value : String) -> String {
   let mut i = 0
   while i < bytes.length() {
     let byte = bytes.unsafe_get(i)
+    if byte == b'+' {
+      decoded.push(b' ')
+      i = i + 1
+      continue
+    }
     if byte == b'%' && i + 2 < bytes.length() {
       let high = base64_hex_to_int(bytes.unsafe_get(i + 1).to_int())
       let low = base64_hex_to_int(bytes.unsafe_get(i + 2).to_int())
@@ -290,21 +295,35 @@ pub fn Quiver::parse_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareUrlParts {
+  let is_url = input.contains("://")
   let has_hash = input.contains("#")
-  if !has_hash {
-    if input.contains("://") {
-      return { payload: None, macro_url: None, renderer: None, embed: false }
-    }
+  if !has_hash && !is_url {
     let is_fragment_query = input.has_prefix("q=") ||
       input.has_prefix("r=") ||
       input.has_prefix("macro_url=") ||
+      input.has_prefix("embed") ||
       input.contains("&")
     if !is_fragment_query {
       return { payload: Some(input), macro_url: None, renderer: None, embed: false }
     }
   }
+  let fragment_raw = if has_hash {
+    base64_share_url_fragment(input)
+  } else if is_url {
+    match input.find("?") {
+      Some(index) => input.unsafe_substring(start=index + 1, end=input.length())
+      None => ""
+    }
+  } else {
+    input
+  }
+  let fragment_amp = fragment_raw.replace_all(old="&amp;", new="&")
+  let fragment = if fragment_amp.has_prefix("?") {
+    fragment_amp.unsafe_substring(start=1, end=fragment_amp.length())
+  } else {
+    fragment_amp
+  }
 
-  let fragment = base64_share_url_fragment(input)
   if fragment == "" {
     return { payload: None, macro_url: None, renderer: None, embed: false }
   }
@@ -313,7 +332,7 @@ pub fn Quiver::parse_base64_share_url(
     if fragment == "embed" {
       return { payload: None, macro_url: None, renderer: None, embed: true }
     }
-    if input.contains("://") {
+    if is_url {
       return { payload: None, macro_url: None, renderer: None, embed: false }
     }
     return { payload: Some(fragment), macro_url: None, renderer: None, embed: false }
