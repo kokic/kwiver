@@ -255,6 +255,70 @@ test "base64 import share url result normalises default renderer" {
   inspect(imported.renderer is None, content="true")
 }
 
+test "base64 share reference extraction supports tikz fletcher and html headers" {
+  let payload = "abc123"
+  let tikz = ["% https://q.uiver.app#q=", payload, "\n\\begin{tikzcd}"].join("")
+  let fletcher = ["// https://q.uiver.app#q=", payload, "\n#diagram({})"].join("")
+  let html = ["<!-- https://q.uiver.app#q=", payload, " -->\n<iframe></iframe>"].join("")
+
+  match Quiver::extract_base64_share_reference(tikz) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    None => abort("expected tikz reference")
+  }
+  match Quiver::extract_base64_share_reference(fletcher) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    None => abort("expected fletcher reference")
+  }
+  match Quiver::extract_base64_share_reference(html) {
+    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    None => abort("expected html reference")
+  }
+}
+
+test "base64 import share text roundtrip from exporter outputs" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  let edge = Edge::new(3, "f", 1, 2, EdgeOptions::at_level(1), Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let tikz_options = TikzCdExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let tikz_output = quiver.export_tikz_cd(options=tikz_options)
+  let imported_tikz = Quiver::import_base64_share_text(tikz_output)
+  inspect(imported_tikz.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match imported_tikz.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+
+  let fletcher_options = FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_macro_url("https://example.com/macros.tex")
+  let fletcher_output = quiver.export_fletcher(options=fletcher_options)
+  let imported_fletcher = Quiver::import_base64_share_text(fletcher_output)
+  inspect(imported_fletcher.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match imported_fletcher.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+
+  let html_options = HtmlEmbedExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+  let html_settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
+  let html_output = quiver.export_html_embed(html_settings, options=html_options)
+  let imported_html = Quiver::import_base64_share_text(html_output)
+  inspect(imported_html.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match imported_html.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+}
+
 test "panic base64 import share url without payload" {
   ignore(Quiver::import_base64_share_url("https://q.uiver.app"))
 }

@@ -214,6 +214,35 @@ fn base64_share_url_fragment(input : String) -> String {
   }
 }
 
+fn base64_share_first_line(input : String) -> String {
+  match input.find("\n") {
+    Some(index) => input.unsafe_substring(start=0, end=index)
+    None => input
+  }
+}
+
+pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
+  if input == "" {
+    return None
+  }
+
+  let first_line = base64_share_first_line(input)
+  if first_line.has_prefix("% ") {
+    return Some(first_line.unsafe_substring(start=2, end=first_line.length()))
+  }
+  if first_line.has_prefix("// ") {
+    return Some(first_line.unsafe_substring(start=3, end=first_line.length()))
+  }
+  if first_line.has_prefix("<!-- ") {
+    match first_line.find(" -->") {
+      Some(index) => return Some(first_line.unsafe_substring(start=5, end=index))
+      None => ()
+    }
+  }
+
+  Some(first_line)
+}
+
 pub fn Quiver::parse_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",
@@ -414,4 +443,15 @@ pub fn Quiver::import_base64_share_url_result(
       }
     None => abort("missing base64 payload in share URL")
   }
+}
+
+pub fn Quiver::import_base64_share_text(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareImportResult raise {
+  let reference = match Quiver::extract_base64_share_reference(input) {
+    Some(value) => value
+    None => input
+  }
+  Quiver::import_base64_share_url_result(reference, default_renderer=default_renderer)
 }
