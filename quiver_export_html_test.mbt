@@ -146,3 +146,27 @@ test "quiver html export omits macro_url for empty quiver and allows base overri
       "<!-- https://alt.uiver.app -->\n<iframe class=\"quiver-embed\" src=\"https://alt.uiver.app#embed\" width=\"500\" height=\"320\" style=\"border-radius: 8px; border: none;\"></iframe>",
   )
 }
+
+test "quiver html export without_share_base_url restores settings base url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 400)
+  let payload = quiver.export_base64_v0()
+  let options = HtmlEmbedExportOptions::default()
+    .with_share_base_url("https://alt.uiver.app")
+    .without_share_base_url()
+
+  let expected = [
+    "<!-- https://q.uiver.app#q=",
+    payload,
+    " -->\n<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width=\"400\" height=\"400\" style=\"border-radius: 8px; border: none;\"></iframe>",
+  ].join("")
+
+  inspect(
+    quiver.export_html_embed(settings, options=options),
+    content=expected,
+  )
+}

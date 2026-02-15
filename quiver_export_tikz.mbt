@@ -184,6 +184,17 @@ pub fn TikzCdExportOptions::with_share_base_url(
   }
 }
 
+pub fn TikzCdExportOptions::without_share_base_url(
+  self : TikzCdExportOptions,
+) -> TikzCdExportOptions {
+  {
+    sep: self.sep,
+    share_base_url: None,
+    macro_url: self.macro_url,
+    renderer: self.renderer,
+  }
+}
+
 pub fn TikzCdExportOptions::with_macro_url(
   self : TikzCdExportOptions,
   macro_url : String,

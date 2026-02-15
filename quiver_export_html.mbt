@@ -37,6 +37,12 @@ pub fn HtmlEmbedExportOptions::with_share_base_url(
   { share_base_url: Some(base_url), macro_url: self.macro_url, renderer: self.renderer }
 }
 
+pub fn HtmlEmbedExportOptions::without_share_base_url(
+  self : HtmlEmbedExportOptions,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
+}
+
 pub fn HtmlEmbedExportOptions::with_macro_url(
   self : HtmlEmbedExportOptions,
   macro_url : String,

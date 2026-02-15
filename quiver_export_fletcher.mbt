@@ -30,6 +30,12 @@ pub fn FletcherExportOptions::with_share_base_url(
   { share_base_url: Some(base_url), macro_url: self.macro_url, renderer: self.renderer }
 }
 
+pub fn FletcherExportOptions::without_share_base_url(
+  self : FletcherExportOptions,
+) -> FletcherExportOptions {
+  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
+}
+
 pub fn FletcherExportOptions::with_macro_url(
   self : FletcherExportOptions,
   macro_url : String,

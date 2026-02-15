@@ -80,6 +80,18 @@ test "fletcher export share URL omits q and macro_url for empty quiver" {
   inspect(out.contains("macro_url="), content="false")
 }
 
+test "fletcher export without_share_base_url falls back to payload comment" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let options = FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .without_share_base_url()
+  let payload = quiver.export_base64_v0()
+
+  let out = quiver.export_fletcher(options=options)
+  inspect(out.has_prefix(["// ", payload, "\n"].join("")), content="true")
+}
+
 test "fletcher export maps label options, styles, and colours" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
