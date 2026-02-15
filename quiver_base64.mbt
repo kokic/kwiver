@@ -36,10 +36,6 @@ pub struct Base64ShareImportResult {
   embed : Bool
 }
 
-fn colour_to_tuple(colour : Colour) -> ColourTuple {
-  (colour.h, colour.s, colour.l, colour.a)
-}
-
 fn colour_from_tuple(tuple : ColourTuple) -> Colour {
   let (h, s, l, a) = tuple
   Colour::new(h, s, l, a)
@@ -64,41 +60,12 @@ fn int_to_label_alignment(value : Int) -> LabelAlignment {
   }
 }
 
-fn edge_shape_to_int(shape : EdgeShape) -> Int {
-  match shape {
-    EdgeShape::Bezier => 0
-    EdgeShape::Arc => 1
-  }
-}
-
 fn int_to_edge_shape(value : Int) -> EdgeShape {
   match value {
     0 => EdgeShape::Bezier
     1 => EdgeShape::Arc
     _ => EdgeShape::Bezier
   }
-}
-
-fn edge_options_to_encoded(options : EdgeOptions) -> EncodedEdgeOptions {
-  (
-    (
-      options.label_position,
-      options.offset,
-      options.curve,
-      options.radius,
-      options.angle,
-    ),
-    (options.shorten.source, options.shorten.target),
-    (options.level, edge_shape_to_int(options.shape)),
-    colour_to_tuple(options.colour),
-    (options.edge_alignment.source, options.edge_alignment.target),
-    (
-      options.style.name,
-      (options.style.tail.name, options.style.tail.side),
-      (options.style.body.name, options.style.body.side),
-      (options.style.head.name, options.style.head.side),
-    ),
-  )
 }
 
 fn edge_options_from_encoded(
@@ -416,36 +383,208 @@ pub fn Quiver::parse_base64_share_url(
 }
 
 pub fn Quiver::export_base64_v0(self : Quiver) -> String {
-  let vertices : Array[EncodedVertex] = []
-  let edges : Array[EncodedEdge] = []
+  let cells = self.all_cells()
+  let vertices : Array[Vertex] = []
+  let edges : Array[Edge] = []
 
-  for cell in self.all_cells() {
+  for cell in cells {
     match cell {
-      CellData::Vertex(vertex) => vertices.push(
-        (
-          vertex.cell.id,
-          vertex.x,
-          vertex.y,
-          vertex.cell.label,
-          colour_to_tuple(vertex.cell.label_colour),
-        ),
-      )
-      CellData::Edge(edge) => edges.push(
-        (
-          edge.cell.id,
-          edge.source,
-          edge.target,
-          edge.cell.label,
-          label_alignment_to_int(edge.options.label_alignment),
-          colour_to_tuple(edge.cell.label_colour),
-          edge_options_to_encoded(edge.options),
-        ),
-      )
+      CellData::Vertex(vertex) => vertices.push(vertex)
+      CellData::Edge(edge) => edges.push(edge)
     }
   }
 
-  let payload : EncodedQuiver = (0, vertices, edges)
-  let json_string = payload.to_json().stringify()
+  if vertices.is_empty() {
+    return @base64.encode(@utf8.encode("[0,0]"))
+  }
+
+  let mut min_x = vertices.unsafe_get(0).x
+  let mut min_y = vertices.unsafe_get(0).y
+  for vertex in vertices {
+    if vertex.x < min_x {
+      min_x = vertex.x
+    }
+    if vertex.y < min_y {
+      min_y = vertex.y
+    }
+  }
+
+  let json_int = (value : Int) => Json::number(value.to_double())
+  let json_colour = (colour : Colour) => Json::array([
+    Json::number(colour.h.to_double()),
+    Json::number(colour.s.to_double()),
+    Json::number(colour.l.to_double()),
+    Json::number(colour.a),
+  ])
+
+  let equal_colour = (a : Colour, b : Colour) =>
+    a.h == b.h && a.s == b.s && a.l == b.l && a.a == b.a
+
+  let options_delta = (options : EdgeOptions) => {
+    let defaults = EdgeOptions::at_level(options.level)
+    let delta : Map[String, Json] = Map::new()
+
+    if options.label_position != defaults.label_position {
+      delta.set("label_position", json_int(options.label_position))
+    }
+    if options.offset != defaults.offset {
+      delta.set("offset", json_int(options.offset))
+    }
+    if options.curve != defaults.curve {
+      delta.set("curve", json_int(options.curve))
+    }
+    if options.radius != defaults.radius {
+      delta.set("radius", json_int(options.radius))
+    }
+    if options.angle != defaults.angle {
+      delta.set("angle", json_int(options.angle))
+    }
+
+    if options.shorten.source != defaults.shorten.source ||
+      options.shorten.target != defaults.shorten.target {
+      let shorten_delta : Map[String, Json] = Map::new()
+      if options.shorten.source != defaults.shorten.source {
+        shorten_delta.set("source", json_int(options.shorten.source))
+      }
+      if options.shorten.target != defaults.shorten.target {
+        shorten_delta.set("target", json_int(options.shorten.target))
+      }
+      if !shorten_delta.is_empty() {
+        delta.set("shorten", Json::object(shorten_delta))
+      }
+    }
+
+    if !equal_colour(options.colour, defaults.colour) {
+      delta.set("colour", json_colour(options.colour))
+    }
+
+    if options.edge_alignment.source != defaults.edge_alignment.source ||
+      options.edge_alignment.target != defaults.edge_alignment.target {
+      let alignment_delta : Map[String, Json] = Map::new()
+      if options.edge_alignment.source != defaults.edge_alignment.source {
+        alignment_delta.set("source", Json::boolean(options.edge_alignment.source))
+      }
+      if options.edge_alignment.target != defaults.edge_alignment.target {
+        alignment_delta.set("target", Json::boolean(options.edge_alignment.target))
+      }
+      if !alignment_delta.is_empty() {
+        delta.set("edge_alignment", Json::object(alignment_delta))
+      }
+    }
+
+    let style_delta : Map[String, Json] = Map::new()
+    if options.style.name != defaults.style.name {
+      style_delta.set("name", Json::string(options.style.name))
+    }
+
+    let tail_delta : Map[String, Json] = Map::new()
+    if options.style.tail.name != defaults.style.tail.name {
+      tail_delta.set("name", Json::string(options.style.tail.name))
+    }
+    if options.style.tail.side != defaults.style.tail.side {
+      tail_delta.set("side", Json::string(options.style.tail.side))
+    }
+    if !tail_delta.is_empty() {
+      style_delta.set("tail", Json::object(tail_delta))
+    }
+
+    let body_delta : Map[String, Json] = Map::new()
+    if options.style.body.name != defaults.style.body.name {
+      body_delta.set("name", Json::string(options.style.body.name))
+    }
+    if options.style.body.side != defaults.style.body.side {
+      body_delta.set("side", Json::string(options.style.body.side))
+    }
+    if !body_delta.is_empty() {
+      style_delta.set("body", Json::object(body_delta))
+    }
+
+    let head_delta : Map[String, Json] = Map::new()
+    if options.style.head.name != defaults.style.head.name {
+      head_delta.set("name", Json::string(options.style.head.name))
+    }
+    if options.style.head.side != defaults.style.head.side {
+      head_delta.set("side", Json::string(options.style.head.side))
+    }
+    if !head_delta.is_empty() {
+      style_delta.set("head", Json::object(head_delta))
+    }
+
+    if !style_delta.is_empty() {
+      delta.set("style", Json::object(style_delta))
+    }
+
+    match options.shape {
+      EdgeShape::Bezier => {
+        delta.remove("radius")
+        delta.remove("angle")
+      }
+      EdgeShape::Arc => delta.remove("curve")
+    }
+
+    delta
+  }
+
+  let encoded_cells : Array[Json] = []
+  let indices : @hashmap.HashMap[Int, Int] = @hashmap.new()
+
+  for vertex in vertices {
+    let cell : Array[Json] = [
+      json_int(vertex.x - min_x),
+      json_int(vertex.y - min_y),
+    ]
+    if vertex.cell.label != "" {
+      cell.push(Json::string(vertex.cell.label))
+    }
+    if vertex.cell.label != "" && vertex.cell.label_colour.is_not_black() {
+      cell.push(json_colour(vertex.cell.label_colour))
+    }
+    indices.set(vertex.cell.id, encoded_cells.length())
+    encoded_cells.push(Json::array(cell))
+  }
+
+  for edge in edges {
+    let source_index = match indices.get(edge.source) {
+      Some(value) => value
+      None => abort("invalid source index in quiver encoding")
+    }
+    let target_index = match indices.get(edge.target) {
+      Some(value) => value
+      None => abort("invalid target index in quiver encoding")
+    }
+
+    let cell : Array[Json] = [
+      json_int(source_index),
+      json_int(target_index),
+    ]
+    let end : Array[Json] = []
+
+    if edge.cell.label != "" && edge.cell.label_colour.is_not_black() {
+      end.push(json_colour(edge.cell.label_colour))
+    }
+
+    let delta = options_delta(edge.options)
+    if !end.is_empty() || !delta.is_empty() {
+      end.push(Json::object(delta))
+    }
+
+    let alignment = label_alignment_to_int(edge.options.label_alignment)
+    if !end.is_empty() || (alignment != 0 && edge.cell.label != "") {
+      end.push(json_int(alignment))
+    }
+    if !end.is_empty() || edge.cell.label != "" {
+      end.push(Json::string(edge.cell.label))
+    }
+
+    end.rev_each((value) => cell.push(value))
+
+    indices.set(edge.cell.id, encoded_cells.length())
+    encoded_cells.push(Json::array(cell))
+  }
+
+  let payload : Array[Json] = [json_int(0), json_int(vertices.length())]
+  payload.append(encoded_cells)
+  let json_string = Json::array(payload).stringify()
   @base64.encode(@utf8.encode(json_string))
 }
 
@@ -591,6 +730,8 @@ fn base64_import_apply_options_delta(
 ) -> EdgeOptions raise {
   let mut out = options
   let mut has_shorten = false
+  let mut has_curve = false
+  let mut has_radius_or_angle = false
 
   match options_map.get("label_position") {
     Some(value) => {
@@ -611,6 +752,7 @@ fn base64_import_apply_options_delta(
     Some(value) => {
       let curve : Int = @json.from_json(value)
       out = out.with_curve(curve)
+      has_curve = true
     }
     None => ()
   }
@@ -618,6 +760,7 @@ fn base64_import_apply_options_delta(
     Some(value) => {
       let radius : Int = @json.from_json(value)
       out = out.with_radius(radius)
+      has_radius_or_angle = true
     }
     None => ()
   }
@@ -625,6 +768,7 @@ fn base64_import_apply_options_delta(
     Some(value) => {
       let angle : Int = @json.from_json(value)
       out = out.with_angle(angle)
+      has_radius_or_angle = true
     }
     None => ()
   }
@@ -694,7 +838,14 @@ fn base64_import_apply_options_delta(
         out = out.with_shape_bezier()
       }
     }
-    None => ()
+    None => {
+      // JS canonical payload omits `shape`; infer it from which curve parameters were encoded.
+      if has_radius_or_angle && !has_curve {
+        out = out.with_shape_arc()
+      } else if has_curve && !has_radius_or_angle {
+        out = out.with_shape_bezier()
+      }
+    }
   }
   match options_map.get("level") {
     Some(value) => {

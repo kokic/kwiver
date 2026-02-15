@@ -8,6 +8,16 @@ fn find_edge(quiver : Quiver, id : Int) -> Edge? {
   None
 }
 
+fn find_edge_by_label(quiver : Quiver, label : String) -> Edge? {
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(edge) => if edge.cell.label == label { return Some(edge) }
+      _ => ()
+    }
+  }
+  None
+}
+
 fn base64_encode_json(input : String) -> String {
   @base64.encode(@utf8.encode(input))
 }
@@ -50,7 +60,7 @@ test "base64 v0 roundtrip preserves edge options" {
 
   let encoded = quiver.export_base64_v0()
   let decoded = Quiver::import_base64_v0(encoded)
-  let decoded_edge = find_edge(decoded, 12)
+  let decoded_edge = find_edge_by_label(decoded, "g")
 
   inspect(decoded_edge is Some(_), content="true")
   match decoded_edge {
