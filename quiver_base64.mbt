@@ -28,6 +28,12 @@ pub struct Base64ShareUrlParts {
   renderer : String?
 }
 
+pub struct Base64ShareImportResult {
+  quiver : Quiver
+  macro_url : String?
+  renderer : String?
+}
+
 fn colour_to_tuple(colour : Colour) -> ColourTuple {
   (colour.h, colour.s, colour.l, colour.a)
 }
@@ -388,9 +394,24 @@ pub fn Quiver::import_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Quiver raise {
+  Quiver::import_base64_share_url_result(
+    input,
+    default_renderer=default_renderer,
+  ).quiver
+}
+
+pub fn Quiver::import_base64_share_url_result(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareImportResult raise {
   let parsed = Quiver::parse_base64_share_url(input, default_renderer=default_renderer)
   match parsed.payload {
-    Some(payload) => Quiver::import_base64_v0(payload)
+    Some(payload) =>
+      {
+        quiver: Quiver::import_base64_v0(payload),
+        macro_url: parsed.macro_url,
+        renderer: parsed.renderer,
+      }
     None => abort("missing base64 payload in share URL")
   }
 }

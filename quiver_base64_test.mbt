@@ -223,6 +223,38 @@ test "base64 import share url roundtrip works for full link and payload-only" {
   inspect(decoded_payload.all_cell_ids(), content="[1, 2, 3]")
 }
 
+test "base64 import share url result preserves renderer and macro_url metadata" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some("https://example.com/macros.tex"),
+    renderer="svg",
+  )
+
+  let imported = Quiver::import_base64_share_url_result(link)
+  inspect(imported.quiver.all_cell_ids(), content="[1]")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match imported.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+}
+
+test "base64 import share url result normalises default renderer" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = ["https://q.uiver.app#r=canvas&q=", payload].join("")
+
+  let imported = Quiver::import_base64_share_url_result(link)
+  inspect(imported.quiver.all_cell_ids(), content="[1]")
+  inspect(imported.renderer is None, content="true")
+}
+
 test "panic base64 import share url without payload" {
   ignore(Quiver::import_base64_share_url("https://q.uiver.app"))
 }
