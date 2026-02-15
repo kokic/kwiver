@@ -116,7 +116,20 @@ fn base64_is_url_unreserved(code : Int) -> Bool {
   let is_digit = code >= 48 && code <= 57
   let is_upper = code >= 65 && code <= 90
   let is_lower = code >= 97 && code <= 122
-  is_digit || is_upper || is_lower || code == 45 || code == 46 || code == 95 || code == 126
+  // Match JS encodeURIComponent unescaped set:
+  // A-Z a-z 0-9 - _ . ! ~ * ' ( )
+  is_digit ||
+  is_upper ||
+  is_lower ||
+  code == 45 ||
+  code == 95 ||
+  code == 46 ||
+  code == 33 ||
+  code == 126 ||
+  code == 42 ||
+  code == 39 ||
+  code == 40 ||
+  code == 41
 }
 
 fn base64_hex_upper(n : Int) -> Char {

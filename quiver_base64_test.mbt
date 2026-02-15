@@ -261,6 +261,27 @@ test "base64 share url percent-encodes renderer value" {
   )
 }
 
+test "base64 share url keeps js encodeURIComponent-safe punctuation" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let macro_url = "https://example.com/a!b*c'(d)e.tex"
+  let renderer = "svg!*'()"
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some(macro_url),
+    renderer=renderer,
+  )
+  let expected = [
+    "https://q.uiver.app#r=svg!*'()&q=",
+    payload,
+    "&macro_url=https%3A%2F%2Fexample.com%2Fa!b*c'(d)e.tex",
+  ].join("")
+
+  inspect(link == expected, content="true")
+}
+
 test "base64 share url uses configurable default renderer" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
