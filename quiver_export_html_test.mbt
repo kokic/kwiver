@@ -86,6 +86,52 @@ test "quiver html export supports non-default renderer in share link for non-emp
   )
 }
 
+test "quiver html export omits renderer when explicitly default" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 400)
+  let payload = quiver.export_base64_v0()
+  let options = HtmlEmbedExportOptions::default().with_renderer("canvas")
+
+  let expected = [
+    "<!-- https://q.uiver.app#q=",
+    payload,
+    " -->\n<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width=\"400\" height=\"400\" style=\"border-radius: 8px; border: none;\"></iframe>",
+  ].join("")
+
+  inspect(
+    quiver.export_html_embed(settings, options=options),
+    content=expected,
+  )
+}
+
+test "quiver html export without_renderer clears previously configured renderer" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 400)
+  let payload = quiver.export_base64_v0()
+  let options = HtmlEmbedExportOptions::default()
+    .with_renderer("svg")
+    .without_renderer()
+
+  let expected = [
+    "<!-- https://q.uiver.app#q=",
+    payload,
+    " -->\n<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#q=",
+    payload,
+    "&embed\" width=\"400\" height=\"400\" style=\"border-radius: 8px; border: none;\"></iframe>",
+  ].join("")
+
+  inspect(
+    quiver.export_html_embed(settings, options=options),
+    content=expected,
+  )
+}
+
 test "quiver html export omits macro_url for empty quiver and allows base override" {
   let quiver = Quiver::new()
   let settings = HtmlEmbedExportSettings::default("https://q.uiver.app")

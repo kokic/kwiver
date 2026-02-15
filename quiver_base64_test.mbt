@@ -105,6 +105,39 @@ test "base64 share url omits renderer when default" {
   )
 }
 
+test "base64 share url percent-encodes renderer value" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    None,
+    renderer="svg/canvas mode",
+  )
+  inspect(
+    link == ["https://q.uiver.app#r=svg%2Fcanvas%20mode&q=", payload].join(""),
+    content="true",
+  )
+}
+
+test "base64 share url uses configurable default renderer" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    None,
+    renderer="svg",
+    default_renderer="svg",
+  )
+  inspect(
+    link == ["https://q.uiver.app#q=", payload].join(""),
+    content="true",
+  )
+}
+
 test "base64 share url for empty quiver returns base only" {
   let quiver = Quiver::new()
   let link = quiver.export_base64_share_url(
