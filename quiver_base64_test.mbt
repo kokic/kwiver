@@ -18,6 +18,16 @@ fn find_edge_by_label(quiver : Quiver, label : String) -> Edge? {
   None
 }
 
+fn find_vertex_by_label(quiver : Quiver, label : String) -> Vertex? {
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) => if vertex.cell.label == label { return Some(vertex) }
+      _ => ()
+    }
+  }
+  None
+}
+
 fn base64_encode_json(input : String) -> String {
   @base64.encode(@utf8.encode(input))
 }
@@ -106,6 +116,94 @@ test "base64 v0 selection export without dependencies skips dangling edges" {
   let encoded = quiver.export_base64_v0_selection([1, 3], include_dependencies=false)
   let decoded = Quiver::import_base64_v0(encoded)
   inspect(decoded.all_cell_ids(), content="[1]")
+}
+
+test "base64 v0 selection import result remaps ids and applies origin offset" {
+  let source = Quiver::new()
+  source.add(CellData::from_vertex(Vertex::new_black(10, "A", 4, 9)))
+  source.add(CellData::from_vertex(Vertex::new_black(20, "B", 6, 10)))
+  let edge = Edge::new(30, "f", 10, 20, EdgeOptions::at_level(1), Colour::black())
+  source.add(CellData::from_edge(edge))
+  source.connect(10, 20, 30)
+  let payload = source.export_base64_v0_selection([30])
+
+  let target = Quiver::new()
+  target.add(CellData::from_vertex(Vertex::new_black(1, "Existing", 0, 0)))
+
+  let mut next_id = 1
+  let alloc = () => {
+    let id = next_id
+    next_id = next_id + 1
+    id
+  }
+
+  let result = target.import_base64_v0_selection_result(
+    payload,
+    5,
+    7,
+    alloc,
+  )
+
+  inspect(result.imported_ids, content="[2, 3, 4]")
+  match result.id_remap.get(1) {
+    Some(value) => inspect(value, content="2")
+    None => abort("expected remap for source vertex")
+  }
+  match result.id_remap.get(2) {
+    Some(value) => inspect(value, content="3")
+    None => abort("expected remap for target vertex")
+  }
+  match result.id_remap.get(3) {
+    Some(value) => inspect(value, content="4")
+    None => abort("expected remap for edge")
+  }
+
+  match find_vertex_by_label(target, "A") {
+    Some(vertex) => {
+      inspect(vertex.x, content="5")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected imported vertex A")
+  }
+  match find_vertex_by_label(target, "B") {
+    Some(vertex) => {
+      inspect(vertex.x, content="7")
+      inspect(vertex.y, content="8")
+    }
+    None => abort("expected imported vertex B")
+  }
+  match find_edge_by_label(target, "f") {
+    Some(imported_edge) => {
+      inspect(imported_edge.source, content="2")
+      inspect(imported_edge.target, content="3")
+    }
+    None => abort("expected imported edge")
+  }
+}
+
+test "base64 v0 selection import result keeps target unchanged for empty payload" {
+  let source = Quiver::new()
+  source.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  source.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  let edge = Edge::new(3, "f", 1, 2, EdgeOptions::at_level(1), Colour::black())
+  source.add(CellData::from_edge(edge))
+  source.connect(1, 2, 3)
+
+  let payload = source.export_base64_v0_selection([3], include_dependencies=false)
+  let target = Quiver::new()
+  target.add(CellData::from_vertex(Vertex::new_black(9, "Existing", 2, 2)))
+
+  let mut next_id = 10
+  let alloc = () => {
+    let id = next_id
+    next_id = next_id + 1
+    id
+  }
+
+  let result = target.import_base64_v0_selection_result(payload, 0, 0, alloc)
+  inspect(result.imported_ids, content="[]")
+  inspect(result.id_remap.length(), content="0")
+  inspect(target.all_cell_ids(), content="[9]")
 }
 
 test "base64 v0 import supports js canonical minimal layout" {

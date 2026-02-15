@@ -36,6 +36,11 @@ pub struct Base64ShareImportResult {
   embed : Bool
 }
 
+pub struct Base64SelectionImportResult {
+  imported_ids : Array[Int]
+  id_remap : Map[Int, Int]
+}
+
 fn colour_from_tuple(tuple : ColourTuple) -> Colour {
   let (h, s, l, a) = tuple
   Colour::new(h, s, l, a)
@@ -1206,6 +1211,126 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   }
 
   base64_import_quiver_from_js(root)
+}
+
+fn Quiver::base64_import_alloc_unique_id(self : Quiver, alloc_id : () -> Int) -> Int {
+  let mut retries = 0
+  while retries < 1_000_000 {
+    let id = alloc_id()
+    if id > 0 && !self.cells.contains(id) {
+      return id
+    }
+    retries = retries + 1
+  }
+  abort("unable to allocate unique cell id")
+}
+
+pub fn Quiver::import_base64_v0_selection_result(
+  self : Quiver,
+  encoded : String,
+  origin_x : Int,
+  origin_y : Int,
+  alloc_id : () -> Int,
+) -> Base64SelectionImportResult raise {
+  let imported = Quiver::import_base64_v0(encoded)
+  let vertices : Array[Vertex] = []
+  let edges : Array[Edge] = []
+
+  let mut first_vertex = true
+  let mut min_x = 0
+  let mut min_y = 0
+  for cell in imported.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) => {
+        vertices.push(vertex)
+        if first_vertex {
+          min_x = vertex.x
+          min_y = vertex.y
+          first_vertex = false
+        } else {
+          if vertex.x < min_x {
+            min_x = vertex.x
+          }
+          if vertex.y < min_y {
+            min_y = vertex.y
+          }
+        }
+      }
+      CellData::Edge(edge) => edges.push(edge)
+    }
+  }
+
+  if vertices.is_empty() {
+    return { imported_ids: [], id_remap: Map::new() }
+  }
+
+  let id_remap : Map[Int, Int] = Map::new()
+  let imported_ids : Array[Int] = []
+
+  for vertex in vertices {
+    let new_id = self.base64_import_alloc_unique_id(alloc_id)
+    id_remap.set(vertex.cell.id, new_id)
+    imported_ids.push(new_id)
+    self.add(
+      CellData::from_vertex(
+        Vertex::new(
+          new_id,
+          vertex.cell.label,
+          vertex.x - min_x + origin_x,
+          vertex.y - min_y + origin_y,
+          vertex.cell.label_colour,
+        ),
+      ),
+    )
+  }
+
+  for edge in edges {
+    let source = match id_remap.get(edge.source) {
+      Some(value) => value
+      None => continue
+    }
+    let target = match id_remap.get(edge.target) {
+      Some(value) => value
+      None => continue
+    }
+
+    let new_id = self.base64_import_alloc_unique_id(alloc_id)
+    id_remap.set(edge.cell.id, new_id)
+    imported_ids.push(new_id)
+    self.add(
+      CellData::from_edge(
+        Edge::new(
+          new_id,
+          edge.cell.label,
+          source,
+          target,
+          edge.options,
+          edge.cell.label_colour,
+        ),
+      ),
+    )
+    self.connect(source, target, new_id)
+  }
+
+  {
+    imported_ids: self.order_ids(imported_ids),
+    id_remap,
+  }
+}
+
+pub fn Quiver::import_base64_v0_selection(
+  self : Quiver,
+  encoded : String,
+  origin_x : Int,
+  origin_y : Int,
+  alloc_id : () -> Int,
+) -> Array[Int] raise {
+  self.import_base64_v0_selection_result(
+    encoded,
+    origin_x,
+    origin_y,
+    alloc_id,
+  ).imported_ids
 }
 
 pub fn Quiver::import_base64_share_url(
