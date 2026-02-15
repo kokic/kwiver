@@ -178,9 +178,10 @@ test "base64 share url parser extracts payload renderer and macro_url" {
     Some(value) => inspect(value, content="https://example.com/macros.tex")
     None => abort("expected macro_url")
   }
+  inspect(parsed.embed, content="false")
 }
 
-test "base64 share url parser ignores embed and normalises default renderer" {
+test "base64 share url parser captures embed and normalises default renderer" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
@@ -200,6 +201,15 @@ test "base64 share url parser ignores embed and normalises default renderer" {
     Some(value) => inspect(value, content="https://example.com/macros.tex")
     None => abort("expected macro_url")
   }
+  inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser supports hash embed without payload" {
+  let parsed = Quiver::parse_base64_share_url("https://q.uiver.app#embed")
+  inspect(parsed.payload is None, content="true")
+  inspect(parsed.renderer is None, content="true")
+  inspect(parsed.macro_url is None, content="true")
+  inspect(parsed.embed, content="true")
 }
 
 test "base64 import share url roundtrip works for full link and payload-only" {
@@ -242,6 +252,7 @@ test "base64 import share url result preserves renderer and macro_url metadata" 
     Some(value) => inspect(value, content="https://example.com/macros.tex")
     None => abort("expected macro_url")
   }
+  inspect(imported.embed, content="false")
 }
 
 test "base64 import share url result normalises default renderer" {
@@ -253,6 +264,7 @@ test "base64 import share url result normalises default renderer" {
   let imported = Quiver::import_base64_share_url_result(link)
   inspect(imported.quiver.all_cell_ids(), content="[1]")
   inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
 }
 
 test "base64 share reference extraction supports tikz fletcher and html headers" {
@@ -318,6 +330,7 @@ test "base64 import share text roundtrip from exporter outputs" {
     Some(value) => inspect(value, content="svg")
     None => abort("expected renderer")
   }
+  inspect(imported_tikz.embed, content="false")
 
   let fletcher_options = FletcherExportOptions::default()
     .with_share_base_url("https://q.uiver.app")
@@ -329,6 +342,7 @@ test "base64 import share text roundtrip from exporter outputs" {
     Some(value) => inspect(value, content="https://example.com/macros.tex")
     None => abort("expected macro_url")
   }
+  inspect(imported_fletcher.embed, content="false")
 
   let html_options = HtmlEmbedExportOptions::default()
     .with_share_base_url("https://q.uiver.app")
@@ -341,6 +355,7 @@ test "base64 import share text roundtrip from exporter outputs" {
     Some(value) => inspect(value, content="svg")
     None => abort("expected renderer")
   }
+  inspect(imported_html.embed, content="false")
 }
 
 test "base64 import share text works from wrapped markdown and iframe-only source" {
@@ -356,6 +371,7 @@ test "base64 import share text works from wrapped markdown and iframe-only sourc
   ].join("")
   let imported_wrapped = Quiver::import_base64_share_text(wrapped)
   inspect(imported_wrapped.quiver.all_cell_ids(), content="[1]")
+  inspect(imported_wrapped.embed, content="false")
 
   let iframe_only = [
     "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=",
@@ -368,6 +384,7 @@ test "base64 import share text works from wrapped markdown and iframe-only sourc
     Some(value) => inspect(value, content="svg")
     None => abort("expected renderer")
   }
+  inspect(imported_iframe.embed, content="true")
 }
 
 test "panic base64 import share url without payload" {

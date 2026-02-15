@@ -26,12 +26,14 @@ pub struct Base64ShareUrlParts {
   payload : String?
   macro_url : String?
   renderer : String?
+  embed : Bool
 }
 
 pub struct Base64ShareImportResult {
   quiver : Quiver
   macro_url : String?
   renderer : String?
+  embed : Bool
 }
 
 fn colour_to_tuple(colour : Colour) -> ColourTuple {
@@ -291,36 +293,44 @@ pub fn Quiver::parse_base64_share_url(
   let has_hash = input.contains("#")
   if !has_hash {
     if input.contains("://") {
-      return { payload: None, macro_url: None, renderer: None }
+      return { payload: None, macro_url: None, renderer: None, embed: false }
     }
     let is_fragment_query = input.has_prefix("q=") ||
       input.has_prefix("r=") ||
       input.has_prefix("macro_url=") ||
       input.contains("&")
     if !is_fragment_query {
-      return { payload: Some(input), macro_url: None, renderer: None }
+      return { payload: Some(input), macro_url: None, renderer: None, embed: false }
     }
   }
 
   let fragment = base64_share_url_fragment(input)
   if fragment == "" {
-    return { payload: None, macro_url: None, renderer: None }
+    return { payload: None, macro_url: None, renderer: None, embed: false }
   }
 
   if !fragment.contains("=") {
-    if input.contains("://") {
-      return { payload: None, macro_url: None, renderer: None }
+    if fragment == "embed" {
+      return { payload: None, macro_url: None, renderer: None, embed: true }
     }
-    return { payload: Some(fragment), macro_url: None, renderer: None }
+    if input.contains("://") {
+      return { payload: None, macro_url: None, renderer: None, embed: false }
+    }
+    return { payload: Some(fragment), macro_url: None, renderer: None, embed: false }
   }
 
   let mut payload : String? = None
   let mut macro_url : String? = None
   let mut renderer_raw : String? = None
+  let mut embed = false
 
   for pair_view in fragment.split("&") {
     let pair = pair_view.to_string()
     if pair == "" {
+      continue
+    }
+    if pair == "embed" {
+      embed = true
       continue
     }
 
@@ -334,6 +344,8 @@ pub fn Quiver::parse_base64_share_url(
           macro_url = Some(base64_percent_decode_component(value))
         } else if key == "r" {
           renderer_raw = Some(base64_percent_decode_component(value))
+        } else if key == "embed" {
+          embed = true
         }
       }
       None => ()
@@ -350,7 +362,7 @@ pub fn Quiver::parse_base64_share_url(
     None => None
   }
 
-  { payload, macro_url, renderer }
+  { payload, macro_url, renderer, embed }
 }
 
 pub fn Quiver::export_base64_v0(self : Quiver) -> String {
@@ -481,6 +493,7 @@ pub fn Quiver::import_base64_share_url_result(
         quiver: Quiver::import_base64_v0(payload),
         macro_url: parsed.macro_url,
         renderer: parsed.renderer,
+        embed: parsed.embed,
       }
     None => abort("missing base64 payload in share URL")
   }
