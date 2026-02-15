@@ -14,6 +14,7 @@ pub struct TikzCdExportOptions {
   sep : TikzCdSepOptions
   share_base_url : String?
   macro_url : String?
+  renderer : String?
 }
 
 pub struct TikzCdExportDefinitions {
@@ -120,14 +121,19 @@ pub fn TikzCdSepOptions::with_em(
 }
 
 pub fn TikzCdExportOptions::default() -> TikzCdExportOptions {
-  { sep: TikzCdSepOptions::default(), share_base_url: None, macro_url: None }
+  { sep: TikzCdSepOptions::default(), share_base_url: None, macro_url: None, renderer: None }
 }
 
 pub fn TikzCdExportOptions::with_sep(
   self : TikzCdExportOptions,
   sep : TikzCdSepOptions,
 ) -> TikzCdExportOptions {
-  { sep, share_base_url: self.share_base_url, macro_url: self.macro_url }
+  {
+    sep,
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: self.renderer,
+  }
 }
 
 pub fn TikzCdExportOptions::with_column_sep_em(
@@ -138,6 +144,7 @@ pub fn TikzCdExportOptions::with_column_sep_em(
     sep: self.sep.with_column_em(value),
     share_base_url: self.share_base_url,
     macro_url: self.macro_url,
+    renderer: self.renderer,
   }
 }
 
@@ -149,6 +156,7 @@ pub fn TikzCdExportOptions::with_row_sep_em(
     sep: self.sep.with_row_em(value),
     share_base_url: self.share_base_url,
     macro_url: self.macro_url,
+    renderer: self.renderer,
   }
 }
 
@@ -160,6 +168,7 @@ pub fn TikzCdExportOptions::with_sep_em(
     sep: TikzCdSepOptions::default().with_em(value),
     share_base_url: self.share_base_url,
     macro_url: self.macro_url,
+    renderer: self.renderer,
   }
 }
 
@@ -167,18 +176,54 @@ pub fn TikzCdExportOptions::with_share_base_url(
   self : TikzCdExportOptions,
   base_url : String,
 ) -> TikzCdExportOptions {
-  { sep: self.sep, share_base_url: Some(base_url), macro_url: self.macro_url }
+  {
+    sep: self.sep,
+    share_base_url: Some(base_url),
+    macro_url: self.macro_url,
+    renderer: self.renderer,
+  }
 }
 
 pub fn TikzCdExportOptions::with_macro_url(
   self : TikzCdExportOptions,
   macro_url : String,
 ) -> TikzCdExportOptions {
-  { sep: self.sep, share_base_url: self.share_base_url, macro_url: Some(macro_url) }
+  {
+    sep: self.sep,
+    share_base_url: self.share_base_url,
+    macro_url: Some(macro_url),
+    renderer: self.renderer,
+  }
 }
 
 pub fn TikzCdExportOptions::without_macro_url(self : TikzCdExportOptions) -> TikzCdExportOptions {
-  { sep: self.sep, share_base_url: self.share_base_url, macro_url: None }
+  {
+    sep: self.sep,
+    share_base_url: self.share_base_url,
+    macro_url: None,
+    renderer: self.renderer,
+  }
+}
+
+pub fn TikzCdExportOptions::with_renderer(
+  self : TikzCdExportOptions,
+  renderer : String,
+) -> TikzCdExportOptions {
+  {
+    sep: self.sep,
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: Some(renderer),
+  }
+}
+
+pub fn TikzCdExportOptions::without_renderer(self : TikzCdExportOptions) -> TikzCdExportOptions {
+  {
+    sep: self.sep,
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: None,
+  }
 }
 
 pub fn TikzCdExportDefinitions::default() -> TikzCdExportDefinitions {
@@ -314,6 +359,7 @@ fn tikz_wrap_output(
     quiver.export_base64_share_url(
       options_config.share_base_url,
       options_config.macro_url,
+      renderer?=options_config.renderer,
     ),
     "\n",
     wrapped,

@@ -11,6 +11,7 @@ pub struct HtmlEmbedExportSettings {
 pub struct HtmlEmbedExportOptions {
   share_base_url : String?
   macro_url : String?
+  renderer : String?
 }
 
 pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSettings {
@@ -26,27 +27,40 @@ pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSet
 }
 
 pub fn HtmlEmbedExportOptions::default() -> HtmlEmbedExportOptions {
-  { share_base_url: None, macro_url: None }
+  { share_base_url: None, macro_url: None, renderer: None }
 }
 
 pub fn HtmlEmbedExportOptions::with_share_base_url(
   self : HtmlEmbedExportOptions,
   base_url : String,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: Some(base_url), macro_url: self.macro_url }
+  { share_base_url: Some(base_url), macro_url: self.macro_url, renderer: self.renderer }
 }
 
 pub fn HtmlEmbedExportOptions::with_macro_url(
   self : HtmlEmbedExportOptions,
   macro_url : String,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: Some(macro_url) }
+  { share_base_url: self.share_base_url, macro_url: Some(macro_url), renderer: self.renderer }
 }
 
 pub fn HtmlEmbedExportOptions::without_macro_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: None }
+  { share_base_url: self.share_base_url, macro_url: None, renderer: self.renderer }
+}
+
+pub fn HtmlEmbedExportOptions::with_renderer(
+  self : HtmlEmbedExportOptions,
+  renderer : String,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: Some(renderer) }
+}
+
+pub fn HtmlEmbedExportOptions::without_renderer(
+  self : HtmlEmbedExportOptions,
+) -> HtmlEmbedExportOptions {
+  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: None }
 }
 
 pub fn HtmlEmbedExportSettings::with_fixed_size(
@@ -91,7 +105,11 @@ fn html_embed_url(
     Some(url) => Some(url)
     None => Some(settings.base_url)
   }
-  quiver.export_base64_share_url(share_base_url, options.macro_url)
+  quiver.export_base64_share_url(
+    share_base_url,
+    options.macro_url,
+    renderer?=options.renderer,
+  )
 }
 
 pub fn Quiver::export_html_embed(

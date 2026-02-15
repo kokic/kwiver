@@ -200,6 +200,8 @@ pub fn Quiver::export_base64_share_url(
   self : Quiver,
   share_base_url : String?,
   macro_url : String?,
+  renderer? : String,
+  default_renderer? : String = "canvas",
 ) -> String {
   let payload = self.export_base64_v0()
   match share_base_url {
@@ -207,11 +209,20 @@ pub fn Quiver::export_base64_share_url(
       if self.is_empty() {
         base_url
       } else {
+        let renderer_part = match renderer {
+          Some(value) =>
+            if value == default_renderer {
+              ""
+            } else {
+              ["r=", base64_percent_encode_component(value), "&"].join("")
+            }
+          None => ""
+        }
         let macro_part = match macro_url {
           Some(value) => ["&macro_url=", base64_percent_encode_component(value)].join("")
           None => ""
         }
-        [base_url, "#q=", payload, macro_part].join("")
+        [base_url, "#", renderer_part, "q=", payload, macro_part].join("")
       }
     }
     None => payload

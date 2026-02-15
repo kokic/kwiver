@@ -73,6 +73,38 @@ test "base64 share url encodes macro_url for non-empty quiver" {
   )
 }
 
+test "base64 share url includes renderer when non-default" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    None,
+    renderer="svg",
+  )
+  inspect(
+    link == ["https://q.uiver.app#r=svg&q=", payload].join(""),
+    content="true",
+  )
+}
+
+test "base64 share url omits renderer when default" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    None,
+    renderer="canvas",
+  )
+  inspect(
+    link == ["https://q.uiver.app#q=", payload].join(""),
+    content="true",
+  )
+}
+
 test "base64 share url for empty quiver returns base only" {
   let quiver = Quiver::new()
   let link = quiver.export_base64_share_url(
