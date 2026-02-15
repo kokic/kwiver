@@ -8,6 +8,19 @@ fn find_edge(quiver : Quiver, id : Int) -> Edge? {
   None
 }
 
+fn base64_encode_json(input : String) -> String {
+  @base64.encode(@utf8.encode(input))
+}
+
+fn alignment_variant_to_int(alignment : LabelAlignment) -> Int {
+  match alignment {
+    LabelAlignment::Left => 0
+    LabelAlignment::Centre => 1
+    LabelAlignment::Right => 2
+    LabelAlignment::Over => 3
+  }
+}
+
 test "base64 v0 roundtrip preserves ids and structure" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -49,6 +62,65 @@ test "base64 v0 roundtrip preserves edge options" {
       inspect(edge.options.shorten.target, content="0")
       inspect(edge.options.style.body.name, content="cell")
       inspect(edge.cell.label_colour.h, content="30")
+    }
+    None => abort("expected edge")
+  }
+}
+
+test "base64 v0 import supports js canonical minimal layout" {
+  let encoded = base64_encode_json(
+    "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"f\"]]",
+  )
+  let decoded = Quiver::import_base64_v0(encoded)
+
+  inspect(decoded.all_cell_ids(), content="[1, 2, 3]")
+  match find_edge(decoded, 3) {
+    Some(edge) => {
+      inspect(edge.source, content="1")
+      inspect(edge.target, content="2")
+      inspect(edge.cell.label, content="f")
+    }
+    None => abort("expected edge")
+  }
+}
+
+test "base64 v0 import supports js canonical edge option deltas" {
+  let encoded = base64_encode_json(
+    [
+      "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"g\",2,{\"offset\":7,\"curve\":20,\"shorten\":{\"source\":5,\"target\":6},\"colour\":[120,60,50,1],\"edge_alignment\":{\"source\":false},\"style\":{\"tail\":{\"name\":\"hook\",\"side\":\"left\"},\"body\":{\"name\":\"barred\"},\"head\":{\"name\":\"none\"}}},[30,50,50,1]]]",
+    ].join(""),
+  )
+  let decoded = Quiver::import_base64_v0(encoded)
+
+  match find_edge(decoded, 3) {
+    Some(edge) => {
+      inspect(alignment_variant_to_int(edge.options.label_alignment), content="2")
+      inspect(edge.options.offset, content="7")
+      inspect(edge.options.curve, content="20")
+      inspect(edge.options.shorten.source, content="5")
+      inspect(edge.options.shorten.target, content="6")
+      inspect(edge.options.colour.h, content="120")
+      inspect(edge.options.edge_alignment.source, content="false")
+      inspect(edge.options.style.tail.name, content="hook")
+      inspect(edge.options.style.tail.side, content="left")
+      inspect(edge.options.style.body.name, content="barred")
+      inspect(edge.options.style.head.name, content="none")
+      inspect(edge.cell.label_colour.h, content="30")
+    }
+    None => abort("expected edge")
+  }
+}
+
+test "base64 v0 import supports legacy js length option" {
+  let encoded = base64_encode_json(
+    "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"h\",0,{\"length\":80}]]",
+  )
+  let decoded = Quiver::import_base64_v0(encoded)
+
+  match find_edge(decoded, 3) {
+    Some(edge) => {
+      inspect(edge.options.shorten.source, content="10")
+      inspect(edge.options.shorten.target, content="10")
     }
     None => abort("expected edge")
   }

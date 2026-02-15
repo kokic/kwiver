@@ -482,10 +482,234 @@ pub fn Quiver::export_base64_share_url(
   }
 }
 
-pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
-  let decoded = @utf8.decode(@base64.decode(encoded))
-  let json = @json.parse(decoded)
-  let parsed : EncodedQuiver = @json.from_json(json)
+fn base64_import_assert(condition : Bool, message : String) -> Unit {
+  if !condition {
+    abort(message + " in quiver encoding")
+  }
+}
+
+fn base64_import_colour(raw : Json) -> Colour raise {
+  let values : Array[Double] = @json.from_json(raw)
+  base64_import_assert(
+    values.length() >= 3 && values.length() <= 4,
+    "invalid colour format",
+  )
+  let h = values.unsafe_get(0).to_int()
+  let s = values.unsafe_get(1).to_int()
+  let l = values.unsafe_get(2).to_int()
+  let a = if values.length() >= 4 {
+    values.unsafe_get(3)
+  } else {
+    1.0
+  }
+  base64_import_assert(h >= 0 && h <= 360, "invalid hue")
+  base64_import_assert(s >= 0 && s <= 100, "invalid saturation")
+  base64_import_assert(l >= 0 && l <= 100, "invalid lightness")
+  base64_import_assert(a >= 0.0 && a <= 1.0, "invalid alpha")
+  Colour::new(h, s, l, a)
+}
+
+fn base64_import_endpoint_style(
+  raw : Json,
+  fallback : EdgeEndpointStyle,
+) -> EdgeEndpointStyle raise {
+  match raw {
+    Json::String(name) => { name, side: fallback.side }
+    Json::Object(value_map) => {
+      let name = match value_map.get("name") {
+        Some(value) => @json.from_json(value)
+        None => fallback.name
+      }
+      let side = match value_map.get("side") {
+        Some(value) => @json.from_json(value)
+        None => fallback.side
+      }
+      { name, side }
+    }
+    _ => fallback
+  }
+}
+
+fn base64_import_apply_style_delta(
+  options : EdgeOptions,
+  style_raw : Json,
+) -> (EdgeOptions, Int?) raise {
+  match style_raw {
+    Json::Object(style_map) => {
+      let mut out = options
+      let mut level_override : Int? = None
+
+      match style_map.get("name") {
+        Some(value) => {
+          let name : String = @json.from_json(value)
+          out = out.with_style_name(name)
+        }
+        None => ()
+      }
+      match style_map.get("tail") {
+        Some(value) => {
+          let tail = base64_import_endpoint_style(value, out.style.tail)
+          out = out.with_style_tail(tail.name, side=tail.side)
+        }
+        None => ()
+      }
+      match style_map.get("body") {
+        Some(value) => {
+          let body = base64_import_endpoint_style(value, out.style.body)
+          out = out.with_style_body(body.name, side=body.side)
+          match value {
+            Json::Object(body_map) => match body_map.get("level") {
+              Some(level_value) => {
+                let level : Int = @json.from_json(level_value)
+                base64_import_assert(level >= 1, "invalid level")
+                level_override = Some(level)
+              }
+              None => ()
+            }
+            _ => ()
+          }
+        }
+        None => ()
+      }
+      match style_map.get("head") {
+        Some(value) => {
+          let head = base64_import_endpoint_style(value, out.style.head)
+          out = out.with_style_head(head.name, side=head.side)
+        }
+        None => ()
+      }
+
+      (out, level_override)
+    }
+    _ => (options, None)
+  }
+}
+
+fn base64_import_apply_options_delta(
+  options : EdgeOptions,
+  options_map : Map[String, Json],
+) -> EdgeOptions raise {
+  let mut out = options
+  let mut has_shorten = false
+
+  match options_map.get("label_position") {
+    Some(value) => {
+      let label_position : Int = @json.from_json(value)
+      base64_import_assert(label_position >= 0 && label_position <= 100, "invalid label position")
+      out = out.with_label_position(label_position)
+    }
+    None => ()
+  }
+  match options_map.get("offset") {
+    Some(value) => {
+      let offset : Int = @json.from_json(value)
+      out = out.with_offset(offset)
+    }
+    None => ()
+  }
+  match options_map.get("curve") {
+    Some(value) => {
+      let curve : Int = @json.from_json(value)
+      out = out.with_curve(curve)
+    }
+    None => ()
+  }
+  match options_map.get("radius") {
+    Some(value) => {
+      let radius : Int = @json.from_json(value)
+      out = out.with_radius(radius)
+    }
+    None => ()
+  }
+  match options_map.get("angle") {
+    Some(value) => {
+      let angle : Int = @json.from_json(value)
+      out = out.with_angle(angle)
+    }
+    None => ()
+  }
+  match options_map.get("shorten") {
+    Some(value) => {
+      let shorten_map : Map[String, Json] = @json.from_json(value)
+      let mut source = out.shorten.source
+      let mut target = out.shorten.target
+      match shorten_map.get("source") {
+        Some(raw) => {
+          source = @json.from_json(raw)
+          base64_import_assert(source >= 0, "invalid shorten")
+        }
+        None => ()
+      }
+      match shorten_map.get("target") {
+        Some(raw) => {
+          target = @json.from_json(raw)
+          base64_import_assert(target >= 0, "invalid shorten")
+        }
+        None => ()
+      }
+      base64_import_assert(source + target <= 100, "invalid shorten")
+      out = out.with_shorten(source, target)
+      has_shorten = true
+    }
+    None => ()
+  }
+  if !has_shorten {
+    match options_map.get("length") {
+      Some(value) => {
+        let length : Int = @json.from_json(value)
+        base64_import_assert(length >= 0 && length <= 100, "invalid length")
+        let shorten = (100 - length) / 2
+        out = out.with_shorten(shorten, shorten)
+      }
+      None => ()
+    }
+  }
+  match options_map.get("colour") {
+    Some(value) => out = out.with_colour(base64_import_colour(value))
+    None => ()
+  }
+  match options_map.get("edge_alignment") {
+    Some(value) => {
+      let alignment_map : Map[String, Json] = @json.from_json(value)
+      let mut source = out.edge_alignment.source
+      let mut target = out.edge_alignment.target
+      match alignment_map.get("source") {
+        Some(raw) => source = @json.from_json(raw)
+        None => ()
+      }
+      match alignment_map.get("target") {
+        Some(raw) => target = @json.from_json(raw)
+        None => ()
+      }
+      out = out.with_edge_alignment(source, target)
+    }
+    None => ()
+  }
+  match options_map.get("shape") {
+    Some(value) => {
+      let shape : String = @json.from_json(value)
+      if shape == "arc" {
+        out = out.with_shape_arc()
+      } else if shape == "bezier" {
+        out = out.with_shape_bezier()
+      }
+    }
+    None => ()
+  }
+  match options_map.get("level") {
+    Some(value) => {
+      let level : Int = @json.from_json(value)
+      if level >= 1 {
+        out = out.with_level(level)
+      }
+    }
+    None => ()
+  }
+
+  out
+}
+
+fn base64_import_quiver_from_legacy(parsed : EncodedQuiver) -> Quiver {
   let (version, vertices, edges) = parsed
   if version != 0 {
     abort("unsupported base64 quiver version")
@@ -520,6 +744,147 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   }
 
   quiver
+}
+
+fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
+  base64_import_assert(root.length() >= 2, "invalid quiver format")
+
+  let version : Int = @json.from_json(root.unsafe_get(0))
+  base64_import_assert(version == 0, "unsupported base64 quiver version")
+
+  let vertices : Int = @json.from_json(root.unsafe_get(1))
+  let cells_count = root.length() - 2
+  base64_import_assert(vertices >= 0, "invalid number of vertices")
+  base64_import_assert(vertices <= cells_count, "invalid number of vertices")
+
+  let quiver = Quiver::new()
+  let index_to_id : Array[Int] = []
+  let index_to_level : Array[Int] = []
+  let mut i = 0
+  while i < cells_count {
+    let cell_raw = root.unsafe_get(i + 2)
+    let cell : Array[Json] = @json.from_json(cell_raw)
+    if i < vertices {
+      base64_import_assert(cell.length() >= 2 && cell.length() <= 4, "invalid vertex format")
+      let x : Int = @json.from_json(cell.unsafe_get(0))
+      let y : Int = @json.from_json(cell.unsafe_get(1))
+      base64_import_assert(x >= 0, "invalid x position")
+      base64_import_assert(y >= 0, "invalid y position")
+      let label = if cell.length() >= 3 {
+        @json.from_json(cell.unsafe_get(2))
+      } else {
+        ""
+      }
+      let label_colour = if cell.length() >= 4 {
+        base64_import_colour(cell.unsafe_get(3))
+      } else {
+        Colour::black()
+      }
+      let id = i + 1
+      quiver.add(
+        CellData::from_vertex(
+          Vertex::new(id, label, x, y, label_colour),
+        ),
+      )
+      index_to_id.push(id)
+      index_to_level.push(0)
+    } else {
+      base64_import_assert(cell.length() >= 2 && cell.length() <= 6, "invalid edge format")
+      let source_index : Int = @json.from_json(cell.unsafe_get(0))
+      let target_index : Int = @json.from_json(cell.unsafe_get(1))
+      base64_import_assert(source_index >= 0, "invalid source index")
+      base64_import_assert(target_index >= 0, "invalid target index")
+      base64_import_assert(source_index < index_to_id.length(), "invalid source index")
+      base64_import_assert(target_index < index_to_id.length(), "invalid target index")
+
+      let source_id = index_to_id.unsafe_get(source_index)
+      let target_id = index_to_id.unsafe_get(target_index)
+      let label = if cell.length() >= 3 {
+        @json.from_json(cell.unsafe_get(2))
+      } else {
+        ""
+      }
+      let alignment = if cell.length() >= 4 {
+        let value : Int = @json.from_json(cell.unsafe_get(3))
+        base64_import_assert(value >= 0 && value <= 3, "invalid label alignment")
+        value
+      } else {
+        0
+      }
+      let mut level = Int::max(
+        index_to_level.unsafe_get(source_index),
+        index_to_level.unsafe_get(target_index),
+      ) + 1
+
+      let options_map : Map[String, Json] = if cell.length() >= 5 {
+        match cell.unsafe_get(4) {
+          Json::Object(map) => map
+          Json::Null => Map::new()
+          _ => abort("expected object in quiver encoding")
+        }
+      } else {
+        Map::new()
+      }
+
+      let mut options = EdgeOptions::at_level(level)
+      options = match alignment {
+        0 => options.with_label_alignment_left()
+        1 => options.with_label_alignment_centre()
+        2 => options.with_label_alignment_right()
+        _ => options.with_label_alignment_over()
+      }
+
+      match options_map.get("style") {
+        Some(style_raw) => {
+          let (styled, level_override) = base64_import_apply_style_delta(options, style_raw)
+          options = styled
+          match level_override {
+            Some(value) => level = value
+            None => ()
+          }
+        }
+        None => ()
+      }
+      options = base64_import_apply_options_delta(options, options_map)
+      options = options.with_level(level)
+
+      let label_colour = if cell.length() >= 6 {
+        base64_import_colour(cell.unsafe_get(5))
+      } else {
+        Colour::black()
+      }
+      let id = i + 1
+      quiver.add(
+        CellData::from_edge(
+          Edge::new(id, label, source_id, target_id, options, label_colour),
+        ),
+      )
+      quiver.connect(source_id, target_id, id)
+      index_to_id.push(id)
+      index_to_level.push(quiver.cell_level_or_default(id))
+    }
+    i = i + 1
+  }
+
+  quiver
+}
+
+pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
+  let decoded = @utf8.decode(@base64.decode(encoded))
+  let json = @json.parse(decoded)
+  let root : Array[Json] = @json.from_json(json)
+
+  if root.length() == 3 {
+    match (root.unsafe_get(1), root.unsafe_get(2)) {
+      (Json::Array(_), Json::Array(_)) => {
+        let parsed : EncodedQuiver = @json.from_json(json)
+        return base64_import_quiver_from_legacy(parsed)
+      }
+      _ => ()
+    }
+  }
+
+  base64_import_quiver_from_js(root)
 }
 
 pub fn Quiver::import_base64_share_url(
