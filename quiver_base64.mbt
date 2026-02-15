@@ -410,15 +410,23 @@ pub fn Quiver::export_base64_v0(self : Quiver) -> String {
   }
 
   let json_int = (value : Int) => Json::number(value.to_double())
-  let json_colour = (colour : Colour) => Json::array([
-    Json::number(colour.h.to_double()),
-    Json::number(colour.s.to_double()),
-    Json::number(colour.l.to_double()),
-    Json::number(colour.a),
-  ])
+  let json_colour = (colour : Colour) => {
+    let values : Array[Json] = [
+      Json::number(colour.h.to_double()),
+      Json::number(colour.s.to_double()),
+      Json::number(colour.l.to_double()),
+    ]
+    // Match quiver JS Colour.toJSON(): omit alpha when it is fully opaque.
+    if colour.a != 1.0 {
+      values.push(Json::number(colour.a))
+    }
+    Json::array(values)
+  }
 
   let equal_colour = (a : Colour, b : Colour) =>
-    a.h == b.h && a.s == b.s && a.l == b.l && a.a == b.a
+    (a.h == b.h && a.s == b.s && a.l == b.l && a.a == b.a) ||
+    (a.l == 0 && b.l == 0) ||
+    (a.l == 100 && b.l == 100)
 
   let options_delta = (options : EdgeOptions) => {
     let defaults = EdgeOptions::at_level(options.level)

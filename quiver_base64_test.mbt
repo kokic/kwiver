@@ -22,6 +22,11 @@ fn base64_encode_json(input : String) -> String {
   @base64.encode(@utf8.encode(input))
 }
 
+fn base64_decode_json_array(encoded : String) -> Array[Json] raise {
+  let decoded = @utf8.decode(@base64.decode(encoded))
+  @json.from_json(@json.parse(decoded))
+}
+
 fn alignment_variant_to_int(alignment : LabelAlignment) -> Int {
   match alignment {
     LabelAlignment::Left => 0
@@ -134,6 +139,59 @@ test "base64 v0 import supports legacy js length option" {
     }
     None => abort("expected edge")
   }
+}
+
+test "base64 v0 export omits alpha channel for opaque colours like js" {
+  let quiver = Quiver::new()
+  quiver.add(
+    CellData::from_vertex(
+      Vertex::new(1, "A", 0, 0, Colour::new(120, 60, 60, 1.0)),
+    ),
+  )
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1).with_colour(Colour::new(30, 60, 60, 1.0))
+  let edge = Edge::new(3, "f", 1, 2, options, Colour::new(240, 60, 60, 1.0))
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let root = base64_decode_json_array(quiver.export_base64_v0())
+
+  let vertex_cell : Array[Json] = @json.from_json(root.unsafe_get(2))
+  let vertex_colour : Array[Double] = @json.from_json(vertex_cell.unsafe_get(3))
+  inspect(vertex_colour.length(), content="3")
+
+  let edge_cell : Array[Json] = @json.from_json(root.unsafe_get(4))
+  let edge_options : Map[String, Json] = @json.from_json(edge_cell.unsafe_get(4))
+  let edge_colour = match edge_options.get("colour") {
+    Some(value) => value
+    None => abort("expected edge colour in options delta")
+  }
+  let edge_colour_values : Array[Double] = @json.from_json(edge_colour)
+  inspect(edge_colour_values.length(), content="3")
+
+  let label_colour_values : Array[Double] = @json.from_json(edge_cell.unsafe_get(5))
+  inspect(label_colour_values.length(), content="3")
+}
+
+test "base64 v0 export treats all l=0 colours as default black in option delta" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let options = EdgeOptions::at_level(1)
+    .with_offset(7)
+    .with_colour(Colour::new(240, 80, 0, 0.2))
+  let edge = Edge::new(3, "", 1, 2, options, Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let root = base64_decode_json_array(quiver.export_base64_v0())
+  let edge_cell : Array[Json] = @json.from_json(root.unsafe_get(4))
+  let edge_options : Map[String, Json] = @json.from_json(edge_cell.unsafe_get(4))
+
+  inspect(edge_options.contains("offset"), content="true")
+  inspect(edge_options.contains("colour"), content="false")
 }
 
 test "base64 share url encodes macro_url for non-empty quiver" {
