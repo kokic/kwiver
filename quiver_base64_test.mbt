@@ -393,8 +393,48 @@ test "base64 share url parser supports hash question prefix and html ampersands"
     None => abort("expected renderer")
   }
   match parsed.macro_url {
-    Some(value) => inspect(value, content="https://example.com/my macros.tex")
+    Some(value) => inspect(value, content="https://example.com/my+macros.tex")
     None => abort("expected macro_url")
+  }
+  inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser supports hashbang prefix" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = [
+    "https://q.uiver.app#!r=svg&q=",
+    payload,
+    "&macro_url=https%3A%2F%2Fexample.com%2Fhashbang.tex&embed",
+  ].join("")
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  match parsed.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/hashbang.tex")
+    None => abort("expected macro_url")
+  }
+  inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser supports hashbang question prefix" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = ["https://q.uiver.app#!?q=", payload, "&embed"].join("")
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
   }
   inspect(parsed.embed, content="true")
 }
@@ -461,6 +501,27 @@ test "base64 share url parser keeps fragment payload and query macro_url" {
     None => abort("expected macro_url")
   }
   inspect(parsed.embed, content="true")
+}
+
+test "base64 share url parser preserves plus in renderer and macro_url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = [
+    "https://q.uiver.app#r=svg%2Bcanvas&q=",
+    payload,
+    "&macro_url=https%3A%2F%2Fexample.com%2Fa+b.tex",
+  ].join("")
+
+  let parsed = Quiver::parse_base64_share_url(link)
+  match parsed.renderer {
+    Some(value) => inspect(value, content="svg+canvas")
+    None => abort("expected renderer")
+  }
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/a+b.tex")
+    None => abort("expected macro_url")
+  }
 }
 
 test "base64 import share url roundtrip works for full link and payload-only" {

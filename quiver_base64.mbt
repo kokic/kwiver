@@ -174,11 +174,6 @@ fn base64_percent_decode_component(value : String) -> String {
   let mut i = 0
   while i < bytes.length() {
     let byte = bytes.unsafe_get(i)
-    if byte == b'+' {
-      decoded.push(b' ')
-      i = i + 1
-      continue
-    }
     if byte == b'%' && i + 2 < bytes.length() {
       let high = base64_hex_to_int(bytes.unsafe_get(i + 1).to_int())
       let low = base64_hex_to_int(bytes.unsafe_get(i + 2).to_int())
@@ -221,10 +216,19 @@ fn base64_share_url_query(input : String) -> String {
 
 fn base64_normalise_fragment(value : String) -> String {
   let amp = value.replace_all(old="&amp;", new="&")
-  if amp.has_prefix("?") {
-    amp.unsafe_substring(start=1, end=amp.length())
-  } else {
+  let mut start = 0
+  while start < amp.length() {
+    let ch = amp.unsafe_get(start)
+    if ch == '?' || ch == '!' {
+      start = start + 1
+      continue
+    }
+    break
+  }
+  if start == 0 {
     amp
+  } else {
+    amp.unsafe_substring(start=start, end=amp.length())
   }
 }
 
