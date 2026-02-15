@@ -76,3 +76,18 @@ test "quiver transitive closures" {
   )
   inspect(sort_ids(quiver.connected_components([1])), content="[1, 2, 3, 4]")
 }
+
+test "quiver next_available_id skips occupied ids and reuses flushed ids" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(3, "B", 1, 0)))
+
+  inspect(quiver.next_available_id(), content="2")
+  inspect(quiver.next_available_id(start=3), content="4")
+
+  ignore(quiver.remove(1, 10))
+  inspect(quiver.next_available_id(start=1), content="2")
+
+  quiver.flush(10)
+  inspect(quiver.next_available_id(start=1), content="1")
+}

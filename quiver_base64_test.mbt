@@ -206,6 +206,63 @@ test "base64 v0 selection import result keeps target unchanged for empty payload
   inspect(target.all_cell_ids(), content="[9]")
 }
 
+test "base64 v0 selection auto-id import skips existing ids deterministically" {
+  let source = Quiver::new()
+  source.add(CellData::from_vertex(Vertex::new_black(10, "A", 0, 0)))
+  source.add(CellData::from_vertex(Vertex::new_black(20, "B", 1, 0)))
+  let edge = Edge::new(30, "f", 10, 20, EdgeOptions::at_level(1), Colour::black())
+  source.add(CellData::from_edge(edge))
+  source.connect(10, 20, 30)
+  let payload = source.export_base64_v0_selection([30])
+
+  let target = Quiver::new()
+  target.add(CellData::from_vertex(Vertex::new_black(1, "P", 0, 0)))
+  target.add(CellData::from_vertex(Vertex::new_black(2, "Q", 1, 0)))
+  target.add(CellData::from_vertex(Vertex::new_black(4, "R", 2, 0)))
+
+  let result = target.import_base64_v0_selection_auto_ids(
+    payload,
+    8,
+    9,
+    start_id=1,
+  )
+  inspect(result.imported_ids, content="[3, 5, 6]")
+  match result.id_remap.get(1) {
+    Some(value) => inspect(value, content="3")
+    None => abort("expected remap for source vertex")
+  }
+  match result.id_remap.get(2) {
+    Some(value) => inspect(value, content="5")
+    None => abort("expected remap for target vertex")
+  }
+  match result.id_remap.get(3) {
+    Some(value) => inspect(value, content="6")
+    None => abort("expected remap for edge")
+  }
+
+  match find_vertex_by_label(target, "A") {
+    Some(vertex) => {
+      inspect(vertex.x, content="8")
+      inspect(vertex.y, content="9")
+    }
+    None => abort("expected imported vertex A")
+  }
+  match find_vertex_by_label(target, "B") {
+    Some(vertex) => {
+      inspect(vertex.x, content="9")
+      inspect(vertex.y, content="9")
+    }
+    None => abort("expected imported vertex B")
+  }
+  match find_edge_by_label(target, "f") {
+    Some(imported_edge) => {
+      inspect(imported_edge.source, content="3")
+      inspect(imported_edge.target, content="5")
+    }
+    None => abort("expected imported edge")
+  }
+}
+
 test "base64 v0 import supports js canonical minimal layout" {
   let encoded = base64_encode_json(
     "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"f\"]]",

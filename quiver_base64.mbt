@@ -1333,6 +1333,27 @@ pub fn Quiver::import_base64_v0_selection(
   ).imported_ids
 }
 
+pub fn Quiver::import_base64_v0_selection_auto_ids(
+  self : Quiver,
+  encoded : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> Base64SelectionImportResult raise {
+  let mut next_id = self.next_available_id(start=start_id)
+  let alloc_id = () => {
+    let id = next_id
+    next_id = self.next_available_id(start=id + 1)
+    id
+  }
+  self.import_base64_v0_selection_result(
+    encoded,
+    origin_x,
+    origin_y,
+    alloc_id,
+  )
+}
+
 pub fn Quiver::import_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",

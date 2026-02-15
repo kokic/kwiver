@@ -141,6 +141,14 @@ pub fn Quiver::contains_cell(self : Quiver, cell_id : Int) -> Bool {
   self.cells.contains(cell_id) && !self.deleted.contains(cell_id)
 }
 
+pub fn Quiver::next_available_id(self : Quiver, start? : Int = 1) -> Int {
+  let mut candidate = if start < 1 { 1 } else { start }
+  while self.cells.contains(candidate) {
+    candidate = candidate + 1
+  }
+  candidate
+}
+
 pub fn Quiver::dependencies_of(
   self : Quiver,
   cell_id : Int,
