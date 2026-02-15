@@ -154,3 +154,75 @@ test "base64 share url without base returns payload" {
   let link = quiver.export_base64_share_url(None, Some("https://example.com/macros.tex"))
   inspect(link, content=payload)
 }
+
+test "base64 share url parser extracts payload renderer and macro_url" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some("https://example.com/macros.tex"),
+    renderer="svg",
+  )
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  match parsed.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+}
+
+test "base64 share url parser ignores embed and normalises default renderer" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  let payload = quiver.export_base64_v0()
+  let link = [
+    "https://q.uiver.app#r=canvas&q=",
+    payload,
+    "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex&embed",
+  ].join("")
+  let parsed = Quiver::parse_base64_share_url(link)
+
+  match parsed.payload {
+    Some(value) => inspect(value == payload, content="true")
+    None => abort("expected payload")
+  }
+  inspect(parsed.renderer is None, content="true")
+  match parsed.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+}
+
+test "base64 import share url roundtrip works for full link and payload-only" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  let edge = Edge::new(3, "f", 1, 2, EdgeOptions::at_level(1), Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let link = quiver.export_base64_share_url(
+    Some("https://q.uiver.app"),
+    Some("https://example.com/macros.tex"),
+    renderer="svg",
+  )
+  let decoded_full = Quiver::import_base64_share_url(link)
+  inspect(decoded_full.all_cell_ids(), content="[1, 2, 3]")
+
+  let payload_only = quiver.export_base64_share_url(None, None)
+  let decoded_payload = Quiver::import_base64_share_url(payload_only)
+  inspect(decoded_payload.all_cell_ids(), content="[1, 2, 3]")
+}
+
+test "panic base64 import share url without payload" {
+  ignore(Quiver::import_base64_share_url("https://q.uiver.app"))
+}

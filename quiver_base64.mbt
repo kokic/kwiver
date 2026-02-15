@@ -22,6 +22,12 @@ type EncodedEdge = (Int, Int, Int, String, Int, ColourTuple, EncodedEdgeOptions)
 
 type EncodedQuiver = (Int, Array[EncodedVertex], Array[EncodedEdge])
 
+pub struct Base64ShareUrlParts {
+  payload : String?
+  macro_url : String?
+  renderer : String?
+}
+
 fn colour_to_tuple(colour : Colour) -> ColourTuple {
   (colour.h, colour.s, colour.l, colour.a)
 }
@@ -162,6 +168,115 @@ fn base64_percent_encode_component(value : String) -> String {
   out.join("")
 }
 
+fn base64_hex_to_int(code : Int) -> Int {
+  if code >= 48 && code <= 57 {
+    code - 48
+  } else if code >= 65 && code <= 70 {
+    code - 55
+  } else if code >= 97 && code <= 102 {
+    code - 87
+  } else {
+    -1
+  }
+}
+
+fn base64_percent_decode_component(value : String) -> String {
+  let bytes = @utf8.encode(value)
+  let decoded : Array[Byte] = []
+  let mut i = 0
+  while i < bytes.length() {
+    let byte = bytes.unsafe_get(i)
+    if byte == b'%' && i + 2 < bytes.length() {
+      let high = base64_hex_to_int(bytes.unsafe_get(i + 1).to_int())
+      let low = base64_hex_to_int(bytes.unsafe_get(i + 2).to_int())
+      if high >= 0 && low >= 0 {
+        decoded.push((high * 16 + low).to_byte())
+        i = i + 3
+        continue
+      }
+    }
+    decoded.push(byte)
+    i = i + 1
+  }
+  @utf8.decode_lossy(Bytes::from_array(decoded))
+}
+
+fn base64_share_url_fragment(input : String) -> String {
+  match input.find("#") {
+    Some(index) => input.unsafe_substring(start=index + 1, end=input.length())
+    None => input
+  }
+}
+
+pub fn Quiver::parse_base64_share_url(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Base64ShareUrlParts {
+  let has_hash = input.contains("#")
+  if !has_hash {
+    if input.contains("://") {
+      return { payload: None, macro_url: None, renderer: None }
+    }
+    let is_fragment_query = input.has_prefix("q=") ||
+      input.has_prefix("r=") ||
+      input.has_prefix("macro_url=") ||
+      input.contains("&")
+    if !is_fragment_query {
+      return { payload: Some(input), macro_url: None, renderer: None }
+    }
+  }
+
+  let fragment = base64_share_url_fragment(input)
+  if fragment == "" {
+    return { payload: None, macro_url: None, renderer: None }
+  }
+
+  if !fragment.contains("=") {
+    if input.contains("://") {
+      return { payload: None, macro_url: None, renderer: None }
+    }
+    return { payload: Some(fragment), macro_url: None, renderer: None }
+  }
+
+  let mut payload : String? = None
+  let mut macro_url : String? = None
+  let mut renderer_raw : String? = None
+
+  for pair_view in fragment.split("&") {
+    let pair = pair_view.to_string()
+    if pair == "" {
+      continue
+    }
+
+    match pair.find("=") {
+      Some(index) => {
+        let key = pair.unsafe_substring(start=0, end=index)
+        let value = pair.unsafe_substring(start=index + 1, end=pair.length())
+        if key == "q" {
+          payload = Some(value)
+        } else if key == "macro_url" {
+          macro_url = Some(base64_percent_decode_component(value))
+        } else if key == "r" {
+          renderer_raw = Some(base64_percent_decode_component(value))
+        }
+      }
+      None => ()
+    }
+  }
+
+  let renderer = match renderer_raw {
+    Some(value) =>
+      if value == default_renderer {
+        None
+      } else {
+        Some(value)
+      }
+    None => None
+  }
+
+  { payload, macro_url, renderer }
+}
+
 pub fn Quiver::export_base64_v0(self : Quiver) -> String {
   let vertices : Array[EncodedVertex] = []
   let edges : Array[EncodedEdge] = []
@@ -267,4 +382,15 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   }
 
   quiver
+}
+
+pub fn Quiver::import_base64_share_url(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Quiver raise {
+  let parsed = Quiver::parse_base64_share_url(input, default_renderer=default_renderer)
+  match parsed.payload {
+    Some(payload) => Quiver::import_base64_v0(payload)
+    None => abort("missing base64 payload in share URL")
+  }
 }
