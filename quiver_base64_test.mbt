@@ -671,3 +671,10 @@ test "base64 import share text supports single-quoted and spaced iframe src" {
 test "panic base64 import share url without payload" {
   ignore(Quiver::import_base64_share_url("https://q.uiver.app"))
 }
+
+test "panic base64 v0 import rejects non-integer colour components" {
+  let encoded = base64_encode_json(
+    "[0,1,[0,0,\"A\",[30.5,60,60]]]",
+  )
+  ignore(Quiver::import_base64_v0(encoded))
+}

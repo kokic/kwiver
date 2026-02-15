@@ -725,15 +725,26 @@ fn base64_import_assert(condition : Bool, message : String) -> Unit {
   }
 }
 
+fn base64_double_is_integer(value : Double) -> Bool {
+  value == value.trunc()
+}
+
 fn base64_import_colour(raw : Json) -> Colour raise {
   let values : Array[Double] = @json.from_json(raw)
   base64_import_assert(
     values.length() >= 3 && values.length() <= 4,
     "invalid colour format",
   )
-  let h = values.unsafe_get(0).to_int()
-  let s = values.unsafe_get(1).to_int()
-  let l = values.unsafe_get(2).to_int()
+  let h_raw = values.unsafe_get(0)
+  let s_raw = values.unsafe_get(1)
+  let l_raw = values.unsafe_get(2)
+  base64_import_assert(base64_double_is_integer(h_raw), "invalid hue")
+  base64_import_assert(base64_double_is_integer(s_raw), "invalid saturation")
+  base64_import_assert(base64_double_is_integer(l_raw), "invalid lightness")
+
+  let h = h_raw.to_int()
+  let s = s_raw.to_int()
+  let l = l_raw.to_int()
   let a = if values.length() >= 4 {
     values.unsafe_get(3)
   } else {
