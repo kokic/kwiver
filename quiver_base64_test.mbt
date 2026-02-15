@@ -82,6 +82,32 @@ test "base64 v0 roundtrip preserves edge options" {
   }
 }
 
+test "base64 v0 selection export includes transitive dependencies by default" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  let edge = Edge::new(3, "f", 1, 2, EdgeOptions::at_level(1), Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let encoded = quiver.export_base64_v0_selection([3])
+  let decoded = Quiver::import_base64_v0(encoded)
+  inspect(decoded.all_cell_ids(), content="[1, 2, 3]")
+}
+
+test "base64 v0 selection export without dependencies skips dangling edges" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+  let edge = Edge::new(3, "f", 1, 2, EdgeOptions::at_level(1), Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 2, 3)
+
+  let encoded = quiver.export_base64_v0_selection([1, 3], include_dependencies=false)
+  let decoded = Quiver::import_base64_v0(encoded)
+  inspect(decoded.all_cell_ids(), content="[1]")
+}
+
 test "base64 v0 import supports js canonical minimal layout" {
   let encoded = base64_encode_json(
     "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"f\"]]",

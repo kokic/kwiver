@@ -489,12 +489,27 @@ pub fn Quiver::parse_base64_share_url(
   { payload, macro_url, renderer, embed }
 }
 
-pub fn Quiver::export_base64_v0(self : Quiver) -> String {
+fn base64_id_set(ids : Array[Int]) -> @hashmap.HashMap[Int, Bool] {
+  let out : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  for id in ids {
+    out.set(id, true)
+  }
+  out
+}
+
+fn Quiver::base64_export_v0_with_ids(
+  self : Quiver,
+  included_ids : @hashmap.HashMap[Int, Bool],
+  strict_edge_refs : Bool,
+) -> String {
   let cells = self.all_cells()
   let vertices : Array[Vertex] = []
   let edges : Array[Edge] = []
 
   for cell in cells {
+    if !included_ids.contains(cell.id()) {
+      continue
+    }
     match cell {
       CellData::Vertex(vertex) => vertices.push(vertex)
       CellData::Edge(edge) => edges.push(edge)
@@ -660,13 +675,24 @@ pub fn Quiver::export_base64_v0(self : Quiver) -> String {
 
   for edge in edges {
     let source_index = match indices.get(edge.source) {
-      Some(value) => value
-      None => abort("invalid source index in quiver encoding")
+      Some(value) => Some(value)
+      None => None
     }
     let target_index = match indices.get(edge.target) {
-      Some(value) => value
-      None => abort("invalid target index in quiver encoding")
+      Some(value) => Some(value)
+      None => None
     }
+
+    if source_index is None || target_index is None {
+      if strict_edge_refs {
+        abort("invalid source/target index in quiver encoding")
+      } else {
+        continue
+      }
+    }
+
+    let source_index = source_index.unwrap()
+    let target_index = target_index.unwrap()
 
     let cell : Array[Json] = [
       json_int(source_index),
@@ -701,6 +727,24 @@ pub fn Quiver::export_base64_v0(self : Quiver) -> String {
   payload.append(encoded_cells)
   let json_string = Json::array(payload).stringify()
   @base64.encode(@utf8.encode(json_string))
+}
+
+pub fn Quiver::export_base64_v0(self : Quiver) -> String {
+  self.base64_export_v0_with_ids(base64_id_set(self.all_cell_ids()), true)
+}
+
+pub fn Quiver::export_base64_v0_selection(
+  self : Quiver,
+  selected_ids : Array[Int],
+  include_dependencies? : Bool = true,
+) -> String {
+  let ids = if include_dependencies {
+    self.transitive_reverse_dependencies(selected_ids)
+  } else {
+    selected_ids.copy()
+  }
+  ids.retain((id) => self.contains_cell(id))
+  self.base64_export_v0_with_ids(base64_id_set(ids), false)
 }
 
 pub fn Quiver::export_base64_share_url(
