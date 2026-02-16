@@ -1,3 +1,4 @@
+///|
 pub struct HtmlEmbedExportSettings {
   base_url : String
   fixed_size : Bool
@@ -8,13 +9,17 @@ pub struct HtmlEmbedExportSettings {
   embed_padding : Int
 }
 
+///|
 pub struct HtmlEmbedExportOptions {
   share_base_url : String?
   macro_url : String?
   renderer : String?
 }
 
-pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSettings {
+///|
+pub fn HtmlEmbedExportSettings::default(
+  base_url : String,
+) -> HtmlEmbedExportSettings {
   {
     base_url,
     fixed_size: false,
@@ -26,49 +31,77 @@ pub fn HtmlEmbedExportSettings::default(base_url : String) -> HtmlEmbedExportSet
   }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::default() -> HtmlEmbedExportOptions {
   { share_base_url: None, macro_url: None, renderer: None }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::with_share_base_url(
   self : HtmlEmbedExportOptions,
   base_url : String,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: Some(base_url), macro_url: self.macro_url, renderer: self.renderer }
+  {
+    share_base_url: Some(base_url),
+    macro_url: self.macro_url,
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::without_share_base_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
   { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::with_macro_url(
   self : HtmlEmbedExportOptions,
   macro_url : String,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: Some(macro_url), renderer: self.renderer }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: Some(macro_url),
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::without_macro_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: None, renderer: self.renderer }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: None,
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::with_renderer(
   self : HtmlEmbedExportOptions,
   renderer : String,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: Some(renderer) }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: Some(renderer),
+  }
 }
 
+///|
 pub fn HtmlEmbedExportOptions::without_renderer(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: None }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: None,
+  }
 }
 
+///|
 pub fn HtmlEmbedExportSettings::with_fixed_size(
   self : HtmlEmbedExportSettings,
   width : Int,
@@ -77,31 +110,53 @@ pub fn HtmlEmbedExportSettings::with_fixed_size(
   {
     base_url: self.base_url,
     fixed_size: true,
-    width: if width < 1 { 1 } else { width },
-    height: if height < 1 { 1 } else { height },
+    width: if width < 1 {
+      1
+    } else {
+      width
+    },
+    height: if height < 1 {
+      1
+    } else {
+      height
+    },
     diagram_width: self.diagram_width,
     diagram_height: self.diagram_height,
     embed_padding: self.embed_padding,
   }
 }
 
+///|
 pub fn HtmlEmbedExportSettings::with_dynamic_size(
   self : HtmlEmbedExportSettings,
   diagram_width : Int,
   diagram_height : Int,
-  embed_padding~ : Int = 24,
+  embed_padding? : Int = 24,
 ) -> HtmlEmbedExportSettings {
   {
     base_url: self.base_url,
     fixed_size: false,
     width: self.width,
     height: self.height,
-    diagram_width: if diagram_width < 0 { 0 } else { diagram_width },
-    diagram_height: if diagram_height < 0 { 0 } else { diagram_height },
-    embed_padding: if embed_padding < 0 { 0 } else { embed_padding },
+    diagram_width: if diagram_width < 0 {
+      0
+    } else {
+      diagram_width
+    },
+    diagram_height: if diagram_height < 0 {
+      0
+    } else {
+      diagram_height
+    },
+    embed_padding: if embed_padding < 0 {
+      0
+    } else {
+      embed_padding
+    },
   }
 }
 
+///|
 fn html_embed_url(
   quiver : Quiver,
   settings : HtmlEmbedExportSettings,
@@ -118,6 +173,7 @@ fn html_embed_url(
   )
 }
 
+///|
 fn html_embed_extract_src(input : String) -> String? {
   let single_quote = Int::to_byte(39)
   let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
@@ -166,17 +222,14 @@ fn html_embed_extract_src(input : String) -> String? {
   None
 }
 
+///|
 pub fn Quiver::export_html_embed(
   self : Quiver,
   settings : HtmlEmbedExportSettings,
-  options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
+  options? : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
   let url = html_embed_url(self, settings, options)
-  let src = if self.is_empty() {
-    url + "#embed"
-  } else {
-    url + "&embed"
-  }
+  let src = if self.is_empty() { url + "#embed" } else { url + "&embed" }
   let (width, height) = if settings.fixed_size {
     (settings.width, settings.height)
   } else {
@@ -198,26 +251,26 @@ pub fn Quiver::export_html_embed(
   ].join("")
 }
 
+///|
 pub fn Quiver::import_html_embed_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
   let reference = match html_embed_extract_src(input) {
     Some(url) => url
-    None => match Quiver::extract_base64_share_reference(input) {
-      Some(value) => value
-      None => input
-    }
+    None =>
+      match Quiver::extract_base64_share_reference(input) {
+        Some(value) => value
+        None => input
+      }
   }
-  Quiver::import_base64_share_url_result(reference, default_renderer=default_renderer)
+  Quiver::import_base64_share_url_result(reference, default_renderer~)
 }
 
+///|
 pub fn Quiver::import_html_embed(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Quiver raise {
-  Quiver::import_html_embed_result(
-    input,
-    default_renderer=default_renderer,
-  ).quiver
+  Quiver::import_html_embed_result(input, default_renderer~).quiver
 }

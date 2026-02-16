@@ -1,71 +1,104 @@
-﻿pub struct FletcherExportSettings {
+///|
+pub struct FletcherExportSettings {
   centre_diagram : Bool
 }
 
+///|
 pub fn FletcherExportSettings::default() -> FletcherExportSettings {
   { centre_diagram: false }
 }
 
+///|
 pub fn FletcherExportSettings::with_centre_diagram(
   _self : FletcherExportSettings,
-  value~ : Bool = true,
+  value? : Bool = true,
 ) -> FletcherExportSettings {
   { centre_diagram: value }
 }
 
+///|
 pub struct FletcherExportOptions {
   share_base_url : String?
   macro_url : String?
   renderer : String?
 }
 
+///|
 pub fn FletcherExportOptions::default() -> FletcherExportOptions {
   { share_base_url: None, macro_url: None, renderer: None }
 }
 
+///|
 pub fn FletcherExportOptions::with_share_base_url(
   self : FletcherExportOptions,
   base_url : String,
 ) -> FletcherExportOptions {
-  { share_base_url: Some(base_url), macro_url: self.macro_url, renderer: self.renderer }
+  {
+    share_base_url: Some(base_url),
+    macro_url: self.macro_url,
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn FletcherExportOptions::without_share_base_url(
   self : FletcherExportOptions,
 ) -> FletcherExportOptions {
   { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
 }
 
+///|
 pub fn FletcherExportOptions::with_macro_url(
   self : FletcherExportOptions,
   macro_url : String,
 ) -> FletcherExportOptions {
-  { share_base_url: self.share_base_url, macro_url: Some(macro_url), renderer: self.renderer }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: Some(macro_url),
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn FletcherExportOptions::without_macro_url(
   self : FletcherExportOptions,
 ) -> FletcherExportOptions {
-  { share_base_url: self.share_base_url, macro_url: None, renderer: self.renderer }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: None,
+    renderer: self.renderer,
+  }
 }
 
+///|
 pub fn FletcherExportOptions::with_renderer(
   self : FletcherExportOptions,
   renderer : String,
 ) -> FletcherExportOptions {
-  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: Some(renderer) }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: Some(renderer),
+  }
 }
 
+///|
 pub fn FletcherExportOptions::without_renderer(
   self : FletcherExportOptions,
 ) -> FletcherExportOptions {
-  { share_base_url: self.share_base_url, macro_url: self.macro_url, renderer: None }
+  {
+    share_base_url: self.share_base_url,
+    macro_url: self.macro_url,
+    renderer: None,
+  }
 }
 
+///|
 fn fletcher_coords(vertex : Vertex) -> String {
   ["(", vertex.x.to_string(), ", ", vertex.y.to_string(), ")"].join("")
 }
 
+///|
 fn fletcher_format_label(label : String) -> String {
   if label == "" {
     ""
@@ -74,6 +107,7 @@ fn fletcher_format_label(label : String) -> String {
   }
 }
 
+///|
 fn fletcher_arg_list(args : Array[String]) -> String {
   let effective : Array[String] = []
   for arg in args {
@@ -88,6 +122,7 @@ fn fletcher_arg_list(args : Array[String]) -> String {
   }
 }
 
+///|
 fn fletcher_repeat(token : String, count : Int) -> String {
   if count <= 0 {
     return ""
@@ -99,6 +134,7 @@ fn fletcher_repeat(token : String, count : Int) -> String {
   out.join("")
 }
 
+///|
 fn fletcher_round_to_int(x : Double) -> Int {
   if x >= 0.0 {
     @math.floor(x + 0.5).to_int()
@@ -107,6 +143,7 @@ fn fletcher_round_to_int(x : Double) -> Int {
   }
 }
 
+///|
 fn fletcher_colour_to_typst_hsl(colour : Colour) -> String {
   let saturation = fletcher_round_to_int(colour.s.to_double() * 2.55)
   let lightness = fletcher_round_to_int(colour.l.to_double() * 2.55)
@@ -121,6 +158,7 @@ fn fletcher_colour_to_typst_hsl(colour : Colour) -> String {
   ].join("")
 }
 
+///|
 fn fletcher_int_sign(value : Int) -> Double {
   if value > 0 {
     1.0
@@ -131,6 +169,7 @@ fn fletcher_int_sign(value : Int) -> Double {
   }
 }
 
+///|
 fn fletcher_arrow_marks(edge : Edge) -> (String, Array[String]) {
   if edge.options.style.name != "arrow" {
     return ("-", [])
@@ -142,7 +181,12 @@ fn fletcher_arrow_marks(edge : Edge) -> (String, Array[String]) {
   match edge.options.style.tail.name {
     "maps to" => marks += "|"
     "mono" => marks += ">"
-    "hook" => marks += if edge.options.style.tail.side == "top" { "hook" } else { "hook'" }
+    "hook" =>
+      marks += if edge.options.style.tail.side == "top" {
+        "hook"
+      } else {
+        "hook'"
+      }
     "arrowhead" => marks += "<"
     _ => ()
   }
@@ -155,7 +199,11 @@ fn fletcher_arrow_marks(edge : Edge) -> (String, Array[String]) {
         extra_args.push("extrude: (-6,-2,2,6)")
         extra_args.push("mark-scale: 2")
       }
-      marks += if level == 1 { "-" } else { fletcher_repeat("=", edge.options.level - 1) }
+      marks += if level == 1 {
+        "-"
+      } else {
+        fletcher_repeat("=", edge.options.level - 1)
+      }
     }
     "dashed" => marks += "--"
     "dotted" => marks += ".."
@@ -173,13 +221,18 @@ fn fletcher_arrow_marks(edge : Edge) -> (String, Array[String]) {
     "arrowhead" => marks += ">"
     "epi" => marks += ">>"
     "harpoon" =>
-      marks += if edge.options.style.head.side == "top" { "harpoon" } else { "harpoon'" }
+      marks += if edge.options.style.head.side == "top" {
+        "harpoon"
+      } else {
+        "harpoon'"
+      }
     _ => ()
   }
 
   (marks, extra_args)
 }
 
+///|
 fn fletcher_wrap_output(
   quiver : Quiver,
   settings : FletcherExportSettings,
@@ -209,10 +262,11 @@ fn fletcher_wrap_output(
   ].join("")
 }
 
+///|
 pub fn Quiver::export_fletcher(
   self : Quiver,
-  settings~ : FletcherExportSettings = FletcherExportSettings::default(),
-  options~ : FletcherExportOptions = FletcherExportOptions::default(),
+  settings? : FletcherExportSettings = FletcherExportSettings::default(),
+  options? : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
   let vertices : Array[Vertex] = []
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
@@ -239,12 +293,22 @@ pub fn Quiver::export_fletcher(
   let lines : Array[String] = []
 
   for vertex in vertices {
-    let label_arg = if vertex.cell.label != "" && vertex.cell.label_colour.is_not_black() {
-      ["text(", fletcher_colour_to_typst_hsl(vertex.cell.label_colour), ")", fletcher_format_label(vertex.cell.label)].join("")
+    let label_arg = if vertex.cell.label != "" &&
+      vertex.cell.label_colour.is_not_black() {
+      [
+        "text(",
+        fletcher_colour_to_typst_hsl(vertex.cell.label_colour),
+        ")",
+        fletcher_format_label(vertex.cell.label),
+      ].join("")
     } else {
       fletcher_format_label(vertex.cell.label)
     }
-    lines.push(["\tnode(", fletcher_coords(vertex), fletcher_arg_list([label_arg]), ")"].join(""))
+    lines.push(
+      ["\tnode(", fletcher_coords(vertex), fletcher_arg_list([label_arg]), ")"].join(
+        "",
+      ),
+    )
   }
 
   for edge in edges {
@@ -275,12 +339,23 @@ pub fn Quiver::export_fletcher(
           args.push(["label-side: ", label_side].join(""))
 
           if edge.options.label_position != 50 {
-            args.push(["label-pos: ", (edge.options.label_position.to_double() / 100.0).to_string()].join(""))
+            args.push(
+              [
+                "label-pos: ",
+                (edge.options.label_position.to_double() / 100.0).to_string(),
+              ].join(""),
+            )
           }
         }
 
-        if edge.options.offset != 0 && edge.source != edge.target && edge.options.curve == 0 {
-          args.push(["shift: ", (-edge.options.offset.to_double() / 20.0).to_string()].join(""))
+        if edge.options.offset != 0 &&
+          edge.source != edge.target &&
+          edge.options.curve == 0 {
+          args.push(
+            ["shift: ", (-edge.options.offset.to_double() / 20.0).to_string()].join(
+              "",
+            ),
+          )
         }
 
         let (arrow_marks, arrow_args) = fletcher_arrow_marks(edge)
@@ -292,19 +367,43 @@ pub fn Quiver::export_fletcher(
         }
 
         if edge.cell.label != "" && edge.cell.label_colour.is_not_black() {
-          args[0] = ["text(", fletcher_colour_to_typst_hsl(edge.cell.label_colour), ")", args[0]].join("")
+          args[0] = [
+            "text(",
+            fletcher_colour_to_typst_hsl(edge.cell.label_colour),
+            ")",
+            args[0],
+          ].join("")
         }
         if edge.options.colour.is_not_black() {
-          args.push(["stroke: ", fletcher_colour_to_typst_hsl(edge.options.colour)].join(""))
+          args.push(
+            ["stroke: ", fletcher_colour_to_typst_hsl(edge.options.colour)].join(
+              "",
+            ),
+          )
         }
 
         if edge.source == edge.target {
           let loop_bend = fletcher_int_sign(edge.options.radius) *
-            ((Int::abs(edge.options.radius).to_double() - 1.0) * (150.0 - 130.0) / 4.0 + 130.0)
+            (
+              (Int::abs(edge.options.radius).to_double() - 1.0) *
+              (150.0 - 130.0) /
+              4.0 +
+              130.0
+            )
           args.push(["bend: ", loop_bend.to_string(), "deg"].join(""))
-          args.push(["loop-angle: ", (90 - edge.options.angle).to_string(), "deg"].join(""))
+          args.push(
+            ["loop-angle: ", (90 - edge.options.angle).to_string(), "deg"].join(
+              "",
+            ),
+          )
         } else if edge.options.curve != 0 {
-          args.push(["bend: ", (-edge.options.curve.to_double() * 90.0 / 5.0).to_string(), "deg"].join(""))
+          args.push(
+            [
+              "bend: ",
+              (-edge.options.curve.to_double() * 90.0 / 5.0).to_string(),
+              "deg",
+            ].join(""),
+          )
         }
 
         lines.push(
@@ -325,19 +424,18 @@ pub fn Quiver::export_fletcher(
   fletcher_wrap_output(self, settings, options, lines)
 }
 
+///|
 pub fn Quiver::import_fletcher_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+  Quiver::import_base64_share_text(input, default_renderer~)
 }
 
+///|
 pub fn Quiver::import_fletcher(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Quiver raise {
-  Quiver::import_fletcher_result(
-    input,
-    default_renderer=default_renderer,
-  ).quiver
+  Quiver::import_fletcher_result(input, default_renderer~).quiver
 }
