@@ -1,3 +1,4 @@
+///|
 test "browser runtime roundtrips payload across sessions" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
@@ -42,9 +43,7 @@ test "browser runtime import share url and paste selection" {
   let selection_payload = source.export_selection()
   let payload = source.export_payload()
   let share_url = [
-    "https://q.uiver.app#r=svg&q=",
-    payload,
-    "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+    "https://q.uiver.app#r=svg&q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
   ].join("")
 
   let target = BrowserRuntime::new()
@@ -63,4 +62,80 @@ test "browser runtime import share url and paste selection" {
   let pasted = target.paste_selection(selection_payload, 10, 20, start_id=1)
   inspect(pasted.imported_ids.length(), content="3")
   inspect(target.selection().length(), content="3")
+}
+
+///|
+test "browser runtime applies incremental mutations via ffi surface" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 2, 0)
+  let edge_id = runtime.add_edge(source_id, target_id, label="m")
+
+  inspect(runtime.set_label(source_id, "A2"), content="true")
+  inspect(
+    runtime.set_label_colour(edge_id, @kwiver.Colour::new(240, 100, 50, 1.0)),
+    content="true",
+  )
+  inspect(runtime.move_vertex(source_id, 9, 4), content="true")
+
+  let options = @kwiver.EdgeOptions::at_level(5)
+    .with_curve(-2)
+    .with_style_tail("hook", side="top")
+  inspect(runtime.set_edge_options(edge_id, options), content="true")
+  inspect(runtime.reconnect_edge(edge_id, target_id, source_id), content="true")
+
+  let quiver = @kwiver.Quiver::import_base64_v0(runtime.export_payload())
+  let mut source_vertex : @kwiver.Vertex? = None
+  let mut edge_value : @kwiver.Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      @kwiver.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      @kwiver.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A2")
+      // Base64 canonical export normalises positions by top-left offset.
+      inspect(vertex.x, content="7")
+      inspect(vertex.y, content="4")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="240")
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.style.tail.name, content="hook")
+      inspect(edge.options.level, content="1")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
+test "browser runtime mutation helpers reject mismatched ids" {
+  let runtime = BrowserRuntime::new()
+  let vertex_id = runtime.add_vertex("A", 0, 0)
+
+  inspect(runtime.move_vertex(999, 1, 1), content="false")
+  inspect(runtime.set_label(999, "X"), content="false")
+  inspect(
+    runtime.set_edge_options(vertex_id, @kwiver.EdgeOptions::at_level(1)),
+    content="false",
+  )
+  inspect(
+    runtime.reconnect_edge(vertex_id, vertex_id, vertex_id),
+    content="false",
+  )
 }

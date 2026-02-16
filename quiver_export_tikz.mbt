@@ -1,3 +1,4 @@
+///|
 pub struct TikzCdExportSettings {
   centre_diagram : Bool
   ampersand_replacement : Bool
@@ -5,11 +6,13 @@ pub struct TikzCdExportSettings {
   standalone : Bool
 }
 
+///|
 pub struct TikzCdSepOptions {
   column_hundredths : Int
   row_hundredths : Int
 }
 
+///|
 pub struct TikzCdExportOptions {
   sep : TikzCdSepOptions
   share_base_url : String?
@@ -17,20 +20,24 @@ pub struct TikzCdExportOptions {
   renderer : String?
 }
 
+///|
 pub struct TikzCdExportDefinitions {
   colours : @hashmap.HashMap[String, Colour]
 }
 
+///|
 pub struct TikzCdExportMetadata {
   tikz_incompatibilities : Array[String]
   dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]]
 }
 
+///|
 pub struct TikzCdExportResult {
   data : String
   metadata : TikzCdExportMetadata
 }
 
+///|
 pub fn TikzCdExportSettings::default() -> TikzCdExportSettings {
   {
     centre_diagram: false,
@@ -40,9 +47,10 @@ pub fn TikzCdExportSettings::default() -> TikzCdExportSettings {
   }
 }
 
+///|
 pub fn TikzCdExportSettings::with_centre_diagram(
   self : TikzCdExportSettings,
-  value~ : Bool = true,
+  value? : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: value,
@@ -52,9 +60,10 @@ pub fn TikzCdExportSettings::with_centre_diagram(
   }
 }
 
+///|
 pub fn TikzCdExportSettings::with_ampersand_replacement(
   self : TikzCdExportSettings,
-  value~ : Bool = true,
+  value? : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -64,9 +73,10 @@ pub fn TikzCdExportSettings::with_ampersand_replacement(
   }
 }
 
+///|
 pub fn TikzCdExportSettings::with_cramped(
   self : TikzCdExportSettings,
-  value~ : Bool = true,
+  value? : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -76,9 +86,10 @@ pub fn TikzCdExportSettings::with_cramped(
   }
 }
 
+///|
 pub fn TikzCdExportSettings::with_standalone(
   self : TikzCdExportSettings,
-  value~ : Bool = true,
+  value? : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -88,10 +99,12 @@ pub fn TikzCdExportSettings::with_standalone(
   }
 }
 
+///|
 pub fn TikzCdSepOptions::default() -> TikzCdSepOptions {
   { column_hundredths: 180, row_hundredths: 180 }
 }
 
+///|
 pub fn TikzCdSepOptions::with_column_em(
   self : TikzCdSepOptions,
   value : Double,
@@ -102,6 +115,7 @@ pub fn TikzCdSepOptions::with_column_em(
   }
 }
 
+///|
 pub fn TikzCdSepOptions::with_row_em(
   self : TikzCdSepOptions,
   value : Double,
@@ -112,6 +126,7 @@ pub fn TikzCdSepOptions::with_row_em(
   }
 }
 
+///|
 pub fn TikzCdSepOptions::with_em(
   _self : TikzCdSepOptions,
   value : Double,
@@ -120,10 +135,17 @@ pub fn TikzCdSepOptions::with_em(
   { column_hundredths: hundredths, row_hundredths: hundredths }
 }
 
+///|
 pub fn TikzCdExportOptions::default() -> TikzCdExportOptions {
-  { sep: TikzCdSepOptions::default(), share_base_url: None, macro_url: None, renderer: None }
+  {
+    sep: TikzCdSepOptions::default(),
+    share_base_url: None,
+    macro_url: None,
+    renderer: None,
+  }
 }
 
+///|
 pub fn TikzCdExportOptions::with_sep(
   self : TikzCdExportOptions,
   sep : TikzCdSepOptions,
@@ -136,6 +158,7 @@ pub fn TikzCdExportOptions::with_sep(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_column_sep_em(
   self : TikzCdExportOptions,
   value : Double,
@@ -148,6 +171,7 @@ pub fn TikzCdExportOptions::with_column_sep_em(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_row_sep_em(
   self : TikzCdExportOptions,
   value : Double,
@@ -160,6 +184,7 @@ pub fn TikzCdExportOptions::with_row_sep_em(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_sep_em(
   self : TikzCdExportOptions,
   value : Double,
@@ -172,6 +197,7 @@ pub fn TikzCdExportOptions::with_sep_em(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_share_base_url(
   self : TikzCdExportOptions,
   base_url : String,
@@ -184,6 +210,7 @@ pub fn TikzCdExportOptions::with_share_base_url(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::without_share_base_url(
   self : TikzCdExportOptions,
 ) -> TikzCdExportOptions {
@@ -195,6 +222,7 @@ pub fn TikzCdExportOptions::without_share_base_url(
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_macro_url(
   self : TikzCdExportOptions,
   macro_url : String,
@@ -207,7 +235,10 @@ pub fn TikzCdExportOptions::with_macro_url(
   }
 }
 
-pub fn TikzCdExportOptions::without_macro_url(self : TikzCdExportOptions) -> TikzCdExportOptions {
+///|
+pub fn TikzCdExportOptions::without_macro_url(
+  self : TikzCdExportOptions,
+) -> TikzCdExportOptions {
   {
     sep: self.sep,
     share_base_url: self.share_base_url,
@@ -216,6 +247,7 @@ pub fn TikzCdExportOptions::without_macro_url(self : TikzCdExportOptions) -> Tik
   }
 }
 
+///|
 pub fn TikzCdExportOptions::with_renderer(
   self : TikzCdExportOptions,
   renderer : String,
@@ -228,7 +260,10 @@ pub fn TikzCdExportOptions::with_renderer(
   }
 }
 
-pub fn TikzCdExportOptions::without_renderer(self : TikzCdExportOptions) -> TikzCdExportOptions {
+///|
+pub fn TikzCdExportOptions::without_renderer(
+  self : TikzCdExportOptions,
+) -> TikzCdExportOptions {
   {
     sep: self.sep,
     share_base_url: self.share_base_url,
@@ -237,10 +272,12 @@ pub fn TikzCdExportOptions::without_renderer(self : TikzCdExportOptions) -> Tikz
   }
 }
 
+///|
 pub fn TikzCdExportDefinitions::default() -> TikzCdExportDefinitions {
   { colours: @hashmap.new() }
 }
 
+///|
 pub fn TikzCdExportDefinitions::with_colour(
   self : TikzCdExportDefinitions,
   name : String,
@@ -250,10 +287,12 @@ pub fn TikzCdExportDefinitions::with_colour(
   self
 }
 
+///|
 fn tikz_escape_label(label : String) -> String {
   label.replace_all(old="\"", new="\\\"")
 }
 
+///|
 fn tikz_is_simple_label(label : String) -> Bool {
   let bytes = @utf8.encode(label)
   if bytes.length() == 0 {
@@ -281,6 +320,7 @@ fn tikz_is_simple_label(label : String) -> Bool {
   true
 }
 
+///|
 fn tikz_format_label(label : String) -> String {
   let escaped = tikz_escape_label(label)
   if escaped.contains("\\\\") {
@@ -293,7 +333,11 @@ fn tikz_format_label(label : String) -> String {
   }
 }
 
-fn tikz_begin_line(settings : TikzCdExportSettings, options_config : TikzCdExportOptions) -> String {
+///|
+fn tikz_begin_line(
+  settings : TikzCdExportSettings,
+  options_config : TikzCdExportOptions,
+) -> String {
   let options : Array[String] = []
   if settings.ampersand_replacement {
     options.push("ampersand replacement=\\&")
@@ -323,6 +367,7 @@ fn tikz_begin_line(settings : TikzCdExportSettings, options_config : TikzCdExpor
   }
 }
 
+///|
 fn tikz_fixed_2(value : Int) -> String {
   let sign = if value < 0 { "-" } else { "" }
   let abs_value = Int::abs(value)
@@ -336,6 +381,7 @@ fn tikz_fixed_2(value : Int) -> String {
   [sign, whole.to_string(), ".", frac_string].join("")
 }
 
+///|
 fn tikz_sep_option_name(value : Int) -> String {
   match value {
     45 => "tiny"
@@ -348,6 +394,7 @@ fn tikz_sep_option_name(value : Int) -> String {
   }
 }
 
+///|
 fn tikz_wrap_output(
   quiver : Quiver,
   settings : TikzCdExportSettings,
@@ -357,8 +404,7 @@ fn tikz_wrap_output(
   let wrapped = if settings.standalone {
     [
       "\\documentclass[tikz]{standalone}\n\\usepackage{quiver}\n\\begin{document}\n",
-      tikzcd,
-      "\n\\end{document}",
+      tikzcd, "\n\\end{document}",
     ].join("")
   } else if settings.centre_diagram {
     ["\\[", tikzcd, "\\]"].join("")
@@ -377,6 +423,7 @@ fn tikz_wrap_output(
   ].join("")
 }
 
+///|
 fn tikz_indent_lines(content : String) -> String {
   if content == "" {
     ""
@@ -385,6 +432,7 @@ fn tikz_indent_lines(content : String) -> String {
   }
 }
 
+///|
 fn tikz_repeat(token : String, count : Int) -> String {
   if count <= 0 {
     return ""
@@ -396,11 +444,17 @@ fn tikz_repeat(token : String, count : Int) -> String {
   out.join("")
 }
 
+///|
 fn tikz_mod(x : Double, y : Double) -> Double {
   let r = x - y * @math.floor(x / y)
-  if r < 0.0 { r + y } else { r }
+  if r < 0.0 {
+    r + y
+  } else {
+    r
+  }
 }
 
+///|
 fn tikz_round_to_int(x : Double) -> Int {
   if x >= 0.0 {
     @math.floor(x + 0.5).to_int()
@@ -409,6 +463,7 @@ fn tikz_round_to_int(x : Double) -> Int {
   }
 }
 
+///|
 fn tikz_direction_option(source : Vertex, target : Vertex) -> String? {
   let dx = target.x - source.x
   let dy = target.y - source.y
@@ -427,21 +482,37 @@ fn tikz_direction_option(source : Vertex, target : Vertex) -> String? {
   }
 
   let direction = parts.join("")
-  if direction == "" { None } else { Some(direction) }
+  if direction == "" {
+    None
+  } else {
+    Some(direction)
+  }
 }
 
+///|
 fn tikz_max_double(a : Double, b : Double) -> Double {
-  if a > b { a } else { b }
+  if a > b {
+    a
+  } else {
+    b
+  }
 }
 
+///|
 fn tikz_min_double(a : Double, b : Double) -> Double {
-  if a < b { a } else { b }
+  if a < b {
+    a
+  } else {
+    b
+  }
 }
 
+///|
 fn tikz_min3_double(a : Double, b : Double, c : Double) -> Double {
   tikz_min_double(a, tikz_min_double(b, c))
 }
 
+///|
 fn tikz_colour_channel(colour : Colour, n : Int) -> Int {
   let h = colour.h.to_double()
   let s = colour.s.to_double() / 100.0
@@ -460,6 +531,7 @@ fn tikz_colour_channel(colour : Colour, n : Int) -> Int {
   }
 }
 
+///|
 fn tikz_colour_spec(colour : Colour) -> String {
   let r = tikz_colour_channel(colour, 0)
   let g = tikz_colour_channel(colour, 8)
@@ -475,6 +547,7 @@ fn tikz_colour_spec(colour : Colour) -> String {
   ].join("")
 }
 
+///|
 fn tikz_builtin_colour_name(colour : Colour) -> String? {
   if colour.l == 0 {
     return Some("black")
@@ -498,6 +571,7 @@ fn tikz_builtin_colour_name(colour : Colour) -> String? {
   None
 }
 
+///|
 fn tikz_wrap_colour_name(name : String, parenthesise : Bool) -> String {
   if parenthesise {
     ["{", name, "}"].join("")
@@ -506,6 +580,7 @@ fn tikz_wrap_colour_name(name : String, parenthesise : Bool) -> String {
   }
 }
 
+///|
 fn tikz_colour_latex(
   colour : Colour,
   definitions : TikzCdExportDefinitions,
@@ -520,11 +595,10 @@ fn tikz_colour_latex(
   colour_names.sort()
   for name in colour_names {
     match definitions.colours.get(name) {
-      Some(defined_colour) => {
+      Some(defined_colour) =>
         if tikz_colour_eq(defined_colour, colour) {
           return tikz_wrap_colour_name(name, parenthesise)
         }
-      }
       None => ()
     }
   }
@@ -532,6 +606,7 @@ fn tikz_colour_latex(
   tikz_colour_spec(colour)
 }
 
+///|
 fn tikz_coloured_text(
   label : String,
   colour : Colour,
@@ -546,11 +621,13 @@ fn tikz_coloured_text(
   ].join("")
 }
 
+///|
 fn tikz_colour_eq(a : Colour, b : Colour) -> Bool {
   let exact = a.h == b.h && a.s == b.s && a.l == b.l && a.a == b.a
   exact || (a.l == 0 && b.l == 0) || (a.l == 100 && b.l == 100)
 }
 
+///|
 fn tikz_edge_is_empty(edge : Edge) -> Bool {
   let is_arrow = edge.options.style.name == "arrow"
   let no_head = edge.options.style.head.name == "none"
@@ -559,10 +636,13 @@ fn tikz_edge_is_empty(edge : Edge) -> Bool {
   is_arrow && no_head && no_body && no_tail
 }
 
+///|
 fn tikz_shared_colour(edge : Edge) -> Bool {
-  tikz_colour_eq(edge.options.colour, edge.cell.label_colour) && edge.cell.label_colour.is_not_black()
+  tikz_colour_eq(edge.options.colour, edge.cell.label_colour) &&
+  edge.cell.label_colour.is_not_black()
 }
 
+///|
 fn tikz_append_colour_options(
   options : Array[String],
   edge : Edge,
@@ -570,16 +650,27 @@ fn tikz_append_colour_options(
   definitions : TikzCdExportDefinitions,
 ) -> Bool {
   if tikz_shared_colour(edge) {
-    options.push(["color=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(""))
+    options.push(
+      ["color=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(
+        "",
+      ),
+    )
     false
   } else {
-    if !edge_is_empty && edge.options.style.name == "arrow" && edge.options.colour.is_not_black() {
-      options.push(["draw=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
+    if !edge_is_empty &&
+      edge.options.style.name == "arrow" &&
+      edge.options.colour.is_not_black() {
+      options.push(
+        ["draw=", tikz_colour_latex(edge.options.colour, definitions, false)].join(
+          "",
+        ),
+      )
     }
     edge.cell.label_colour.is_not_black()
   }
 }
 
+///|
 fn tikz_edge_label_content(edge : Edge, _explicit_colour : Bool) -> String {
   if edge.cell.label == "" {
     return ""
@@ -587,7 +678,11 @@ fn tikz_edge_label_content(edge : Edge, _explicit_colour : Bool) -> String {
   tikz_format_label(edge.cell.label)
 }
 
-fn tikz_vertex_label(vertex : Vertex, definitions : TikzCdExportDefinitions) -> String {
+///|
+fn tikz_vertex_label(
+  vertex : Vertex,
+  definitions : TikzCdExportDefinitions,
+) -> String {
   if vertex.cell.label == "" {
     ""
   } else if vertex.cell.label_colour.is_not_black() {
@@ -597,6 +692,7 @@ fn tikz_vertex_label(vertex : Vertex, definitions : TikzCdExportDefinitions) -> 
   }
 }
 
+///|
 fn tikz_edge_coord_part(vertex : Vertex?) -> (Int, Int) {
   match vertex {
     Some(v) => (v.y, v.x)
@@ -604,6 +700,7 @@ fn tikz_edge_coord_part(vertex : Vertex?) -> (Int, Int) {
   }
 }
 
+///|
 fn tikz_resolve_vertex(
   start_id : Int,
   vertices_by_id : @hashmap.HashMap[Int, Vertex],
@@ -620,7 +717,8 @@ fn tikz_resolve_vertex(
     }
 
     match edges_by_id.get(current) {
-      Some(edge) => current = if pick_source { edge.source } else { edge.target }
+      Some(edge) =>
+        current = if pick_source { edge.source } else { edge.target }
       None => return None
     }
     i = i + 1
@@ -628,18 +726,28 @@ fn tikz_resolve_vertex(
   None
 }
 
+///|
 fn tikz_edge_reference_name(base_name : String, phantom : Bool) -> String {
-  if phantom { [base_name, "p"].join("") } else { base_name }
+  if phantom {
+    [base_name, "p"].join("")
+  } else {
+    base_name
+  }
 }
 
+///|
 fn tikz_named_placeholder(name : String) -> String {
   ["\"\"{name=", name, ", anchor=center, inner sep=0}"].join("")
 }
 
+///|
 fn tikz_vertex_reference(vertex : Vertex, min_x : Int, min_y : Int) -> String {
-  [(vertex.y - min_y + 1).to_string(), "-", (vertex.x - min_x + 1).to_string()].join("")
+  [(vertex.y - min_y + 1).to_string(), "-", (vertex.x - min_x + 1).to_string()].join(
+    "",
+  )
 }
 
+///|
 fn tikz_cell_reference(
   cell_id : Int,
   min_x : Int,
@@ -650,17 +758,20 @@ fn tikz_cell_reference(
 ) -> String? {
   match vertices_by_id.get(cell_id) {
     Some(vertex) => Some(tikz_vertex_reference(vertex, min_x, min_y))
-    None => match edge_export_name_by_id.get(cell_id) {
-      Some(edge_name) => Some(tikz_edge_reference_name(edge_name, phantom))
-      None => None
-    }
+    None =>
+      match edge_export_name_by_id.get(cell_id) {
+        Some(edge_name) => Some(tikz_edge_reference_name(edge_name, phantom))
+        None => None
+      }
   }
 }
 
+///|
 fn tikz_vertex_origin(vertex : Vertex) -> Point {
   Point::new(vertex.x.to_double(), vertex.y.to_double())
 }
 
+///|
 fn tikz_cell_origin(
   cell_id : Int,
   use_phantom : Bool,
@@ -674,45 +785,48 @@ fn tikz_cell_origin(
 
   match vertices_by_id.get(cell_id) {
     Some(vertex) => Some(tikz_vertex_origin(vertex))
-    None => match edges_by_id.get(cell_id) {
-      Some(edge) => {
-        let source_origin = tikz_cell_origin(
-          edge.source,
-          !edge.options.edge_alignment.source,
-          vertices_by_id,
-          edges_by_id,
-          depth + 1,
-        )
-        let target_origin = tikz_cell_origin(
-          edge.target,
-          !edge.options.edge_alignment.target,
-          vertices_by_id,
-          edges_by_id,
-          depth + 1,
-        )
-        match (source_origin, target_origin) {
-          (Some(source_point), Some(target_point)) => {
-            let t = if use_phantom {
-              0.5
-            } else {
-              let midpoint_numerator = edge.options.shorten.source +
-                (100 - edge.options.shorten.target)
-              midpoint_numerator.to_double() / 200.0
+    None =>
+      match edges_by_id.get(cell_id) {
+        Some(edge) => {
+          let source_origin = tikz_cell_origin(
+            edge.source,
+            !edge.options.edge_alignment.source,
+            vertices_by_id,
+            edges_by_id,
+            depth + 1,
+          )
+          let target_origin = tikz_cell_origin(
+            edge.target,
+            !edge.options.edge_alignment.target,
+            vertices_by_id,
+            edges_by_id,
+            depth + 1,
+          )
+          match (source_origin, target_origin) {
+            (Some(source_point), Some(target_point)) => {
+              let t = if use_phantom {
+                0.5
+              } else {
+                let midpoint_numerator = edge.options.shorten.source +
+                  (100 - edge.options.shorten.target)
+                midpoint_numerator.to_double() / 200.0
+              }
+              Some(source_point.lerp(target_point, t))
             }
-            Some(source_point.lerp(target_point, t))
+            _ => None
           }
-          _ => None
         }
+        None => None
       }
-      None => None
-    }
   }
 }
 
+///|
 fn tikz_edge_angle_deg(source : Point, target : Point) -> Double {
   @math.atan2(target.y - source.y, target.x - source.x) * 180.0 / @math.PI
 }
 
+///|
 fn tikz_compare_edges(
   vertices_by_id : @hashmap.HashMap[Int, Vertex],
   edges_by_id : @hashmap.HashMap[Int, Edge],
@@ -751,6 +865,7 @@ fn tikz_compare_edges(
   a.cell.id - b.cell.id
 }
 
+///|
 fn tikz_is_arrow_body_decoration(style_body : String) -> Bool {
   match style_body {
     "barred" => true
@@ -761,7 +876,12 @@ fn tikz_is_arrow_body_decoration(style_body : String) -> Bool {
   }
 }
 
-fn tikz_label_option(content : String, swap : Bool, parameters : Array[String]) -> String {
+///|
+fn tikz_label_option(
+  content : String,
+  swap : Bool,
+  parameters : Array[String],
+) -> String {
   let base = if swap {
     ["\"", content, "\"'"].join("")
   } else {
@@ -774,6 +894,7 @@ fn tikz_label_option(content : String, swap : Bool, parameters : Array[String]) 
   }
 }
 
+///|
 fn tikz_append_label_options(
   options : Array[String],
   edge : Edge,
@@ -799,11 +920,14 @@ fn tikz_append_label_options(
 
     if edge.options.label_position != 50 {
       label_parameters.push(
-        ["pos=", (edge.options.label_position.to_double() / 100.0).to_string()].join(""),
+        ["pos=", (edge.options.label_position.to_double() / 100.0).to_string()].join(
+          "",
+        ),
       )
     }
 
-    if edge.options.style.name == "arrow" && tikz_is_arrow_body_decoration(edge.options.style.body.name) {
+    if edge.options.style.name == "arrow" &&
+      tikz_is_arrow_body_decoration(edge.options.style.body.name) {
       match edge.options.label_alignment {
         LabelAlignment::Left => label_parameters.push("inner sep=.8ex")
         LabelAlignment::Right => label_parameters.push("inner sep=.8ex")
@@ -812,14 +936,23 @@ fn tikz_append_label_options(
     }
 
     if explicit_label_colour && edge.cell.label_colour.is_not_black() {
-      label_parameters.push(["text=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(""))
+      label_parameters.push(
+        ["text=", tikz_colour_latex(edge.cell.label_colour, definitions, false)].join(
+          "",
+        ),
+      )
     }
 
     options.push(tikz_label_option(label_content, swap, label_parameters))
   }
 }
 
-fn tikz_append_style_options(options : Array[String], edge : Edge, edge_is_empty : Bool) -> Unit {
+///|
+fn tikz_append_style_options(
+  options : Array[String],
+  edge : Edge,
+  edge_is_empty : Bool,
+) -> Unit {
   if edge.options.style.name != "arrow" {
     return
   }
@@ -850,24 +983,22 @@ fn tikz_append_style_options(options : Array[String], edge : Edge, edge_is_empty
 
   match edge.options.style.tail.name {
     "maps to" => options.push("maps to")
-    "mono" => {
+    "mono" =>
       if edge.options.level == 2 {
         options.push("2tail")
       } else {
         options.push("tail")
       }
-    }
     "hook" => {
       let suffix = if edge.options.style.tail.side == "top" { "" } else { "'" }
       options.push(["hook", suffix].join(""))
     }
-    "arrowhead" => {
+    "arrowhead" =>
       if edge.options.level == 2 {
         options.push("2tail reversed")
       } else {
         options.push("tail reversed")
       }
-    }
     _ => ()
   }
 
@@ -882,7 +1013,11 @@ fn tikz_append_style_options(options : Array[String], edge : Edge, edge_is_empty
   }
 }
 
-fn tikz_append_shift_and_curve_options(options : Array[String], edge : Edge) -> Unit {
+///|
+fn tikz_append_shift_and_curve_options(
+  options : Array[String],
+  edge : Edge,
+) -> Unit {
   if edge.options.offset != 0 {
     let side = if edge.options.offset > 0 { "right" } else { "left" }
     let abs_offset = Int::abs(edge.options.offset)
@@ -896,24 +1031,34 @@ fn tikz_append_shift_and_curve_options(options : Array[String], edge : Edge) -> 
   if edge.options.curve != 0 {
     // Keep a compact fixed mapping in pt for minimum viable parity.
     let curve_height_pt = edge.options.curve.to_double() * 6.0
-    options.push(["curve={height=", curve_height_pt.to_string(), "pt}"].join(""))
+    options.push(
+      ["curve={height=", curve_height_pt.to_string(), "pt}"].join(""),
+    )
   }
 }
 
+///|
 fn tikz_append_geometry_options(options : Array[String], edge : Edge) -> Unit {
   tikz_append_shift_and_curve_options(options, edge)
 
   if edge.options.shorten.source != 0 || edge.options.shorten.target != 0 {
     let source = edge.options.shorten.source.to_double() / 100.0
     let target = (100 - edge.options.shorten.target).to_double() / 100.0
-    options.push(["between={", source.to_string(), "}{", target.to_string(), "}"].join(""))
+    options.push(
+      ["between={", source.to_string(), "}{", target.to_string(), "}"].join(""),
+    )
   }
 }
 
-fn tikz_append_phantom_geometry_options(options : Array[String], edge : Edge) -> Unit {
+///|
+fn tikz_append_phantom_geometry_options(
+  options : Array[String],
+  edge : Edge,
+) -> Unit {
   tikz_append_shift_and_curve_options(options, edge)
 }
 
+///|
 fn tikz_append_arrow_body_decorations(
   options : Array[String],
   edge : Edge,
@@ -923,7 +1068,8 @@ fn tikz_append_arrow_body_decorations(
     return
   }
 
-  let midpoint_numerator = edge.options.shorten.source + (100 - edge.options.shorten.target)
+  let midpoint_numerator = edge.options.shorten.source +
+    (100 - edge.options.shorten.target)
   let has_custom_midpoint = midpoint_numerator != 100
   let midpoint = midpoint_numerator.to_double() / 200.0
 
@@ -935,7 +1081,11 @@ fn tikz_append_arrow_body_decorations(
 
   let with_edge_colour = (parameters : Array[String]) => {
     if edge.options.colour.is_not_black() {
-      parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
+      parameters.push(
+        ["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(
+          "",
+        ),
+      )
     }
   }
 
@@ -960,8 +1110,7 @@ fn tikz_append_arrow_body_decorations(
     }
     "bullet hollow" => {
       let background_parameters : Array[String] = [
-        "marking",
-        "text=\\pgfkeysvalueof{/tikz/commutative diagrams/background color}",
+        "marking", "text=\\pgfkeysvalueof{/tikz/commutative diagrams/background color}",
       ]
       with_midpoint(background_parameters)
       options.push(tikz_decoration_option("\\bullet", background_parameters))
@@ -975,6 +1124,7 @@ fn tikz_append_arrow_body_decorations(
   }
 }
 
+///|
 fn tikz_append_loop_options(
   options : Array[String],
   edge : Edge,
@@ -993,17 +1143,23 @@ fn tikz_append_loop_options(
   options.push("loop")
   let clockwise = if edge.options.radius >= 0 { 1.0 } else { -1.0 }
   let loop_angle = 180.0 - 90.0 * clockwise - edge.options.angle.to_double()
-  let angle_spread = 30.0 + 5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
+  let angle_spread = 30.0 +
+    5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
   let in_angle = tikz_mod(loop_angle - angle_spread * clockwise, 360.0)
   let out_angle = tikz_mod(loop_angle + angle_spread * clockwise, 360.0)
-  let distance = 5.0 + 5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
+  let distance = 5.0 +
+    5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
 
   options.push(["in=", in_angle.to_string()].join(""))
   options.push(["out=", out_angle.to_string()].join(""))
   options.push(["distance=", distance.to_string(), "mm"].join(""))
 }
 
-fn tikz_decoration_option(content : String, parameters : Array[String]) -> String {
+///|
+fn tikz_decoration_option(
+  content : String,
+  parameters : Array[String],
+) -> String {
   if parameters.is_empty() {
     ["\"", content, "\""].join("")
   } else {
@@ -1011,6 +1167,7 @@ fn tikz_decoration_option(content : String, parameters : Array[String]) -> Strin
   }
 }
 
+///|
 fn tikz_append_non_arrow_style_options(
   options : Array[String],
   edge : Edge,
@@ -1023,11 +1180,13 @@ fn tikz_append_non_arrow_style_options(
     edge.options.angle.to_double()
   } else {
     match (source, target) {
-      (Some(source_point), Some(target_point)) => tikz_edge_angle_deg(source_point, target_point)
+      (Some(source_point), Some(target_point)) =>
+        tikz_edge_angle_deg(source_point, target_point)
       _ => 0.0
     }
   }
-  let decoration_text = !shared_colour && edge.options.style.name != "arrow" &&
+  let decoration_text = !shared_colour &&
+    edge.options.style.name != "arrow" &&
     edge.options.colour.is_not_black()
 
   match edge.options.style.name {
@@ -1035,7 +1194,11 @@ fn tikz_append_non_arrow_style_options(
       let rotate = -tikz_round_to_int(angle_deg)
       let parameters : Array[String] = ["anchor=center"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
+        parameters.push(
+          ["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(
+            "",
+          ),
+        )
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -1047,7 +1210,11 @@ fn tikz_append_non_arrow_style_options(
       let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
       let parameters : Array[String] = ["anchor=center", "pos=0.125"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
+        parameters.push(
+          ["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(
+            "",
+          ),
+        )
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -1059,7 +1226,11 @@ fn tikz_append_non_arrow_style_options(
       let rotate = 45 - 45 * tikz_round_to_int(angle_deg / 45.0)
       let parameters : Array[String] = ["anchor=center", "pos=0.125"]
       if decoration_text {
-        parameters.push(["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(""))
+        parameters.push(
+          ["text=", tikz_colour_latex(edge.options.colour, definitions, false)].join(
+            "",
+          ),
+        )
       }
       if rotate != 0 {
         parameters.push(["rotate=", rotate.to_string()].join(""))
@@ -1071,12 +1242,14 @@ fn tikz_append_non_arrow_style_options(
   }
 }
 
+///|
 fn tikz_sorted_keys(values : @hashmap.HashMap[String, Bool]) -> Array[String] {
   let keys = Array::from_iter(values.keys())
   keys.sort()
   keys
 }
 
+///|
 fn tikz_add_dependency(
   dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]],
   package_name : String,
@@ -1086,6 +1259,7 @@ fn tikz_add_dependency(
   reasons.set(reason, true)
 }
 
+///|
 fn tikz_add_incompatibility(
   incompatibilities : @hashmap.HashMap[String, Bool],
   warning : String,
@@ -1093,11 +1267,15 @@ fn tikz_add_incompatibility(
   incompatibilities.set(warning, true)
 }
 
+///|
 fn tikz_finalize_metadata(
   incompatibilities : @hashmap.HashMap[String, Bool],
   dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]],
 ) -> TikzCdExportMetadata {
-  let dependencies_copy : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]] = @hashmap.new()
+  let dependencies_copy : @hashmap.HashMap[
+    String,
+    @hashmap.HashMap[String, Bool],
+  ] = @hashmap.new()
   dependencies.each((package_name, reasons_set) => {
     let reasons_copy : @hashmap.HashMap[String, Bool] = @hashmap.new()
     reasons_set.each((reason, _) => reasons_copy.set(reason, true))
@@ -1110,11 +1288,12 @@ fn tikz_finalize_metadata(
   }
 }
 
+///|
 pub fn Quiver::export_tikz_cd_result(
   self : Quiver,
-  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
   let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
   let edges_by_id : @hashmap.HashMap[Int, Edge] = @hashmap.new()
@@ -1191,24 +1370,25 @@ pub fn Quiver::export_tikz_cd_result(
 
   let arrow_lines : Array[String] = []
   for edge in edges {
-    match (
-      tikz_cell_reference(
-        edge.source,
-        min_x,
-        min_y,
-        !edge.options.edge_alignment.source,
-        vertices_by_id,
-        edge_export_name_by_id,
-      ),
-      tikz_cell_reference(
-        edge.target,
-        min_x,
-        min_y,
-        !edge.options.edge_alignment.target,
-        vertices_by_id,
-        edge_export_name_by_id,
-      ),
-    ) {
+    match
+      (
+        tikz_cell_reference(
+          edge.source,
+          min_x,
+          min_y,
+          !edge.options.edge_alignment.source,
+          vertices_by_id,
+          edge_export_name_by_id,
+        ),
+        tikz_cell_reference(
+          edge.target,
+          min_x,
+          min_y,
+          !edge.options.edge_alignment.target,
+          vertices_by_id,
+          edge_export_name_by_id,
+        ),
+      ) {
       (Some(source_ref), Some(target_ref)) => {
         let source_vertex = vertices_by_id.get(edge.source)
         let target_vertex = vertices_by_id.get(edge.target)
@@ -1230,13 +1410,14 @@ pub fn Quiver::export_tikz_cd_result(
         let arrow_options : Array[String] = []
         if referenced_edges.contains(edge.cell.id) {
           match edge_export_name_by_id.get(edge.cell.id) {
-            Some(edge_name) => arrow_options.push(tikz_named_placeholder(edge_name))
+            Some(edge_name) =>
+              arrow_options.push(tikz_named_placeholder(edge_name))
             None => ()
           }
         }
 
         match (source_vertex, target_vertex) {
-          (Some(source), Some(target)) => {
+          (Some(source), Some(target)) =>
             match tikz_direction_option(source, target) {
               Some(direction) => arrow_options.push(direction)
               None => {
@@ -1244,7 +1425,6 @@ pub fn Quiver::export_tikz_cd_result(
                 arrow_options.push(["to=", target_ref].join(""))
               }
             }
-          }
           _ => {
             arrow_options.push(["from=", source_ref].join(""))
             arrow_options.push(["to=", target_ref].join(""))
@@ -1258,71 +1438,55 @@ pub fn Quiver::export_tikz_cd_result(
           tikz_add_dependency(dependencies, "quiver", "shortened arrows")
         }
         let explicit_label_colour = tikz_append_colour_options(
-          arrow_options,
-          edge,
-          edge_is_empty,
-          definitions,
+          arrow_options, edge, edge_is_empty, definitions,
         )
         let label_content = tikz_edge_label_content(edge, explicit_label_colour)
         tikz_append_label_options(
-          arrow_options,
-          edge,
-          label_content,
-          explicit_label_colour,
-          definitions,
+          arrow_options, edge, label_content, explicit_label_colour, definitions,
         )
         tikz_append_arrow_body_decorations(arrow_options, edge, definitions)
         tikz_append_geometry_options(arrow_options, edge)
         tikz_append_loop_options(
-          arrow_options,
-          edge,
-          source_vertex,
-          target_vertex,
+          arrow_options, edge, source_vertex, target_vertex,
         )
         tikz_append_non_arrow_style_options(
-          arrow_options,
-          edge,
-          shared_colour,
-          source_origin,
-          target_origin,
-          definitions,
+          arrow_options, edge, shared_colour, source_origin, target_origin, definitions,
         )
         tikz_append_style_options(arrow_options, edge, edge_is_empty)
 
         if edge.options.style.name == "arrow" && edge.options.level > 2 {
-          tikz_add_dependency(dependencies, "tikz-nfold", "triple arrows or higher")
+          tikz_add_dependency(
+            dependencies, "tikz-nfold", "triple arrows or higher",
+          )
         }
 
         if edge.options.level > 1 {
           match edge.options.style.body.name {
-            "bullet hollow" => tikz_add_incompatibility(
-              tikz_incompatibilities,
-              "double arrows or higher with decorations",
-            )
-            "bullet solid" => tikz_add_incompatibility(
-              tikz_incompatibilities,
-              "double arrows or higher with decorations",
-            )
+            "bullet hollow" =>
+              tikz_add_incompatibility(
+                tikz_incompatibilities, "double arrows or higher with decorations",
+              )
+            "bullet solid" =>
+              tikz_add_incompatibility(
+                tikz_incompatibilities, "double arrows or higher with decorations",
+              )
             _ => ()
           }
 
           if edge.options.style.tail.name == "hook" {
             tikz_add_incompatibility(
-              tikz_incompatibilities,
-              "double arrows or higher with hook tails",
+              tikz_incompatibilities, "double arrows or higher with hook tails",
             )
           }
 
           if edge.options.style.head.name == "epi" {
             tikz_add_incompatibility(
-              tikz_incompatibilities,
-              "double arrows or higher with multiple heads",
+              tikz_incompatibilities, "double arrows or higher with multiple heads",
             )
           }
           if edge.options.style.head.name == "harpoon" {
             tikz_add_incompatibility(
-              tikz_incompatibilities,
-              "double arrows or higher with harpoon heads",
+              tikz_incompatibilities, "double arrows or higher with harpoon heads",
             )
           }
         }
@@ -1334,7 +1498,9 @@ pub fn Quiver::export_tikz_cd_result(
             Some(edge_name) => {
               let phantom_options : Array[String] = []
               phantom_options.push(
-                tikz_named_placeholder(tikz_edge_reference_name(edge_name, true)),
+                tikz_named_placeholder(
+                  tikz_edge_reference_name(edge_name, true),
+                ),
               )
               phantom_options.push("phantom")
               phantom_options.push(["from=", source_ref].join(""))
@@ -1342,7 +1508,9 @@ pub fn Quiver::export_tikz_cd_result(
               phantom_options.push("start anchor=center")
               phantom_options.push("end anchor=center")
               tikz_append_phantom_geometry_options(phantom_options, edge)
-              arrow_lines.push(["\\arrow[", phantom_options.join(", "), "]"].join(""))
+              arrow_lines.push(
+                ["\\arrow[", phantom_options.join(", "), "]"].join(""),
+              )
             }
             None => ()
           }
@@ -1413,19 +1581,17 @@ pub fn Quiver::export_tikz_cd_result(
   }
 }
 
+///|
 pub fn Quiver::export_tikz_cd(
   self : Quiver,
-  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> String {
-  self.export_tikz_cd_result(
-    settings=settings,
-    options=options,
-    definitions=definitions,
-  ).data
+  self.export_tikz_cd_result(settings~, options~, definitions~).data
 }
 
+///|
 fn tikz_trim_left(input : String) -> String {
   let mut start = 0
   while start < input.length() {
@@ -1439,15 +1605,22 @@ fn tikz_trim_left(input : String) -> String {
   if start == 0 {
     input
   } else {
-    input.unsafe_substring(start=start, end=input.length())
+    input.unsafe_substring(start~, end=input.length())
   }
 }
 
+///|
+fn tikz_is_whitespace(ch : UInt16) -> Bool {
+  ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
+}
+
+///|
 priv struct TikzEnvironmentBody {
   body : String
   ampersand_replacement : Bool
 }
 
+///|
 priv struct TikzArrowMatch {
   start : Int
   options_start : Int
@@ -1455,6 +1628,7 @@ priv struct TikzArrowMatch {
   close_delimiter : UInt16
 }
 
+///|
 priv struct TikzParsedArrow {
   direction : String?
   label : String
@@ -1464,6 +1638,7 @@ priv struct TikzParsedArrow {
   to_y : Int?
 }
 
+///|
 priv struct TikzPendingArrow {
   source_x : Int
   source_y : Int
@@ -1472,6 +1647,7 @@ priv struct TikzPendingArrow {
   label : String
 }
 
+///|
 fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
   let compact = options
     .replace_all(old=" ", new="")
@@ -1479,6 +1655,7 @@ fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
   compact.contains("ampersandreplacement=\\&")
 }
 
+///|
 fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
   let begin_token = "\\begin{tikzcd}"
   let end_token = "\\end{tikzcd}"
@@ -1501,7 +1678,9 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
             depth = depth - 1
             if depth == 0 {
               let options = rest.unsafe_substring(start=1, end=i)
-              ampersand_replacement = tikz_ampersand_replacement_enabled(options)
+              ampersand_replacement = tikz_ampersand_replacement_enabled(
+                options,
+              )
               rest = rest.unsafe_substring(start=i + 1, end=rest.length())
               break
             }
@@ -1522,45 +1701,140 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
   }
 }
 
+///|
 fn tikz_split_rows(body : String) -> Array[String] {
   let rows : Array[String] = []
-  for row in body.split("\\\\") {
-    rows.push(row.to_string())
+  let mut segment_start = 0
+  let mut i = 0
+  while i + 1 < body.length() {
+    if body.unsafe_get(i) == '\\' && body.unsafe_get(i + 1) == '\\' {
+      rows.push(body.unsafe_substring(start=segment_start, end=i))
+      i = i + 2
+      while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
+        i = i + 1
+      }
+      if i < body.length() && body.unsafe_get(i) == '[' {
+        let mut depth = 1
+        i = i + 1
+        while i < body.length() && depth > 0 {
+          let ch = body.unsafe_get(i)
+          if ch == '[' {
+            depth = depth + 1
+          } else if ch == ']' {
+            depth = depth - 1
+          }
+          i = i + 1
+        }
+      }
+      segment_start = i
+      continue
+    }
+    i = i + 1
   }
+  rows.push(body.unsafe_substring(start=segment_start, end=body.length()))
   rows
 }
 
-fn tikz_split_cells(row : String, ampersand_replacement : Bool) -> Array[String] {
+///|
+fn tikz_split_cells(
+  row : String,
+  ampersand_replacement : Bool,
+) -> Array[String] {
   let cells : Array[String] = []
-  let delimiter = if ampersand_replacement {
-    "\\&"
-  } else {
-    "&"
+  let mut segment_start = 0
+  let mut i = 0
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut in_quotes = false
+  while i < row.length() {
+    let ch = row.unsafe_get(i)
+    if ch == '\\' {
+      if i + 1 < row.length() {
+        let next = row.unsafe_get(i + 1)
+        if ampersand_replacement &&
+          !in_quotes &&
+          brace_depth == 0 &&
+          bracket_depth == 0 &&
+          paren_depth == 0 &&
+          next == '&' {
+          cells.push(row.unsafe_substring(start=segment_start, end=i))
+          i = i + 2
+          segment_start = i
+          continue
+        }
+        // Skip escaped next char so it cannot act as a delimiter.
+        i = i + 2
+        continue
+      }
+      i = i + 1
+      continue
+    }
+
+    if ch == '"' {
+      in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if !in_quotes {
+      if ch == '{' {
+        brace_depth = brace_depth + 1
+      } else if ch == '}' && brace_depth > 0 {
+        brace_depth = brace_depth - 1
+      } else if ch == '[' {
+        bracket_depth = bracket_depth + 1
+      } else if ch == ']' && bracket_depth > 0 {
+        bracket_depth = bracket_depth - 1
+      } else if ch == '(' {
+        paren_depth = paren_depth + 1
+      } else if ch == ')' && paren_depth > 0 {
+        paren_depth = paren_depth - 1
+      } else if !ampersand_replacement &&
+        ch == '&' &&
+        brace_depth == 0 &&
+        bracket_depth == 0 &&
+        paren_depth == 0 {
+        cells.push(row.unsafe_substring(start=segment_start, end=i))
+        i = i + 1
+        segment_start = i
+        continue
+      }
+    }
+
+    i = i + 1
   }
-  for cell in row.split(delimiter) {
-    cells.push(cell.to_string())
-  }
+  cells.push(row.unsafe_substring(start=segment_start, end=row.length()))
   cells
 }
 
+///|
 fn tikz_unwrap_braced_text(input : String) -> String {
   let trimmed = input.trim().to_string()
   if trimmed.length() >= 2 && trimmed.has_prefix("{") && trimmed.has_suffix("}") {
-    trimmed.unsafe_substring(start=1, end=trimmed.length() - 1).trim().to_string()
+    trimmed
+    .unsafe_substring(start=1, end=trimmed.length() - 1)
+    .trim()
+    .to_string()
   } else {
     trimmed
   }
 }
 
+///|
 fn tikz_strip_math_wrapper(input : String) -> String {
   let trimmed = input.trim().to_string()
   if trimmed.length() >= 2 && trimmed.has_prefix("$") && trimmed.has_suffix("$") {
-    trimmed.unsafe_substring(start=1, end=trimmed.length() - 1).trim().to_string()
+    trimmed
+    .unsafe_substring(start=1, end=trimmed.length() - 1)
+    .trim()
+    .to_string()
   } else {
     trimmed
   }
 }
 
+///|
 fn tikz_parse_positive_int(input : String) -> Int? {
   let value = input.trim().to_string()
   if value == "" {
@@ -1579,19 +1853,22 @@ fn tikz_parse_positive_int(input : String) -> Int? {
   Some(out)
 }
 
+///|
 fn tikz_parse_grid_reference(value : String) -> (Int, Int)? {
   let raw = tikz_unwrap_braced_text(value)
-  let compact = raw
-    .replace_all(old=" ", new="")
-    .replace_all(old="\t", new="")
+  let compact = raw.replace_all(old=" ", new="").replace_all(old="\t", new="")
   match compact.find("-") {
     Some(split_at) => {
       let row_text = compact.unsafe_substring(start=0, end=split_at)
-      let col_text = compact.unsafe_substring(start=split_at + 1, end=compact.length())
+      let col_text = compact.unsafe_substring(
+        start=split_at + 1,
+        end=compact.length(),
+      )
       if row_text == "" || col_text == "" || col_text.contains("-") {
         return None
       }
-      match (tikz_parse_positive_int(row_text), tikz_parse_positive_int(col_text)) {
+      match
+        (tikz_parse_positive_int(row_text), tikz_parse_positive_int(col_text)) {
         (Some(row), Some(col)) =>
           if row >= 1 && col >= 1 {
             Some((col - 1, row - 1))
@@ -1605,6 +1882,7 @@ fn tikz_parse_grid_reference(value : String) -> (Int, Int)? {
   }
 }
 
+///|
 fn tikz_is_direction_token(token : String) -> Bool {
   if token == "" {
     return false
@@ -1617,12 +1895,13 @@ fn tikz_is_direction_token(token : String) -> Bool {
   true
 }
 
+///|
 fn tikz_extract_first_quoted(value : String) -> String? {
   match value.find("\"") {
     Some(start) => {
       let rest = value.unsafe_substring(start=start + 1, end=value.length())
       match rest.find("\"") {
-        Some(end) => Some(rest.unsafe_substring(start=0, end=end))
+        Some(end) => Some(rest.unsafe_substring(start=0, end~))
         None => None
       }
     }
@@ -1630,18 +1909,24 @@ fn tikz_extract_first_quoted(value : String) -> String? {
   }
 }
 
+///|
 fn tikz_option_key_value(option : String) -> (String, String)? {
   match option.find("=") {
-    Some(index) => Some(
-      (
-        option.unsafe_substring(start=0, end=index).trim().to_string(),
-        option.unsafe_substring(start=index + 1, end=option.length()).trim().to_string(),
-      ),
-    )
+    Some(index) =>
+      Some(
+        (
+          option.unsafe_substring(start=0, end=index).trim().to_string(),
+          option
+          .unsafe_substring(start=index + 1, end=option.length())
+          .trim()
+          .to_string(),
+        ),
+      )
     None => None
   }
 }
 
+///|
 fn tikz_is_label_modifier(option : String) -> Bool {
   match option {
     "'" => true
@@ -1653,6 +1938,7 @@ fn tikz_is_label_modifier(option : String) -> Bool {
   }
 }
 
+///|
 fn tikz_extract_arrow_label_option(option : String) -> String? {
   match tikz_extract_first_quoted(option) {
     Some(value) => return Some(value)
@@ -1664,47 +1950,143 @@ fn tikz_extract_arrow_label_option(option : String) -> String? {
   }
 
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
-  if token == "" || tikz_is_direction_token(token) || tikz_is_label_modifier(token) {
+  if token == "" ||
+    tikz_is_direction_token(token) ||
+    tikz_is_label_modifier(token) {
     None
   } else {
     Some(token)
   }
 }
 
-fn tikz_consider_arrow_match(
-  best : TikzArrowMatch?,
-  input : String,
-  token : String,
-  open_delimiter : UInt16,
-  close_delimiter : UInt16,
-) -> TikzArrowMatch? {
-  match input.find(token) {
-    Some(start) => {
-      let candidate : TikzArrowMatch = {
-        start,
-        options_start: start + token.length(),
-        open_delimiter,
-        close_delimiter,
+fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
+  let mut i = 0
+  while i < input.length() {
+    if input.unsafe_get(i) != '\\' {
+      i = i + 1
+      continue
+    }
+
+    let rest = input.unsafe_substring(start=i, end=input.length())
+    let command_len = if rest.has_prefix("\\arrow") {
+      6
+    } else if rest.has_prefix("\\ar") {
+      3
+    } else {
+      0
+    }
+
+    if command_len == 0 {
+      i = i + 1
+      continue
+    }
+
+    let mut options_start = i + command_len
+    while options_start < input.length() &&
+      tikz_is_whitespace(input.unsafe_get(options_start)) {
+      options_start = options_start + 1
+    }
+    if options_start < input.length() {
+      let open = input.unsafe_get(options_start)
+      if open == '[' {
+        return Some({
+          start: i,
+          options_start: options_start + 1,
+          open_delimiter: '[',
+          close_delimiter: ']',
+        })
       }
-      match best {
-        Some(previous) => if start < previous.start { Some(candidate) } else { Some(previous) }
-        None => Some(candidate)
+      if open == '{' {
+        return Some({
+          start: i,
+          options_start: options_start + 1,
+          open_delimiter: '{',
+          close_delimiter: '}',
+        })
       }
     }
-    None => best
+    i = i + 1
   }
+
+  None
 }
 
-fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
-  let mut best : TikzArrowMatch? = None
-  best = tikz_consider_arrow_match(best, input, "\\arrow[", '[', ']')
-  best = tikz_consider_arrow_match(best, input, "\\arrow{", '{', '}')
-  best = tikz_consider_arrow_match(best, input, "\\ar[", '[', ']')
-  best = tikz_consider_arrow_match(best, input, "\\ar{", '{', '}')
-  best
+///|
+fn tikz_split_arrow_options(raw_options : String) -> Array[String] {
+  let options : Array[String] = []
+  let mut segment_start = 0
+  let mut i = 0
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut in_quotes = false
+
+  while i < raw_options.length() {
+    let ch = raw_options.unsafe_get(i)
+    if ch == '\\' {
+      if i + 1 < raw_options.length() {
+        i = i + 2
+      } else {
+        i = i + 1
+      }
+      continue
+    }
+
+    if ch == '"' {
+      in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if !in_quotes {
+      if ch == '{' {
+        brace_depth = brace_depth + 1
+      } else if ch == '}' && brace_depth > 0 {
+        brace_depth = brace_depth - 1
+      } else if ch == '[' {
+        bracket_depth = bracket_depth + 1
+      } else if ch == ']' && bracket_depth > 0 {
+        bracket_depth = bracket_depth - 1
+      } else if ch == '(' {
+        paren_depth = paren_depth + 1
+      } else if ch == ')' && paren_depth > 0 {
+        paren_depth = paren_depth - 1
+      } else if ch == ',' &&
+        brace_depth == 0 &&
+        bracket_depth == 0 &&
+        paren_depth == 0 {
+        let option = raw_options
+          .unsafe_substring(start=segment_start, end=i)
+          .trim()
+          .to_string()
+        if option != "" {
+          options.push(option)
+        }
+        i = i + 1
+        segment_start = i
+        continue
+      }
+    }
+
+    i = i + 1
+  }
+
+  let option = raw_options
+    .unsafe_substring(start=segment_start, end=raw_options.length())
+    .trim()
+    .to_string()
+  if option != "" {
+    options.push(option)
+  }
+  options
 }
 
-fn tikz_find_closing_delimiter(input : String, open_delimiter : UInt16, close_delimiter : UInt16) -> Int? {
+///|
+fn tikz_find_closing_delimiter(
+  input : String,
+  open_delimiter : UInt16,
+  close_delimiter : UInt16,
+) -> Int? {
   let mut depth = 0
   let mut i = 0
   while i < input.length() {
@@ -1722,6 +2104,7 @@ fn tikz_find_closing_delimiter(input : String, open_delimiter : UInt16, close_de
   None
 }
 
+///|
 fn tikz_cell_label_text(cell : String) -> String {
   let trimmed = cell.trim().to_string()
   match tikz_next_arrow_match(trimmed) {
@@ -1733,24 +2116,26 @@ fn tikz_cell_label_text(cell : String) -> String {
   }
 }
 
+///|
 fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
   let arrows : Array[TikzParsedArrow] = []
   let mut rest = cell
   while true {
     match tikz_next_arrow_match(rest) {
       Some(matched) => {
-        let after_arrow = rest.unsafe_substring(start=matched.options_start, end=rest.length())
-        match tikz_find_closing_delimiter(
-          after_arrow,
-          matched.open_delimiter,
-          matched.close_delimiter,
-        ) {
+        let after_arrow = rest.unsafe_substring(
+          start=matched.options_start,
+          end=rest.length(),
+        )
+        match
+          tikz_find_closing_delimiter(
+            after_arrow,
+            matched.open_delimiter,
+            matched.close_delimiter,
+          ) {
           Some(end) => {
-            let raw_options = after_arrow.unsafe_substring(start=0, end=end)
-            let options : Array[String] = []
-            for option in raw_options.split(",") {
-              options.push(option.trim().to_string())
-            }
+            let raw_options = after_arrow.unsafe_substring(start=0, end~)
+            let options = tikz_split_arrow_options(raw_options)
 
             let mut direction : String? = None
             let mut label = ""
@@ -1761,7 +2146,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
             for option in options {
               match tikz_option_key_value(option) {
-                Some((key, value)) => {
+                Some((key, value)) =>
                   if key == "from" {
                     match tikz_parse_grid_reference(value) {
                       Some((x, y)) => {
@@ -1779,10 +2164,10 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       None => ()
                     }
                   }
-                }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
-                  if direction is None && tikz_is_direction_token(direction_candidate) {
+                  if direction is None &&
+                    tikz_is_direction_token(direction_candidate) {
                     direction = Some(direction_candidate)
                   }
                   if label == "" {
@@ -1795,16 +2180,12 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               }
             }
 
-            arrows.push({
-              direction,
-              label,
-              from_x,
-              from_y,
-              to_x,
-              to_y,
-            })
+            arrows.push({ direction, label, from_x, from_y, to_x, to_y })
 
-            rest = after_arrow.unsafe_substring(start=end + 1, end=after_arrow.length())
+            rest = after_arrow.unsafe_substring(
+              start=end + 1,
+              end=after_arrow.length(),
+            )
           }
           None => break
         }
@@ -1815,6 +2196,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
   arrows
 }
 
+///|
 fn tikz_direction_delta(direction : String) -> (Int, Int) {
   let mut dx = 0
   let mut dy = 0
@@ -1832,10 +2214,12 @@ fn tikz_direction_delta(direction : String) -> (Int, Int) {
   (dx, dy)
 }
 
+///|
 fn tikz_grid_key(x : Int, y : Int) -> String {
   ["x=", x.to_string(), ",y=", y.to_string()].join("")
 }
 
+///|
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
@@ -1861,7 +2245,9 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       let label = tikz_cell_label_text(cell)
       let vertex_id = next_id
       next_id = next_id + 1
-      quiver.add(CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)))
+      quiver.add(
+        CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)),
+      )
       vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
 
       for parsed_arrow in tikz_collect_cell_arrows(cell) {
@@ -1876,23 +2262,25 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
         let target_coords = match (parsed_arrow.to_x, parsed_arrow.to_y) {
           (Some(tx), Some(ty)) => Some((tx, ty))
-          _ => match parsed_arrow.direction {
-            Some(direction) => {
-              let (dx, dy) = tikz_direction_delta(direction)
-              Some((source_x + dx, source_y + dy))
+          _ =>
+            match parsed_arrow.direction {
+              Some(direction) => {
+                let (dx, dy) = tikz_direction_delta(direction)
+                Some((source_x + dx, source_y + dy))
+              }
+              None => None
             }
-            None => None
-          }
         }
 
         match target_coords {
-          Some((target_x, target_y)) => pending_arrows.push({
-            source_x,
-            source_y,
-            target_x,
-            target_y,
-            label: parsed_arrow.label,
-          })
+          Some((target_x, target_y)) =>
+            pending_arrows.push({
+              source_x,
+              source_y,
+              target_x,
+              target_y,
+              label: parsed_arrow.label,
+            })
           None => ()
         }
       }
@@ -1903,11 +2291,13 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   }
 
   for pending in pending_arrows {
-    let source_id = match vertex_by_key.get(tikz_grid_key(pending.source_x, pending.source_y)) {
+    let source_id = match
+      vertex_by_key.get(tikz_grid_key(pending.source_x, pending.source_y)) {
       Some(value) => value
       None => continue
     }
-    let target_id = match vertex_by_key.get(tikz_grid_key(pending.target_x, pending.target_y)) {
+    let target_id = match
+      vertex_by_key.get(tikz_grid_key(pending.target_x, pending.target_y)) {
       Some(value) => value
       None => continue
     }
@@ -1931,6 +2321,8 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
   quiver
 }
+
+///|
 fn tikz_has_share_reference_hint(input : String) -> Bool {
   for raw_line in input.split("\n") {
     let line = raw_line.to_string().trim().to_string()
@@ -1947,11 +2339,13 @@ fn tikz_has_share_reference_hint(input : String) -> Bool {
   false
 }
 
+///|
 pub fn Quiver::import_tikz_cd_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  let looks_like_tikz = input.contains("\\begin{tikzcd}") && input.contains("\\end{tikzcd}")
+  let looks_like_tikz = input.contains("\\begin{tikzcd}") &&
+    input.contains("\\end{tikzcd}")
   if looks_like_tikz && !tikz_has_share_reference_hint(input) {
     {
       quiver: Quiver::import_tikz_cd_minimal(input),
@@ -1960,17 +2354,14 @@ pub fn Quiver::import_tikz_cd_result(
       embed: false,
     }
   } else {
-    Quiver::import_base64_share_text(input, default_renderer=default_renderer)
+    Quiver::import_base64_share_text(input, default_renderer~)
   }
 }
 
+///|
 pub fn Quiver::import_tikz_cd(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Quiver raise {
-  Quiver::import_tikz_cd_result(
-    input,
-    default_renderer=default_renderer,
-  ).quiver
+  Quiver::import_tikz_cd_result(input, default_renderer~).quiver
 }
-
