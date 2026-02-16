@@ -1,7 +1,10 @@
+///|
 type ColourTuple = (Int, Int, Int, Double)
 
+///|
 type EncodedVertex = (Int, Int, Int, String, ColourTuple)
 
+///|
 type EncodedEdgeStyles = (
   String,
   (String, String),
@@ -9,6 +12,7 @@ type EncodedEdgeStyles = (
   (String, String),
 )
 
+///|
 type EncodedEdgeOptions = (
   (Int, Int, Int, Int, Int),
   (Int, Int),
@@ -18,10 +22,13 @@ type EncodedEdgeOptions = (
   EncodedEdgeStyles,
 )
 
+///|
 type EncodedEdge = (Int, Int, Int, String, Int, ColourTuple, EncodedEdgeOptions)
 
+///|
 type EncodedQuiver = (Int, Array[EncodedVertex], Array[EncodedEdge])
 
+///|
 pub struct Base64ShareUrlParts {
   payload : String?
   macro_url : String?
@@ -29,6 +36,7 @@ pub struct Base64ShareUrlParts {
   embed : Bool
 }
 
+///|
 pub struct Base64ShareImportResult {
   quiver : Quiver
   macro_url : String?
@@ -36,16 +44,19 @@ pub struct Base64ShareImportResult {
   embed : Bool
 }
 
+///|
 pub struct Base64SelectionImportResult {
   imported_ids : Array[Int]
   id_remap : Map[Int, Int]
 }
 
+///|
 fn colour_from_tuple(tuple : ColourTuple) -> Colour {
   let (h, s, l, a) = tuple
   Colour::new(h, s, l, a)
 }
 
+///|
 fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
   match alignment {
     LabelAlignment::Left => 0
@@ -55,6 +66,7 @@ fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
   }
 }
 
+///|
 fn int_to_label_alignment(value : Int) -> LabelAlignment {
   match value {
     0 => LabelAlignment::Left
@@ -65,6 +77,7 @@ fn int_to_label_alignment(value : Int) -> LabelAlignment {
   }
 }
 
+///|
 fn int_to_edge_shape(value : Int) -> EdgeShape {
   match value {
     0 => EdgeShape::Bezier
@@ -73,18 +86,12 @@ fn int_to_edge_shape(value : Int) -> EdgeShape {
   }
 }
 
+///|
 fn edge_options_from_encoded(
   alignment : Int,
   encoded : EncodedEdgeOptions,
 ) -> EdgeOptions {
-  let (
-    core,
-    shorten,
-    level_shape,
-    colour,
-    edge_alignment,
-    style,
-  ) = encoded
+  let (core, shorten, level_shape, colour, edge_alignment, style) = encoded
   let (label_position, offset, curve, radius, angle) = core
   let (shorten_source, shorten_target) = shorten
   let (level, shape) = level_shape
@@ -101,7 +108,11 @@ fn edge_options_from_encoded(
     radius,
     angle,
     shorten: { source: shorten_source, target: shorten_target },
-    level: if level < 1 { 1 } else { level },
+    level: if level < 1 {
+      1
+    } else {
+      level
+    },
     shape: int_to_edge_shape(shape),
     colour: colour_from_tuple(colour),
     edge_alignment: {
@@ -117,6 +128,7 @@ fn edge_options_from_encoded(
   }
 }
 
+///|
 fn base64_is_url_unreserved(code : Int) -> Bool {
   let is_digit = code >= 48 && code <= 57
   let is_upper = code >= 65 && code <= 90
@@ -137,6 +149,7 @@ fn base64_is_url_unreserved(code : Int) -> Bool {
   code == 41
 }
 
+///|
 fn base64_hex_upper(n : Int) -> Char {
   if n < 10 {
     (48 + n).unsafe_to_char()
@@ -145,6 +158,7 @@ fn base64_hex_upper(n : Int) -> Char {
   }
 }
 
+///|
 fn base64_percent_encode_component(value : String) -> String {
   let bytes = @utf8.encode(value)
   let out : Array[String] = []
@@ -161,6 +175,7 @@ fn base64_percent_encode_component(value : String) -> String {
   out.join("")
 }
 
+///|
 fn base64_hex_to_int(code : Int) -> Int {
   if code >= 48 && code <= 57 {
     code - 48
@@ -173,6 +188,7 @@ fn base64_hex_to_int(code : Int) -> Int {
   }
 }
 
+///|
 fn base64_percent_decode_component(value : String) -> String {
   let bytes = @utf8.encode(value)
   let decoded : Array[Byte] = []
@@ -194,6 +210,7 @@ fn base64_percent_decode_component(value : String) -> String {
   @utf8.decode_lossy(Bytes::from_array(decoded))
 }
 
+///|
 fn base64_share_url_fragment(input : String) -> String {
   match input.find("#") {
     Some(index) => input.unsafe_substring(start=index + 1, end=input.length())
@@ -201,6 +218,7 @@ fn base64_share_url_fragment(input : String) -> String {
   }
 }
 
+///|
 fn base64_share_url_query(input : String) -> String {
   match input.find("?") {
     Some(query_start) => {
@@ -213,12 +231,13 @@ fn base64_share_url_query(input : String) -> String {
           }
         None => input.length()
       }
-      input.unsafe_substring(start=query_start + 1, end=end)
+      input.unsafe_substring(start=query_start + 1, end~)
     }
     None => ""
   }
 }
 
+///|
 fn base64_normalise_fragment(value : String) -> String {
   let amp = value.replace_all(old="&amp;", new="&")
   let mut start = 0
@@ -233,20 +252,22 @@ fn base64_normalise_fragment(value : String) -> String {
   if start == 0 {
     amp
   } else {
-    amp.unsafe_substring(start=start, end=amp.length())
+    amp.unsafe_substring(start~, end=amp.length())
   }
 }
 
+///|
 fn base64_trimmed(line : String) -> String {
   line.trim().to_string()
 }
 
+///|
 fn base64_extract_html_comment_reference(line : String) -> String? {
   match line.find("<!--") {
     Some(start) => {
       let after = line.unsafe_substring(start=start + 4, end=line.length())
       match after.find("-->") {
-        Some(end) => Some(base64_trimmed(after.unsafe_substring(start=0, end=end)))
+        Some(end) => Some(base64_trimmed(after.unsafe_substring(start=0, end~)))
         None => None
       }
     }
@@ -254,6 +275,7 @@ fn base64_extract_html_comment_reference(line : String) -> String? {
   }
 }
 
+///|
 fn base64_extract_iframe_src_reference(line : String) -> String? {
   let single_quote = Int::to_byte(39)
   let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
@@ -298,6 +320,7 @@ fn base64_extract_iframe_src_reference(line : String) -> String? {
   None
 }
 
+///|
 pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
   if input == "" {
     return None
@@ -314,23 +337,21 @@ pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
     }
 
     if line.has_prefix("% ") {
-      return Some(base64_trimmed(line.unsafe_substring(start=2, end=line.length())))
+      return Some(
+        base64_trimmed(line.unsafe_substring(start=2, end=line.length())),
+      )
     }
     if line.has_prefix("// ") {
-      return Some(base64_trimmed(line.unsafe_substring(start=3, end=line.length())))
+      return Some(
+        base64_trimmed(line.unsafe_substring(start=3, end=line.length())),
+      )
     }
     match base64_extract_html_comment_reference(line) {
-      Some(reference) =>
-        if reference != "" {
-          return Some(reference)
-        }
+      Some(reference) => if reference != "" { return Some(reference) }
       None => ()
     }
     match base64_extract_iframe_src_reference(line) {
-      Some(reference) =>
-        if reference != "" {
-          return Some(reference)
-        }
+      Some(reference) => if reference != "" { return Some(reference) }
       None => ()
     }
   }
@@ -338,6 +359,7 @@ pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
   fallback
 }
 
+///|
 fn base64_parse_share_segment(
   segment : String,
   allow_bare_payload : Bool,
@@ -395,6 +417,7 @@ fn base64_parse_share_segment(
   (payload, macro_url, renderer_raw, embed)
 }
 
+///|
 pub fn Quiver::parse_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",
@@ -408,7 +431,12 @@ pub fn Quiver::parse_base64_share_url(
       input.has_prefix("embed") ||
       input.contains("&")
     if !is_fragment_query {
-      return { payload: Some(input), macro_url: None, renderer: None, embed: false }
+      return {
+        payload: Some(input),
+        macro_url: None,
+        renderer: None,
+        embed: false,
+      }
     }
   }
 
@@ -429,26 +457,25 @@ pub fn Quiver::parse_base64_share_url(
     }
 
     let parsed_fragment = base64_parse_share_segment(
-      fragment,
-      false,
-      payload,
-      macro_url,
-      renderer_raw,
-      embed,
+      fragment, false, payload, macro_url, renderer_raw, embed,
     )
-    let (payload_after_fragment, macro_after_fragment, renderer_after_fragment, embed_after_fragment) =
-      parsed_fragment
-
-    let parsed_query = base64_parse_share_segment(
-      query,
-      false,
+    let (
       payload_after_fragment,
       macro_after_fragment,
       renderer_after_fragment,
       embed_after_fragment,
+    ) = parsed_fragment
+
+    let parsed_query = base64_parse_share_segment(
+      query, false, payload_after_fragment, macro_after_fragment, renderer_after_fragment,
+      embed_after_fragment,
     )
-    let (payload_after_query, macro_after_query, renderer_after_query, embed_after_query) =
-      parsed_query
+    let (
+      payload_after_query,
+      macro_after_query,
+      renderer_after_query,
+      embed_after_query,
+    ) = parsed_query
 
     payload = payload_after_query
     macro_url = macro_after_query
@@ -466,15 +493,14 @@ pub fn Quiver::parse_base64_share_url(
     }
 
     let parsed = base64_parse_share_segment(
-      fragment,
-      true,
-      payload,
-      macro_url,
-      renderer_raw,
-      embed,
+      fragment, true, payload, macro_url, renderer_raw, embed,
     )
-    let (payload_after_fragment, macro_after_fragment, renderer_after_fragment, embed_after_fragment) =
-      parsed
+    let (
+      payload_after_fragment,
+      macro_after_fragment,
+      renderer_after_fragment,
+      embed_after_fragment,
+    ) = parsed
     payload = payload_after_fragment
     macro_url = macro_after_fragment
     renderer_raw = renderer_after_fragment
@@ -482,18 +508,14 @@ pub fn Quiver::parse_base64_share_url(
   }
 
   let renderer = match renderer_raw {
-    Some(value) =>
-      if value == default_renderer {
-        None
-      } else {
-        Some(value)
-      }
+    Some(value) => if value == default_renderer { None } else { Some(value) }
     None => None
   }
 
   { payload, macro_url, renderer, embed }
 }
 
+///|
 fn base64_id_set(ids : Array[Int]) -> @hashmap.HashMap[Int, Bool] {
   let out : @hashmap.HashMap[Int, Bool] = @hashmap.new()
   for id in ids {
@@ -502,6 +524,7 @@ fn base64_id_set(ids : Array[Int]) -> @hashmap.HashMap[Int, Bool] {
   out
 }
 
+///|
 fn Quiver::base64_export_v0_with_ids(
   self : Quiver,
   included_ids : @hashmap.HashMap[Int, Bool],
@@ -550,10 +573,11 @@ fn Quiver::base64_export_v0_with_ids(
     Json::array(values)
   }
 
-  let equal_colour = (a : Colour, b : Colour) =>
+  let equal_colour = (a : Colour, b : Colour) => {
     (a.h == b.h && a.s == b.s && a.l == b.l && a.a == b.a) ||
     (a.l == 0 && b.l == 0) ||
     (a.l == 100 && b.l == 100)
+  }
 
   let options_delta = (options : EdgeOptions) => {
     let defaults = EdgeOptions::at_level(options.level)
@@ -597,10 +621,16 @@ fn Quiver::base64_export_v0_with_ids(
       options.edge_alignment.target != defaults.edge_alignment.target {
       let alignment_delta : Map[String, Json] = Map::new()
       if options.edge_alignment.source != defaults.edge_alignment.source {
-        alignment_delta.set("source", Json::boolean(options.edge_alignment.source))
+        alignment_delta.set(
+          "source",
+          Json::boolean(options.edge_alignment.source),
+        )
       }
       if options.edge_alignment.target != defaults.edge_alignment.target {
-        alignment_delta.set("target", Json::boolean(options.edge_alignment.target))
+        alignment_delta.set(
+          "target",
+          Json::boolean(options.edge_alignment.target),
+        )
       }
       if !alignment_delta.is_empty() {
         delta.set("edge_alignment", Json::object(alignment_delta))
@@ -699,10 +729,7 @@ fn Quiver::base64_export_v0_with_ids(
     let source_index = source_index.unwrap()
     let target_index = target_index.unwrap()
 
-    let cell : Array[Json] = [
-      json_int(source_index),
-      json_int(target_index),
-    ]
+    let cell : Array[Json] = [json_int(source_index), json_int(target_index)]
     let end : Array[Json] = []
 
     if edge.cell.label != "" && edge.cell.label_colour.is_not_black() {
@@ -722,7 +749,7 @@ fn Quiver::base64_export_v0_with_ids(
       end.push(Json::string(edge.cell.label))
     }
 
-    end.rev_each((value) => cell.push(value))
+    end.rev_each(value => cell.push(value))
 
     indices.set(edge.cell.id, encoded_cells.length())
     encoded_cells.push(Json::array(cell))
@@ -734,10 +761,12 @@ fn Quiver::base64_export_v0_with_ids(
   @base64.encode(@utf8.encode(json_string))
 }
 
+///|
 pub fn Quiver::export_base64_v0(self : Quiver) -> String {
   self.base64_export_v0_with_ids(base64_id_set(self.all_cell_ids()), true)
 }
 
+///|
 pub fn Quiver::export_base64_v0_selection(
   self : Quiver,
   selected_ids : Array[Int],
@@ -748,10 +777,11 @@ pub fn Quiver::export_base64_v0_selection(
   } else {
     selected_ids.copy()
   }
-  ids.retain((id) => self.contains_cell(id))
+  ids.retain(id => self.contains_cell(id))
   self.base64_export_v0_with_ids(base64_id_set(ids), false)
 }
 
+///|
 pub fn Quiver::export_base64_share_url(
   self : Quiver,
   share_base_url : String?,
@@ -761,7 +791,7 @@ pub fn Quiver::export_base64_share_url(
 ) -> String {
   let payload = self.export_base64_v0()
   match share_base_url {
-    Some(base_url) => {
+    Some(base_url) =>
       if self.is_empty() {
         base_url
       } else {
@@ -775,26 +805,29 @@ pub fn Quiver::export_base64_share_url(
           None => ""
         }
         let macro_part = match macro_url {
-          Some(value) => ["&macro_url=", base64_percent_encode_component(value)].join("")
+          Some(value) =>
+            ["&macro_url=", base64_percent_encode_component(value)].join("")
           None => ""
         }
         [base_url, "#", renderer_part, "q=", payload, macro_part].join("")
       }
-    }
     None => payload
   }
 }
 
+///|
 fn base64_import_assert(condition : Bool, message : String) -> Unit {
   if !condition {
     abort(message + " in quiver encoding")
   }
 }
 
+///|
 fn base64_double_is_integer(value : Double) -> Bool {
   value == value.trunc()
 }
 
+///|
 fn base64_import_colour(raw : Json) -> Colour raise {
   let values : Array[Double] = @json.from_json(raw)
   base64_import_assert(
@@ -811,11 +844,7 @@ fn base64_import_colour(raw : Json) -> Colour raise {
   let h = h_raw.to_int()
   let s = s_raw.to_int()
   let l = l_raw.to_int()
-  let a = if values.length() >= 4 {
-    values.unsafe_get(3)
-  } else {
-    1.0
-  }
+  let a = if values.length() >= 4 { values.unsafe_get(3) } else { 1.0 }
   base64_import_assert(h >= 0 && h <= 360, "invalid hue")
   base64_import_assert(s >= 0 && s <= 100, "invalid saturation")
   base64_import_assert(l >= 0 && l <= 100, "invalid lightness")
@@ -823,6 +852,7 @@ fn base64_import_colour(raw : Json) -> Colour raise {
   Colour::new(h, s, l, a)
 }
 
+///|
 fn base64_import_endpoint_style(
   raw : Json,
   fallback : EdgeEndpointStyle,
@@ -844,6 +874,7 @@ fn base64_import_endpoint_style(
   }
 }
 
+///|
 fn base64_import_apply_style_delta(
   options : EdgeOptions,
   style_raw : Json,
@@ -872,14 +903,15 @@ fn base64_import_apply_style_delta(
           let body = base64_import_endpoint_style(value, out.style.body)
           out = out.with_style_body(body.name, side=body.side)
           match value {
-            Json::Object(body_map) => match body_map.get("level") {
-              Some(level_value) => {
-                let level : Int = @json.from_json(level_value)
-                base64_import_assert(level >= 1, "invalid level")
-                level_override = Some(level)
+            Json::Object(body_map) =>
+              match body_map.get("level") {
+                Some(level_value) => {
+                  let level : Int = @json.from_json(level_value)
+                  base64_import_assert(level >= 1, "invalid level")
+                  level_override = Some(level)
+                }
+                None => ()
               }
-              None => ()
-            }
             _ => ()
           }
         }
@@ -899,6 +931,7 @@ fn base64_import_apply_style_delta(
   }
 }
 
+///|
 fn base64_import_apply_options_delta(
   options : EdgeOptions,
   options_map : Map[String, Json],
@@ -911,7 +944,10 @@ fn base64_import_apply_options_delta(
   match options_map.get("label_position") {
     Some(value) => {
       let label_position : Int = @json.from_json(value)
-      base64_import_assert(label_position >= 0 && label_position <= 100, "invalid label position")
+      base64_import_assert(
+        label_position >= 0 && label_position <= 100,
+        "invalid label position",
+      )
       out = out.with_label_position(label_position)
     }
     None => ()
@@ -1013,14 +1049,13 @@ fn base64_import_apply_options_delta(
         out = out.with_shape_bezier()
       }
     }
-    None => {
+    None =>
       // JS canonical payload omits `shape`; infer it from which curve parameters were encoded.
       if has_radius_or_angle && !has_curve {
         out = out.with_shape_arc()
       } else if has_curve && !has_radius_or_angle {
         out = out.with_shape_bezier()
       }
-    }
   }
   match options_map.get("level") {
     Some(value) => {
@@ -1035,6 +1070,7 @@ fn base64_import_apply_options_delta(
   out
 }
 
+///|
 fn base64_import_quiver_from_legacy(parsed : EncodedQuiver) -> Quiver {
   let (version, vertices, edges) = parsed
   if version != 0 {
@@ -1058,7 +1094,14 @@ fn base64_import_quiver_from_legacy(parsed : EncodedQuiver) -> Quiver {
     let options = edge_options_from_encoded(alignment, edge_options)
     quiver.add(
       CellData::from_edge(
-        Edge::new(id, label, source, target, options, colour_from_tuple(label_colour)),
+        Edge::new(
+          id,
+          label,
+          source,
+          target,
+          options,
+          colour_from_tuple(label_colour),
+        ),
       ),
     )
     pending_connections.push((id, source, target))
@@ -1072,6 +1115,7 @@ fn base64_import_quiver_from_legacy(parsed : EncodedQuiver) -> Quiver {
   quiver
 }
 
+///|
 fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
   base64_import_assert(root.length() >= 2, "invalid quiver format")
 
@@ -1091,7 +1135,10 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
     let cell_raw = root.unsafe_get(i + 2)
     let cell : Array[Json] = @json.from_json(cell_raw)
     if i < vertices {
-      base64_import_assert(cell.length() >= 2 && cell.length() <= 4, "invalid vertex format")
+      base64_import_assert(
+        cell.length() >= 2 && cell.length() <= 4,
+        "invalid vertex format",
+      )
       let x : Int = @json.from_json(cell.unsafe_get(0))
       let y : Int = @json.from_json(cell.unsafe_get(1))
       base64_import_assert(x >= 0, "invalid x position")
@@ -1108,20 +1155,27 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       }
       let id = i + 1
       quiver.add(
-        CellData::from_vertex(
-          Vertex::new(id, label, x, y, label_colour),
-        ),
+        CellData::from_vertex(Vertex::new(id, label, x, y, label_colour)),
       )
       index_to_id.push(id)
       index_to_level.push(0)
     } else {
-      base64_import_assert(cell.length() >= 2 && cell.length() <= 6, "invalid edge format")
+      base64_import_assert(
+        cell.length() >= 2 && cell.length() <= 6,
+        "invalid edge format",
+      )
       let source_index : Int = @json.from_json(cell.unsafe_get(0))
       let target_index : Int = @json.from_json(cell.unsafe_get(1))
       base64_import_assert(source_index >= 0, "invalid source index")
       base64_import_assert(target_index >= 0, "invalid target index")
-      base64_import_assert(source_index < index_to_id.length(), "invalid source index")
-      base64_import_assert(target_index < index_to_id.length(), "invalid target index")
+      base64_import_assert(
+        source_index < index_to_id.length(),
+        "invalid source index",
+      )
+      base64_import_assert(
+        target_index < index_to_id.length(),
+        "invalid target index",
+      )
 
       let source_id = index_to_id.unsafe_get(source_index)
       let target_id = index_to_id.unsafe_get(target_index)
@@ -1132,15 +1186,19 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       }
       let alignment = if cell.length() >= 4 {
         let value : Int = @json.from_json(cell.unsafe_get(3))
-        base64_import_assert(value >= 0 && value <= 3, "invalid label alignment")
+        base64_import_assert(
+          value >= 0 && value <= 3,
+          "invalid label alignment",
+        )
         value
       } else {
         0
       }
       let mut level = Int::max(
-        index_to_level.unsafe_get(source_index),
-        index_to_level.unsafe_get(target_index),
-      ) + 1
+          index_to_level.unsafe_get(source_index),
+          index_to_level.unsafe_get(target_index),
+        ) +
+        1
 
       let options_map : Map[String, Json] = if cell.length() >= 5 {
         match cell.unsafe_get(4) {
@@ -1162,7 +1220,9 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
 
       match options_map.get("style") {
         Some(style_raw) => {
-          let (styled, level_override) = base64_import_apply_style_delta(options, style_raw)
+          let (styled, level_override) = base64_import_apply_style_delta(
+            options, style_raw,
+          )
           options = styled
           match level_override {
             Some(value) => level = value
@@ -1195,6 +1255,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
   quiver
 }
 
+///|
 pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   let decoded = @utf8.decode(@base64.decode(encoded))
   let json = @json.parse(decoded)
@@ -1213,7 +1274,11 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   base64_import_quiver_from_js(root)
 }
 
-fn Quiver::base64_import_alloc_unique_id(self : Quiver, alloc_id : () -> Int) -> Int {
+///|
+fn Quiver::base64_import_alloc_unique_id(
+  self : Quiver,
+  alloc_id : () -> Int,
+) -> Int {
   let mut retries = 0
   while retries < 1_000_000 {
     let id = alloc_id()
@@ -1225,6 +1290,7 @@ fn Quiver::base64_import_alloc_unique_id(self : Quiver, alloc_id : () -> Int) ->
   abort("unable to allocate unique cell id")
 }
 
+///|
 pub fn Quiver::import_base64_v0_selection_result(
   self : Quiver,
   encoded : String,
@@ -1312,12 +1378,10 @@ pub fn Quiver::import_base64_v0_selection_result(
     self.connect(source, target, new_id)
   }
 
-  {
-    imported_ids: self.order_ids(imported_ids),
-    id_remap,
-  }
+  { imported_ids: self.order_ids(imported_ids), id_remap }
 }
 
+///|
 pub fn Quiver::import_base64_v0_selection(
   self : Quiver,
   encoded : String,
@@ -1325,14 +1389,10 @@ pub fn Quiver::import_base64_v0_selection(
   origin_y : Int,
   alloc_id : () -> Int,
 ) -> Array[Int] raise {
-  self.import_base64_v0_selection_result(
-    encoded,
-    origin_x,
-    origin_y,
-    alloc_id,
-  ).imported_ids
+  self.import_base64_v0_selection_result(encoded, origin_x, origin_y, alloc_id).imported_ids
 }
 
+///|
 pub fn Quiver::import_base64_v0_selection_auto_ids(
   self : Quiver,
   encoded : String,
@@ -1346,29 +1406,23 @@ pub fn Quiver::import_base64_v0_selection_auto_ids(
     next_id = self.next_available_id(start=id + 1)
     id
   }
-  self.import_base64_v0_selection_result(
-    encoded,
-    origin_x,
-    origin_y,
-    alloc_id,
-  )
+  self.import_base64_v0_selection_result(encoded, origin_x, origin_y, alloc_id)
 }
 
+///|
 pub fn Quiver::import_base64_share_url(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Quiver raise {
-  Quiver::import_base64_share_url_result(
-    input,
-    default_renderer=default_renderer,
-  ).quiver
+  Quiver::import_base64_share_url_result(input, default_renderer~).quiver
 }
 
+///|
 pub fn Quiver::import_base64_share_url_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  let parsed = Quiver::parse_base64_share_url(input, default_renderer=default_renderer)
+  let parsed = Quiver::parse_base64_share_url(input, default_renderer~)
   match parsed.payload {
     Some(payload) =>
       {
@@ -1381,6 +1435,7 @@ pub fn Quiver::import_base64_share_url_result(
   }
 }
 
+///|
 pub fn Quiver::import_base64_share_text(
   input : String,
   default_renderer? : String = "canvas",
@@ -1389,5 +1444,5 @@ pub fn Quiver::import_base64_share_text(
     Some(value) => value
     None => input
   }
-  Quiver::import_base64_share_url_result(reference, default_renderer=default_renderer)
+  Quiver::import_base64_share_url_result(reference, default_renderer~)
 }

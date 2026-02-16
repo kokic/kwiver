@@ -1,3 +1,4 @@
+///|
 fn find_edge(quiver : Quiver, id : Int) -> Edge? {
   for cell in quiver.all_cells() {
     match cell {
@@ -8,6 +9,7 @@ fn find_edge(quiver : Quiver, id : Int) -> Edge? {
   None
 }
 
+///|
 fn find_edge_by_label(quiver : Quiver, label : String) -> Edge? {
   for cell in quiver.all_cells() {
     match cell {
@@ -18,25 +20,32 @@ fn find_edge_by_label(quiver : Quiver, label : String) -> Edge? {
   None
 }
 
+///|
 fn find_vertex_by_label(quiver : Quiver, label : String) -> Vertex? {
   for cell in quiver.all_cells() {
     match cell {
-      CellData::Vertex(vertex) => if vertex.cell.label == label { return Some(vertex) }
+      CellData::Vertex(vertex) =>
+        if vertex.cell.label == label {
+          return Some(vertex)
+        }
       _ => ()
     }
   }
   None
 }
 
+///|
 fn base64_encode_json(input : String) -> String {
   @base64.encode(@utf8.encode(input))
 }
 
+///|
 fn base64_decode_json_array(encoded : String) -> Array[Json] raise {
   let decoded = @utf8.decode(@base64.decode(encoded))
   @json.from_json(@json.parse(decoded))
 }
 
+///|
 fn alignment_variant_to_int(alignment : LabelAlignment) -> Int {
   match alignment {
     LabelAlignment::Left => 0
@@ -46,6 +55,7 @@ fn alignment_variant_to_int(alignment : LabelAlignment) -> Int {
   }
 }
 
+///|
 test "base64 v0 roundtrip preserves ids and structure" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -63,6 +73,7 @@ test "base64 v0 roundtrip preserves ids and structure" {
   inspect(decoded.connected_components([1]), content="[1, 2, 3]")
 }
 
+///|
 test "base64 v0 roundtrip preserves edge options" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(10, "X", 0, 0)))
@@ -92,6 +103,7 @@ test "base64 v0 roundtrip preserves edge options" {
   }
 }
 
+///|
 test "base64 v0 selection export includes transitive dependencies by default" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -105,6 +117,7 @@ test "base64 v0 selection export includes transitive dependencies by default" {
   inspect(decoded.all_cell_ids(), content="[1, 2, 3]")
 }
 
+///|
 test "base64 v0 selection export without dependencies skips dangling edges" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -113,16 +126,27 @@ test "base64 v0 selection export without dependencies skips dangling edges" {
   quiver.add(CellData::from_edge(edge))
   quiver.connect(1, 2, 3)
 
-  let encoded = quiver.export_base64_v0_selection([1, 3], include_dependencies=false)
+  let encoded = quiver.export_base64_v0_selection(
+    [1, 3],
+    include_dependencies=false,
+  )
   let decoded = Quiver::import_base64_v0(encoded)
   inspect(decoded.all_cell_ids(), content="[1]")
 }
 
+///|
 test "base64 v0 selection import result remaps ids and applies origin offset" {
   let source = Quiver::new()
   source.add(CellData::from_vertex(Vertex::new_black(10, "A", 4, 9)))
   source.add(CellData::from_vertex(Vertex::new_black(20, "B", 6, 10)))
-  let edge = Edge::new(30, "f", 10, 20, EdgeOptions::at_level(1), Colour::black())
+  let edge = Edge::new(
+    30,
+    "f",
+    10,
+    20,
+    EdgeOptions::at_level(1),
+    Colour::black(),
+  )
   source.add(CellData::from_edge(edge))
   source.connect(10, 20, 30)
   let payload = source.export_base64_v0_selection([30])
@@ -137,12 +161,7 @@ test "base64 v0 selection import result remaps ids and applies origin offset" {
     id
   }
 
-  let result = target.import_base64_v0_selection_result(
-    payload,
-    5,
-    7,
-    alloc,
-  )
+  let result = target.import_base64_v0_selection_result(payload, 5, 7, alloc)
 
   inspect(result.imported_ids, content="[2, 3, 4]")
   match result.id_remap.get(1) {
@@ -181,6 +200,7 @@ test "base64 v0 selection import result remaps ids and applies origin offset" {
   }
 }
 
+///|
 test "base64 v0 selection import result keeps target unchanged for empty payload" {
   let source = Quiver::new()
   source.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -189,7 +209,10 @@ test "base64 v0 selection import result keeps target unchanged for empty payload
   source.add(CellData::from_edge(edge))
   source.connect(1, 2, 3)
 
-  let payload = source.export_base64_v0_selection([3], include_dependencies=false)
+  let payload = source.export_base64_v0_selection(
+    [3],
+    include_dependencies=false,
+  )
   let target = Quiver::new()
   target.add(CellData::from_vertex(Vertex::new_black(9, "Existing", 2, 2)))
 
@@ -206,11 +229,19 @@ test "base64 v0 selection import result keeps target unchanged for empty payload
   inspect(target.all_cell_ids(), content="[9]")
 }
 
+///|
 test "base64 v0 selection auto-id import skips existing ids deterministically" {
   let source = Quiver::new()
   source.add(CellData::from_vertex(Vertex::new_black(10, "A", 0, 0)))
   source.add(CellData::from_vertex(Vertex::new_black(20, "B", 1, 0)))
-  let edge = Edge::new(30, "f", 10, 20, EdgeOptions::at_level(1), Colour::black())
+  let edge = Edge::new(
+    30,
+    "f",
+    10,
+    20,
+    EdgeOptions::at_level(1),
+    Colour::black(),
+  )
   source.add(CellData::from_edge(edge))
   source.connect(10, 20, 30)
   let payload = source.export_base64_v0_selection([30])
@@ -263,10 +294,9 @@ test "base64 v0 selection auto-id import skips existing ids deterministically" {
   }
 }
 
+///|
 test "base64 v0 import supports js canonical minimal layout" {
-  let encoded = base64_encode_json(
-    "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"f\"]]",
-  )
+  let encoded = base64_encode_json("[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"f\"]]")
   let decoded = Quiver::import_base64_v0(encoded)
 
   inspect(decoded.all_cell_ids(), content="[1, 2, 3]")
@@ -280,6 +310,7 @@ test "base64 v0 import supports js canonical minimal layout" {
   }
 }
 
+///|
 test "base64 v0 import supports js canonical edge option deltas" {
   let encoded = base64_encode_json(
     [
@@ -290,7 +321,10 @@ test "base64 v0 import supports js canonical edge option deltas" {
 
   match find_edge(decoded, 3) {
     Some(edge) => {
-      inspect(alignment_variant_to_int(edge.options.label_alignment), content="2")
+      inspect(
+        alignment_variant_to_int(edge.options.label_alignment),
+        content="2",
+      )
       inspect(edge.options.offset, content="7")
       inspect(edge.options.curve, content="20")
       inspect(edge.options.shorten.source, content="5")
@@ -307,6 +341,7 @@ test "base64 v0 import supports js canonical edge option deltas" {
   }
 }
 
+///|
 test "base64 v0 import supports legacy js length option" {
   let encoded = base64_encode_json(
     "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"h\",0,{\"length\":80}]]",
@@ -322,6 +357,7 @@ test "base64 v0 import supports legacy js length option" {
   }
 }
 
+///|
 test "base64 v0 export omits alpha channel for opaque colours like js" {
   let quiver = Quiver::new()
   quiver.add(
@@ -331,7 +367,9 @@ test "base64 v0 export omits alpha channel for opaque colours like js" {
   )
   quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
 
-  let options = EdgeOptions::at_level(1).with_colour(Colour::new(30, 60, 60, 1.0))
+  let options = EdgeOptions::at_level(1).with_colour(
+    Colour::new(30, 60, 60, 1.0),
+  )
   let edge = Edge::new(3, "f", 1, 2, options, Colour::new(240, 60, 60, 1.0))
   quiver.add(CellData::from_edge(edge))
   quiver.connect(1, 2, 3)
@@ -343,7 +381,9 @@ test "base64 v0 export omits alpha channel for opaque colours like js" {
   inspect(vertex_colour.length(), content="3")
 
   let edge_cell : Array[Json] = @json.from_json(root.unsafe_get(4))
-  let edge_options : Map[String, Json] = @json.from_json(edge_cell.unsafe_get(4))
+  let edge_options : Map[String, Json] = @json.from_json(
+    edge_cell.unsafe_get(4),
+  )
   let edge_colour = match edge_options.get("colour") {
     Some(value) => value
     None => abort("expected edge colour in options delta")
@@ -351,10 +391,13 @@ test "base64 v0 export omits alpha channel for opaque colours like js" {
   let edge_colour_values : Array[Double] = @json.from_json(edge_colour)
   inspect(edge_colour_values.length(), content="3")
 
-  let label_colour_values : Array[Double] = @json.from_json(edge_cell.unsafe_get(5))
+  let label_colour_values : Array[Double] = @json.from_json(
+    edge_cell.unsafe_get(5),
+  )
   inspect(label_colour_values.length(), content="3")
 }
 
+///|
 test "base64 v0 export treats all l=0 colours as default black in option delta" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -369,12 +412,15 @@ test "base64 v0 export treats all l=0 colours as default black in option delta" 
 
   let root = base64_decode_json_array(quiver.export_base64_v0())
   let edge_cell : Array[Json] = @json.from_json(root.unsafe_get(4))
-  let edge_options : Map[String, Json] = @json.from_json(edge_cell.unsafe_get(4))
+  let edge_options : Map[String, Json] = @json.from_json(
+    edge_cell.unsafe_get(4),
+  )
 
   inspect(edge_options.contains("offset"), content="true")
   inspect(edge_options.contains("colour"), content="false")
 }
 
+///|
 test "base64 share url encodes macro_url for non-empty quiver" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -385,15 +431,15 @@ test "base64 share url encodes macro_url for non-empty quiver" {
     Some("https://example.com/macros.tex"),
   )
   inspect(
-    link == [
-      "https://q.uiver.app#q=",
-      payload,
-      "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+    link ==
+    [
+      "https://q.uiver.app#q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
     ].join(""),
     content="true",
   )
 }
 
+///|
 test "base64 share url includes renderer when non-default" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -410,6 +456,7 @@ test "base64 share url includes renderer when non-default" {
   )
 }
 
+///|
 test "base64 share url omits renderer when default" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -420,12 +467,10 @@ test "base64 share url omits renderer when default" {
     None,
     renderer="canvas",
   )
-  inspect(
-    link == ["https://q.uiver.app#q=", payload].join(""),
-    content="true",
-  )
+  inspect(link == ["https://q.uiver.app#q=", payload].join(""), content="true")
 }
 
+///|
 test "base64 share url percent-encodes renderer value" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -442,6 +487,7 @@ test "base64 share url percent-encodes renderer value" {
   )
 }
 
+///|
 test "base64 share url keeps js encodeURIComponent-safe punctuation" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -452,17 +498,16 @@ test "base64 share url keeps js encodeURIComponent-safe punctuation" {
   let link = quiver.export_base64_share_url(
     Some("https://q.uiver.app"),
     Some(macro_url),
-    renderer=renderer,
+    renderer~,
   )
   let expected = [
-    "https://q.uiver.app#r=svg!*'()&q=",
-    payload,
-    "&macro_url=https%3A%2F%2Fexample.com%2Fa!b*c'(d)e.tex",
+    "https://q.uiver.app#r=svg!*'()&q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fa!b*c'(d)e.tex",
   ].join("")
 
   inspect(link == expected, content="true")
 }
 
+///|
 test "base64 share url uses configurable default renderer" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -474,12 +519,10 @@ test "base64 share url uses configurable default renderer" {
     renderer="svg",
     default_renderer="svg",
   )
-  inspect(
-    link == ["https://q.uiver.app#q=", payload].join(""),
-    content="true",
-  )
+  inspect(link == ["https://q.uiver.app#q=", payload].join(""), content="true")
 }
 
+///|
 test "base64 share url for empty quiver returns base only" {
   let quiver = Quiver::new()
   let link = quiver.export_base64_share_url(
@@ -489,14 +532,19 @@ test "base64 share url for empty quiver returns base only" {
   inspect(link, content="https://q.uiver.app")
 }
 
+///|
 test "base64 share url without base returns payload" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
-  let link = quiver.export_base64_share_url(None, Some("https://example.com/macros.tex"))
+  let link = quiver.export_base64_share_url(
+    None,
+    Some("https://example.com/macros.tex"),
+  )
   inspect(link, content=payload)
 }
 
+///|
 test "base64 share url parser extracts payload renderer and macro_url" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -523,14 +571,13 @@ test "base64 share url parser extracts payload renderer and macro_url" {
   inspect(parsed.embed, content="false")
 }
 
+///|
 test "base64 share url parser captures embed and normalises default renderer" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
   let link = [
-    "https://q.uiver.app#r=canvas&q=",
-    payload,
-    "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex&embed",
+    "https://q.uiver.app#r=canvas&q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex&embed",
   ].join("")
   let parsed = Quiver::parse_base64_share_url(link)
 
@@ -546,6 +593,7 @@ test "base64 share url parser captures embed and normalises default renderer" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser supports hash embed without payload" {
   let parsed = Quiver::parse_base64_share_url("https://q.uiver.app#embed")
   inspect(parsed.payload is None, content="true")
@@ -554,14 +602,13 @@ test "base64 share url parser supports hash embed without payload" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser supports hash question prefix and html ampersands" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
   let link = [
-    "https://q.uiver.app#?r=svg&q=",
-    payload,
-    "&amp;macro_url=https%3A%2F%2Fexample.com%2Fmy+macros.tex&amp;embed",
+    "https://q.uiver.app#?r=svg&q=", payload, "&amp;macro_url=https%3A%2F%2Fexample.com%2Fmy+macros.tex&amp;embed",
   ].join("")
   let parsed = Quiver::parse_base64_share_url(link)
 
@@ -580,14 +627,13 @@ test "base64 share url parser supports hash question prefix and html ampersands"
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser supports hashbang prefix" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
   let link = [
-    "https://q.uiver.app#!r=svg&q=",
-    payload,
-    "&macro_url=https%3A%2F%2Fexample.com%2Fhashbang.tex&embed",
+    "https://q.uiver.app#!r=svg&q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fhashbang.tex&embed",
   ].join("")
   let parsed = Quiver::parse_base64_share_url(link)
 
@@ -606,6 +652,7 @@ test "base64 share url parser supports hashbang prefix" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser supports hashbang question prefix" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -620,6 +667,7 @@ test "base64 share url parser supports hashbang question prefix" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser supports query-style url without hash" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -634,6 +682,7 @@ test "base64 share url parser supports query-style url without hash" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser merges fragment and query with query priority" {
   let quiver_fragment = Quiver::new()
   quiver_fragment.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -644,11 +693,7 @@ test "base64 share url parser merges fragment and query with query priority" {
   let payload_query = quiver_query.export_base64_v0()
 
   let link = [
-    "https://q.uiver.app/?q=",
-    payload_query,
-    "&r=canvas#q=",
-    payload_fragment,
-    "&r=svg&embed",
+    "https://q.uiver.app/?q=", payload_query, "&r=canvas#q=", payload_fragment, "&r=svg&embed",
   ].join("")
 
   let parsed = Quiver::parse_base64_share_url(link)
@@ -662,13 +707,13 @@ test "base64 share url parser merges fragment and query with query priority" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser keeps fragment payload and query macro_url" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
   let link = [
-    "https://q.uiver.app/?macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex#q=",
-    payload,
+    "https://q.uiver.app/?macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex#q=", payload,
     "&embed",
   ].join("")
 
@@ -684,14 +729,13 @@ test "base64 share url parser keeps fragment payload and query macro_url" {
   inspect(parsed.embed, content="true")
 }
 
+///|
 test "base64 share url parser preserves plus in renderer and macro_url" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
   let link = [
-    "https://q.uiver.app#r=svg%2Bcanvas&q=",
-    payload,
-    "&macro_url=https%3A%2F%2Fexample.com%2Fa+b.tex",
+    "https://q.uiver.app#r=svg%2Bcanvas&q=", payload, "&macro_url=https%3A%2F%2Fexample.com%2Fa+b.tex",
   ].join("")
 
   let parsed = Quiver::parse_base64_share_url(link)
@@ -705,6 +749,7 @@ test "base64 share url parser preserves plus in renderer and macro_url" {
   }
 }
 
+///|
 test "base64 import share url roundtrip works for full link and payload-only" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -726,6 +771,7 @@ test "base64 import share url roundtrip works for full link and payload-only" {
   inspect(decoded_payload.all_cell_ids(), content="[1, 2, 3]")
 }
 
+///|
 test "base64 import share url result preserves renderer and macro_url metadata" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -748,6 +794,7 @@ test "base64 import share url result preserves renderer and macro_url metadata" 
   inspect(imported.embed, content="false")
 }
 
+///|
 test "base64 import share url result normalises default renderer" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -760,73 +807,89 @@ test "base64 import share url result normalises default renderer" {
   inspect(imported.embed, content="false")
 }
 
+///|
 test "base64 share reference extraction supports tikz fletcher and html headers" {
   let payload = "abc123"
   let tikz = ["% https://q.uiver.app#q=", payload, "\n\\begin{tikzcd}"].join("")
-  let fletcher = ["// https://q.uiver.app#q=", payload, "\n#diagram({})"].join("")
-  let html = ["<!-- https://q.uiver.app#q=", payload, " -->\n<iframe></iframe>"].join("")
+  let fletcher = ["// https://q.uiver.app#q=", payload, "\n#diagram({})"].join(
+    "",
+  )
+  let html = ["<!-- https://q.uiver.app#q=", payload, " -->\n<iframe></iframe>"].join(
+    "",
+  )
 
   match Quiver::extract_base64_share_reference(tikz) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    Some(value) =>
+      inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
     None => abort("expected tikz reference")
   }
   match Quiver::extract_base64_share_reference(fletcher) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    Some(value) =>
+      inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
     None => abort("expected fletcher reference")
   }
   match Quiver::extract_base64_share_reference(html) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    Some(value) =>
+      inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
     None => abort("expected html reference")
   }
 }
 
+///|
 test "base64 share reference extraction supports wrapped markdown and iframe src" {
   let payload = "abc123"
   let wrapped = [
-    "```latex\n",
-    "  % https://q.uiver.app#q=",
-    payload,
-    "\n\\begin{tikzcd}\n```",
+    "```latex\n", "  % https://q.uiver.app#q=", payload, "\n\\begin{tikzcd}\n```",
   ].join("")
   let iframe_only = [
-    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=",
-    payload,
+    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=", payload,
     "&embed\" width=\"400\" height=\"400\"></iframe>",
   ].join("")
 
   match Quiver::extract_base64_share_reference(wrapped) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
+    Some(value) =>
+      inspect(value, content=["https://q.uiver.app#q=", payload].join(""))
     None => abort("expected wrapped reference")
   }
   match Quiver::extract_base64_share_reference(iframe_only) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""))
+    Some(value) =>
+      inspect(
+        value,
+        content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""),
+      )
     None => abort("expected iframe reference")
   }
 }
 
+///|
 test "base64 share reference extraction supports single-quoted and spaced iframe src" {
   let payload = "abc123"
   let single_quoted = [
-    "<iframe src='https://q.uiver.app#r=svg&q=",
-    payload,
-    "&embed'></iframe>",
+    "<iframe src='https://q.uiver.app#r=svg&q=", payload, "&embed'></iframe>",
   ].join("")
   let spaced_assignment = [
-    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=",
-    payload,
-    "&embed\" width='400'></iframe>",
+    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=", payload, "&embed\" width='400'></iframe>",
   ].join("")
 
   match Quiver::extract_base64_share_reference(single_quoted) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""))
+    Some(value) =>
+      inspect(
+        value,
+        content=["https://q.uiver.app#r=svg&q=", payload, "&embed"].join(""),
+      )
     None => abort("expected single-quoted iframe reference")
   }
   match Quiver::extract_base64_share_reference(spaced_assignment) {
-    Some(value) => inspect(value, content=["https://q.uiver.app#q=", payload, "&embed"].join(""))
+    Some(value) =>
+      inspect(
+        value,
+        content=["https://q.uiver.app#q=", payload, "&embed"].join(""),
+      )
     None => abort("expected spaced-assignment iframe reference")
   }
 }
 
+///|
 test "base64 import share text roundtrip from exporter outputs" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -864,7 +927,10 @@ test "base64 import share text roundtrip from exporter outputs" {
     .with_share_base_url("https://q.uiver.app")
     .with_renderer("svg")
   let html_settings = HtmlEmbedExportSettings::default("https://q.uiver.app")
-  let html_output = quiver.export_html_embed(html_settings, options=html_options)
+  let html_output = quiver.export_html_embed(
+    html_settings,
+    options=html_options,
+  )
   let imported_html = Quiver::import_base64_share_text(html_output)
   inspect(imported_html.quiver.all_cell_ids(), content="[1, 2, 3]")
   match imported_html.renderer {
@@ -874,24 +940,21 @@ test "base64 import share text roundtrip from exporter outputs" {
   inspect(imported_html.embed, content="false")
 }
 
+///|
 test "base64 import share text works from wrapped markdown and iframe-only source" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
 
   let wrapped = [
-    "```latex\n",
-    "  % https://q.uiver.app#q=",
-    payload,
-    "\n\\begin{tikzcd}\n```",
+    "```latex\n", "  % https://q.uiver.app#q=", payload, "\n\\begin{tikzcd}\n```",
   ].join("")
   let imported_wrapped = Quiver::import_base64_share_text(wrapped)
   inspect(imported_wrapped.quiver.all_cell_ids(), content="[1]")
   inspect(imported_wrapped.embed, content="false")
 
   let iframe_only = [
-    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=",
-    payload,
+    "<iframe class=\"quiver-embed\" src=\"https://q.uiver.app#r=svg&q=", payload,
     "&embed\" width=\"400\" height=\"400\"></iframe>",
   ].join("")
   let imported_iframe = Quiver::import_base64_share_text(iframe_only)
@@ -903,15 +966,14 @@ test "base64 import share text works from wrapped markdown and iframe-only sourc
   inspect(imported_iframe.embed, content="true")
 }
 
+///|
 test "base64 import share text supports single-quoted and spaced iframe src" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
   let payload = quiver.export_base64_v0()
 
   let single_quoted = [
-    "<iframe src='https://q.uiver.app#r=svg&q=",
-    payload,
-    "&embed'></iframe>",
+    "<iframe src='https://q.uiver.app#r=svg&q=", payload, "&embed'></iframe>",
   ].join("")
   let imported_single = Quiver::import_base64_share_text(single_quoted)
   inspect(imported_single.quiver.all_cell_ids(), content="[1]")
@@ -922,22 +984,20 @@ test "base64 import share text supports single-quoted and spaced iframe src" {
   inspect(imported_single.embed, content="true")
 
   let spaced_assignment = [
-    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=",
-    payload,
-    "&embed\" width='400'></iframe>",
+    "<iframe class='quiver-embed' src = \"https://q.uiver.app#q=", payload, "&embed\" width='400'></iframe>",
   ].join("")
   let imported_spaced = Quiver::import_base64_share_text(spaced_assignment)
   inspect(imported_spaced.quiver.all_cell_ids(), content="[1]")
   inspect(imported_spaced.embed, content="true")
 }
 
+///|
 test "panic base64 import share url without payload" {
   ignore(Quiver::import_base64_share_url("https://q.uiver.app"))
 }
 
+///|
 test "panic base64 v0 import rejects non-integer colour components" {
-  let encoded = base64_encode_json(
-    "[0,1,[0,0,\"A\",[30.5,60,60]]]",
-  )
+  let encoded = base64_encode_json("[0,1,[0,0,\"A\",[30.5,60,60]]]")
   ignore(Quiver::import_base64_v0(encoded))
 }
