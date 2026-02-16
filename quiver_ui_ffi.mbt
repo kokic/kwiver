@@ -196,6 +196,22 @@ pub fn QuiverUiAdapter::import_share_url(
 }
 
 ///|
+pub fn QuiverUiAdapter::import_share_text(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> QuiverUiImportResult raise {
+  let imported = Quiver::import_base64_share_text(input, default_renderer~)
+  self.quiver = imported.quiver
+  quiver_ui_import_result(
+    self.quiver,
+    imported.macro_url,
+    imported.renderer,
+    imported.embed,
+  )
+}
+
+///|
 pub fn QuiverUiAdapter::import_tikz_cd(
   self : QuiverUiAdapter,
   input : String,
@@ -619,6 +635,15 @@ pub fn ffi_adapter_import_share_url(
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
   adapter.import_share_url(input, default_renderer~)
+}
+
+///|
+pub fn ffi_adapter_import_share_text(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> QuiverUiImportResult raise {
+  adapter.import_share_text(input, default_renderer~)
 }
 
 ///|

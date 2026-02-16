@@ -225,6 +225,21 @@ pub fn BrowserRuntime::import_share_url(
 }
 
 ///|
+pub fn BrowserRuntime::import_share_text(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> @kwiver.QuiverUiImportResult raise {
+  let imported = @kwiver.ffi_adapter_import_share_text(
+    self.adapter,
+    input,
+    default_renderer~,
+  )
+  self.selected_ids = []
+  imported
+}
+
+///|
 pub fn BrowserRuntime::import_tikz_cd(
   self : BrowserRuntime,
   input : String,

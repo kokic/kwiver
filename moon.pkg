@@ -16,6 +16,7 @@ options(
         "ffi_adapter_reset",
         "ffi_adapter_import_base64",
         "ffi_adapter_import_share_url",
+        "ffi_adapter_import_share_text",
         "ffi_adapter_import_tikz_cd",
         "ffi_adapter_import_fletcher",
         "ffi_adapter_import_html_embed",
