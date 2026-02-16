@@ -131,6 +131,14 @@ pub fn BrowserRuntime::reconnect_edge(
 }
 
 ///|
+pub fn BrowserRuntime::apply_mutation_batch(
+  self : BrowserRuntime,
+  batch : @kwiver.QuiverUiMutationBatch,
+) -> @kwiver.QuiverUiMutationBatchResult {
+  @kwiver.ffi_adapter_apply_mutation_batch(self.adapter, batch)
+}
+
+///|
 pub fn BrowserRuntime::remove(
   self : BrowserRuntime,
   cell_id : Int,

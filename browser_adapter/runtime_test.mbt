@@ -184,6 +184,73 @@ test "browser runtime applies incremental mutations via ffi surface" {
 }
 
 ///|
+test "browser runtime applies mutation batch through ffi adapter" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 2, 0)
+  let edge_id = runtime.add_edge(source_id, target_id, label="f")
+  runtime.set_selection([source_id, edge_id])
+
+  let batch = @kwiver.QuiverUiMutationBatch::new(
+    [@kwiver.QuiverUiSetLabelPatch::new(source_id, "A2")],
+    [],
+    [@kwiver.QuiverUiMoveVertexPatch::new(source_id, 5, 7)],
+    [
+      @kwiver.QuiverUiSetEdgeOptionsPatch::new(
+        edge_id,
+        @kwiver.EdgeOptions::at_level(1).with_curve(-1),
+      ),
+    ],
+    [
+      @kwiver.QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id),
+    ],
+  )
+
+  let result = runtime.apply_mutation_batch(batch)
+  inspect(result.label_results, content="[true]")
+  inspect(result.vertex_position_results, content="[true]")
+  inspect(result.edge_option_results, content="[true]")
+  inspect(result.edge_connection_results, content="[true]")
+  inspect(result.payload == runtime.export_payload(), content="true")
+  inspect(runtime.selection(), content="[1, 3]")
+
+  let quiver = @kwiver.Quiver::import_base64_v0(result.payload)
+  let mut source_vertex : @kwiver.Vertex? = None
+  let mut edge_value : @kwiver.Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      @kwiver.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      @kwiver.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A2")
+      // Base64 canonical export normalises positions by top-left offset.
+      inspect(vertex.x, content="3")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-1")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "browser runtime mutation helpers reject mismatched ids" {
   let runtime = BrowserRuntime::new()
   let vertex_id = runtime.add_vertex("A", 0, 0)

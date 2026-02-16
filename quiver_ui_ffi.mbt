@@ -1,7 +1,9 @@
+///|
 pub struct QuiverUiAdapter {
   mut quiver : Quiver
 }
 
+///|
 pub struct QuiverUiImportResult {
   payload : String
   macro_url : String?
@@ -9,35 +11,150 @@ pub struct QuiverUiImportResult {
   embed : Bool
 }
 
+///|
 pub struct QuiverUiIdRemap {
   old_id : Int
   new_id : Int
 }
 
+///|
 pub struct QuiverUiSelectionImportResult {
   payload : String
   imported_ids : Array[Int]
   id_remap : Array[QuiverUiIdRemap]
 }
 
+///|
+pub struct QuiverUiSetLabelPatch {
+  cell_id : Int
+  label : String
+}
+
+///|
+pub struct QuiverUiSetLabelColourPatch {
+  cell_id : Int
+  label_colour : Colour
+}
+
+///|
+pub struct QuiverUiMoveVertexPatch {
+  vertex_id : Int
+  x : Int
+  y : Int
+}
+
+///|
+pub struct QuiverUiSetEdgeOptionsPatch {
+  edge_id : Int
+  options : EdgeOptions
+}
+
+///|
+pub struct QuiverUiReconnectEdgePatch {
+  edge_id : Int
+  source_id : Int
+  target_id : Int
+}
+
+///|
+pub struct QuiverUiMutationBatch {
+  labels : Array[QuiverUiSetLabelPatch]
+  label_colours : Array[QuiverUiSetLabelColourPatch]
+  vertex_positions : Array[QuiverUiMoveVertexPatch]
+  edge_options : Array[QuiverUiSetEdgeOptionsPatch]
+  edge_connections : Array[QuiverUiReconnectEdgePatch]
+}
+
+///|
+pub struct QuiverUiMutationBatchResult {
+  payload : String
+  label_results : Array[Bool]
+  label_colour_results : Array[Bool]
+  vertex_position_results : Array[Bool]
+  edge_option_results : Array[Bool]
+  edge_connection_results : Array[Bool]
+}
+
+///|
 pub fn QuiverUiAdapter::new() -> QuiverUiAdapter {
   { quiver: Quiver::new() }
 }
 
+///|
+pub fn QuiverUiSetLabelPatch::new(
+  cell_id : Int,
+  label : String,
+) -> QuiverUiSetLabelPatch {
+  { cell_id, label }
+}
+
+///|
+pub fn QuiverUiSetLabelColourPatch::new(
+  cell_id : Int,
+  label_colour : Colour,
+) -> QuiverUiSetLabelColourPatch {
+  { cell_id, label_colour }
+}
+
+///|
+pub fn QuiverUiMoveVertexPatch::new(
+  vertex_id : Int,
+  x : Int,
+  y : Int,
+) -> QuiverUiMoveVertexPatch {
+  { vertex_id, x, y }
+}
+
+///|
+pub fn QuiverUiSetEdgeOptionsPatch::new(
+  edge_id : Int,
+  options : EdgeOptions,
+) -> QuiverUiSetEdgeOptionsPatch {
+  { edge_id, options }
+}
+
+///|
+pub fn QuiverUiReconnectEdgePatch::new(
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> QuiverUiReconnectEdgePatch {
+  { edge_id, source_id, target_id }
+}
+
+///|
+pub fn QuiverUiMutationBatch::default() -> QuiverUiMutationBatch {
+  {
+    labels: [],
+    label_colours: [],
+    vertex_positions: [],
+    edge_options: [],
+    edge_connections: [],
+  }
+}
+
+///|
+pub fn QuiverUiMutationBatch::new(
+  labels : Array[QuiverUiSetLabelPatch],
+  label_colours : Array[QuiverUiSetLabelColourPatch],
+  vertex_positions : Array[QuiverUiMoveVertexPatch],
+  edge_options : Array[QuiverUiSetEdgeOptionsPatch],
+  edge_connections : Array[QuiverUiReconnectEdgePatch],
+) -> QuiverUiMutationBatch {
+  { labels, label_colours, vertex_positions, edge_options, edge_connections }
+}
+
+///|
 fn quiver_ui_import_result(
   quiver : Quiver,
   macro_url : String?,
   renderer : String?,
   embed : Bool,
 ) -> QuiverUiImportResult {
-  {
-    payload: quiver.export_base64_v0(),
-    macro_url,
-    renderer,
-    embed,
-  }
+  { payload: quiver.export_base64_v0(), macro_url, renderer, embed }
 }
 
+///|
 fn quiver_ui_sorted_id_remap(remap : Map[Int, Int]) -> Array[QuiverUiIdRemap] {
   let out : Array[QuiverUiIdRemap] = []
   remap.each((old_id, new_id) => out.push({ old_id, new_id }))
@@ -45,10 +162,12 @@ fn quiver_ui_sorted_id_remap(remap : Map[Int, Int]) -> Array[QuiverUiIdRemap] {
   out
 }
 
+///|
 pub fn QuiverUiAdapter::reset(self : QuiverUiAdapter) -> Unit {
   self.quiver = Quiver::new()
 }
 
+///|
 pub fn QuiverUiAdapter::import_base64_state(
   self : QuiverUiAdapter,
   payload : String,
@@ -57,6 +176,7 @@ pub fn QuiverUiAdapter::import_base64_state(
   self.quiver.export_base64_v0()
 }
 
+///|
 pub fn QuiverUiAdapter::import_share_url(
   self : QuiverUiAdapter,
   input : String,
@@ -64,7 +184,7 @@ pub fn QuiverUiAdapter::import_share_url(
 ) -> QuiverUiImportResult raise {
   let imported = Quiver::import_base64_share_url_result(
     input,
-    default_renderer=default_renderer,
+    default_renderer~,
   )
   self.quiver = imported.quiver
   quiver_ui_import_result(
@@ -75,15 +195,13 @@ pub fn QuiverUiAdapter::import_share_url(
   )
 }
 
+///|
 pub fn QuiverUiAdapter::import_tikz_cd(
   self : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  let imported = Quiver::import_tikz_cd_result(
-    input,
-    default_renderer=default_renderer,
-  )
+  let imported = Quiver::import_tikz_cd_result(input, default_renderer~)
   self.quiver = imported.quiver
   quiver_ui_import_result(
     self.quiver,
@@ -93,15 +211,13 @@ pub fn QuiverUiAdapter::import_tikz_cd(
   )
 }
 
+///|
 pub fn QuiverUiAdapter::import_fletcher(
   self : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  let imported = Quiver::import_fletcher_result(
-    input,
-    default_renderer=default_renderer,
-  )
+  let imported = Quiver::import_fletcher_result(input, default_renderer~)
   self.quiver = imported.quiver
   quiver_ui_import_result(
     self.quiver,
@@ -111,15 +227,13 @@ pub fn QuiverUiAdapter::import_fletcher(
   )
 }
 
+///|
 pub fn QuiverUiAdapter::import_html_embed(
   self : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  let imported = Quiver::import_html_embed_result(
-    input,
-    default_renderer=default_renderer,
-  )
+  let imported = Quiver::import_html_embed_result(input, default_renderer~)
   self.quiver = imported.quiver
   quiver_ui_import_result(
     self.quiver,
@@ -129,6 +243,7 @@ pub fn QuiverUiAdapter::import_html_embed(
   )
 }
 
+///|
 pub fn QuiverUiAdapter::paste_base64_selection(
   self : QuiverUiAdapter,
   payload : String,
@@ -140,7 +255,7 @@ pub fn QuiverUiAdapter::paste_base64_selection(
     payload,
     origin_x,
     origin_y,
-    start_id=start_id,
+    start_id~,
   )
   {
     payload: self.quiver.export_base64_v0(),
@@ -149,6 +264,7 @@ pub fn QuiverUiAdapter::paste_base64_selection(
   }
 }
 
+///|
 pub fn QuiverUiAdapter::add_vertex(
   self : QuiverUiAdapter,
   label : String,
@@ -158,13 +274,12 @@ pub fn QuiverUiAdapter::add_vertex(
 ) -> Int {
   let id = self.quiver.next_available_id()
   self.quiver.add(
-    CellData::from_vertex(
-      Vertex::new(id, label, x, y, label_colour),
-    ),
+    CellData::from_vertex(Vertex::new(id, label, x, y, label_colour)),
   )
   id
 }
 
+///|
 pub fn QuiverUiAdapter::add_edge(
   self : QuiverUiAdapter,
   source_id : Int,
@@ -183,20 +298,237 @@ pub fn QuiverUiAdapter::add_edge(
   let id = self.quiver.next_available_id()
   self.quiver.add(
     CellData::from_edge(
-      Edge::new(
-        id,
-        label,
-        source_id,
-        target_id,
-        options,
-        label_colour,
-      ),
+      Edge::new(id, label, source_id, target_id, options, label_colour),
     ),
   )
   self.quiver.connect(source_id, target_id, id)
   id
 }
 
+///|
+pub fn QuiverUiAdapter::set_cell_label(
+  self : QuiverUiAdapter,
+  cell_id : Int,
+  label : String,
+) -> Bool {
+  if !self.quiver.contains_cell(cell_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(cell_id) {
+    Some(CellData::Vertex(vertex)) => {
+      self.quiver.cells.set(
+        cell_id,
+        CellData::from_vertex(
+          Vertex::new(
+            vertex.cell.id,
+            label,
+            vertex.x,
+            vertex.y,
+            vertex.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    Some(CellData::Edge(edge)) => {
+      self.quiver.cells.set(
+        cell_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            label,
+            edge.source,
+            edge.target,
+            edge.options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    None => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_cell_label_colour(
+  self : QuiverUiAdapter,
+  cell_id : Int,
+  label_colour : Colour,
+) -> Bool {
+  if !self.quiver.contains_cell(cell_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(cell_id) {
+    Some(CellData::Vertex(vertex)) => {
+      self.quiver.cells.set(
+        cell_id,
+        CellData::from_vertex(
+          Vertex::new(
+            vertex.cell.id,
+            vertex.cell.label,
+            vertex.x,
+            vertex.y,
+            label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    Some(CellData::Edge(edge)) => {
+      self.quiver.cells.set(
+        cell_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            edge.options,
+            label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    None => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::move_vertex(
+  self : QuiverUiAdapter,
+  vertex_id : Int,
+  x : Int,
+  y : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(vertex_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(vertex_id) {
+    Some(CellData::Vertex(vertex)) => {
+      self.quiver.cells.set(
+        vertex_id,
+        CellData::from_vertex(
+          Vertex::new(
+            vertex.cell.id,
+            vertex.cell.label,
+            x,
+            y,
+            vertex.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_options(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  options : EdgeOptions,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let safe_options = options.with_level(edge.cell.level)
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            safe_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::reconnect_edge(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) ||
+    !self.quiver.contains_cell(source_id) ||
+    !self.quiver.contains_cell(target_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(_)) => {
+      self.quiver.connect(source_id, target_id, edge_id)
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::apply_mutation_batch(
+  self : QuiverUiAdapter,
+  batch : QuiverUiMutationBatch,
+) -> QuiverUiMutationBatchResult {
+  let label_results : Array[Bool] = []
+  for patch in batch.labels {
+    label_results.push(self.set_cell_label(patch.cell_id, patch.label))
+  }
+
+  let label_colour_results : Array[Bool] = []
+  for patch in batch.label_colours {
+    label_colour_results.push(
+      self.set_cell_label_colour(patch.cell_id, patch.label_colour),
+    )
+  }
+
+  let vertex_position_results : Array[Bool] = []
+  for patch in batch.vertex_positions {
+    vertex_position_results.push(
+      self.move_vertex(patch.vertex_id, patch.x, patch.y),
+    )
+  }
+
+  let edge_option_results : Array[Bool] = []
+  for patch in batch.edge_options {
+    edge_option_results.push(self.set_edge_options(patch.edge_id, patch.options))
+  }
+
+  let edge_connection_results : Array[Bool] = []
+  for patch in batch.edge_connections {
+    edge_connection_results.push(
+      self.reconnect_edge(patch.edge_id, patch.source_id, patch.target_id),
+    )
+  }
+
+  {
+    payload: self.quiver.export_base64_v0(),
+    label_results,
+    label_colour_results,
+    vertex_position_results,
+    edge_option_results,
+    edge_connection_results,
+  }
+}
+
+///|
 pub fn QuiverUiAdapter::remove(
   self : QuiverUiAdapter,
   cell_id : Int,
@@ -205,70 +537,74 @@ pub fn QuiverUiAdapter::remove(
   self.quiver.remove(cell_id, when)
 }
 
+///|
 pub fn QuiverUiAdapter::flush(self : QuiverUiAdapter, when : Int) -> Unit {
   self.quiver.flush(when)
 }
 
+///|
 pub fn QuiverUiAdapter::all_cells(self : QuiverUiAdapter) -> Array[CellData] {
   self.quiver.all_cells()
 }
 
+///|
 pub fn QuiverUiAdapter::all_cell_ids(self : QuiverUiAdapter) -> Array[Int] {
   self.quiver.all_cell_ids()
 }
 
+///|
 pub fn QuiverUiAdapter::export_base64_state(self : QuiverUiAdapter) -> String {
   self.quiver.export_base64_v0()
 }
 
+///|
 pub fn QuiverUiAdapter::export_base64_selection(
   self : QuiverUiAdapter,
   selected_ids : Array[Int],
   include_dependencies? : Bool = true,
 ) -> String {
-  self.quiver.export_base64_v0_selection(
-    selected_ids,
-    include_dependencies=include_dependencies,
-  )
+  self.quiver.export_base64_v0_selection(selected_ids, include_dependencies~)
 }
 
+///|
 pub fn QuiverUiAdapter::export_tikz_cd(
   self : QuiverUiAdapter,
-  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
-  self.quiver.export_tikz_cd_result(
-    settings=settings,
-    options=options,
-    definitions=definitions,
-  )
+  self.quiver.export_tikz_cd_result(settings~, options~, definitions~)
 }
 
+///|
 pub fn QuiverUiAdapter::export_fletcher(
   self : QuiverUiAdapter,
-  settings~ : FletcherExportSettings = FletcherExportSettings::default(),
-  options~ : FletcherExportOptions = FletcherExportOptions::default(),
+  settings? : FletcherExportSettings = FletcherExportSettings::default(),
+  options? : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
-  self.quiver.export_fletcher(settings=settings, options=options)
+  self.quiver.export_fletcher(settings~, options~)
 }
 
+///|
 pub fn QuiverUiAdapter::export_html_embed(
   self : QuiverUiAdapter,
   settings : HtmlEmbedExportSettings,
-  options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
+  options? : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
-  self.quiver.export_html_embed(settings, options=options)
+  self.quiver.export_html_embed(settings, options~)
 }
 
+///|
 pub fn ffi_adapter_new() -> QuiverUiAdapter {
   QuiverUiAdapter::new()
 }
 
+///|
 pub fn ffi_adapter_reset(adapter : QuiverUiAdapter) -> Unit {
   adapter.reset()
 }
 
+///|
 pub fn ffi_adapter_import_base64(
   adapter : QuiverUiAdapter,
   payload : String,
@@ -276,38 +612,43 @@ pub fn ffi_adapter_import_base64(
   adapter.import_base64_state(payload)
 }
 
+///|
 pub fn ffi_adapter_import_share_url(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  adapter.import_share_url(input, default_renderer=default_renderer)
+  adapter.import_share_url(input, default_renderer~)
 }
 
+///|
 pub fn ffi_adapter_import_tikz_cd(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  adapter.import_tikz_cd(input, default_renderer=default_renderer)
+  adapter.import_tikz_cd(input, default_renderer~)
 }
 
+///|
 pub fn ffi_adapter_import_fletcher(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  adapter.import_fletcher(input, default_renderer=default_renderer)
+  adapter.import_fletcher(input, default_renderer~)
 }
 
+///|
 pub fn ffi_adapter_import_html_embed(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
-  adapter.import_html_embed(input, default_renderer=default_renderer)
+  adapter.import_html_embed(input, default_renderer~)
 }
 
+///|
 pub fn ffi_adapter_paste_base64_selection(
   adapter : QuiverUiAdapter,
   payload : String,
@@ -315,14 +656,10 @@ pub fn ffi_adapter_paste_base64_selection(
   origin_y : Int,
   start_id? : Int = 1,
 ) -> QuiverUiSelectionImportResult raise {
-  adapter.paste_base64_selection(
-    payload,
-    origin_x,
-    origin_y,
-    start_id=start_id,
-  )
+  adapter.paste_base64_selection(payload, origin_x, origin_y, start_id~)
 }
 
+///|
 pub fn ffi_adapter_add_vertex(
   adapter : QuiverUiAdapter,
   label : String,
@@ -330,9 +667,10 @@ pub fn ffi_adapter_add_vertex(
   y : Int,
   label_colour? : Colour = Colour::black(),
 ) -> Int {
-  adapter.add_vertex(label, x, y, label_colour=label_colour)
+  adapter.add_vertex(label, x, y, label_colour~)
 }
 
+///|
 pub fn ffi_adapter_add_edge(
   adapter : QuiverUiAdapter,
   source_id : Int,
@@ -341,15 +679,65 @@ pub fn ffi_adapter_add_edge(
   options? : EdgeOptions = EdgeOptions::at_level(1),
   label_colour? : Colour = Colour::black(),
 ) -> Int {
-  adapter.add_edge(
-    source_id,
-    target_id,
-    label=label,
-    options=options,
-    label_colour=label_colour,
-  )
+  adapter.add_edge(source_id, target_id, label~, options~, label_colour~)
 }
 
+///|
+pub fn ffi_adapter_set_cell_label(
+  adapter : QuiverUiAdapter,
+  cell_id : Int,
+  label : String,
+) -> Bool {
+  adapter.set_cell_label(cell_id, label)
+}
+
+///|
+pub fn ffi_adapter_set_cell_label_colour(
+  adapter : QuiverUiAdapter,
+  cell_id : Int,
+  label_colour : Colour,
+) -> Bool {
+  adapter.set_cell_label_colour(cell_id, label_colour)
+}
+
+///|
+pub fn ffi_adapter_move_vertex(
+  adapter : QuiverUiAdapter,
+  vertex_id : Int,
+  x : Int,
+  y : Int,
+) -> Bool {
+  adapter.move_vertex(vertex_id, x, y)
+}
+
+///|
+pub fn ffi_adapter_set_edge_options(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  options : EdgeOptions,
+) -> Bool {
+  adapter.set_edge_options(edge_id, options)
+}
+
+///|
+pub fn ffi_adapter_reconnect_edge(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> Bool {
+  adapter.reconnect_edge(edge_id, source_id, target_id)
+}
+
+///|
+pub fn ffi_adapter_apply_mutation_batch(
+  adapter : QuiverUiAdapter,
+  batch : QuiverUiMutationBatch,
+) -> QuiverUiMutationBatchResult {
+  adapter.apply_mutation_batch(batch)
+}
+
+///|
 pub fn ffi_adapter_remove(
   adapter : QuiverUiAdapter,
   cell_id : Int,
@@ -358,59 +746,59 @@ pub fn ffi_adapter_remove(
   adapter.remove(cell_id, when)
 }
 
+///|
 pub fn ffi_adapter_flush(adapter : QuiverUiAdapter, when : Int) -> Unit {
   adapter.flush(when)
 }
 
+///|
 pub fn ffi_adapter_all_cells(adapter : QuiverUiAdapter) -> Array[CellData] {
   adapter.all_cells()
 }
 
+///|
 pub fn ffi_adapter_all_cell_ids(adapter : QuiverUiAdapter) -> Array[Int] {
   adapter.all_cell_ids()
 }
 
+///|
 pub fn ffi_adapter_export_base64(adapter : QuiverUiAdapter) -> String {
   adapter.export_base64_state()
 }
 
+///|
 pub fn ffi_adapter_export_base64_selection(
   adapter : QuiverUiAdapter,
   selected_ids : Array[Int],
   include_dependencies? : Bool = true,
 ) -> String {
-  adapter.export_base64_selection(
-    selected_ids,
-    include_dependencies=include_dependencies,
-  )
+  adapter.export_base64_selection(selected_ids, include_dependencies~)
 }
 
+///|
 pub fn ffi_adapter_export_tikz_cd(
   adapter : QuiverUiAdapter,
-  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
-  adapter.export_tikz_cd(
-    settings=settings,
-    options=options,
-    definitions=definitions,
-  )
+  adapter.export_tikz_cd(settings~, options~, definitions~)
 }
 
+///|
 pub fn ffi_adapter_export_fletcher(
   adapter : QuiverUiAdapter,
-  settings~ : FletcherExportSettings = FletcherExportSettings::default(),
-  options~ : FletcherExportOptions = FletcherExportOptions::default(),
+  settings? : FletcherExportSettings = FletcherExportSettings::default(),
+  options? : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
-  adapter.export_fletcher(settings=settings, options=options)
+  adapter.export_fletcher(settings~, options~)
 }
 
+///|
 pub fn ffi_adapter_export_html_embed(
   adapter : QuiverUiAdapter,
   settings : HtmlEmbedExportSettings,
-  options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
+  options? : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
-  adapter.export_html_embed(settings, options=options)
+  adapter.export_html_embed(settings, options~)
 }
-

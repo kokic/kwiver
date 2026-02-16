@@ -23,6 +23,12 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `ffi_adapter_add_vertex(adapter, label, x, y, label_colour?) -> Int`
 - `ffi_adapter_add_edge(adapter, source_id, target_id, label?, options?, label_colour?) -> Int`
+- `ffi_adapter_set_cell_label(adapter, cell_id, label) -> Bool`
+- `ffi_adapter_set_cell_label_colour(adapter, cell_id, label_colour) -> Bool`
+- `ffi_adapter_move_vertex(adapter, vertex_id, x, y) -> Bool`
+- `ffi_adapter_set_edge_options(adapter, edge_id, options) -> Bool`
+- `ffi_adapter_reconnect_edge(adapter, edge_id, source_id, target_id) -> Bool`
+- `ffi_adapter_apply_mutation_batch(adapter, batch) -> QuiverUiMutationBatchResult`
 - `ffi_adapter_remove(adapter, cell_id, when) -> Array[Int]`
 - `ffi_adapter_flush(adapter, when)`
 - `ffi_adapter_reset(adapter)`
@@ -44,4 +50,6 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `QuiverUiImportResult` returns `{ payload, macro_url, renderer, embed }`.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
+- `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `id_remap` is sorted by `old_id` to keep deterministic JS-side patch application.
+- Batch apply order is fixed: `labels -> label_colours -> vertex_positions -> edge_options -> edge_connections`.

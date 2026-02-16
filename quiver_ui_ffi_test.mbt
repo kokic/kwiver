@@ -139,6 +139,93 @@ test "ui ffi adapter supports incremental mutation without reload" {
 }
 
 ///|
+test "ui ffi adapter applies mutation batch and reports per-op results" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 2, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+
+  let batch = QuiverUiMutationBatch::new(
+    [
+      QuiverUiSetLabelPatch::new(source_id, "A2"),
+      QuiverUiSetLabelPatch::new(999, "missing"),
+    ],
+    [
+      QuiverUiSetLabelColourPatch::new(
+        edge_id,
+        Colour::new(120, 100, 25, 1.0),
+      ),
+      QuiverUiSetLabelColourPatch::new(999, Colour::new(0, 0, 0, 1.0)),
+    ],
+    [
+      QuiverUiMoveVertexPatch::new(source_id, 5, 7),
+      QuiverUiMoveVertexPatch::new(999, 1, 1),
+    ],
+    [
+      QuiverUiSetEdgeOptionsPatch::new(
+        edge_id,
+        EdgeOptions::at_level(9)
+          .with_curve(-2)
+          .with_style_head("epi")
+          .with_colour(Colour::new(0, 100, 50, 1.0)),
+      ),
+      QuiverUiSetEdgeOptionsPatch::new(999, EdgeOptions::at_level(1)),
+    ],
+    [
+      QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id),
+      QuiverUiReconnectEdgePatch::new(999, source_id, target_id),
+    ],
+  )
+
+  let result = ffi_adapter_apply_mutation_batch(adapter, batch)
+  inspect(result.label_results, content="[true, false]")
+  inspect(result.label_colour_results, content="[true, false]")
+  inspect(result.vertex_position_results, content="[true, false]")
+  inspect(result.edge_option_results, content="[true, false]")
+  inspect(result.edge_connection_results, content="[true, false]")
+  inspect(result.payload == ffi_adapter_export_base64(adapter), content="true")
+
+  let quiver = Quiver::import_base64_v0(result.payload)
+  let mut source_vertex : Vertex? = None
+  let mut edge_value : Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A2")
+      // Base64 canonical export normalises positions by top-left offset.
+      inspect(vertex.x, content="3")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="120")
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.style.head.name, content="epi")
+      inspect(edge.options.level, content="1")
+      inspect(edge.options.colour.h, content="0")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "ui ffi adapter mutation APIs return false for invalid ids" {
   let adapter = ffi_adapter_new()
   let vertex_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
