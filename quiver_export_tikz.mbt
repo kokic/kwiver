@@ -1443,7 +1443,43 @@ fn tikz_trim_left(input : String) -> String {
   }
 }
 
-fn tikz_extract_environment_body(input : String) -> String? {
+priv struct TikzEnvironmentBody {
+  body : String
+  ampersand_replacement : Bool
+}
+
+priv struct TikzArrowMatch {
+  start : Int
+  options_start : Int
+  open_delimiter : UInt16
+  close_delimiter : UInt16
+}
+
+priv struct TikzParsedArrow {
+  direction : String?
+  label : String
+  from_x : Int?
+  from_y : Int?
+  to_x : Int?
+  to_y : Int?
+}
+
+priv struct TikzPendingArrow {
+  source_x : Int
+  source_y : Int
+  target_x : Int
+  target_y : Int
+  label : String
+}
+
+fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
+  let compact = options
+    .replace_all(old=" ", new="")
+    .replace_all(old="\t", new="")
+  compact.contains("ampersandreplacement=\\&")
+}
+
+fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
   let begin_token = "\\begin{tikzcd}"
   let end_token = "\\end{tikzcd}"
   match input.find(begin_token) {
@@ -1453,6 +1489,7 @@ fn tikz_extract_environment_body(input : String) -> String? {
         end=input.length(),
       )
       let mut rest = tikz_trim_left(after_begin)
+      let mut ampersand_replacement = false
       if rest.has_prefix("[") {
         let mut depth = 0
         let mut i = 0
@@ -1463,6 +1500,8 @@ fn tikz_extract_environment_body(input : String) -> String? {
           } else if ch == ']' {
             depth = depth - 1
             if depth == 0 {
+              let options = rest.unsafe_substring(start=1, end=i)
+              ampersand_replacement = tikz_ampersand_replacement_enabled(options)
               rest = rest.unsafe_substring(start=i + 1, end=rest.length())
               break
             }
@@ -1472,7 +1511,10 @@ fn tikz_extract_environment_body(input : String) -> String? {
       }
       match rest.find(end_token) {
         Some(end_index) =>
-          Some(rest.unsafe_substring(start=0, end=end_index))
+          Some({
+            body: rest.unsafe_substring(start=0, end=end_index),
+            ampersand_replacement,
+          })
         None => None
       }
     }
@@ -1488,12 +1530,79 @@ fn tikz_split_rows(body : String) -> Array[String] {
   rows
 }
 
-fn tikz_split_cells(row : String) -> Array[String] {
+fn tikz_split_cells(row : String, ampersand_replacement : Bool) -> Array[String] {
   let cells : Array[String] = []
-  for cell in row.split("&") {
+  let delimiter = if ampersand_replacement {
+    "\\&"
+  } else {
+    "&"
+  }
+  for cell in row.split(delimiter) {
     cells.push(cell.to_string())
   }
   cells
+}
+
+fn tikz_unwrap_braced_text(input : String) -> String {
+  let trimmed = input.trim().to_string()
+  if trimmed.length() >= 2 && trimmed.has_prefix("{") && trimmed.has_suffix("}") {
+    trimmed.unsafe_substring(start=1, end=trimmed.length() - 1).trim().to_string()
+  } else {
+    trimmed
+  }
+}
+
+fn tikz_strip_math_wrapper(input : String) -> String {
+  let trimmed = input.trim().to_string()
+  if trimmed.length() >= 2 && trimmed.has_prefix("$") && trimmed.has_suffix("$") {
+    trimmed.unsafe_substring(start=1, end=trimmed.length() - 1).trim().to_string()
+  } else {
+    trimmed
+  }
+}
+
+fn tikz_parse_positive_int(input : String) -> Int? {
+  let value = input.trim().to_string()
+  if value == "" {
+    return None
+  }
+
+  let bytes = @utf8.encode(value)
+  let mut out = 0
+  for byte in bytes {
+    let code = byte.to_int()
+    if code < 48 || code > 57 {
+      return None
+    }
+    out = out * 10 + (code - 48)
+  }
+  Some(out)
+}
+
+fn tikz_parse_grid_reference(value : String) -> (Int, Int)? {
+  let raw = tikz_unwrap_braced_text(value)
+  let compact = raw
+    .replace_all(old=" ", new="")
+    .replace_all(old="\t", new="")
+  match compact.find("-") {
+    Some(split_at) => {
+      let row_text = compact.unsafe_substring(start=0, end=split_at)
+      let col_text = compact.unsafe_substring(start=split_at + 1, end=compact.length())
+      if row_text == "" || col_text == "" || col_text.contains("-") {
+        return None
+      }
+      match (tikz_parse_positive_int(row_text), tikz_parse_positive_int(col_text)) {
+        (Some(row), Some(col)) =>
+          if row >= 1 && col >= 1 {
+            Some((col - 1, row - 1))
+          } else {
+            None
+          }
+        _ => None
+      }
+    }
+    None => None
+  }
 }
 
 fn tikz_is_direction_token(token : String) -> Bool {
@@ -1521,25 +1630,121 @@ fn tikz_extract_first_quoted(value : String) -> String? {
   }
 }
 
-fn tikz_cell_label_text(cell : String) -> String {
-  let trimmed = cell.trim().to_string()
-  match trimmed.find("\\arrow[") {
-    Some(index) => trimmed.unsafe_substring(start=0, end=index).trim().to_string()
-    None => trimmed
+fn tikz_option_key_value(option : String) -> (String, String)? {
+  match option.find("=") {
+    Some(index) => Some(
+      (
+        option.unsafe_substring(start=0, end=index).trim().to_string(),
+        option.unsafe_substring(start=index + 1, end=option.length()).trim().to_string(),
+      ),
+    )
+    None => None
   }
 }
 
-fn tikz_collect_cell_arrows(cell : String) -> Array[(String, String)] {
-  let arrows : Array[(String, String)] = []
+fn tikz_is_label_modifier(option : String) -> Bool {
+  match option {
+    "'" => true
+    "swap" => true
+    "description" => true
+    "marking" => true
+    "allow upside down" => true
+    _ => false
+  }
+}
+
+fn tikz_extract_arrow_label_option(option : String) -> String? {
+  match tikz_extract_first_quoted(option) {
+    Some(value) => return Some(value)
+    None => ()
+  }
+
+  if option.contains("=") {
+    return None
+  }
+
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+  if token == "" || tikz_is_direction_token(token) || tikz_is_label_modifier(token) {
+    None
+  } else {
+    Some(token)
+  }
+}
+
+fn tikz_consider_arrow_match(
+  best : TikzArrowMatch?,
+  input : String,
+  token : String,
+  open_delimiter : UInt16,
+  close_delimiter : UInt16,
+) -> TikzArrowMatch? {
+  match input.find(token) {
+    Some(start) => {
+      let candidate : TikzArrowMatch = {
+        start,
+        options_start: start + token.length(),
+        open_delimiter,
+        close_delimiter,
+      }
+      match best {
+        Some(previous) => if start < previous.start { Some(candidate) } else { Some(previous) }
+        None => Some(candidate)
+      }
+    }
+    None => best
+  }
+}
+
+fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
+  let mut best : TikzArrowMatch? = None
+  best = tikz_consider_arrow_match(best, input, "\\arrow[", '[', ']')
+  best = tikz_consider_arrow_match(best, input, "\\arrow{", '{', '}')
+  best = tikz_consider_arrow_match(best, input, "\\ar[", '[', ']')
+  best = tikz_consider_arrow_match(best, input, "\\ar{", '{', '}')
+  best
+}
+
+fn tikz_find_closing_delimiter(input : String, open_delimiter : UInt16, close_delimiter : UInt16) -> Int? {
+  let mut depth = 0
+  let mut i = 0
+  while i < input.length() {
+    let ch = input.unsafe_get(i)
+    if ch == open_delimiter {
+      depth = depth + 1
+    } else if ch == close_delimiter {
+      if depth == 0 {
+        return Some(i)
+      }
+      depth = depth - 1
+    }
+    i = i + 1
+  }
+  None
+}
+
+fn tikz_cell_label_text(cell : String) -> String {
+  let trimmed = cell.trim().to_string()
+  match tikz_next_arrow_match(trimmed) {
+    Some(matched) =>
+      tikz_unwrap_braced_text(
+        trimmed.unsafe_substring(start=0, end=matched.start),
+      )
+    None => tikz_unwrap_braced_text(trimmed)
+  }
+}
+
+fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
+  let arrows : Array[TikzParsedArrow] = []
   let mut rest = cell
   while true {
-    match rest.find("\\arrow[") {
-      Some(start) => {
-        let after_arrow = rest.unsafe_substring(
-          start=start + "\\arrow[".length(),
-          end=rest.length(),
-        )
-        match after_arrow.find("]") {
+    match tikz_next_arrow_match(rest) {
+      Some(matched) => {
+        let after_arrow = rest.unsafe_substring(start=matched.options_start, end=rest.length())
+        match tikz_find_closing_delimiter(
+          after_arrow,
+          matched.open_delimiter,
+          matched.close_delimiter,
+        ) {
           Some(end) => {
             let raw_options = after_arrow.unsafe_substring(start=0, end=end)
             let options : Array[String] = []
@@ -1549,23 +1754,55 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[(String, String)] {
 
             let mut direction : String? = None
             let mut label = ""
+            let mut from_x : Int? = None
+            let mut from_y : Int? = None
+            let mut to_x : Int? = None
+            let mut to_y : Int? = None
+
             for option in options {
-              if direction is None && tikz_is_direction_token(option) {
-                direction = Some(option)
-              }
-              match tikz_extract_first_quoted(option) {
-                Some(value) =>
-                  if label == "" {
-                    label = value
+              match tikz_option_key_value(option) {
+                Some((key, value)) => {
+                  if key == "from" {
+                    match tikz_parse_grid_reference(value) {
+                      Some((x, y)) => {
+                        from_x = Some(x)
+                        from_y = Some(y)
+                      }
+                      None => ()
+                    }
+                  } else if key == "to" {
+                    match tikz_parse_grid_reference(value) {
+                      Some((x, y)) => {
+                        to_x = Some(x)
+                        to_y = Some(y)
+                      }
+                      None => ()
+                    }
                   }
-                None => ()
+                }
+                None => {
+                  let direction_candidate = tikz_unwrap_braced_text(option)
+                  if direction is None && tikz_is_direction_token(direction_candidate) {
+                    direction = Some(direction_candidate)
+                  }
+                  if label == "" {
+                    match tikz_extract_arrow_label_option(option) {
+                      Some(value) => label = value
+                      None => ()
+                    }
+                  }
+                }
               }
             }
 
-            match direction {
-              Some(dir) => arrows.push((dir, label))
-              None => ()
-            }
+            arrows.push({
+              direction,
+              label,
+              from_x,
+              from_y,
+              to_x,
+              to_y,
+            })
 
             rest = after_arrow.unsafe_substring(start=end + 1, end=after_arrow.length())
           }
@@ -1600,17 +1837,15 @@ fn tikz_grid_key(x : Int, y : Int) -> String {
 }
 
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
-  let body = match tikz_extract_environment_body(input) {
+  let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
     None => abort("missing tikzcd environment")
   }
 
-  let rows = tikz_split_rows(body)
+  let rows = tikz_split_rows(environment.body)
   let quiver = Quiver::new()
   let vertex_by_key : Map[String, Int] = Map::new()
-  let vertex_x_by_id : Map[Int, Int] = Map::new()
-  let vertex_y_by_id : Map[Int, Int] = Map::new()
-  let pending_arrows : Array[(Int, String, String)] = []
+  let pending_arrows : Array[TikzPendingArrow] = []
   let mut next_id = 1
 
   let mut y = 0
@@ -1619,7 +1854,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     if row == "" {
       continue
     }
-    let cells = tikz_split_cells(row)
+    let cells = tikz_split_cells(row, environment.ampersand_replacement)
     let mut x = 0
     for cell_raw in cells {
       let cell = cell_raw.trim().to_string()
@@ -1628,31 +1863,51 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       next_id = next_id + 1
       quiver.add(CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)))
       vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
-      vertex_x_by_id.set(vertex_id, x)
-      vertex_y_by_id.set(vertex_id, y)
-      for arrow in tikz_collect_cell_arrows(cell) {
-        let (direction, arrow_label) = arrow
-        pending_arrows.push((vertex_id, direction, arrow_label))
+
+      for parsed_arrow in tikz_collect_cell_arrows(cell) {
+        let source_x = match parsed_arrow.from_x {
+          Some(value) => value
+          None => x
+        }
+        let source_y = match parsed_arrow.from_y {
+          Some(value) => value
+          None => y
+        }
+
+        let target_coords = match (parsed_arrow.to_x, parsed_arrow.to_y) {
+          (Some(tx), Some(ty)) => Some((tx, ty))
+          _ => match parsed_arrow.direction {
+            Some(direction) => {
+              let (dx, dy) = tikz_direction_delta(direction)
+              Some((source_x + dx, source_y + dy))
+            }
+            None => None
+          }
+        }
+
+        match target_coords {
+          Some((target_x, target_y)) => pending_arrows.push({
+            source_x,
+            source_y,
+            target_x,
+            target_y,
+            label: parsed_arrow.label,
+          })
+          None => ()
+        }
       }
+
       x = x + 1
     }
     y = y + 1
   }
 
   for pending in pending_arrows {
-    let (source_id, direction, label) = pending
-    let source_x = match vertex_x_by_id.get(source_id) {
+    let source_id = match vertex_by_key.get(tikz_grid_key(pending.source_x, pending.source_y)) {
       Some(value) => value
       None => continue
     }
-    let source_y = match vertex_y_by_id.get(source_id) {
-      Some(value) => value
-      None => continue
-    }
-    let (dx, dy) = tikz_direction_delta(direction)
-    let target_x = source_x + dx
-    let target_y = source_y + dy
-    let target_id = match vertex_by_key.get(tikz_grid_key(target_x, target_y)) {
+    let target_id = match vertex_by_key.get(tikz_grid_key(pending.target_x, pending.target_y)) {
       Some(value) => value
       None => continue
     }
@@ -1661,7 +1916,14 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     next_id = next_id + 1
     quiver.add(
       CellData::from_edge(
-        Edge::new(edge_id, label, source_id, target_id, EdgeOptions::at_level(1), Colour::black()),
+        Edge::new(
+          edge_id,
+          pending.label,
+          source_id,
+          target_id,
+          EdgeOptions::at_level(1),
+          Colour::black(),
+        ),
       ),
     )
     quiver.connect(source_id, target_id, edge_id)
@@ -1669,7 +1931,6 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
   quiver
 }
-
 fn tikz_has_share_reference_hint(input : String) -> Bool {
   for raw_line in input.split("\n") {
     let line = raw_line.to_string().trim().to_string()
@@ -1712,3 +1973,4 @@ pub fn Quiver::import_tikz_cd(
     default_renderer=default_renderer,
   ).quiver
 }
+
