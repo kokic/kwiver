@@ -1,3 +1,4 @@
+///|
 pub struct Cell {
   id : Int
   level : Int
@@ -5,21 +6,24 @@ pub struct Cell {
   label_colour : Colour
 }
 
-pub fn Cell::new(id : Int, level : Int, label : String, label_colour : Colour) -> Cell {
-  {
-    id,
-    level: if level < 0 { 0 } else { level },
-    label,
-    label_colour,
-  }
+///|
+pub fn Cell::new(
+  id : Int,
+  level : Int,
+  label : String,
+  label_colour : Colour,
+) -> Cell {
+  { id, level: if level < 0 { 0 } else { level }, label, label_colour }
 }
 
+///|
 pub struct Vertex {
   cell : Cell
   x : Int
   y : Int
 }
 
+///|
 pub fn Vertex::new(
   id : Int,
   label : String,
@@ -27,17 +31,15 @@ pub fn Vertex::new(
   y : Int,
   label_colour : Colour,
 ) -> Vertex {
-  {
-    cell: Cell::new(id, 0, label, label_colour),
-    x,
-    y,
-  }
+  { cell: Cell::new(id, 0, label, label_colour), x, y }
 }
 
+///|
 pub fn Vertex::new_black(id : Int, label : String, x : Int, y : Int) -> Vertex {
   Vertex::new(id, label, x, y, Colour::black())
 }
 
+///|
 pub struct Edge {
   cell : Cell
   source : Int
@@ -45,6 +47,7 @@ pub struct Edge {
   options : EdgeOptions
 }
 
+///|
 pub fn Edge::new(
   id : Int,
   label : String,
@@ -61,19 +64,23 @@ pub fn Edge::new(
   }
 }
 
+///|
 pub enum CellData {
   Vertex(Vertex)
   Edge(Edge)
 }
 
+///|
 pub fn CellData::from_vertex(vertex : Vertex) -> CellData {
   CellData::Vertex(vertex)
 }
 
+///|
 pub fn CellData::from_edge(edge : Edge) -> CellData {
   CellData::Edge(edge)
 }
 
+///|
 pub fn CellData::id(self : CellData) -> Int {
   match self {
     CellData::Vertex(vertex) => vertex.cell.id
@@ -81,6 +88,7 @@ pub fn CellData::id(self : CellData) -> Int {
   }
 }
 
+///|
 pub fn CellData::level(self : CellData) -> Int {
   match self {
     CellData::Vertex(vertex) => vertex.cell.level
@@ -88,6 +96,7 @@ pub fn CellData::level(self : CellData) -> Int {
   }
 }
 
+///|
 pub fn CellData::is_vertex(self : CellData) -> Bool {
   match self {
     CellData::Vertex(_) => true
@@ -95,6 +104,7 @@ pub fn CellData::is_vertex(self : CellData) -> Bool {
   }
 }
 
+///|
 pub fn CellData::is_edge(self : CellData) -> Bool {
   match self {
     CellData::Vertex(_) => false
@@ -102,9 +112,20 @@ pub fn CellData::is_edge(self : CellData) -> Bool {
   }
 }
 
-pub fn Edge::reconnected(self : Edge, source : Int, target : Int, level : Int) -> Edge {
+///|
+pub fn Edge::reconnected(
+  self : Edge,
+  source : Int,
+  target : Int,
+  level : Int,
+) -> Edge {
   {
-    cell: Cell::new(self.cell.id, level, self.cell.label, self.cell.label_colour),
+    cell: Cell::new(
+      self.cell.id,
+      level,
+      self.cell.label,
+      self.cell.label_colour,
+    ),
     source,
     target,
     options: self.options.with_level(level),

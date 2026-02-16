@@ -1,3 +1,4 @@
+///|
 pub struct ArrowGeometryConfig {
   curve_height : Double
   loop_height : Double
@@ -8,6 +9,7 @@ pub struct ArrowGeometryConfig {
   minimum_arc_chord : Double
 }
 
+///|
 pub fn ArrowGeometryConfig::default() -> ArrowGeometryConfig {
   {
     curve_height: 24.0,
@@ -20,7 +22,10 @@ pub fn ArrowGeometryConfig::default() -> ArrowGeometryConfig {
   }
 }
 
-fn ArrowGeometryConfig::curve_model_config(self : ArrowGeometryConfig) -> ArrowCurveModelConfig {
+///|
+fn ArrowGeometryConfig::curve_model_config(
+  self : ArrowGeometryConfig,
+) -> ArrowCurveModelConfig {
   {
     curve_height: self.curve_height,
     loop_height: self.loop_height,
@@ -31,7 +36,10 @@ fn ArrowGeometryConfig::curve_model_config(self : ArrowGeometryConfig) -> ArrowC
   }
 }
 
-fn ArrowGeometryConfig::layout_config(self : ArrowGeometryConfig) -> ArrowLayoutConfig {
+///|
+fn ArrowGeometryConfig::layout_config(
+  self : ArrowGeometryConfig,
+) -> ArrowLayoutConfig {
   {
     label_padding: self.label_padding,
     boundary_samples: 256,
@@ -39,11 +47,13 @@ fn ArrowGeometryConfig::layout_config(self : ArrowGeometryConfig) -> ArrowLayout
   }
 }
 
+///|
 pub struct ArrowEndpoints {
   start : CurvePoint
   end : CurvePoint
 }
 
+///|
 pub struct ArrowGeometry {
   source : ArrowShape
   target : ArrowShape
@@ -51,15 +61,16 @@ pub struct ArrowGeometry {
   config : ArrowGeometryConfig
 }
 
-pub fn ArrowGeometry::new(source : ArrowShape, target : ArrowShape, options : EdgeOptions) -> ArrowGeometry {
-  {
-    source,
-    target,
-    options,
-    config: ArrowGeometryConfig::default(),
-  }
+///|
+pub fn ArrowGeometry::new(
+  source : ArrowShape,
+  target : ArrowShape,
+  options : EdgeOptions,
+) -> ArrowGeometry {
+  { source, target, options, config: ArrowGeometryConfig::default() }
 }
 
+///|
 pub fn ArrowGeometry::with_config(
   source : ArrowShape,
   target : ArrowShape,
@@ -69,6 +80,7 @@ pub fn ArrowGeometry::with_config(
   { source, target, options, config }
 }
 
+///|
 fn ArrowGeometry::curve_model(self : ArrowGeometry) -> ArrowCurveModel {
   ArrowCurveModel::with_config(
     self.source.origin(),
@@ -78,6 +90,7 @@ fn ArrowGeometry::curve_model(self : ArrowGeometry) -> ArrowCurveModel {
   )
 }
 
+///|
 fn ArrowGeometry::layout(self : ArrowGeometry) -> ArrowLayout {
   ArrowLayout::with_config(
     self.source,
@@ -88,28 +101,38 @@ fn ArrowGeometry::layout(self : ArrowGeometry) -> ArrowLayout {
   )
 }
 
+///|
 pub fn ArrowGeometry::endpoints(self : ArrowGeometry) -> ArrowEndpoints {
   let endpoints = self.layout().clipped_endpoints()
   { start: endpoints.start, end: endpoints.end }
 }
 
-pub fn ArrowGeometry::path_points(self : ArrowGeometry, segments~ : Int = 64) -> Array[Point] {
+///|
+pub fn ArrowGeometry::path_points(
+  self : ArrowGeometry,
+  segments? : Int = 64,
+) -> Array[Point] {
   let curve_model = self.curve_model()
   let interval = self.layout().shortened_interval()
-  curve_model.path_points(interval, segments=segments)
+  curve_model.path_points(interval, segments~)
 }
 
-pub fn ArrowGeometry::path_svg(self : ArrowGeometry, segments~ : Int = 64) -> String {
+///|
+pub fn ArrowGeometry::path_svg(
+  self : ArrowGeometry,
+  segments? : Int = 64,
+) -> String {
   let curve_model = self.curve_model()
   let interval = self.layout().shortened_interval()
-  curve_model.path_svg(interval, segments=segments)
+  curve_model.path_svg(interval, segments~)
 }
 
+///|
 pub fn ArrowGeometry::label_position(
   self : ArrowGeometry,
   label_width : Double,
   label_height : Double,
-  edge_width~ : Double = 1.5,
+  edge_width? : Double = 1.5,
 ) -> Point {
-  self.layout().label_position(label_width, label_height, edge_width=edge_width)
+  self.layout().label_position(label_width, label_height, edge_width~)
 }

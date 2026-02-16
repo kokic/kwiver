@@ -1,9 +1,15 @@
-fn assert_close(actual : Double, expected : Double, tolerance~ : Double = 0.0001) -> Unit {
+///|
+fn assert_close(
+  actual : Double,
+  expected : Double,
+  tolerance? : Double = 0.0001,
+) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")
   }
 }
 
+///|
 test "bezier basic geometry" {
   let bezier = Bezier::new(Point::zero(), 10.0, 4.0, 0.0)
   let p0 = bezier.point(0.0)
@@ -24,6 +30,7 @@ test "bezier basic geometry" {
   }
 }
 
+///|
 test "bezier t_after_length" {
   let bezier = Bezier::new(Point::zero(), 10.0, 4.0, 0.0)
   let total = bezier.arc_length(1.0)
@@ -32,6 +39,7 @@ test "bezier t_after_length" {
   assert_close(t_for(total), 1.0, tolerance=0.02)
 }
 
+///|
 test "arc endpoints and parameter by length" {
   let arc = Arc::new(Point::zero(), 10.0, false, 8.0, 0.0)
   let p0 = arc.point(0.0)
@@ -48,6 +56,7 @@ test "arc endpoints and parameter by length" {
   assert_close(t_for(total), 1.0, tolerance=0.0001)
 }
 
+///|
 test "arc angle membership sanity" {
   let arc = Arc::new(Point::zero(), 10.0, false, 8.0, 0.0)
   // Reconstruct the radial angle at t = 0.5 from tangent direction.

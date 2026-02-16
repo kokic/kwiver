@@ -1,3 +1,4 @@
+///|
 pub struct ArrowShapeRoundedRect {
   origin : Point
   width : Double
@@ -5,19 +6,23 @@ pub struct ArrowShapeRoundedRect {
   radius : Double
 }
 
+///|
 enum ArrowShapeData {
   Endpoint(Point)
   RoundedRect(ArrowShapeRoundedRect)
 }
 
+///|
 pub struct ArrowShape {
   data : ArrowShapeData
 }
 
+///|
 pub fn ArrowShape::endpoint(origin : Point) -> ArrowShape {
   { data: ArrowShapeData::Endpoint(origin) }
 }
 
+///|
 pub fn ArrowShape::rounded_rect(
   origin : Point,
   width : Double,
@@ -27,6 +32,7 @@ pub fn ArrowShape::rounded_rect(
   { data: ArrowShapeData::RoundedRect({ origin, width, height, radius }) }
 }
 
+///|
 pub fn ArrowShape::origin(self : ArrowShape) -> Point {
   match self.data {
     ArrowShapeData::Endpoint(origin) => origin
@@ -34,6 +40,7 @@ pub fn ArrowShape::origin(self : ArrowShape) -> Point {
   }
 }
 
+///|
 fn ArrowShape::contains(self : ArrowShape, point : Point) -> Bool {
   match self.data {
     ArrowShapeData::Endpoint(origin) => point.eq(origin)
@@ -47,13 +54,7 @@ fn ArrowShape::contains(self : ArrowShape, point : Point) -> Bool {
       }
 
       let radius = Double::abs(rect.radius)
-      let r = if radius > hw {
-        hw
-      } else if radius > hh {
-        hh
-      } else {
-        radius
-      }
+      let r = if radius > hw { hw } else if radius > hh { hh } else { radius }
 
       let dx = ax - (hw - r)
       let dy = ay - (hh - r)
@@ -66,25 +67,25 @@ fn ArrowShape::contains(self : ArrowShape, point : Point) -> Bool {
   }
 }
 
+///|
 pub struct ArrowLayoutConfig {
   label_padding : Double
   boundary_samples : Int
   boundary_iterations : Int
 }
 
+///|
 pub fn ArrowLayoutConfig::default() -> ArrowLayoutConfig {
-  {
-    label_padding: 8.0,
-    boundary_samples: 256,
-    boundary_iterations: 30,
-  }
+  { label_padding: 8.0, boundary_samples: 256, boundary_iterations: 30 }
 }
 
+///|
 pub struct ArrowLayoutEndpoints {
   start : CurvePoint
   end : CurvePoint
 }
 
+///|
 pub struct ArrowLayout {
   source : ArrowShape
   target : ArrowShape
@@ -93,21 +94,17 @@ pub struct ArrowLayout {
   config : ArrowLayoutConfig
 }
 
+///|
 pub fn ArrowLayout::new(
   source : ArrowShape,
   target : ArrowShape,
   curve_model : ArrowCurveModel,
   options : EdgeOptions,
 ) -> ArrowLayout {
-  {
-    source,
-    target,
-    curve_model,
-    options,
-    config: ArrowLayoutConfig::default(),
-  }
+  { source, target, curve_model, options, config: ArrowLayoutConfig::default() }
 }
 
+///|
 pub fn ArrowLayout::with_config(
   source : ArrowShape,
   target : ArrowShape,
@@ -118,10 +115,12 @@ pub fn ArrowLayout::with_config(
   { source, target, curve_model, options, config }
 }
 
+///|
 fn ArrowLayout::curve_point(self : ArrowLayout, t : Double) -> CurvePoint {
   CurvePoint::new(self.curve_model.point(t), t, self.curve_model.tangent(t))
 }
 
+///|
 fn ArrowLayout::binary_boundary(
   self : ArrowLayout,
   shape : ArrowShape,
@@ -147,19 +146,22 @@ fn ArrowLayout::binary_boundary(
       } else {
         right = mid
       }
+    } else if inside {
+      right = mid
     } else {
-      if inside {
-        right = mid
-      } else {
-        left = mid
-      }
+      left = mid
     }
     i = i + 1
   }
 
-  if source_side { left } else { right }
+  if source_side {
+    left
+  } else {
+    right
+  }
 }
 
+///|
 fn ArrowLayout::endpoint_for_shape(
   self : ArrowLayout,
   shape : ArrowShape,
@@ -224,13 +226,17 @@ fn ArrowLayout::endpoint_for_shape(
   }
 }
 
-pub fn ArrowLayout::clipped_endpoints(self : ArrowLayout) -> ArrowLayoutEndpoints {
+///|
+pub fn ArrowLayout::clipped_endpoints(
+  self : ArrowLayout,
+) -> ArrowLayoutEndpoints {
   {
     start: self.endpoint_for_shape(self.source, true),
     end: self.endpoint_for_shape(self.target, false),
   }
 }
 
+///|
 pub fn ArrowLayout::clipped_interval(self : ArrowLayout) -> ArrowCurveInterval {
   let endpoints = self.clipped_endpoints()
   if endpoints.end.t < endpoints.start.t {
@@ -241,11 +247,17 @@ pub fn ArrowLayout::clipped_interval(self : ArrowLayout) -> ArrowCurveInterval {
   }
 }
 
-pub fn ArrowLayout::shortened_interval(self : ArrowLayout) -> ArrowCurveInterval {
+///|
+pub fn ArrowLayout::shortened_interval(
+  self : ArrowLayout,
+) -> ArrowCurveInterval {
   self.curve_model.shorten_interval(self.clipped_interval())
 }
 
-pub fn ArrowLayout::shortened_endpoints(self : ArrowLayout) -> ArrowLayoutEndpoints {
+///|
+pub fn ArrowLayout::shortened_endpoints(
+  self : ArrowLayout,
+) -> ArrowLayoutEndpoints {
   let interval = self.shortened_interval()
   {
     start: self.curve_point(interval.start_t),
@@ -253,11 +265,12 @@ pub fn ArrowLayout::shortened_endpoints(self : ArrowLayout) -> ArrowLayoutEndpoi
   }
 }
 
+///|
 pub fn ArrowLayout::label_position(
   self : ArrowLayout,
   label_width : Double,
   label_height : Double,
-  edge_width~ : Double = 1.5,
+  edge_width? : Double = 1.5,
 ) -> Point {
   let interval = self.shortened_interval()
   let ratio = self.options.label_position.to_double() / 100.0
@@ -269,18 +282,16 @@ pub fn ArrowLayout::label_position(
     LabelAlignment::Over => centre
     LabelAlignment::Left => {
       let offset_angle = self.curve_model.tangent(t) - @math.PI / 2.0
-      let distance = self.config.label_padding + edge_width / 2.0 + @math.hypot(
-        label_width / 2.0,
-        label_height / 2.0,
-      )
+      let distance = self.config.label_padding +
+        edge_width / 2.0 +
+        @math.hypot(label_width / 2.0, label_height / 2.0)
       centre.add(Point::lendir(distance, offset_angle))
     }
     LabelAlignment::Right => {
       let offset_angle = self.curve_model.tangent(t) + @math.PI / 2.0
-      let distance = self.config.label_padding + edge_width / 2.0 + @math.hypot(
-        label_width / 2.0,
-        label_height / 2.0,
-      )
+      let distance = self.config.label_padding +
+        edge_width / 2.0 +
+        @math.hypot(label_width / 2.0, label_height / 2.0)
       centre.add(Point::lendir(distance, offset_angle))
     }
   }

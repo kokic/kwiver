@@ -1,9 +1,15 @@
-fn assert_close_arrow(actual : Double, expected : Double, tolerance~ : Double = 0.001) -> Unit {
+///|
+fn assert_close_arrow(
+  actual : Double,
+  expected : Double,
+  tolerance? : Double = 0.001,
+) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")
   }
 }
 
+///|
 test "arrow geometry endpoints for point-to-point line" {
   let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
   let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
@@ -17,6 +23,7 @@ test "arrow geometry endpoints for point-to-point line" {
   assert_close_arrow(endpoints.end.y, 0.0)
 }
 
+///|
 test "arrow geometry rounded-rect source clipping" {
   let source = ArrowShape::rounded_rect(Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
   let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
@@ -31,6 +38,7 @@ test "arrow geometry rounded-rect source clipping" {
   assert_close_arrow(endpoints.end.x, 100.0)
 }
 
+///|
 test "arrow geometry path uses shortening" {
   let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
   let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
@@ -46,6 +54,7 @@ test "arrow geometry path uses shortening" {
   assert_close_arrow(points[points.length() - 1].x, 80.0, tolerance=1.0)
 }
 
+///|
 test "arrow geometry label position left-right differs" {
   let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
   let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
@@ -68,6 +77,7 @@ test "arrow geometry label position left-right differs" {
   }
 }
 
+///|
 test "arrow geometry arc path and label" {
   let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
   let target = ArrowShape::endpoint(Point::new(0.0, 0.0))

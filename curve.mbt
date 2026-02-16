@@ -1,5 +1,7 @@
+///|
 pub const EPSILON : Double = 0.000001
 
+///|
 fn sign(x : Double) -> Double {
   if x > 0.0 {
     1.0
@@ -10,15 +12,22 @@ fn sign(x : Double) -> Double {
   }
 }
 
+///|
 fn mod_double(x : Double, y : Double) -> Double {
   let r = x - y * @math.floor(x / y)
-  if r < 0.0 { r + y } else { r }
+  if r < 0.0 {
+    r + y
+  } else {
+    r
+  }
 }
 
+///|
 fn mod_2pi(x : Double) -> Double {
   mod_double(x, 2.0 * @math.PI)
 }
 
+///|
 pub struct CurvePoint {
   x : Double
   y : Double
@@ -26,14 +35,17 @@ pub struct CurvePoint {
   angle : Double
 }
 
+///|
 pub fn CurvePoint::new(point : Point, t : Double, angle : Double) -> CurvePoint {
   { x: point.x, y: point.y, t, angle }
 }
 
+///|
 pub fn CurvePoint::point(self : CurvePoint) -> Point {
   Point::new(self.x, self.y)
 }
 
+///|
 pub struct Bezier {
   origin : Point
   w : Double
@@ -41,29 +53,52 @@ pub struct Bezier {
   angle : Double
 }
 
-pub fn Bezier::new(origin : Point, w : Double, h : Double, angle : Double) -> Bezier {
+///|
+pub fn Bezier::new(
+  origin : Point,
+  w : Double,
+  h : Double,
+  angle : Double,
+) -> Bezier {
   { origin, w, h, angle }
 }
 
+///|
 fn Bezier::end(self : Bezier) -> Point {
   self.origin.add(Point::new(self.w, 0.0))
 }
 
+///|
 fn Bezier::control(self : Bezier) -> Point {
   self.origin.add(Point::new(self.w / 2.0, self.h))
 }
 
+///|
 pub fn Bezier::point(self : Bezier, t : Double) -> Point {
-  self.origin.lerp(self.control(), t).lerp(self.control().lerp(self.end(), t), t)
+  self.origin
+  .lerp(self.control(), t)
+  .lerp(self.control().lerp(self.end(), t), t)
 }
 
+///|
 pub fn Bezier::tangent(self : Bezier, t : Double) -> Double {
-  self.control().lerp(self.end(), t).sub(self.origin.lerp(self.control(), t)).angle()
+  self
+  .control()
+  .lerp(self.end(), t)
+  .sub(self.origin.lerp(self.control(), t))
+  .angle()
 }
 
-pub fn Bezier::delineate(self : Bezier, t : Double) -> (Array[(Double, Point)], Double) {
+///|
+pub fn Bezier::delineate(
+  self : Bezier,
+  t : Double,
+) -> (Array[(Double, Point)], Double) {
   let precision = 0.25
-  let points : Array[(Double, Point)] = [(0.0, self.point(0.0)), (t, self.point(t))]
+  let points : Array[(Double, Point)] = [
+    (0.0, self.point(0.0)),
+    (t, self.point(t)),
+  ]
   let mut previous_length = -1.0
   let mut length = 0.0
 
@@ -96,12 +131,17 @@ pub fn Bezier::delineate(self : Bezier, t : Double) -> (Array[(Double, Point)], 
   (points, length)
 }
 
+///|
 pub fn Bezier::arc_length(self : Bezier, t : Double) -> Double {
   let (_, length) = self.delineate(t)
   length
 }
 
-pub fn Bezier::t_after_length(self : Bezier, clamp~ : Bool = false) -> (Double) -> Double {
+///|
+pub fn Bezier::t_after_length(
+  self : Bezier,
+  clamp? : Bool = false,
+) -> (Double) -> Double {
   let (points, _) = self.delineate(1.0)
 
   (length : Double) => {
@@ -139,14 +179,17 @@ pub fn Bezier::t_after_length(self : Bezier, clamp~ : Bool = false) -> (Double) 
   }
 }
 
+///|
 pub fn Bezier::height(self : Bezier) -> Double {
   self.h / 2.0
 }
 
+///|
 pub fn Bezier::width(self : Bezier) -> Double {
   self.w
 }
 
+///|
 pub struct Arc {
   origin : Point
   chord : Double
@@ -160,6 +203,7 @@ pub struct Arc {
   start_angle : Double
 }
 
+///|
 pub fn Arc::new(
   origin : Point,
   chord : Double,
@@ -176,7 +220,8 @@ pub fn Arc::new(
   )
   let start_angle_raw = mod_2pi(centre_normalised.neg().angle())
   let clockwise = if radius >= 0.0 { 1.0 } else { -1.0 }
-  let sweep_angle = @math.PI + (2.0 * @math.PI - 2.0 * start_angle_raw) * clockwise
+  let sweep_angle = @math.PI +
+    (2.0 * @math.PI - 2.0 * start_angle_raw) * clockwise
   let centre = origin.add(centre_normalised.rotate(angle))
   let start_angle = mod_2pi(start_angle_raw + angle)
   {
@@ -193,27 +238,43 @@ pub fn Arc::new(
   }
 }
 
+///|
 pub fn Arc::clockwise(self : Arc) -> Double {
-  if self.radius >= 0.0 { 1.0 } else { -1.0 }
+  if self.radius >= 0.0 {
+    1.0
+  } else {
+    -1.0
+  }
 }
 
+///|
 pub fn Arc::point(self : Arc, t : Double) -> Point {
-  self.centre_normalised.add(self.origin).add(
+  self.centre_normalised
+  .add(self.origin)
+  .add(
     Point::new(Double::abs(self.radius), 0.0).rotate(
       self.start_angle - self.angle + t * self.sweep_angle * self.clockwise(),
     ),
   )
 }
 
+///|
 pub fn Arc::tangent(self : Arc, t : Double) -> Double {
-  self.start_angle - self.angle + (t * self.sweep_angle + @math.PI / 2.0) * self.clockwise()
+  self.start_angle -
+  self.angle +
+  (t * self.sweep_angle + @math.PI / 2.0) * self.clockwise()
 }
 
+///|
 pub fn Arc::arc_length(self : Arc, t : Double) -> Double {
   t * self.sweep_angle * Double::abs(self.radius)
 }
 
-pub fn Arc::t_after_length(self : Arc, clamp~ : Bool = false) -> (Double) -> Double {
+///|
+pub fn Arc::t_after_length(
+  self : Arc,
+  clamp? : Bool = false,
+) -> (Double) -> Double {
   (length : Double) => {
     if length < 0.0 {
       if clamp {
@@ -232,6 +293,7 @@ pub fn Arc::t_after_length(self : Arc, clamp~ : Bool = false) -> (Double) -> Dou
   }
 }
 
+///|
 pub fn Arc::height(self : Arc) -> Double {
   if self.major {
     Double::abs(self.radius * 2.0 - self.sagitta)
@@ -240,10 +302,16 @@ pub fn Arc::height(self : Arc) -> Double {
   }
 }
 
+///|
 pub fn Arc::width(self : Arc) -> Double {
-  if self.major { Double::abs(self.radius) * 2.0 } else { self.chord }
+  if self.major {
+    Double::abs(self.radius) * 2.0
+  } else {
+    self.chord
+  }
 }
 
+///|
 pub fn Arc::angle_in_arc(self : Arc, angle : Double) -> Bool {
   fn normalise(theta : Double) -> Double {
     let mut out = theta
@@ -257,6 +325,9 @@ pub fn Arc::angle_in_arc(self : Arc, angle : Double) -> Bool {
   }
 
   let angle1 = normalise(self.start_angle - angle)
-  let angle2 = normalise(self.start_angle + self.sweep_angle * self.clockwise() - angle)
-  ((angle1 * angle2 < 0.0 && Double::abs(angle1 - angle2) < @math.PI) != self.major)
+  let angle2 = normalise(
+    self.start_angle + self.sweep_angle * self.clockwise() - angle,
+  )
+  (angle1 * angle2 < 0.0 && Double::abs(angle1 - angle2) < @math.PI) !=
+  self.major
 }

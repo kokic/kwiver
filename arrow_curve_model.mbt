@@ -1,3 +1,4 @@
+///|
 pub struct ArrowCurveModelConfig {
   curve_height : Double
   loop_height : Double
@@ -7,6 +8,7 @@ pub struct ArrowCurveModelConfig {
   minimum_arc_chord : Double
 }
 
+///|
 pub fn ArrowCurveModelConfig::default() -> ArrowCurveModelConfig {
   {
     curve_height: 24.0,
@@ -18,19 +20,26 @@ pub fn ArrowCurveModelConfig::default() -> ArrowCurveModelConfig {
   }
 }
 
+///|
 pub struct ArrowCurveInterval {
   start_t : Double
   end_t : Double
 }
 
-pub fn ArrowCurveInterval::new(start_t : Double, end_t : Double) -> ArrowCurveInterval {
+///|
+pub fn ArrowCurveInterval::new(
+  start_t : Double,
+  end_t : Double,
+) -> ArrowCurveInterval {
   { start_t, end_t }
 }
 
+///|
 pub fn ArrowCurveInterval::full() -> ArrowCurveInterval {
   { start_t: 0.0, end_t: 1.0 }
 }
 
+///|
 pub struct ArrowCurveModel {
   source_origin : Point
   target_origin : Point
@@ -38,6 +47,7 @@ pub struct ArrowCurveModel {
   config : ArrowCurveModelConfig
 }
 
+///|
 pub fn ArrowCurveModel::new(
   source_origin : Point,
   target_origin : Point,
@@ -51,6 +61,7 @@ pub fn ArrowCurveModel::new(
   }
 }
 
+///|
 pub fn ArrowCurveModel::with_config(
   source_origin : Point,
   target_origin : Point,
@@ -60,6 +71,7 @@ pub fn ArrowCurveModel::with_config(
   { source_origin, target_origin, options, config }
 }
 
+///|
 fn arrow_curve_model_int_sign(value : Int) -> Double {
   if value > 0 {
     1.0
@@ -70,14 +82,17 @@ fn arrow_curve_model_int_sign(value : Int) -> Double {
   }
 }
 
+///|
 fn arrow_curve_model_deg_to_rad(deg : Double) -> Double {
   deg * @math.PI / 180.0
 }
 
+///|
 fn ArrowCurveModel::base_angle(self : ArrowCurveModel) -> Double {
   self.target_origin.sub(self.source_origin).angle()
 }
 
+///|
 fn ArrowCurveModel::chord_length(self : ArrowCurveModel) -> Double {
   let length = self.target_origin.sub(self.source_origin).length()
   let is_arc = match self.options.shape {
@@ -91,6 +106,7 @@ fn ArrowCurveModel::chord_length(self : ArrowCurveModel) -> Double {
   }
 }
 
+///|
 fn ArrowCurveModel::loop_radius_pixels(self : ArrowCurveModel) -> Double {
   let abs_radius = Int::abs(self.options.radius)
   let step = if abs_radius < 2 {
@@ -100,19 +116,28 @@ fn ArrowCurveModel::loop_radius_pixels(self : ArrowCurveModel) -> Double {
   } else {
     4.0
   }
-  step * arrow_curve_model_int_sign(self.options.radius) * self.config.loop_height
+  step *
+  arrow_curve_model_int_sign(self.options.radius) *
+  self.config.loop_height
 }
 
+///|
 fn ArrowCurveModel::bezier_height_pixels(self : ArrowCurveModel) -> Double {
   self.options.curve.to_double() * self.config.curve_height * 2.0
 }
 
+///|
 priv enum ArrowCurveModelData {
   Bezier(Bezier)
   Arc(Arc)
 }
 
-fn ArrowCurveModel::arc_for_chord(self : ArrowCurveModel, chord : Double, loop_radius : Double) -> Arc {
+///|
+fn ArrowCurveModel::arc_for_chord(
+  self : ArrowCurveModel,
+  chord : Double,
+  loop_radius : Double,
+) -> Arc {
   let outer_dis = self.config.arc_outer_dis
   let inner_dis = self.config.arc_inner_dis
   let semicircle_radius = inner_dis / 2.0
@@ -122,21 +147,24 @@ fn ArrowCurveModel::arc_for_chord(self : ArrowCurveModel, chord : Double, loop_r
   } else {
     semicircle_radius * ((outer_dis - chord) / boundary_dis)
   }
-  let r_for_sagitta = sagitta / 2.0 + (chord * chord) / (8.0 * sagitta)
+  let r_for_sagitta = sagitta / 2.0 + chord * chord / (8.0 * sagitta)
   let r = if chord <= inner_dis {
-    semicircle_radius + (inner_dis - chord) / inner_dis * (loop_radius - semicircle_radius)
+    semicircle_radius +
+    (inner_dis - chord) / inner_dis * (loop_radius - semicircle_radius)
   } else {
     r_for_sagitta
   }
   Arc::new(Point::zero(), chord, chord <= inner_dis, r, 0.0)
 }
 
+///|
 fn ArrowCurveModel::curve_data(self : ArrowCurveModel) -> ArrowCurveModelData {
   let chord = self.chord_length()
   match self.options.shape {
-    EdgeShape::Bezier => ArrowCurveModelData::Bezier(
-      Bezier::new(Point::zero(), chord, self.bezier_height_pixels(), 0.0),
-    )
+    EdgeShape::Bezier =>
+      ArrowCurveModelData::Bezier(
+        Bezier::new(Point::zero(), chord, self.bezier_height_pixels(), 0.0),
+      )
     EdgeShape::Arc => {
       let loop_radius = self.loop_radius_pixels()
       if self.source_origin.eq(self.target_origin) {
@@ -156,47 +184,70 @@ fn ArrowCurveModel::curve_data(self : ArrowCurveModel) -> ArrowCurveModelData {
   }
 }
 
-fn ArrowCurveModel::curve_point(curve : ArrowCurveModelData, t : Double) -> Point {
+///|
+fn ArrowCurveModel::curve_point(
+  curve : ArrowCurveModelData,
+  t : Double,
+) -> Point {
   match curve {
     ArrowCurveModelData::Bezier(bezier) => bezier.point(t)
     ArrowCurveModelData::Arc(arc) => arc.point(t)
   }
 }
 
-fn ArrowCurveModel::curve_tangent(curve : ArrowCurveModelData, t : Double) -> Double {
+///|
+fn ArrowCurveModel::curve_tangent(
+  curve : ArrowCurveModelData,
+  t : Double,
+) -> Double {
   match curve {
     ArrowCurveModelData::Bezier(bezier) => bezier.tangent(t)
     ArrowCurveModelData::Arc(arc) => arc.tangent(t)
   }
 }
 
-fn ArrowCurveModel::curve_arc_length(curve : ArrowCurveModelData, t : Double) -> Double {
+///|
+fn ArrowCurveModel::curve_arc_length(
+  curve : ArrowCurveModelData,
+  t : Double,
+) -> Double {
   match curve {
     ArrowCurveModelData::Bezier(bezier) => bezier.arc_length(t)
     ArrowCurveModelData::Arc(arc) => arc.arc_length(t)
   }
 }
 
+///|
 fn ArrowCurveModel::curve_t_after_length(
   curve : ArrowCurveModelData,
   length : Double,
   clamp : Bool,
 ) -> Double {
   match curve {
-    ArrowCurveModelData::Bezier(bezier) => bezier.t_after_length(clamp=clamp)(length)
-    ArrowCurveModelData::Arc(arc) => arc.t_after_length(clamp=clamp)(length)
+    ArrowCurveModelData::Bezier(bezier) => bezier.t_after_length(clamp~)(length)
+    ArrowCurveModelData::Arc(arc) => arc.t_after_length(clamp~)(length)
   }
 }
 
-fn ArrowCurveModel::local_to_world(self : ArrowCurveModel, local_point : Point) -> Point {
-  let shifted = local_point.add(Point::new(
-    0.0,
-    self.options.offset.to_double() * self.config.edge_offset_distance,
-  ))
+///|
+fn ArrowCurveModel::local_to_world(
+  self : ArrowCurveModel,
+  local_point : Point,
+) -> Point {
+  let shifted = local_point.add(
+    Point::new(
+      0.0,
+      self.options.offset.to_double() * self.config.edge_offset_distance,
+    ),
+  )
   self.source_origin.add(shifted.rotate(self.base_angle()))
 }
 
-pub fn ArrowCurveModel::sample(self : ArrowCurveModel, t : Double) -> CurvePoint {
+///|
+pub fn ArrowCurveModel::sample(
+  self : ArrowCurveModel,
+  t : Double,
+) -> CurvePoint {
   let curve = self.curve_data()
   let local_point = ArrowCurveModel::curve_point(curve, t)
   let point = self.local_to_world(local_point)
@@ -204,26 +255,34 @@ pub fn ArrowCurveModel::sample(self : ArrowCurveModel, t : Double) -> CurvePoint
   CurvePoint::new(point, t, angle)
 }
 
+///|
 pub fn ArrowCurveModel::point(self : ArrowCurveModel, t : Double) -> Point {
   self.sample(t).point()
 }
 
+///|
 pub fn ArrowCurveModel::tangent(self : ArrowCurveModel, t : Double) -> Double {
   self.sample(t).angle
 }
 
-pub fn ArrowCurveModel::arc_length(self : ArrowCurveModel, t : Double) -> Double {
+///|
+pub fn ArrowCurveModel::arc_length(
+  self : ArrowCurveModel,
+  t : Double,
+) -> Double {
   ArrowCurveModel::curve_arc_length(self.curve_data(), t)
 }
 
+///|
 pub fn ArrowCurveModel::t_after_length(
   self : ArrowCurveModel,
   length : Double,
-  clamp~ : Bool = false,
+  clamp? : Bool = false,
 ) -> Double {
   ArrowCurveModel::curve_t_after_length(self.curve_data(), length, clamp)
 }
 
+///|
 pub fn ArrowCurveModel::shorten_interval(
   self : ArrowCurveModel,
   interval : ArrowCurveInterval,
@@ -243,14 +302,15 @@ pub fn ArrowCurveModel::shorten_interval(
   ArrowCurveInterval::new(start_t, end_t)
 }
 
+///|
 pub fn ArrowCurveModel::path_points(
   self : ArrowCurveModel,
   interval : ArrowCurveInterval,
-  segments~ : Int = 64,
+  segments? : Int = 64,
 ) -> Array[Point] {
   let n = if segments < 2 { 2 } else { segments }
   let points : Array[Point] = []
-  for i in 0..=n {
+  for i in 0..<=n {
     let ratio = i.to_double() / n.to_double()
     let t = interval.start_t + (interval.end_t - interval.start_t) * ratio
     points.push(self.point(t))
@@ -258,12 +318,13 @@ pub fn ArrowCurveModel::path_points(
   points
 }
 
+///|
 pub fn ArrowCurveModel::path_svg(
   self : ArrowCurveModel,
   interval : ArrowCurveInterval,
-  segments~ : Int = 64,
+  segments? : Int = 64,
 ) -> String {
-  let points = self.path_points(interval, segments=segments)
+  let points = self.path_points(interval, segments~)
   if points.is_empty() {
     return ""
   }
