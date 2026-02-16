@@ -1,0 +1,47 @@
+﻿# JS FFI Boundary (Task 4)
+
+This module freezes a first-pass browser integration surface around `Quiver`.
+
+- Adapter implementation: `quiver_ui_ffi.mbt`
+- JS exported entrypoints: `moon.pkg` -> `options.link.js.exports`
+
+## State Model
+
+- `QuiverUiAdapter` owns one mutable in-memory `Quiver`.
+- JS/UI code keeps one adapter instance per editor tab/document.
+
+## Import Calls
+
+- `ffi_adapter_import_base64(adapter, payload) -> String`
+- `ffi_adapter_import_share_url(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_tikz_cd(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_fletcher(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_html_embed(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_paste_base64_selection(adapter, payload, origin_x, origin_y, start_id?) -> QuiverUiSelectionImportResult`
+
+## Update Calls
+
+- `ffi_adapter_add_vertex(adapter, label, x, y, label_colour?) -> Int`
+- `ffi_adapter_add_edge(adapter, source_id, target_id, label?, options?, label_colour?) -> Int`
+- `ffi_adapter_remove(adapter, cell_id, when) -> Array[Int]`
+- `ffi_adapter_flush(adapter, when)`
+- `ffi_adapter_reset(adapter)`
+
+## Render/Read Calls
+
+- `ffi_adapter_all_cells(adapter) -> Array[CellData]`
+- `ffi_adapter_all_cell_ids(adapter) -> Array[Int]`
+
+## Export Calls
+
+- `ffi_adapter_export_base64(adapter) -> String`
+- `ffi_adapter_export_base64_selection(adapter, selected_ids, include_dependencies?) -> String`
+- `ffi_adapter_export_tikz_cd(adapter, settings?, options?, definitions?) -> TikzCdExportResult`
+- `ffi_adapter_export_fletcher(adapter, settings?, options?) -> String`
+- `ffi_adapter_export_html_embed(adapter, settings, options?) -> String`
+
+## Metadata Contracts
+
+- `QuiverUiImportResult` returns `{ payload, macro_url, renderer, embed }`.
+- `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
+- `id_remap` is sorted by `old_id` to keep deterministic JS-side patch application.
