@@ -65,6 +65,66 @@ test "browser runtime import share url and paste selection" {
 }
 
 ///|
+test "browser runtime fletcher import/export roundtrips with metadata" {
+  let source = BrowserRuntime::new()
+  let source_id = source.add_vertex("A", 0, 0)
+  let target_id = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(source_id, target_id, label="f"))
+
+  let options = @kwiver.FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let fletcher = source.render_fletcher(options~)
+
+  let target = BrowserRuntime::new()
+  target.set_selection([999])
+  let imported = target.import_fletcher(fletcher)
+  inspect(imported.payload == target.export_payload(), content="true")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match imported.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+  inspect(imported.embed, content="false")
+  inspect(target.all_cell_ids(), content="[1, 2, 3]")
+  inspect(target.selection(), content="[]")
+}
+
+///|
+test "browser runtime html import/export roundtrips with embed metadata" {
+  let source = BrowserRuntime::new()
+  ignore(source.add_vertex("A", 0, 0))
+
+  let settings = @kwiver.HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 320)
+  let options = @kwiver.HtmlEmbedExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let html = source.render_html_embed(settings, options~)
+
+  let target = BrowserRuntime::new()
+  target.set_selection([1])
+  let imported = target.import_html_embed(html)
+  inspect(imported.payload == target.export_payload(), content="true")
+  match imported.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  match imported.macro_url {
+    Some(value) => inspect(value, content="https://example.com/macros.tex")
+    None => abort("expected macro_url")
+  }
+  inspect(imported.embed, content="true")
+  inspect(target.all_cell_ids(), content="[1]")
+  inspect(target.selection(), content="[]")
+}
+
+///|
 test "browser runtime applies incremental mutations via ffi surface" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
