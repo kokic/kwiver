@@ -98,6 +98,33 @@ test "browser runtime import share text supports wrappers and iframe-only" {
 }
 
 ///|
+test "browser runtime import text auto supports handwritten tikz and raw payload" {
+  let runtime = BrowserRuntime::new()
+  runtime.set_selection([999])
+
+  let tikz = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}",
+  ].join("")
+  let imported_tikz = runtime.import_text_auto(tikz)
+  inspect(imported_tikz.payload == runtime.export_payload(), content="true")
+  inspect(imported_tikz.renderer, content="None")
+  inspect(imported_tikz.embed, content="false")
+  inspect(runtime.all_cell_ids(), content="[1, 2, 3]")
+  inspect(runtime.selection(), content="[]")
+
+  let source = BrowserRuntime::new()
+  ignore(source.add_vertex("X", 0, 0))
+  let payload = source.export_payload()
+
+  let imported_payload = runtime.import_text_auto(payload)
+  inspect(imported_payload.payload, content=payload)
+  inspect(imported_payload.renderer, content="None")
+  inspect(imported_payload.embed, content="false")
+  inspect(runtime.all_cell_ids(), content="[1]")
+  inspect(runtime.selection(), content="[]")
+}
+
+///|
 test "browser runtime fletcher import/export roundtrips with metadata" {
   let source = BrowserRuntime::new()
   let source_id = source.add_vertex("A", 0, 0)

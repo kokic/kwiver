@@ -95,6 +95,29 @@ test "ui ffi adapter import share text supports exported wrappers and iframe-onl
 }
 
 ///|
+test "ui ffi adapter import text auto supports handwritten tikz and raw payload" {
+  let adapter = ffi_adapter_new()
+  let tikz = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let imported_tikz = ffi_adapter_import_text_auto(adapter, tikz)
+  inspect(imported_tikz.renderer, content="None")
+  inspect(imported_tikz.embed, content="false")
+  inspect(ffi_adapter_all_cell_ids(adapter), content="[1, 2, 3]")
+
+  let source = ffi_adapter_new()
+  ignore(ffi_adapter_add_vertex(source, "X", 0, 0))
+  let payload = ffi_adapter_export_base64(source)
+
+  let imported_payload = ffi_adapter_import_text_auto(adapter, payload)
+  inspect(imported_payload.payload, content=payload)
+  inspect(imported_payload.renderer, content="None")
+  inspect(imported_payload.embed, content="false")
+  inspect(ffi_adapter_all_cell_ids(adapter), content="[1]")
+}
+
+///|
 test "ui ffi adapter supports incremental mutation without reload" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

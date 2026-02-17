@@ -15,6 +15,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `ffi_adapter_import_base64(adapter, payload) -> String`
 - `ffi_adapter_import_share_url(adapter, input, default_renderer?) -> QuiverUiImportResult`
 - `ffi_adapter_import_share_text(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_text_auto(adapter, input, default_renderer?) -> QuiverUiImportResult`
 - `ffi_adapter_import_tikz_cd(adapter, input, default_renderer?) -> QuiverUiImportResult`
 - `ffi_adapter_import_fletcher(adapter, input, default_renderer?) -> QuiverUiImportResult`
 - `ffi_adapter_import_html_embed(adapter, input, default_renderer?) -> QuiverUiImportResult`

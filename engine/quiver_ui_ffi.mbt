@@ -163,6 +163,29 @@ fn quiver_ui_sorted_id_remap(remap : Map[Int, Int]) -> Array[QuiverUiIdRemap] {
 }
 
 ///|
+fn quiver_ui_looks_like_share_reference(input : String) -> Bool {
+  input.contains("#q=") ||
+  input.contains("?q=") ||
+  input.contains("&q=") ||
+  input.contains("q.uiver.app")
+}
+
+///|
+fn quiver_ui_looks_like_tikz(input : String) -> Bool {
+  input.contains("\\begin{tikzcd}") && input.contains("\\end{tikzcd}")
+}
+
+///|
+fn quiver_ui_looks_like_fletcher(input : String) -> Bool {
+  input.contains("#diagram({") || input.contains("diagram({")
+}
+
+///|
+fn quiver_ui_looks_like_html(input : String) -> Bool {
+  input.contains("<iframe") || input.contains("<!--") || input.contains("src=")
+}
+
+///|
 pub fn QuiverUiAdapter::reset(self : QuiverUiAdapter) -> Unit {
   self.quiver = Quiver::new()
 }
@@ -209,6 +232,29 @@ pub fn QuiverUiAdapter::import_share_text(
     imported.renderer,
     imported.embed,
   )
+}
+
+///|
+pub fn QuiverUiAdapter::import_text_auto(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> QuiverUiImportResult raise {
+  if quiver_ui_looks_like_share_reference(input) {
+    return self.import_share_text(input, default_renderer~)
+  }
+  if quiver_ui_looks_like_tikz(input) {
+    return self.import_tikz_cd(input, default_renderer~)
+  }
+  if quiver_ui_looks_like_fletcher(input) {
+    return self.import_fletcher(input, default_renderer~)
+  }
+  if quiver_ui_looks_like_html(input) {
+    return self.import_html_embed(input, default_renderer~)
+  }
+
+  let payload = self.import_base64_state(input)
+  { payload, macro_url: None, renderer: None, embed: false }
 }
 
 ///|
@@ -644,6 +690,15 @@ pub fn ffi_adapter_import_share_text(
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
   adapter.import_share_text(input, default_renderer~)
+}
+
+///|
+pub fn ffi_adapter_import_text_auto(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> QuiverUiImportResult raise {
+  adapter.import_text_auto(input, default_renderer~)
 }
 
 ///|

@@ -240,6 +240,21 @@ pub fn BrowserRuntime::import_share_text(
 }
 
 ///|
+pub fn BrowserRuntime::import_text_auto(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> @engine.QuiverUiImportResult raise {
+  let imported = @engine.ffi_adapter_import_text_auto(
+    self.adapter,
+    input,
+    default_renderer~,
+  )
+  self.selected_ids = []
+  imported
+}
+
+///|
 pub fn BrowserRuntime::import_tikz_cd(
   self : BrowserRuntime,
   input : String,
