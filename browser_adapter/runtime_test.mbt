@@ -65,6 +65,39 @@ test "browser runtime import share url and paste selection" {
 }
 
 ///|
+test "browser runtime import share text supports wrappers and iframe-only" {
+  let source = BrowserRuntime::new()
+  let source_id = source.add_vertex("A", 0, 0)
+  let target_id = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(source_id, target_id, label="f"))
+
+  let tikz = source.render_tikz()
+
+  let target = BrowserRuntime::new()
+  target.set_selection([999])
+  let imported_tikz = target.import_share_text(tikz)
+  inspect(imported_tikz.payload == target.export_payload(), content="true")
+  inspect(imported_tikz.renderer, content="None")
+  inspect(imported_tikz.embed, content="false")
+  inspect(target.all_cell_ids(), content="[1, 2, 3]")
+  inspect(target.selection(), content="[]")
+
+  let payload = source.export_payload()
+  let iframe_only = [
+    "<iframe src='https://q.uiver.app#r=svg&q=", payload, "&embed'></iframe>",
+  ].join("")
+  let imported_iframe = target.import_share_text(iframe_only)
+  inspect(imported_iframe.payload == target.export_payload(), content="true")
+  match imported_iframe.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  inspect(imported_iframe.embed, content="true")
+  inspect(target.all_cell_ids(), content="[1, 2, 3]")
+  inspect(target.selection(), content="[]")
+}
+
+///|
 test "browser runtime fletcher import/export roundtrips with metadata" {
   let source = BrowserRuntime::new()
   let source_id = source.add_vertex("A", 0, 0)

@@ -66,6 +66,35 @@ test "ui ffi adapter import tikz updates state with metadata defaults" {
 }
 
 ///|
+test "ui ffi adapter import share text supports exported wrappers and iframe-only" {
+  let source = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(source, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(source, "B", 1, 0)
+  ignore(ffi_adapter_add_edge(source, source_id, target_id, label="f"))
+
+  let tikz_output = ffi_adapter_export_tikz_cd(source).data
+
+  let target = ffi_adapter_new()
+  let imported_tikz = ffi_adapter_import_share_text(target, tikz_output)
+  inspect(imported_tikz.macro_url, content="None")
+  inspect(imported_tikz.renderer, content="None")
+  inspect(imported_tikz.embed, content="false")
+  inspect(ffi_adapter_all_cell_ids(target), content="[1, 2, 3]")
+
+  let payload = ffi_adapter_export_base64(source)
+  let iframe_only = [
+    "<iframe src='https://q.uiver.app#r=svg&q=", payload, "&embed'></iframe>",
+  ].join("")
+  let imported_iframe = ffi_adapter_import_share_text(target, iframe_only)
+  inspect(ffi_adapter_all_cell_ids(target), content="[1, 2, 3]")
+  match imported_iframe.renderer {
+    Some(value) => inspect(value, content="svg")
+    None => abort("expected renderer")
+  }
+  inspect(imported_iframe.embed, content="true")
+}
+
+///|
 test "ui ffi adapter supports incremental mutation without reload" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
