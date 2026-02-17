@@ -2,8 +2,8 @@
 
 This module freezes a first-pass browser integration surface around `Quiver`.
 
-- Adapter implementation: `quiver_ui_ffi.mbt`
-- JS exported entrypoints: `moon.pkg` -> `options.link.js.exports`
+- Adapter implementation: `engine/quiver_ui_ffi.mbt`
+- JS exported entrypoints: `engine/moon.pkg` -> `options.link.js.exports`
 
 ## State Model
 

@@ -1,4 +1,4 @@
-///|
+﻿///|
 fn assert_close_layout(
   actual : Double,
   expected : Double,
@@ -11,9 +11,9 @@ fn assert_close_layout(
 
 ///|
 test "arrow layout clips source rounded rectangle" {
-  let source = ArrowShape::rounded_rect(Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
-  let options = EdgeOptions::default()
+  let source = ArrowShape::rounded_rect(@engine.Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
+  let options = @engine.EdgeOptions::default()
   let model = ArrowCurveModel::new(source.origin(), target.origin(), options)
   let layout = ArrowLayout::new(source, target, model, options)
   let endpoints = layout.clipped_endpoints()
@@ -26,9 +26,9 @@ test "arrow layout clips source rounded rectangle" {
 
 ///|
 test "arrow layout shortened interval uses edge shorten" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
-  let options = EdgeOptions::default().with_shorten(10, 20)
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
+  let options = @engine.EdgeOptions::default().with_shorten(10, 20)
   let model = ArrowCurveModel::new(source.origin(), target.origin(), options)
   let layout = ArrowLayout::new(source, target, model, options)
   let shortened = layout.shortened_interval()
@@ -39,10 +39,10 @@ test "arrow layout shortened interval uses edge shorten" {
 
 ///|
 test "arrow layout label left-right differs" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
 
-  let options_left = EdgeOptions::default().with_label_alignment_left()
+  let options_left = @engine.EdgeOptions::default().with_label_alignment_left()
   let model_left = ArrowCurveModel::new(
     source.origin(),
     target.origin(),
@@ -51,7 +51,7 @@ test "arrow layout label left-right differs" {
   let layout_left = ArrowLayout::new(source, target, model_left, options_left)
   let left = layout_left.label_position(20.0, 10.0)
 
-  let options_right = EdgeOptions::default().with_label_alignment_right()
+  let options_right = @engine.EdgeOptions::default().with_label_alignment_right()
   let model_right = ArrowCurveModel::new(
     source.origin(),
     target.origin(),
@@ -66,3 +66,4 @@ test "arrow layout label left-right differs" {
     abort("unexpected label offset directions")
   }
 }
+

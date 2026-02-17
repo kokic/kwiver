@@ -1,4 +1,4 @@
-///|
+﻿///|
 fn assert_close_arrow(
   actual : Double,
   expected : Double,
@@ -11,9 +11,9 @@ fn assert_close_arrow(
 
 ///|
 test "arrow geometry endpoints for point-to-point line" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
-  let options = EdgeOptions::default()
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
+  let options = @engine.EdgeOptions::default()
   let geometry = ArrowGeometry::new(source, target, options)
   let endpoints = geometry.endpoints()
 
@@ -25,9 +25,9 @@ test "arrow geometry endpoints for point-to-point line" {
 
 ///|
 test "arrow geometry rounded-rect source clipping" {
-  let source = ArrowShape::rounded_rect(Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
-  let options = EdgeOptions::default()
+  let source = ArrowShape::rounded_rect(@engine.Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
+  let options = @engine.EdgeOptions::default()
   let geometry = ArrowGeometry::new(source, target, options)
   let endpoints = geometry.endpoints()
 
@@ -40,9 +40,9 @@ test "arrow geometry rounded-rect source clipping" {
 
 ///|
 test "arrow geometry path uses shortening" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
-  let options = EdgeOptions::default().with_shorten(10, 20)
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
+  let options = @engine.EdgeOptions::default().with_shorten(10, 20)
   let geometry = ArrowGeometry::new(source, target, options)
   let points = geometry.path_points()
 
@@ -56,19 +56,19 @@ test "arrow geometry path uses shortening" {
 
 ///|
 test "arrow geometry label position left-right differs" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(100.0, 0.0))
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
 
   let left = ArrowGeometry::new(
     source,
     target,
-    EdgeOptions::default().with_label_alignment_left(),
+    @engine.EdgeOptions::default().with_label_alignment_left(),
   ).label_position(20.0, 10.0)
 
   let right = ArrowGeometry::new(
     source,
     target,
-    EdgeOptions::default().with_label_alignment_right(),
+    @engine.EdgeOptions::default().with_label_alignment_right(),
   ).label_position(20.0, 10.0)
 
   // On a left-to-right edge, left label should go to negative y and right to positive y.
@@ -79,9 +79,9 @@ test "arrow geometry label position left-right differs" {
 
 ///|
 test "arrow geometry arc path and label" {
-  let source = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let target = ArrowShape::endpoint(Point::new(0.0, 0.0))
-  let options = EdgeOptions::default()
+  let source = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let target = ArrowShape::endpoint(@engine.Point::new(0.0, 0.0))
+  let options = @engine.EdgeOptions::default()
     .with_shape_arc()
     .with_radius(3)
     .with_angle(45)
@@ -97,3 +97,4 @@ test "arrow geometry arc path and label" {
     abort("invalid label position")
   }
 }
+

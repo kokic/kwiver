@@ -13,5 +13,5 @@ We gratefully acknowledge the original design, file format, and user experience 
 
 ## JS FFI Boundary
 
-A first-pass browser integration surface is documented in docs/js-ffi-boundary.md and implemented in quiver_ui_ffi.mbt.
+A first-pass browser integration surface is documented in docs/js-ffi-boundary.md and implemented in engine/quiver_ui_ffi.mbt.
 

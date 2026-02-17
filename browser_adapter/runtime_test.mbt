@@ -1,4 +1,4 @@
-///|
+﻿///|
 test "browser runtime roundtrips payload across sessions" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
@@ -71,7 +71,7 @@ test "browser runtime fletcher import/export roundtrips with metadata" {
   let target_id = source.add_vertex("B", 1, 0)
   ignore(source.add_edge(source_id, target_id, label="f"))
 
-  let options = @kwiver.FletcherExportOptions::default()
+  let options = @engine.FletcherExportOptions::default()
     .with_share_base_url("https://q.uiver.app")
     .with_renderer("svg")
     .with_macro_url("https://example.com/macros.tex")
@@ -99,9 +99,9 @@ test "browser runtime html import/export roundtrips with embed metadata" {
   let source = BrowserRuntime::new()
   ignore(source.add_vertex("A", 0, 0))
 
-  let settings = @kwiver.HtmlEmbedExportSettings::default("https://q.uiver.app")
+  let settings = @engine.HtmlEmbedExportSettings::default("https://q.uiver.app")
     .with_fixed_size(400, 320)
-  let options = @kwiver.HtmlEmbedExportOptions::default()
+  let options = @engine.HtmlEmbedExportOptions::default()
     .with_share_base_url("https://q.uiver.app")
     .with_renderer("svg")
     .with_macro_url("https://example.com/macros.tex")
@@ -133,27 +133,27 @@ test "browser runtime applies incremental mutations via ffi surface" {
 
   inspect(runtime.set_label(source_id, "A2"), content="true")
   inspect(
-    runtime.set_label_colour(edge_id, @kwiver.Colour::new(240, 100, 50, 1.0)),
+    runtime.set_label_colour(edge_id, @engine.Colour::new(240, 100, 50, 1.0)),
     content="true",
   )
   inspect(runtime.move_vertex(source_id, 9, 4), content="true")
 
-  let options = @kwiver.EdgeOptions::at_level(5)
+  let options = @engine.EdgeOptions::at_level(5)
     .with_curve(-2)
     .with_style_tail("hook", side="top")
   inspect(runtime.set_edge_options(edge_id, options), content="true")
   inspect(runtime.reconnect_edge(edge_id, target_id, source_id), content="true")
 
-  let quiver = @kwiver.Quiver::import_base64_v0(runtime.export_payload())
-  let mut source_vertex : @kwiver.Vertex? = None
-  let mut edge_value : @kwiver.Edge? = None
+  let quiver = @engine.Quiver::import_base64_v0(runtime.export_payload())
+  let mut source_vertex : @engine.Vertex? = None
+  let mut edge_value : @engine.Edge? = None
   for cell in quiver.all_cells() {
     match cell {
-      @kwiver.CellData::Vertex(vertex) =>
+      @engine.CellData::Vertex(vertex) =>
         if vertex.cell.id == source_id {
           source_vertex = Some(vertex)
         }
-      @kwiver.CellData::Edge(edge) =>
+      @engine.CellData::Edge(edge) =>
         if edge.cell.id == edge_id {
           edge_value = Some(edge)
         }
@@ -191,18 +191,18 @@ test "browser runtime applies mutation batch through ffi adapter" {
   let edge_id = runtime.add_edge(source_id, target_id, label="f")
   runtime.set_selection([source_id, edge_id])
 
-  let batch = @kwiver.QuiverUiMutationBatch::new(
-    [@kwiver.QuiverUiSetLabelPatch::new(source_id, "A2")],
+  let batch = @engine.QuiverUiMutationBatch::new(
+    [@engine.QuiverUiSetLabelPatch::new(source_id, "A2")],
     [],
-    [@kwiver.QuiverUiMoveVertexPatch::new(source_id, 5, 7)],
+    [@engine.QuiverUiMoveVertexPatch::new(source_id, 5, 7)],
     [
-      @kwiver.QuiverUiSetEdgeOptionsPatch::new(
+      @engine.QuiverUiSetEdgeOptionsPatch::new(
         edge_id,
-        @kwiver.EdgeOptions::at_level(1).with_curve(-1),
+        @engine.EdgeOptions::at_level(1).with_curve(-1),
       ),
     ],
     [
-      @kwiver.QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id),
+      @engine.QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id),
     ],
   )
 
@@ -214,16 +214,16 @@ test "browser runtime applies mutation batch through ffi adapter" {
   inspect(result.payload == runtime.export_payload(), content="true")
   inspect(runtime.selection(), content="[1, 3]")
 
-  let quiver = @kwiver.Quiver::import_base64_v0(result.payload)
-  let mut source_vertex : @kwiver.Vertex? = None
-  let mut edge_value : @kwiver.Edge? = None
+  let quiver = @engine.Quiver::import_base64_v0(result.payload)
+  let mut source_vertex : @engine.Vertex? = None
+  let mut edge_value : @engine.Edge? = None
   for cell in quiver.all_cells() {
     match cell {
-      @kwiver.CellData::Vertex(vertex) =>
+      @engine.CellData::Vertex(vertex) =>
         if vertex.cell.id == source_id {
           source_vertex = Some(vertex)
         }
-      @kwiver.CellData::Edge(edge) =>
+      @engine.CellData::Edge(edge) =>
         if edge.cell.id == edge_id {
           edge_value = Some(edge)
         }
@@ -258,7 +258,7 @@ test "browser runtime mutation helpers reject mismatched ids" {
   inspect(runtime.move_vertex(999, 1, 1), content="false")
   inspect(runtime.set_label(999, "X"), content="false")
   inspect(
-    runtime.set_edge_options(vertex_id, @kwiver.EdgeOptions::at_level(1)),
+    runtime.set_edge_options(vertex_id, @engine.EdgeOptions::at_level(1)),
     content="false",
   )
   inspect(
@@ -266,3 +266,4 @@ test "browser runtime mutation helpers reject mismatched ids" {
     content="false",
   )
 }
+
