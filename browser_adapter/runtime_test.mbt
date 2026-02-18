@@ -40,6 +40,30 @@ test "browser runtime render_tikz_json includes dependency metadata" {
 }
 
 ///|
+test "browser runtime add remove flush json wrappers update selection" {
+  let runtime = BrowserRuntime::new()
+
+  let add_vertex_json = runtime.add_vertex_json("{\"label\":\"A\",\"x\":0,\"y\":0}")
+  inspect(add_vertex_json.contains("\"id\":1"), content="true")
+  inspect(runtime.selection(), content="[1]")
+
+  ignore(runtime.add_vertex("B", 1, 0))
+  let add_edge_json = runtime.add_edge_json(
+    "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
+  )
+  inspect(add_edge_json.contains("\"id\":3"), content="true")
+  inspect(runtime.selection(), content="[3]")
+
+  let remove_json = runtime.remove_json("{\"cell_id\":1,\"when\":9}")
+  inspect(remove_json.contains("\"removed_ids\":"), content="true")
+  inspect(runtime.selection(), content="[]")
+
+  let flush_json = runtime.flush_json("{\"when\":9}")
+  inspect(flush_json.contains("\"payload\":\""), content="true")
+  inspect(runtime.all_cell_ids(), content="[2]")
+}
+
+///|
 test "browser runtime remove and flush use ffi adapter" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)

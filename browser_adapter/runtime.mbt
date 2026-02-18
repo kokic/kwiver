@@ -9,6 +9,26 @@ fn browser_contains_id(ids : Array[Int], target : Int) -> Bool {
 }
 
 ///|
+fn browser_json_required_field(root : Map[String, Json], key : String) -> Json {
+  match root.get(key) {
+    Some(value) => value
+    None => abort("missing runtime json field: " + key)
+  }
+}
+
+///|
+fn browser_parse_added_id(result_json : String) -> Int raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(result_json))
+  @json.from_json(browser_json_required_field(root, "id"))
+}
+
+///|
+fn browser_parse_removed_ids(result_json : String) -> Array[Int] raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(result_json))
+  @json.from_json(browser_json_required_field(root, "removed_ids"))
+}
+
+///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
   mut selected_ids : Array[Int]
@@ -76,6 +96,26 @@ pub fn BrowserRuntime::add_edge(
   )
   self.selected_ids = [id]
   id
+}
+
+///|
+pub fn BrowserRuntime::add_vertex_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let result_json = @engine.ffi_adapter_add_vertex_json(self.adapter, input_json)
+  self.selected_ids = [browser_parse_added_id(result_json)]
+  result_json
+}
+
+///|
+pub fn BrowserRuntime::add_edge_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let result_json = @engine.ffi_adapter_add_edge_json(self.adapter, input_json)
+  self.selected_ids = [browser_parse_added_id(result_json)]
+  result_json
 }
 
 ///|
@@ -158,8 +198,27 @@ pub fn BrowserRuntime::remove(
 }
 
 ///|
+pub fn BrowserRuntime::remove_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let result_json = @engine.ffi_adapter_remove_json(self.adapter, input_json)
+  let removed_ids = browser_parse_removed_ids(result_json)
+  self.selected_ids.retain(id => !browser_contains_id(removed_ids, id))
+  result_json
+}
+
+///|
 pub fn BrowserRuntime::flush(self : BrowserRuntime, when : Int) -> Unit {
   @engine.ffi_adapter_flush(self.adapter, when)
+}
+
+///|
+pub fn BrowserRuntime::flush_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_flush_json(self.adapter, input_json)
 }
 
 ///|

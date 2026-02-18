@@ -97,6 +97,72 @@ test "ui ffi adapter selection paste returns deterministic remap and payload" {
 }
 
 ///|
+test "ui ffi adapter add remove flush json wrappers carry payload" {
+  let adapter = ffi_adapter_new()
+
+  let add_vertex_json = ffi_adapter_add_vertex_json(
+    adapter,
+    "{\"label\":\"A\",\"x\":0,\"y\":0}",
+  )
+  let add_vertex_result : Map[String, Json] = @json.from_json(
+    @json.parse(add_vertex_json),
+  )
+  let vertex_id : Int = @json.from_json(test_json_get(add_vertex_result, "id"))
+  let payload_after_add_vertex : String = @json.from_json(
+    test_json_get(add_vertex_result, "payload"),
+  )
+  inspect(vertex_id, content="1")
+  inspect(
+    payload_after_add_vertex == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  inspect(target_id, content="2")
+
+  let add_edge_json = ffi_adapter_add_edge_json(
+    adapter,
+    "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
+  )
+  let add_edge_result : Map[String, Json] = @json.from_json(@json.parse(add_edge_json))
+  let edge_id : Int = @json.from_json(test_json_get(add_edge_result, "id"))
+  let payload_after_add_edge : String = @json.from_json(
+    test_json_get(add_edge_result, "payload"),
+  )
+  inspect(edge_id, content="3")
+  inspect(
+    payload_after_add_edge == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let remove_json = ffi_adapter_remove_json(adapter, "{\"cell_id\":1,\"when\":9}")
+  let remove_result : Map[String, Json] = @json.from_json(@json.parse(remove_json))
+  let removed_ids : Array[Int] = @json.from_json(
+    test_json_get(remove_result, "removed_ids"),
+  )
+  removed_ids.sort()
+  let payload_after_remove : String = @json.from_json(
+    test_json_get(remove_result, "payload"),
+  )
+  inspect(removed_ids, content="[1, 3]")
+  inspect(
+    payload_after_remove == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let flush_json = ffi_adapter_flush_json(adapter, "{\"when\":9}")
+  let flush_result : Map[String, Json] = @json.from_json(@json.parse(flush_json))
+  let payload_after_flush : String = @json.from_json(
+    test_json_get(flush_result, "payload"),
+  )
+  inspect(
+    payload_after_flush == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+  inspect(ffi_adapter_all_cell_ids(adapter), content="[2]")
+}
+
+///|
 test "ui ffi adapter import tikz updates state with metadata defaults" {
   let adapter = ffi_adapter_new()
   let input = [

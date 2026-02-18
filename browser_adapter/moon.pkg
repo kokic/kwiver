@@ -1,3 +1,4 @@
 import {
   "kokic/kwiver/engine",
+  "moonbitlang/core/json",
 }
