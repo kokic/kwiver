@@ -46,6 +46,33 @@ fn tikz_test_find_vertex_id_by_label(quiver : Quiver, label : String) -> Int? {
 }
 
 ///|
+fn tikz_test_find_edge_by_vertex_labels(
+  quiver : Quiver,
+  source_label : String,
+  target_label : String,
+) -> Edge? {
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, source_label) {
+    Some(value) => value
+    None => return None
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, target_label) {
+    Some(value) => value
+    None => return None
+  }
+
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(edge) =>
+        if edge.source == source_id && edge.target == target_id {
+          return Some(edge)
+        }
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 test "tikz-cd export basic vertex grid and arrow" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -1257,6 +1284,54 @@ test "tikz-cd import parser maps draw text and shared colour options" {
       inspect(edge.options.colour.l, content="50")
     }
     None => abort("expected edge h")
+  }
+}
+
+///|
+test "tikz-cd import parser maps non-arrow decoration options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"x\", draw=none, \"\\dashv\"{text=red, rotate=-30}] & B \\\\\n",
+    "C \\arrow[r, draw=none, \"\\lrcorner\"{text=green, rotate=90}] & D \\\\\n",
+    "E \\arrow[r, draw=none, \"\\ulcorner\"{text=blue}] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "A", "B") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="x")
+      inspect(edge.options.style.name, content="adjunction")
+      inspect(edge.options.colour.h, content="0")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+      inspect(edge.options.angle, content="30")
+    }
+    None => abort("expected edge A->B")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "C", "D") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="")
+      inspect(edge.options.style.name, content="corner")
+      inspect(edge.options.colour.h, content="120")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="25")
+      inspect(edge.options.angle, content="-45")
+    }
+    None => abort("expected edge C->D")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "E", "F") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="")
+      inspect(edge.options.style.name, content="corner-inverse")
+      inspect(edge.options.colour.h, content="240")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+    }
+    None => abort("expected edge E->F")
   }
 }
 

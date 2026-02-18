@@ -1662,6 +1662,13 @@ priv struct TikzParsedLabelOptions {
 }
 
 ///|
+priv struct TikzParsedDecorationOption {
+  style_name : String
+  colour : Colour?
+  rotate : Int?
+}
+
+///|
 fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
   let compact = options
     .replace_all(old=" ", new="")
@@ -2294,6 +2301,85 @@ fn tikz_parse_colour_option(value : String) -> Colour? {
 }
 
 ///|
+fn tikz_parse_rotate_option(value : String) -> Int? {
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  match tikz_parse_signed_double(text) {
+    Some(value_double) => Some(tikz_round_to_int(value_double))
+    None => None
+  }
+}
+
+///|
+fn tikz_decoration_style_name(content : String) -> String? {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(content))
+    .trim()
+    .to_string()
+  if token == "\\dashv" {
+    return Some("adjunction")
+  }
+  if token == "\\lrcorner" {
+    return Some("corner")
+  }
+  if token == "\\ulcorner" {
+    return Some("corner-inverse")
+  }
+  None
+}
+
+///|
+fn tikz_parse_decoration_option(option : String) -> TikzParsedDecorationOption? {
+  match tikz_extract_first_quoted(option) {
+    Some(content) =>
+      match tikz_decoration_style_name(content) {
+        Some(style_name) => {
+          let mut colour : Colour? = None
+          let mut rotate : Int? = None
+          for suffix_option in tikz_label_suffix_options(option) {
+            match tikz_option_key_value(suffix_option) {
+              Some((key, value)) => {
+                let key_token = tikz_strip_math_wrapper(
+                  tikz_unwrap_braced_text(key),
+                )
+                if key_token == "text" {
+                  match tikz_parse_colour_option(value) {
+                    Some(parsed_colour) => colour = Some(parsed_colour)
+                    None => ()
+                  }
+                } else if key_token == "rotate" {
+                  match tikz_parse_rotate_option(value) {
+                    Some(parsed_rotate) => rotate = Some(parsed_rotate)
+                    None => ()
+                  }
+                }
+              }
+              None => ()
+            }
+          }
+          Some({ style_name, colour, rotate })
+        }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn tikz_apply_decoration_rotation(
+  options : EdgeOptions,
+  style_name : String,
+  rotate : Int,
+) -> EdgeOptions {
+  match style_name {
+    "adjunction" => options.with_angle(-rotate)
+    "corner" => options.with_angle(45 - rotate)
+    "corner-inverse" => options.with_angle(45 - rotate)
+    _ => options
+  }
+}
+
+///|
 fn tikz_parse_label_pos_percent(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2771,6 +2857,29 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut parsed_label_colour = Colour::black()
 
             for option in options {
+              match tikz_parse_decoration_option(option) {
+                Some(parsed_decoration) => {
+                  parsed_options = parsed_options.with_style_name(
+                    parsed_decoration.style_name,
+                  )
+                  match parsed_decoration.colour {
+                    Some(colour) => parsed_options = parsed_options.with_colour(colour)
+                    None => ()
+                  }
+                  match parsed_decoration.rotate {
+                    Some(rotate) =>
+                      parsed_options = tikz_apply_decoration_rotation(
+                        parsed_options,
+                        parsed_decoration.style_name,
+                        rotate,
+                      )
+                    None => ()
+                  }
+                  continue
+                }
+                None => ()
+              }
+
               if label == "" {
                 match tikz_extract_arrow_label_option(option) {
                   Some(value) => label = value
