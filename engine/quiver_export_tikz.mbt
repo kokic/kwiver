@@ -1650,6 +1650,15 @@ priv struct TikzPendingArrow {
 }
 
 ///|
+priv struct TikzParsedLabelOptions {
+  swap : Bool
+  description : Bool
+  marking : Bool
+  allow_upside_down : Bool
+  pos : Int?
+}
+
+///|
 fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
   let compact = options
     .replace_all(old=" ", new="")
@@ -1988,6 +1997,75 @@ fn tikz_parse_level_option_value(value : String) -> Int? {
 }
 
 ///|
+fn tikz_parse_label_pos_percent(value : String) -> Int? {
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text == "" {
+    return None
+  }
+
+  match text.find(".") {
+    Some(dot_index) => {
+      let whole_text = text.unsafe_substring(start=0, end=dot_index)
+      let frac_text = text.unsafe_substring(start=dot_index + 1, end=text.length())
+      if frac_text == "" {
+        return None
+      }
+
+      let whole_value = if whole_text == "" {
+        0
+      } else {
+        match tikz_parse_positive_int(whole_text) {
+          Some(value) => value
+          None => return None
+        }
+      }
+
+      if whole_value > 1 {
+        return None
+      }
+
+      let mut frac_value = 0
+      let mut frac_scale = 1
+      for byte in @utf8.encode(frac_text) {
+        let code = byte.to_int()
+        if code < 48 || code > 57 {
+          return None
+        }
+        frac_value = frac_value * 10 + (code - 48)
+        frac_scale = frac_scale * 10
+      }
+
+      if whole_value == 1 && frac_value != 0 {
+        return None
+      }
+
+      let numerator = whole_value * frac_scale + frac_value
+      let percent_numerator = numerator * 100
+      let rounded = (percent_numerator + frac_scale / 2) / frac_scale
+      if rounded >= 0 && rounded <= 100 {
+        Some(rounded)
+      } else {
+        None
+      }
+    }
+    None =>
+      match tikz_parse_positive_int(text) {
+        Some(value) =>
+          if value <= 1 {
+            Some(value * 100)
+          } else if value <= 100 {
+            Some(value)
+          } else {
+            None
+          }
+        None => None
+      }
+  }
+}
+
+///|
 fn tikz_apply_arrow_flag_option(
   options : EdgeOptions,
   option : String,
@@ -2040,6 +2118,107 @@ fn tikz_apply_arrow_key_value_option(
   }
 
   options
+}
+
+///|
+fn tikz_label_options_default() -> TikzParsedLabelOptions {
+  { swap: false, description: false, marking: false, allow_upside_down: false, pos: None }
+}
+
+///|
+fn tikz_apply_label_flag_option(
+  label_options : TikzParsedLabelOptions,
+  option : String,
+) -> TikzParsedLabelOptions {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+  match token {
+    "'" => { ..label_options, swap: true }
+    "swap" => { ..label_options, swap: true }
+    "description" => { ..label_options, description: true }
+    "marking" => { ..label_options, marking: true }
+    "allow upside down" => { ..label_options, allow_upside_down: true }
+    _ => label_options
+  }
+}
+
+///|
+fn tikz_apply_label_key_value_option(
+  label_options : TikzParsedLabelOptions,
+  key : String,
+  value : String,
+) -> TikzParsedLabelOptions {
+  let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+  if key_token == "pos" {
+    match tikz_parse_label_pos_percent(value) {
+      Some(pos) => { ..label_options, pos: Some(pos) }
+      None => label_options
+    }
+  } else {
+    tikz_apply_label_flag_option(label_options, key_token)
+  }
+}
+
+///|
+fn tikz_label_suffix_options(option : String) -> Array[String] {
+  let suffix_options : Array[String] = []
+  match option.find("\"") {
+    Some(start) => {
+      let rest = option.unsafe_substring(start=start + 1, end=option.length())
+      match rest.find("\"") {
+        Some(end) => {
+          let mut suffix = rest
+            .unsafe_substring(start=end + 1, end=rest.length())
+            .trim()
+            .to_string()
+
+          if suffix.has_prefix("'") {
+            suffix_options.push("'")
+            suffix = suffix
+              .unsafe_substring(start=1, end=suffix.length())
+              .trim()
+              .to_string()
+          }
+
+          if suffix == "" {
+            return suffix_options
+          }
+
+          if suffix.has_prefix("{") && suffix.has_suffix("}") {
+            let inner = suffix.unsafe_substring(start=1, end=suffix.length() - 1)
+            for opt in tikz_split_arrow_options(inner) {
+              suffix_options.push(opt)
+            }
+          } else {
+            suffix_options.push(suffix)
+          }
+        }
+        None => ()
+      }
+    }
+    None => ()
+  }
+  suffix_options
+}
+
+///|
+fn tikz_apply_label_options_to_edge_options(
+  options : EdgeOptions,
+  label_options : TikzParsedLabelOptions,
+) -> EdgeOptions {
+  let aligned = if label_options.marking || label_options.allow_upside_down {
+    options.with_label_alignment_over()
+  } else if label_options.description {
+    options.with_label_alignment_centre()
+  } else if label_options.swap {
+    options.with_label_alignment_right()
+  } else {
+    options.with_label_alignment_left()
+  }
+
+  match label_options.pos {
+    Some(pos) => aligned.with_label_position(pos)
+    None => aligned
+  }
 }
 
 ///|
@@ -2248,8 +2427,16 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut to_x : Int? = None
             let mut to_y : Int? = None
             let mut parsed_options = EdgeOptions::at_level(1)
+            let mut parsed_label_options = tikz_label_options_default()
 
             for option in options {
+              if label == "" {
+                match tikz_extract_arrow_label_option(option) {
+                  Some(value) => label = value
+                  None => ()
+                }
+              }
+
               match tikz_option_key_value(option) {
                 Some((key, value)) =>
                   if key == "from" {
@@ -2274,6 +2461,11 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       key,
                       value,
                     )
+                    parsed_label_options = tikz_apply_label_key_value_option(
+                      parsed_label_options,
+                      key,
+                      value,
+                    )
                   }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
@@ -2288,12 +2480,37 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                     }
                   }
                   parsed_options = tikz_apply_arrow_flag_option(
-                    parsed_options,
+                      parsed_options,
+                      option,
+                    )
+                  parsed_label_options = tikz_apply_label_flag_option(
+                    parsed_label_options,
                     option,
                   )
                 }
               }
+
+              for suffix_option in tikz_label_suffix_options(option) {
+                match tikz_option_key_value(suffix_option) {
+                  Some((key, value)) =>
+                    parsed_label_options = tikz_apply_label_key_value_option(
+                      parsed_label_options,
+                      key,
+                      value,
+                    )
+                  None =>
+                    parsed_label_options = tikz_apply_label_flag_option(
+                      parsed_label_options,
+                      suffix_option,
+                    )
+                }
+              }
             }
+
+            parsed_options = tikz_apply_label_options_to_edge_options(
+              parsed_options,
+              parsed_label_options,
+            )
 
             arrows.push({
               direction,

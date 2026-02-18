@@ -1145,6 +1145,52 @@ test "tikz-cd import parser maps harpoon side option" {
 }
 
 ///|
+test "tikz-cd import parser maps label-local swap description marking and pos" {
+  let swap_input = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"s\"'] & B\n", "\\end{tikzcd}",
+  ].join("")
+  let description_input = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"d\"{description, pos=0.25}] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+  let over_input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"o\"{marking, allow upside down, pos=.75}] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let swap_quiver = Quiver::import_tikz_cd(swap_input)
+  match tikz_test_find_edge_by_label(swap_quiver, "s") {
+    Some(edge) => {
+      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(edge.options.label_position, content="50")
+    }
+    None => abort("expected edge s")
+  }
+
+  let description_quiver = Quiver::import_tikz_cd(description_input)
+  match tikz_test_find_edge_by_label(description_quiver, "d") {
+    Some(edge) => {
+      inspect(
+        edge.options.label_alignment is LabelAlignment::Centre,
+        content="true",
+      )
+      inspect(edge.options.label_position, content="25")
+    }
+    None => abort("expected edge d")
+  }
+
+  let over_quiver = Quiver::import_tikz_cd(over_input)
+  match tikz_test_find_edge_by_label(over_quiver, "o") {
+    Some(edge) => {
+      inspect(edge.options.label_alignment is LabelAlignment::Over, content="true")
+      inspect(edge.options.label_position, content="75")
+    }
+    None => abort("expected edge o")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps commas inside quoted labels" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",
