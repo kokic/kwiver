@@ -170,6 +170,11 @@ pub fn BrowserRuntime::snapshot(self : BrowserRuntime) -> @engine.QuiverUiSnapsh
 }
 
 ///|
+pub fn BrowserRuntime::snapshot_json(self : BrowserRuntime) -> String {
+  @engine.ffi_adapter_snapshot_json(self.adapter)
+}
+
+///|
 pub fn BrowserRuntime::dependencies_of(
   self : BrowserRuntime,
   cell_id : Int,

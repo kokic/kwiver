@@ -1,4 +1,13 @@
 ///|
+///|
+fn test_json_get(root : Map[String, Json], key : String) -> Json {
+  match root.get(key) {
+    Some(value) => value
+    None => abort("missing json key")
+  }
+}
+
+///|
 test "ui ffi adapter wraps update/import/export calls" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
@@ -408,4 +417,96 @@ test "ui ffi adapter snapshot exposes js-friendly model data" {
   inspect(snapshot.dependencies[2].cell_id, content="3")
   inspect(snapshot.dependencies[2].dependencies, content="[]")
   inspect(snapshot.dependencies[2].reverse_dependencies, content="[1, 2]")
+}
+
+///|
+test "ui ffi adapter snapshot_json returns stable plain json shape" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  let options = EdgeOptions::at_level(1)
+    .with_label_alignment_right()
+    .with_style_head("epi")
+    .with_style_body("barred")
+    .with_colour(Colour::new(120, 100, 25, 1.0))
+  ignore(
+    ffi_adapter_add_edge(
+      adapter,
+      source_id,
+      target_id,
+      label="f",
+      options~,
+      label_colour=Colour::new(240, 100, 50, 1.0),
+    ),
+  )
+
+  let snapshot_json = ffi_adapter_snapshot_json(adapter)
+  let root : Map[String, Json] = @json.from_json(@json.parse(snapshot_json))
+  let payload : String = @json.from_json(test_json_get(root, "payload"))
+  inspect(payload == ffi_adapter_export_base64(adapter), content="true")
+
+  let cell_ids : Array[Int] = @json.from_json(test_json_get(root, "cell_ids"))
+  inspect(cell_ids, content="[1, 2, 3]")
+
+  let vertices : Array[Map[String, Json]] = @json.from_json(
+    test_json_get(root, "vertices"),
+  )
+  inspect(vertices.length(), content="2")
+  let vertex0_label : String = @json.from_json(test_json_get(vertices[0], "label"))
+  inspect(vertex0_label, content="A")
+
+  let edges : Array[Map[String, Json]] = @json.from_json(test_json_get(root, "edges"))
+  inspect(edges.length(), content="1")
+  let edge0_source : Int = @json.from_json(test_json_get(edges[0], "source_id"))
+  let edge0_target : Int = @json.from_json(test_json_get(edges[0], "target_id"))
+  let edge0_label : String = @json.from_json(test_json_get(edges[0], "label"))
+  inspect(edge0_source, content="1")
+  inspect(edge0_target, content="2")
+  inspect(edge0_label, content="f")
+
+  let edge_options : Map[String, Json] = @json.from_json(
+    test_json_get(edges[0], "options"),
+  )
+  let edge_label_alignment : String = @json.from_json(
+    test_json_get(edge_options, "label_alignment"),
+  )
+  inspect(edge_label_alignment, content="right")
+  let edge_style : Map[String, Json] = @json.from_json(
+    test_json_get(edge_options, "style"),
+  )
+  let edge_style_name : String = @json.from_json(test_json_get(edge_style, "name"))
+  inspect(edge_style_name, content="arrow")
+  let edge_style_body : Map[String, Json] = @json.from_json(
+    test_json_get(edge_style, "body"),
+  )
+  let edge_style_body_name : String = @json.from_json(
+    test_json_get(edge_style_body, "name"),
+  )
+  inspect(edge_style_body_name, content="barred")
+  let edge_style_head : Map[String, Json] = @json.from_json(
+    test_json_get(edge_style, "head"),
+  )
+  let edge_style_head_name : String = @json.from_json(
+    test_json_get(edge_style_head, "name"),
+  )
+  inspect(edge_style_head_name, content="epi")
+
+  let dependencies : Array[Map[String, Json]] = @json.from_json(
+    test_json_get(root, "dependencies"),
+  )
+  inspect(dependencies.length(), content="3")
+  let deps0 : Array[Int] = @json.from_json(
+    test_json_get(dependencies[0], "dependencies"),
+  )
+  let rev_deps2 : Array[Int] = @json.from_json(
+    test_json_get(dependencies[2], "reverse_dependencies"),
+  )
+  inspect(
+    deps0,
+    content="[3]",
+  )
+  inspect(
+    rev_deps2,
+    content="[1, 2]",
+  )
 }

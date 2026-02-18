@@ -40,6 +40,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `ffi_adapter_all_cells(adapter) -> Array[CellData]`
 - `ffi_adapter_all_cell_ids(adapter) -> Array[Int]`
 - `ffi_adapter_snapshot(adapter) -> QuiverUiSnapshot`
+- `ffi_adapter_snapshot_json(adapter) -> String`
 - `ffi_adapter_dependencies_of(adapter, cell_id) -> Array[Int]`
 - `ffi_adapter_reverse_dependencies_of(adapter, cell_id) -> Array[Int]`
 - `ffi_adapter_transitive_dependencies(adapter, roots, exclude_roots?) -> Array[Int]`
@@ -60,5 +61,6 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
 - `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `QuiverUiSnapshot` returns canonical `payload`, ordered `cell_ids`, flattened `vertices`, flattened `edges` (with stringified option enums), and per-cell dependency adjacency.
+- `ffi_adapter_snapshot_json` serializes the same snapshot shape into plain JSON for JS consumers that avoid MoonBit runtime data shapes.
 - `id_remap` is sorted by `old_id` to keep deterministic JS-side patch application.
 - Batch apply order is fixed: `labels -> label_colours -> vertex_positions -> edge_options -> edge_connections`.

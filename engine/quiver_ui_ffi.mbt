@@ -368,6 +368,126 @@ fn quiver_ui_cell_dependencies_data(
 }
 
 ///|
+fn quiver_ui_int_array_json(values : Array[Int]) -> Json {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(Json::number(value.to_double()))
+  }
+  Json::array(out)
+}
+
+///|
+fn quiver_ui_colour_json(data : QuiverUiColourData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("h", Json::number(data.h.to_double()))
+  out.set("s", Json::number(data.s.to_double()))
+  out.set("l", Json::number(data.l.to_double()))
+  out.set("a", Json::number(data.a))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_endpoint_style_json(data : QuiverUiEdgeEndpointStyleData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("name", Json::string(data.name))
+  out.set("side", Json::string(data.side))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_edge_style_json(data : QuiverUiEdgeStyleData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("name", Json::string(data.name))
+  out.set("tail", quiver_ui_endpoint_style_json(data.tail))
+  out.set("body", quiver_ui_endpoint_style_json(data.body))
+  out.set("head", quiver_ui_endpoint_style_json(data.head))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_edge_options_json(data : QuiverUiEdgeOptionsData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("label_alignment", Json::string(data.label_alignment))
+  out.set("label_position", Json::number(data.label_position.to_double()))
+  out.set("offset", Json::number(data.offset.to_double()))
+  out.set("curve", Json::number(data.curve.to_double()))
+  out.set("radius", Json::number(data.radius.to_double()))
+  out.set("angle", Json::number(data.angle.to_double()))
+  out.set("shorten_source", Json::number(data.shorten_source.to_double()))
+  out.set("shorten_target", Json::number(data.shorten_target.to_double()))
+  out.set("level", Json::number(data.level.to_double()))
+  out.set("shape", Json::string(data.shape))
+  out.set("colour", quiver_ui_colour_json(data.colour))
+  out.set("edge_alignment_source", Json::boolean(data.edge_alignment_source))
+  out.set("edge_alignment_target", Json::boolean(data.edge_alignment_target))
+  out.set("style", quiver_ui_edge_style_json(data.style))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_vertex_json(data : QuiverUiVertexData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("id", Json::number(data.id.to_double()))
+  out.set("level", Json::number(data.level.to_double()))
+  out.set("label", Json::string(data.label))
+  out.set("label_colour", quiver_ui_colour_json(data.label_colour))
+  out.set("x", Json::number(data.x.to_double()))
+  out.set("y", Json::number(data.y.to_double()))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_edge_json(data : QuiverUiEdgeData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("id", Json::number(data.id.to_double()))
+  out.set("level", Json::number(data.level.to_double()))
+  out.set("label", Json::string(data.label))
+  out.set("label_colour", quiver_ui_colour_json(data.label_colour))
+  out.set("source_id", Json::number(data.source_id.to_double()))
+  out.set("target_id", Json::number(data.target_id.to_double()))
+  out.set("options", quiver_ui_edge_options_json(data.options))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_dependencies_json(data : QuiverUiCellDependenciesData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("cell_id", Json::number(data.cell_id.to_double()))
+  out.set("dependencies", quiver_ui_int_array_json(data.dependencies))
+  out.set(
+    "reverse_dependencies",
+    quiver_ui_int_array_json(data.reverse_dependencies),
+  )
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_snapshot_json(snapshot : QuiverUiSnapshot) -> Json {
+  let vertices : Array[Json] = []
+  for vertex in snapshot.vertices {
+    vertices.push(quiver_ui_vertex_json(vertex))
+  }
+
+  let edges : Array[Json] = []
+  for edge in snapshot.edges {
+    edges.push(quiver_ui_edge_json(edge))
+  }
+
+  let dependencies : Array[Json] = []
+  for dependency in snapshot.dependencies {
+    dependencies.push(quiver_ui_dependencies_json(dependency))
+  }
+
+  let out : Map[String, Json] = Map::new()
+  out.set("payload", Json::string(snapshot.payload))
+  out.set("cell_ids", quiver_ui_int_array_json(snapshot.cell_ids))
+  out.set("vertices", Json::array(vertices))
+  out.set("edges", Json::array(edges))
+  out.set("dependencies", Json::array(dependencies))
+  Json::object(out)
+}
+
+///|
 fn quiver_ui_looks_like_share_reference(input : String) -> Bool {
   input.contains("#q=") ||
   input.contains("?q=") ||
@@ -837,6 +957,16 @@ pub fn QuiverUiAdapter::snapshot(self : QuiverUiAdapter) -> QuiverUiSnapshot {
 }
 
 ///|
+pub fn QuiverUiSnapshot::to_json_string(self : QuiverUiSnapshot) -> String {
+  quiver_ui_snapshot_json(self).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::snapshot_json(self : QuiverUiAdapter) -> String {
+  self.snapshot().to_json_string()
+}
+
+///|
 pub fn QuiverUiAdapter::dependencies_of(
   self : QuiverUiAdapter,
   cell_id : Int,
@@ -1110,6 +1240,11 @@ pub fn ffi_adapter_all_cell_ids(adapter : QuiverUiAdapter) -> Array[Int] {
 ///|
 pub fn ffi_adapter_snapshot(adapter : QuiverUiAdapter) -> QuiverUiSnapshot {
   adapter.snapshot()
+}
+
+///|
+pub fn ffi_adapter_snapshot_json(adapter : QuiverUiAdapter) -> String {
+  adapter.snapshot_json()
 }
 
 ///|

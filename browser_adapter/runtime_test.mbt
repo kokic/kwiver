@@ -377,3 +377,18 @@ test "browser runtime snapshot mirrors ffi snapshot data" {
   inspect(snapshot.dependencies[2].reverse_dependencies, content="[1, 2]")
 }
 
+///|
+test "browser runtime snapshot_json exposes plain json for js ui" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 1, 0)
+  ignore(runtime.add_edge(source_id, target_id, label="f"))
+
+  let snapshot_json = runtime.snapshot_json()
+  inspect(snapshot_json.contains("\"payload\":\""), content="true")
+  inspect(snapshot_json.contains("\"cell_ids\":[1,2,3]"), content="true")
+  inspect(snapshot_json.contains("\"vertices\":"), content="true")
+  inspect(snapshot_json.contains("\"edges\":"), content="true")
+  inspect(snapshot_json.contains("\"dependencies\":"), content="true")
+}
+
