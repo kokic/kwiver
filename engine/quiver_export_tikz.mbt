@@ -2242,15 +2242,26 @@ fn tikz_is_share_reference_candidate(reference : String) -> Bool {
     return false
   }
 
-  if reference.contains("q.uiver.app") ||
+  let has_share_markers = reference.contains("q.uiver.app") ||
     reference.contains("#q=") ||
     reference.contains("?q=") ||
     reference.contains("&q=") ||
     reference.has_prefix("q=") ||
     reference.has_prefix("r=") ||
     reference.has_prefix("macro_url=") ||
-    reference.has_prefix("embed") {
-    return true
+    reference.has_prefix("embed")
+
+  if has_share_markers {
+    let parsed = Quiver::parse_base64_share_url(reference)
+    match parsed.payload {
+      Some(payload) => {
+        let payload_result : Result[Quiver, Error] = try? Quiver::import_base64_v0(
+          payload,
+        )
+        return payload_result is Ok(_)
+      }
+      None => return false
+    }
   }
 
   let parsed : Result[Quiver, Error] = try? Quiver::import_base64_v0(reference)
@@ -2379,12 +2390,30 @@ pub fn Quiver::import_tikz_cd_result(
 ) -> Base64ShareImportResult raise {
   let looks_like_tikz = input.contains("\\begin{tikzcd}") &&
     input.contains("\\end{tikzcd}")
-  if looks_like_tikz && !tikz_has_share_reference_hint(input) {
-    {
-      quiver: Quiver::import_tikz_cd_minimal(input),
-      macro_url: None,
-      renderer: None,
-      embed: false,
+  if looks_like_tikz {
+    if !tikz_has_share_reference_hint(input) {
+      return {
+        quiver: Quiver::import_tikz_cd_minimal(input),
+        macro_url: None,
+        renderer: None,
+        embed: false,
+      }
+    }
+
+    // Prefer wrapper import when a share reference is detected, but keep
+    // handwritten diagrams robust when the wrapper marker is malformed.
+    let imported : Result[Base64ShareImportResult, Error] = try? Quiver::import_base64_share_text(
+      input,
+      default_renderer~,
+    )
+    match imported {
+      Ok(result) => result
+      Err(_) => {
+        quiver: Quiver::import_tikz_cd_minimal(input),
+        macro_url: None,
+        renderer: None,
+        embed: false,
+      }
     }
   } else {
     Quiver::import_base64_share_text(input, default_renderer~)
