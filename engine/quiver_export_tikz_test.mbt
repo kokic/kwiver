@@ -1336,6 +1336,65 @@ test "tikz-cd import parser maps non-arrow decoration options" {
 }
 
 ///|
+test "tikz-cd import parser maps arrow body decoration options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\", \"\\shortmid\"{marking, text=red}] & B \\\\\n",
+    "C \\arrow[r, \"\\shortmid\\shortmid\"{marking, text=blue}] & D \\\\\n",
+    "E \\arrow[r, \"\\bullet\"{marking, text=green}] & F \\\\\n",
+    "G \\arrow[r, \"\\bullet\"{marking, text=\\pgfkeysvalueof{/tikz/commutative diagrams/background color}}, \"\\circ\"{marking, text=orange}] & H\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "A", "B") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="f")
+      inspect(edge.options.style.name, content="arrow")
+      inspect(edge.options.style.body.name, content="barred")
+      inspect(edge.options.colour.h, content="0")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+    }
+    None => abort("expected edge A->B")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "C", "D") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="")
+      inspect(edge.options.style.body.name, content="double barred")
+      inspect(edge.options.colour.h, content="240")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+    }
+    None => abort("expected edge C->D")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "E", "F") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="")
+      inspect(edge.options.style.body.name, content="bullet solid")
+      inspect(edge.options.colour.h, content="120")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="25")
+    }
+    None => abort("expected edge E->F")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "G", "H") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="")
+      inspect(edge.options.style.body.name, content="bullet hollow")
+      inspect(edge.options.colour.h, content="30")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+    }
+    None => abort("expected edge G->H")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps commas inside quoted labels" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",

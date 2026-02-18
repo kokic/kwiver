@@ -1669,6 +1669,12 @@ priv struct TikzParsedDecorationOption {
 }
 
 ///|
+priv struct TikzParsedArrowBodyDecorationOption {
+  style_body : String
+  colour : Colour?
+}
+
+///|
 fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
   let compact = options
     .replace_all(old=" ", new="")
@@ -2380,6 +2386,75 @@ fn tikz_apply_decoration_rotation(
 }
 
 ///|
+fn tikz_is_background_colour_expression(value : String) -> Bool {
+  let compact = tikz_ascii_lower(
+    tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+      .replace_all(old=" ", new="")
+      .replace_all(old="\t", new=""),
+  )
+  compact.contains("/tikz/commutativediagrams/backgroundcolor")
+}
+
+///|
+fn tikz_arrow_body_decoration_style(content : String) -> String? {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(content))
+    .trim()
+    .to_string()
+  if token == "\\shortmid" {
+    return Some("barred")
+  }
+  if token == "\\shortmid\\shortmid" {
+    return Some("double barred")
+  }
+  if token == "\\bullet" {
+    return Some("bullet solid")
+  }
+  if token == "\\circ" {
+    return Some("bullet hollow")
+  }
+  None
+}
+
+///|
+fn tikz_parse_arrow_body_decoration_option(
+  option : String,
+) -> TikzParsedArrowBodyDecorationOption? {
+  match tikz_extract_first_quoted(option) {
+    Some(content) =>
+      match tikz_arrow_body_decoration_style(content) {
+        Some(base_style_body) => {
+          let mut style_body = base_style_body
+          let mut colour : Colour? = None
+          for suffix_option in tikz_label_suffix_options(option) {
+            match tikz_option_key_value(suffix_option) {
+              Some((key, value)) => {
+                let key_token = tikz_strip_math_wrapper(
+                  tikz_unwrap_braced_text(key),
+                )
+                if key_token == "text" {
+                  if style_body == "bullet solid" &&
+                    tikz_is_background_colour_expression(value) {
+                    style_body = "bullet hollow"
+                  } else {
+                    match tikz_parse_colour_option(value) {
+                      Some(parsed_colour) => colour = Some(parsed_colour)
+                      None => ()
+                    }
+                  }
+                }
+              }
+              None => ()
+            }
+          }
+          Some({ style_body, colour })
+        }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
 fn tikz_parse_label_pos_percent(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2873,6 +2948,20 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                         parsed_decoration.style_name,
                         rotate,
                       )
+                    None => ()
+                  }
+                  continue
+                }
+                None => ()
+              }
+
+              match tikz_parse_arrow_body_decoration_option(option) {
+                Some(parsed_decoration) => {
+                  parsed_options = parsed_options.with_style_body(
+                    parsed_decoration.style_body,
+                  )
+                  match parsed_decoration.colour {
+                    Some(colour) => parsed_options = parsed_options.with_colour(colour)
                     None => ()
                   }
                   continue
