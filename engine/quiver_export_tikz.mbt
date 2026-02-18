@@ -1637,6 +1637,7 @@ priv struct TikzParsedArrow {
   to_x : Int?
   to_y : Int?
   options : EdgeOptions
+  label_colour : Colour
 }
 
 ///|
@@ -1647,6 +1648,7 @@ priv struct TikzPendingArrow {
   target_y : Int
   label : String
   options : EdgeOptions
+  label_colour : Colour
 }
 
 ///|
@@ -1656,6 +1658,7 @@ priv struct TikzParsedLabelOptions {
   marking : Bool
   allow_upside_down : Bool
   pos : Int?
+  colour : Colour?
 }
 
 ///|
@@ -2140,6 +2143,157 @@ fn tikz_parse_curve_height_option(value : String) -> Int? {
 }
 
 ///|
+fn tikz_ascii_lower(value : String) -> String {
+  let out : Array[String] = []
+  for byte in @utf8.encode(value) {
+    let code = byte.to_int()
+    if code >= 65 && code <= 90 {
+      out.push((code + 32).unsafe_to_char().to_string())
+    } else {
+      out.push(code.unsafe_to_char().to_string())
+    }
+  }
+  out.join("")
+}
+
+///|
+fn tikz_normalise_colour_name(value : String) -> String {
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_prefix("(") && text.has_suffix(")") && text.length() >= 2 {
+    text = text
+      .unsafe_substring(start=1, end=text.length() - 1)
+      .trim()
+      .to_string()
+  }
+  if text.has_prefix("\\") {
+    text = text.unsafe_substring(start=1, end=text.length())
+  }
+  match text.find("!") {
+    Some(index) =>
+      text = text.unsafe_substring(start=0, end=index).trim().to_string()
+    None => ()
+  }
+  tikz_ascii_lower(text)
+}
+
+///|
+fn tikz_named_colour(name : String) -> Colour? {
+  match name {
+    "black" => Some(Colour::black())
+    "white" => Some(Colour::new(0, 0, 100, 1.0))
+    "red" => Some(Colour::new(0, 100, 50, 1.0))
+    "green" => Some(Colour::new(120, 100, 25, 1.0))
+    "blue" => Some(Colour::new(240, 100, 50, 1.0))
+    "yellow" => Some(Colour::new(60, 100, 50, 1.0))
+    "cyan" => Some(Colour::new(180, 100, 50, 1.0))
+    "magenta" => Some(Colour::new(300, 100, 50, 1.0))
+    "gray" => Some(Colour::new(0, 0, 50, 1.0))
+    "grey" => Some(Colour::new(0, 0, 50, 1.0))
+    "orange" => Some(Colour::new(30, 100, 50, 1.0))
+    "purple" => Some(Colour::new(300, 100, 25, 1.0))
+    _ => None
+  }
+}
+
+///|
+fn tikz_parse_rgb_255_component(value : String) -> Int? {
+  match tikz_parse_positive_int(value.trim().to_string()) {
+    Some(component) =>
+      if component >= 0 && component <= 255 {
+        Some(component)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
+fn tikz_parse_rgb_255_colour(value : String) -> Colour? {
+  let compact = value.replace_all(old=" ", new="")
+  if !compact.has_prefix("rgb,255:red,") {
+    return None
+  }
+
+  let after_red = compact.unsafe_substring(start=12, end=compact.length())
+  match after_red.find(";green,") {
+    Some(green_index) => {
+      let red_text = after_red.unsafe_substring(start=0, end=green_index)
+      let after_green = after_red.unsafe_substring(
+        start=green_index + 7,
+        end=after_red.length(),
+      )
+      match after_green.find(";blue,") {
+        Some(blue_index) => {
+          let green_text = after_green.unsafe_substring(start=0, end=blue_index)
+          let blue_text = after_green.unsafe_substring(
+            start=blue_index + 6,
+            end=after_green.length(),
+          )
+          match
+            (
+              tikz_parse_rgb_255_component(red_text),
+              tikz_parse_rgb_255_component(green_text),
+              tikz_parse_rgb_255_component(blue_text),
+            ) {
+            (Some(r_int), Some(g_int), Some(b_int)) => {
+              let r = r_int.to_double() / 255.0
+              let g = g_int.to_double() / 255.0
+              let b = b_int.to_double() / 255.0
+              let max_channel = tikz_max_double(r, tikz_max_double(g, b))
+              let min_channel = tikz_min_double(r, tikz_min_double(g, b))
+              let delta = max_channel - min_channel
+              let l = (max_channel + min_channel) / 2.0
+              if delta == 0.0 {
+                return Some(Colour::new(0, 0, tikz_round_to_int(l * 100.0), 1.0))
+              }
+
+              let abs_l = if 2.0 * l - 1.0 >= 0.0 {
+                2.0 * l - 1.0
+              } else {
+                -(2.0 * l - 1.0)
+              }
+              let s = delta / (1.0 - abs_l)
+              let h = if max_channel == r {
+                60.0 * tikz_mod((g - b) / delta, 6.0)
+              } else if max_channel == g {
+                60.0 * (((b - r) / delta) + 2.0)
+              } else {
+                60.0 * (((r - g) / delta) + 4.0)
+              }
+              Some(
+                Colour::new(
+                  tikz_round_to_int(h),
+                  tikz_round_to_int(s * 100.0),
+                  tikz_round_to_int(l * 100.0),
+                  1.0,
+                ),
+              )
+            }
+            _ => None
+          }
+        }
+        None => None
+      }
+    }
+    None => None
+  }
+}
+
+///|
+fn tikz_parse_colour_option(value : String) -> Colour? {
+  let inner = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  match tikz_parse_rgb_255_colour(inner) {
+    Some(colour) => Some(colour)
+    None => tikz_named_colour(tikz_normalise_colour_name(inner))
+  }
+}
+
+///|
 fn tikz_parse_label_pos_percent(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2296,7 +2450,14 @@ fn tikz_apply_arrow_key_value_option(
 
 ///|
 fn tikz_label_options_default() -> TikzParsedLabelOptions {
-  { swap: false, description: false, marking: false, allow_upside_down: false, pos: None }
+  {
+    swap: false,
+    description: false,
+    marking: false,
+    allow_upside_down: false,
+    pos: None,
+    colour: None,
+  }
 }
 
 ///|
@@ -2325,6 +2486,11 @@ fn tikz_apply_label_key_value_option(
   if key_token == "pos" {
     match tikz_parse_label_pos_percent(value) {
       Some(pos) => { ..label_options, pos: Some(pos) }
+      None => label_options
+    }
+  } else if key_token == "text" {
+    match tikz_parse_colour_option(value) {
+      Some(colour) => { ..label_options, colour: Some(colour) }
       None => label_options
     }
   } else {
@@ -2602,6 +2768,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut to_y : Int? = None
             let mut parsed_options = EdgeOptions::at_level(1)
             let mut parsed_label_options = tikz_label_options_default()
+            let mut parsed_label_colour = Colour::black()
 
             for option in options {
               if label == "" {
@@ -2630,6 +2797,25 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       None => ()
                     }
                   } else {
+                    let key_token = tikz_strip_math_wrapper(
+                      tikz_unwrap_braced_text(key),
+                    )
+                    if key_token == "draw" || key_token == "color" {
+                      match tikz_parse_colour_option(value) {
+                        Some(colour) => {
+                          parsed_options = parsed_options.with_colour(colour)
+                          if key_token == "color" {
+                            parsed_label_colour = colour
+                          }
+                        }
+                        None => ()
+                      }
+                    } else if key_token == "text" {
+                      match tikz_parse_colour_option(value) {
+                        Some(colour) => parsed_label_colour = colour
+                        None => ()
+                      }
+                    }
                     parsed_options = tikz_apply_arrow_key_value_option(
                       parsed_options,
                       key,
@@ -2685,6 +2871,10 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               parsed_options,
               parsed_label_options,
             )
+            let label_colour = match parsed_label_options.colour {
+              Some(colour) => colour
+              None => parsed_label_colour
+            }
 
             arrows.push({
               direction,
@@ -2694,6 +2884,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               to_x,
               to_y,
               options: parsed_options,
+              label_colour,
             })
 
             rest = after_arrow.unsafe_substring(
@@ -2845,6 +3036,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
               target_y,
               label: parsed_arrow.label,
               options: parsed_arrow.options,
+              label_colour: parsed_arrow.label_colour,
             })
           None => ()
         }
@@ -2877,7 +3069,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
           source_id,
           target_id,
           pending.options,
-          Colour::black(),
+          pending.label_colour,
         ),
       ),
     )

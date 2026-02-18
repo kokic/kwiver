@@ -1216,6 +1216,51 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
 }
 
 ///|
+test "tikz-cd import parser maps draw text and shared colour options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"{text=blue}, draw=red] & B \\\\\n",
+    "C \\arrow[r, \"g\", color=green] & D \\\\\n",
+    "E \\arrow[r, \"h\", draw={rgb,255:red,255;green,128;blue,0}] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.options.colour.h, content="0")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+      inspect(edge.cell.label_colour.h, content="240")
+      inspect(edge.cell.label_colour.s, content="100")
+      inspect(edge.cell.label_colour.l, content="50")
+    }
+    None => abort("expected edge f")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => {
+      inspect(edge.options.colour.h, content="120")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="25")
+      inspect(edge.cell.label_colour.h, content="120")
+      inspect(edge.cell.label_colour.s, content="100")
+      inspect(edge.cell.label_colour.l, content="25")
+    }
+    None => abort("expected edge g")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "h") {
+    Some(edge) => {
+      inspect(edge.options.colour.h, content="30")
+      inspect(edge.options.colour.s, content="100")
+      inspect(edge.options.colour.l, content="50")
+    }
+    None => abort("expected edge h")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps commas inside quoted labels" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",
