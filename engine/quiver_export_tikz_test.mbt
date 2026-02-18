@@ -939,6 +939,47 @@ test "tikz-cd import minimal parser supports handwritten matrix and right arrow"
 }
 
 ///|
+test "tikz-cd import parser skips implicit empty matrix cells" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[rr, \"f\"] && B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser keeps explicit empty-label vertex cells" {
+  let input = [
+    "\\begin{tikzcd}\n", "A & {} & B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_vertex_id_by_label(quiver, "") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected explicit empty-label vertex")
+  }
+}
+
+///|
 test "tikz-cd import prefers minimal parser for non-share comment headers" {
   let input = [
     "% handwritten example\n", "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n",

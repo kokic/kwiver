@@ -3151,15 +3151,21 @@ fn tikz_find_closing_delimiter(
 }
 
 ///|
-fn tikz_cell_label_text(cell : String) -> String {
+fn tikz_cell_label_raw(cell : String) -> String {
   let trimmed = cell.trim().to_string()
   match tikz_next_arrow_match(trimmed) {
     Some(matched) =>
-      tikz_unwrap_braced_text(
-        trimmed.unsafe_substring(start=0, end=matched.start),
-      )
-    None => tikz_unwrap_braced_text(trimmed)
+      trimmed
+      .unsafe_substring(start=0, end=matched.start)
+      .trim()
+      .to_string()
+    None => trimmed
   }
+}
+
+///|
+fn tikz_cell_label_text(cell : String) -> String {
+  tikz_unwrap_braced_text(tikz_cell_label_raw(cell))
 }
 
 ///|
@@ -3478,13 +3484,16 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     let mut x = 0
     for cell_raw in cells {
       let cell = cell_raw.trim().to_string()
-      let label = tikz_cell_label_text(cell)
-      let vertex_id = next_id
-      next_id = next_id + 1
-      quiver.add(
-        CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)),
-      )
-      vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
+      let label_raw = tikz_cell_label_raw(cell)
+      if label_raw != "" {
+        let label = tikz_cell_label_text(cell)
+        let vertex_id = next_id
+        next_id = next_id + 1
+        quiver.add(
+          CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)),
+        )
+        vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
+      }
 
       for parsed_arrow in tikz_collect_cell_arrows(cell) {
         if parsed_arrow.is_phantom {
