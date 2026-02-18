@@ -1243,6 +1243,31 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
 }
 
 ///|
+test "tikz-cd import parser maps bend left and bend right options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\", bend left] & B \\\\\n",
+    "C \\arrow[r, \"g\", bend right=60] & D \\\\\n",
+    "E \\arrow[r, \"h\", bend left=15deg] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => inspect(edge.options.curve, content="1")
+    None => abort("expected edge f")
+  }
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => inspect(edge.options.curve, content="-2")
+    None => abort("expected edge g")
+  }
+  match tikz_test_find_edge_by_label(quiver, "h") {
+    Some(edge) => inspect(edge.options.curve, content="1")
+    None => abort("expected edge h")
+  }
+}
+
+///|
 test "tikz-cd import parser maps loop flag and loop geometry options" {
   let input = [
     "\\begin{tikzcd}\n",

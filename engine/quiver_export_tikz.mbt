@@ -2027,6 +2027,8 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
     "harpoon'" => true
     "shift right" => true
     "shift left" => true
+    "bend left" => true
+    "bend right" => true
     "two heads" => true
     "Rightarrow" => true
     "equals" => true
@@ -2113,6 +2115,31 @@ fn tikz_parse_signed_double(value : String) -> Double? {
 fn tikz_parse_shift_magnitude(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
   tikz_parse_positive_int(text)
+}
+
+///|
+fn tikz_parse_bend_curve_magnitude(value : String) -> Int? {
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_suffix("deg") {
+    text = text.unsafe_substring(start=0, end=text.length() - 3)
+  }
+  match tikz_parse_signed_double(text) {
+    Some(angle_value) => {
+      let angle_abs = tikz_abs_double(angle_value)
+      if angle_abs == 0.0 {
+        return None
+      }
+      let curve = tikz_round_to_int(angle_abs / 30.0)
+      if curve < 1 {
+        Some(1)
+      } else {
+        Some(curve)
+      }
+    }
+    None => None
+  }
 }
 
 ///|
@@ -2752,6 +2779,8 @@ fn tikz_apply_arrow_flag_option(
     "harpoon'" => options.with_style_head("harpoon", side="bottom")
     "shift right" => options.with_offset(1)
     "shift left" => options.with_offset(-1)
+    "bend left" => options.with_curve(1)
+    "bend right" => options.with_curve(-1)
     "two heads" => options.with_style_head("epi")
     "Rightarrow" =>
       if options.level < 2 {
@@ -2801,6 +2830,20 @@ fn tikz_apply_arrow_key_value_option(
   if key_token == "curve" {
     match tikz_parse_curve_height_option(value_raw) {
       Some(curve) => return options.with_curve(curve)
+      None => ()
+    }
+  }
+
+  if key_token == "bend left" {
+    match tikz_parse_bend_curve_magnitude(value_raw) {
+      Some(curve) => return options.with_curve(curve)
+      None => ()
+    }
+  }
+
+  if key_token == "bend right" {
+    match tikz_parse_bend_curve_magnitude(value_raw) {
+      Some(curve) => return options.with_curve(-curve)
       None => ()
     }
   }
