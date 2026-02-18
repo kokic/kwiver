@@ -1243,6 +1243,48 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
 }
 
 ///|
+test "tikz-cd import parser maps loop flag and loop geometry options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[loop, \"a\"] \\\\\n",
+    "B \\arrow[loop, in=55, out=125, distance=10mm, \"b\"] \\\\\n",
+    "C \\arrow[loop left, in=305, out=235, distance=10mm, \"c\"]\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "A", "A") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="a")
+      inspect(edge.source == edge.target, content="true")
+      inspect(edge.options.radius, content="3")
+    }
+    None => abort("expected loop edge A->A")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "B", "B") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="b")
+      inspect(edge.source == edge.target, content="true")
+      inspect(edge.options.radius, content="3")
+      inspect(edge.options.angle, content="0")
+    }
+    None => abort("expected loop edge B->B")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "C", "C") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="c")
+      inspect(edge.source == edge.target, content="true")
+      inspect(edge.options.radius, content="-3")
+      inspect(edge.options.angle, content="0")
+    }
+    None => abort("expected loop edge C->C")
+  }
+}
+
+///|
 test "tikz-cd import parser maps draw text and shared colour options" {
   let input = [
     "\\begin{tikzcd}\n",

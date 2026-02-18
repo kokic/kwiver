@@ -1631,6 +1631,7 @@ priv struct TikzArrowMatch {
 ///|
 priv struct TikzParsedArrow {
   direction : String?
+  is_loop : Bool
   label : String
   from_x : Int?
   from_y : Int?
@@ -1672,6 +1673,15 @@ priv struct TikzParsedDecorationOption {
 priv struct TikzParsedArrowBodyDecorationOption {
   style_body : String
   colour : Colour?
+}
+
+///|
+priv struct TikzParsedLoopOptions {
+  is_loop : Bool
+  clockwise_hint : Int?
+  in_angle : Double?
+  out_angle : Double?
+  distance_mm : Double?
 }
 
 ///|
@@ -1994,6 +2004,35 @@ fn tikz_is_label_modifier(option : String) -> Bool {
     "description" => true
     "marking" => true
     "allow upside down" => true
+    _ => false
+  }
+}
+
+///|
+fn tikz_is_arrow_flag_token(option : String) -> Bool {
+  match option {
+    "dashed" => true
+    "dotted" => true
+    "squiggly" => true
+    "no body" => true
+    "no head" => true
+    "maps to" => true
+    "tail" => true
+    "2tail" => true
+    "tail reversed" => true
+    "2tail reversed" => true
+    "hook" => true
+    "hook'" => true
+    "harpoon" => true
+    "harpoon'" => true
+    "shift right" => true
+    "shift left" => true
+    "two heads" => true
+    "Rightarrow" => true
+    "equals" => true
+    "loop" => true
+    "loop left" => true
+    "loop right" => true
     _ => false
   }
 }
@@ -2455,6 +2494,173 @@ fn tikz_parse_arrow_body_decoration_option(
 }
 
 ///|
+fn tikz_loop_options_default() -> TikzParsedLoopOptions {
+  {
+    is_loop: false,
+    clockwise_hint: None,
+    in_angle: None,
+    out_angle: None,
+    distance_mm: None,
+  }
+}
+
+///|
+fn tikz_abs_double(value : Double) -> Double {
+  if value >= 0.0 {
+    value
+  } else {
+    -value
+  }
+}
+
+///|
+fn tikz_signed_angle_delta(from : Double, to : Double) -> Double {
+  let raw = tikz_mod(to - from + 180.0, 360.0) - 180.0
+  if raw == -180.0 {
+    180.0
+  } else {
+    raw
+  }
+}
+
+///|
+fn tikz_parse_angle_option(value : String) -> Double? {
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_suffix("deg") {
+    text = text.unsafe_substring(start=0, end=text.length() - 3)
+  }
+  tikz_parse_signed_double(text)
+}
+
+///|
+fn tikz_parse_distance_mm_option(value : String) -> Double? {
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_suffix("mm") {
+    text = text.unsafe_substring(start=0, end=text.length() - 2)
+  }
+  match tikz_parse_signed_double(text) {
+    Some(distance_mm) => if distance_mm > 0.0 { Some(distance_mm) } else { None }
+    None => None
+  }
+}
+
+///|
+fn tikz_apply_loop_flag_option(
+  loop_options : TikzParsedLoopOptions,
+  option : String,
+) -> TikzParsedLoopOptions {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+    .trim()
+    .to_string()
+  if token == "loop left" {
+    return { ..loop_options, is_loop: true, clockwise_hint: Some(-1) }
+  }
+  if token == "loop right" {
+    return { ..loop_options, is_loop: true, clockwise_hint: Some(1) }
+  }
+  if token == "loop" {
+    return { ..loop_options, is_loop: true }
+  }
+  loop_options
+}
+
+///|
+fn tikz_apply_loop_key_value_option(
+  loop_options : TikzParsedLoopOptions,
+  key : String,
+  value : String,
+) -> TikzParsedLoopOptions {
+  let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+  if key_token == "in" {
+    match tikz_parse_angle_option(value) {
+      Some(in_angle) => return { ..loop_options, in_angle: Some(in_angle) }
+      None => ()
+    }
+  }
+  if key_token == "out" {
+    match tikz_parse_angle_option(value) {
+      Some(out_angle) => return { ..loop_options, out_angle: Some(out_angle) }
+      None => ()
+    }
+  }
+  if key_token == "distance" {
+    match tikz_parse_distance_mm_option(value) {
+      Some(distance_mm) => return { ..loop_options, distance_mm: Some(distance_mm) }
+      None => ()
+    }
+  }
+  loop_options
+}
+
+///|
+fn tikz_apply_loop_geometry_options(
+  options : EdgeOptions,
+  loop_options : TikzParsedLoopOptions,
+) -> EdgeOptions {
+  if !loop_options.is_loop {
+    return options
+  }
+
+  let mut clockwise = match loop_options.clockwise_hint {
+    Some(value) => if value < 0 { -1 } else { 1 }
+    None =>
+      if options.radius < 0 {
+        -1
+      } else {
+        1
+      }
+  }
+
+  let mut abs_radius = Int::abs(options.radius)
+  if abs_radius < 1 {
+    abs_radius = 1
+  }
+
+  let mut angle = options.angle
+  match (loop_options.in_angle, loop_options.out_angle) {
+    (Some(in_angle), Some(out_angle)) => {
+      let delta = tikz_signed_angle_delta(in_angle, out_angle)
+      if delta > 0.0 {
+        clockwise = 1
+      } else if delta < 0.0 {
+        clockwise = -1
+      }
+
+      let spread = tikz_abs_double(delta) / 2.0
+      let loop_angle = tikz_mod(in_angle + delta / 2.0, 360.0)
+      angle = tikz_round_to_int(
+        180.0 - 90.0 * clockwise.to_double() - loop_angle,
+      )
+
+      let radius_from_spread = 1.0 + (spread - 30.0) / 2.5
+      if radius_from_spread >= 1.0 {
+        abs_radius = tikz_round_to_int(radius_from_spread)
+      }
+    }
+    _ => ()
+  }
+
+  match loop_options.distance_mm {
+    Some(distance_mm) => {
+      let radius_from_distance = 1.0 + (distance_mm - 5.0) / 2.5
+      if radius_from_distance >= 1.0 {
+        abs_radius = tikz_round_to_int(radius_from_distance)
+      }
+    }
+    None => ()
+  }
+
+  if abs_radius < 1 {
+    abs_radius = 1
+  }
+  options.with_radius(abs_radius * clockwise).with_angle(angle)
+}
+
+///|
 fn tikz_parse_label_pos_percent(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2736,7 +2942,8 @@ fn tikz_extract_arrow_label_option(option : String) -> String? {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   if token == "" ||
     tikz_is_direction_token(token) ||
-    tikz_is_label_modifier(token) {
+    tikz_is_label_modifier(token) ||
+    tikz_is_arrow_flag_token(token) {
     None
   } else {
     Some(token)
@@ -2930,6 +3137,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut parsed_options = EdgeOptions::at_level(1)
             let mut parsed_label_options = tikz_label_options_default()
             let mut parsed_label_colour = Colour::black()
+            let mut parsed_loop_options = tikz_loop_options_default()
 
             for option in options {
               match tikz_parse_decoration_option(option) {
@@ -3014,6 +3222,11 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                         None => ()
                       }
                     }
+                    parsed_loop_options = tikz_apply_loop_key_value_option(
+                      parsed_loop_options,
+                      key,
+                      value,
+                    )
                     parsed_options = tikz_apply_arrow_key_value_option(
                       parsed_options,
                       key,
@@ -3041,6 +3254,10 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       parsed_options,
                       option,
                     )
+                  parsed_loop_options = tikz_apply_loop_flag_option(
+                    parsed_loop_options,
+                    option,
+                  )
                   parsed_label_options = tikz_apply_label_flag_option(
                     parsed_label_options,
                     option,
@@ -3069,6 +3286,10 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               parsed_options,
               parsed_label_options,
             )
+            parsed_options = tikz_apply_loop_geometry_options(
+              parsed_options,
+              parsed_loop_options,
+            )
             let label_colour = match parsed_label_options.colour {
               Some(colour) => colour
               None => parsed_label_colour
@@ -3076,6 +3297,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
             arrows.push({
               direction,
+              is_loop: parsed_loop_options.is_loop,
               label,
               from_x,
               from_y,
@@ -3221,7 +3443,12 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
                 let (dx, dy) = tikz_direction_delta(direction)
                 Some((source_x + dx, source_y + dy))
               }
-              None => None
+              None =>
+                if parsed_arrow.is_loop {
+                  Some((source_x, source_y))
+                } else {
+                  None
+                }
             }
         }
 
