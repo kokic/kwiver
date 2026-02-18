@@ -1736,6 +1736,39 @@ fn tikz_split_rows(body : String) -> Array[String] {
 }
 
 ///|
+fn tikz_find_unescaped_percent(line : String) -> Int? {
+  let mut i = 0
+  while i < line.length() {
+    if line.unsafe_get(i) == '%' {
+      let mut slash_count = 0
+      let mut j = i
+      while j > 0 && line.unsafe_get(j - 1) == '\\' {
+        slash_count = slash_count + 1
+        j = j - 1
+      }
+      if slash_count % 2 == 0 {
+        return Some(i)
+      }
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn tikz_strip_line_comments(body : String) -> String {
+  let rows : Array[String] = []
+  for line_view in body.split("\n") {
+    let line = line_view.to_string()
+    match tikz_find_unescaped_percent(line) {
+      Some(index) => rows.push(line.unsafe_substring(start=0, end=index))
+      None => rows.push(line)
+    }
+  }
+  rows.join("\n")
+}
+
+///|
 fn tikz_split_cells(
   row : String,
   ampersand_replacement : Bool,
@@ -2275,7 +2308,8 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     None => abort("missing tikzcd environment")
   }
 
-  let rows = tikz_split_rows(environment.body)
+  let body_without_comments = tikz_strip_line_comments(environment.body)
+  let rows = tikz_split_rows(body_without_comments)
   let quiver = Quiver::new()
   let vertex_by_key : Map[String, Int] = Map::new()
   let pending_arrows : Array[TikzPendingArrow] = []
