@@ -2004,6 +2004,11 @@ fn tikz_is_label_modifier(option : String) -> Bool {
     "description" => true
     "marking" => true
     "allow upside down" => true
+    "near start" => true
+    "near end" => true
+    "very near start" => true
+    "very near end" => true
+    "midway" => true
     _ => false
   }
 }
@@ -2882,6 +2887,11 @@ fn tikz_apply_label_flag_option(
     "description" => { ..label_options, description: true }
     "marking" => { ..label_options, marking: true }
     "allow upside down" => { ..label_options, allow_upside_down: true }
+    "near start" => { ..label_options, pos: Some(25) }
+    "near end" => { ..label_options, pos: Some(75) }
+    "very near start" => { ..label_options, pos: Some(15) }
+    "very near end" => { ..label_options, pos: Some(85) }
+    "midway" => { ..label_options, pos: Some(50) }
     _ => label_options
   }
 }

@@ -1218,6 +1218,31 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
 }
 
 ///|
+test "tikz-cd import parser maps label position aliases" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"a\"{near start}] & B \\\\\n",
+    "C \\arrow[r, \"b\"{very near end}] & D \\\\\n",
+    "E \\arrow[r, \"c\", midway] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "a") {
+    Some(edge) => inspect(edge.options.label_position, content="25")
+    None => abort("expected edge a")
+  }
+  match tikz_test_find_edge_by_label(quiver, "b") {
+    Some(edge) => inspect(edge.options.label_position, content="85")
+    None => abort("expected edge b")
+  }
+  match tikz_test_find_edge_by_label(quiver, "c") {
+    Some(edge) => inspect(edge.options.label_position, content="50")
+    None => abort("expected edge c")
+  }
+}
+
+///|
 test "tikz-cd import parser maps geometry shift curve and between options" {
   let input = [
     "\\begin{tikzcd}\n",
