@@ -60,6 +60,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `ffi_adapter_export_base64(adapter) -> String`
 - `ffi_adapter_export_base64_selection(adapter, selected_ids, include_dependencies?) -> String`
 - `ffi_adapter_export_tikz_cd(adapter, settings?, options?, definitions?) -> TikzCdExportResult`
+- `ffi_adapter_export_tikz_cd_json(adapter, settings?, options?, definitions?) -> String`
 - `ffi_adapter_export_fletcher(adapter, settings?, options?) -> String`
 - `ffi_adapter_export_html_embed(adapter, settings, options?) -> String`
 
@@ -70,6 +71,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `ffi_adapter_apply_mutation_batch_json` accepts the same batch shape as `QuiverUiMutationBatch` in JSON and returns JSON-serialized `QuiverUiMutationBatchResult`.
+- `ffi_adapter_export_tikz_cd_json` serializes `{ data, metadata }` where `metadata.dependencies` stays in set-like object form (`package -> { reason: true }`).
 - `QuiverUiSnapshot` returns canonical `payload`, ordered `cell_ids`, flattened `vertices`, flattened `edges` (with stringified option enums), and per-cell dependency adjacency.
 - `ffi_adapter_snapshot_json` serializes the same snapshot shape into plain JSON for JS consumers that avoid MoonBit runtime data shapes.
 - `id_remap` is sorted by `old_id` to keep deterministic JS-side patch application.

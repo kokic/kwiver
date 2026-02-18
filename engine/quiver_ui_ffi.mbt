@@ -530,6 +530,67 @@ fn quiver_ui_selection_import_result_json(
 }
 
 ///|
+fn quiver_ui_string_array_json(values : Array[String]) -> Json {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(Json::string(value))
+  }
+  Json::array(out)
+}
+
+///|
+fn quiver_ui_sorted_string_keys(
+  values : @hashmap.HashMap[String, Bool],
+) -> Array[String] {
+  let out : Array[String] = []
+  values.each((value, _) => out.push(value))
+  out.sort()
+  out
+}
+
+///|
+fn quiver_ui_tikz_dependencies_json(
+  dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]],
+) -> Json {
+  let package_names : Array[String] = []
+  dependencies.each((package_name, _) => package_names.push(package_name))
+  package_names.sort()
+
+  let out : Map[String, Json] = Map::new()
+  for package_name in package_names {
+    match dependencies.get(package_name) {
+      Some(reasons_set) => {
+        let reasons_json : Map[String, Json] = Map::new()
+        for reason in quiver_ui_sorted_string_keys(reasons_set) {
+          reasons_json.set(reason, Json::boolean(true))
+        }
+        out.set(package_name, Json::object(reasons_json))
+      }
+      None => ()
+    }
+  }
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_tikz_export_result_json(result : TikzCdExportResult) -> Json {
+  let metadata : Map[String, Json] = Map::new()
+  metadata.set(
+    "tikz_incompatibilities",
+    quiver_ui_string_array_json(result.metadata.tikz_incompatibilities),
+  )
+  metadata.set(
+    "dependencies",
+    quiver_ui_tikz_dependencies_json(result.metadata.dependencies),
+  )
+
+  let out : Map[String, Json] = Map::new()
+  out.set("data", Json::string(result.data))
+  out.set("metadata", Json::object(metadata))
+  Json::object(out)
+}
+
+///|
 fn quiver_ui_bool_array_json(values : Array[Bool]) -> Json {
   let out : Array[Json] = []
   for value in values {
@@ -1462,6 +1523,21 @@ pub fn QuiverUiAdapter::export_tikz_cd(
 }
 
 ///|
+pub fn TikzCdExportResult::to_json_string(self : TikzCdExportResult) -> String {
+  quiver_ui_tikz_export_result_json(self).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::export_tikz_cd_json(
+  self : QuiverUiAdapter,
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+) -> String {
+  self.export_tikz_cd(settings~, options~, definitions~).to_json_string()
+}
+
+///|
 pub fn QuiverUiAdapter::export_fletcher(
   self : QuiverUiAdapter,
   settings? : FletcherExportSettings = FletcherExportSettings::default(),
@@ -1810,6 +1886,16 @@ pub fn ffi_adapter_export_tikz_cd(
   definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
   adapter.export_tikz_cd(settings~, options~, definitions~)
+}
+
+///|
+pub fn ffi_adapter_export_tikz_cd_json(
+  adapter : QuiverUiAdapter,
+  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+) -> String {
+  adapter.export_tikz_cd_json(settings~, options~, definitions~)
 }
 
 ///|

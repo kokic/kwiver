@@ -52,6 +52,7 @@ options(
         "ffi_adapter_export_base64",
         "ffi_adapter_export_base64_selection",
         "ffi_adapter_export_tikz_cd",
+        "ffi_adapter_export_tikz_cd_json",
         "ffi_adapter_export_fletcher",
         "ffi_adapter_export_html_embed",
       ],

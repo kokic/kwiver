@@ -15,6 +15,28 @@ test "browser runtime roundtrips payload across sessions" {
   inspect(restored.all_cell_ids(), content="[1, 2, 3]")
   inspect(restored.export_payload() == payload, content="true")
   inspect(restored.render_tikz().contains("\\begin{tikzcd}"), content="true")
+  inspect(restored.render_tikz_json().contains("\"data\":\""), content="true")
+  inspect(restored.render_tikz_json().contains("\"metadata\":"), content="true")
+}
+
+///|
+test "browser runtime render_tikz_json includes dependency metadata" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 1, 0)
+  ignore(
+    runtime.add_edge(
+      source_id,
+      target_id,
+      label="f",
+      options=@engine.EdgeOptions::at_level(1).with_shorten(10, 0),
+    ),
+  )
+
+  let tikz_json = runtime.render_tikz_json()
+  inspect(tikz_json.contains("\"dependencies\":"), content="true")
+  inspect(tikz_json.contains("quiver"), content="true")
+  inspect(tikz_json.contains("\"shortened arrows\":true"), content="true")
 }
 
 ///|

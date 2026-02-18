@@ -29,6 +29,45 @@ test "ui ffi adapter wraps update/import/export calls" {
 }
 
 ///|
+test "ui ffi adapter export tikz json wrapper includes metadata contract" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  ignore(
+    ffi_adapter_add_edge(
+      adapter,
+      source_id,
+      target_id,
+      label="f",
+      options=EdgeOptions::at_level(1).with_shorten(10, 0),
+    ),
+  )
+
+  let exported_json = ffi_adapter_export_tikz_cd_json(adapter)
+  let root : Map[String, Json] = @json.from_json(@json.parse(exported_json))
+  let data : String = @json.from_json(test_json_get(root, "data"))
+  inspect(data.contains("\\begin{tikzcd}"), content="true")
+  inspect(data.contains("\\arrow["), content="true")
+
+  let metadata : Map[String, Json] = @json.from_json(test_json_get(root, "metadata"))
+  let incompatibilities : Array[String] = @json.from_json(
+    test_json_get(metadata, "tikz_incompatibilities"),
+  )
+  inspect(incompatibilities, content="[]")
+
+  let dependencies : Map[String, Json] = @json.from_json(
+    test_json_get(metadata, "dependencies"),
+  )
+  match dependencies.get("quiver") {
+    Some(raw_reasons) => {
+      let reasons : Map[String, Json] = @json.from_json(raw_reasons)
+      inspect(reasons.get("shortened arrows") is Some(_), content="true")
+    }
+    None => abort("expected quiver dependency")
+  }
+}
+
+///|
 test "ui ffi adapter selection paste returns deterministic remap and payload" {
   let source = ffi_adapter_new()
   let left_id = ffi_adapter_add_vertex(source, "L", 2, 3)

@@ -250,6 +250,21 @@ pub fn BrowserRuntime::render_tikz(self : BrowserRuntime) -> String {
 }
 
 ///|
+pub fn BrowserRuntime::render_tikz_json(
+  self : BrowserRuntime,
+  settings? : @engine.TikzCdExportSettings = @engine.TikzCdExportSettings::default(),
+  options? : @engine.TikzCdExportOptions = @engine.TikzCdExportOptions::default(),
+  definitions? : @engine.TikzCdExportDefinitions = @engine.TikzCdExportDefinitions::default(),
+) -> String {
+  @engine.ffi_adapter_export_tikz_cd_json(
+    self.adapter,
+    settings~,
+    options~,
+    definitions~,
+  )
+}
+
+///|
 pub fn BrowserRuntime::render_fletcher(
   self : BrowserRuntime,
   settings? : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
