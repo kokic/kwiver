@@ -30,6 +30,7 @@ options(
         "ffi_adapter_set_edge_options",
         "ffi_adapter_reconnect_edge",
         "ffi_adapter_apply_mutation_batch",
+        "ffi_adapter_apply_mutation_batch_json",
         "ffi_adapter_remove",
         "ffi_adapter_flush",
         "ffi_adapter_all_cells",

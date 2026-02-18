@@ -322,6 +322,110 @@ test "ui ffi adapter applies mutation batch and reports per-op results" {
 }
 
 ///|
+test "ui ffi adapter apply_mutation_batch_json supports plain json batch input" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 2, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+
+  inspect(source_id, content="1")
+  inspect(target_id, content="2")
+  inspect(edge_id, content="3")
+
+  let batch_json = [
+    "{",
+    "\"labels\":[{\"cell_id\":1,\"label\":\"A-json\"}],",
+    "\"label_colours\":[{\"cell_id\":3,\"label_colour\":{\"h\":120,\"s\":100,\"l\":25,\"a\":1}}],",
+    "\"vertex_positions\":[{\"vertex_id\":1,\"x\":5,\"y\":7}],",
+    "\"edge_options\":[{\"edge_id\":3,\"options\":{",
+    "\"label_alignment\":\"left\",",
+    "\"label_position\":50,",
+    "\"offset\":0,",
+    "\"curve\":-2,",
+    "\"radius\":3,",
+    "\"angle\":0,",
+    "\"shorten_source\":0,",
+    "\"shorten_target\":0,",
+    "\"level\":1,",
+    "\"shape\":\"bezier\",",
+    "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+    "\"edge_alignment_source\":true,",
+    "\"edge_alignment_target\":true,",
+    "\"style\":{",
+    "\"name\":\"arrow\",",
+    "\"tail\":{\"name\":\"none\",\"side\":\"\"},",
+    "\"body\":{\"name\":\"barred\",\"side\":\"\"},",
+    "\"head\":{\"name\":\"epi\",\"side\":\"\"}",
+    "}}}],",
+    "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
+    "}",
+  ].join("")
+
+  let result_json = ffi_adapter_apply_mutation_batch_json(adapter, batch_json)
+  let result : Map[String, Json] = @json.from_json(@json.parse(result_json))
+  let label_results : Array[Bool] = @json.from_json(
+    test_json_get(result, "label_results"),
+  )
+  let label_colour_results : Array[Bool] = @json.from_json(
+    test_json_get(result, "label_colour_results"),
+  )
+  let vertex_position_results : Array[Bool] = @json.from_json(
+    test_json_get(result, "vertex_position_results"),
+  )
+  let edge_option_results : Array[Bool] = @json.from_json(
+    test_json_get(result, "edge_option_results"),
+  )
+  let edge_connection_results : Array[Bool] = @json.from_json(
+    test_json_get(result, "edge_connection_results"),
+  )
+  inspect(label_results, content="[true]")
+  inspect(label_colour_results, content="[true]")
+  inspect(vertex_position_results, content="[true]")
+  inspect(edge_option_results, content="[true]")
+  inspect(edge_connection_results, content="[true]")
+
+  let payload : String = @json.from_json(test_json_get(result, "payload"))
+  inspect(payload == ffi_adapter_export_base64(adapter), content="true")
+
+  let quiver = Quiver::import_base64_v0(payload)
+  let mut source_vertex : Vertex? = None
+  let mut edge_value : Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A-json")
+      inspect(vertex.x, content="3")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="120")
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.style.body.name, content="barred")
+      inspect(edge.options.style.head.name, content="epi")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "ui ffi adapter mutation APIs return false for invalid ids" {
   let adapter = ffi_adapter_new()
   let vertex_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

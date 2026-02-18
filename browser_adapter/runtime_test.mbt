@@ -311,6 +311,53 @@ test "browser runtime applies mutation batch through ffi adapter" {
 }
 
 ///|
+test "browser runtime apply_mutation_batch_json forwards plain json input" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 1, 0)
+  let edge_id = runtime.add_edge(source_id, target_id, label="f")
+
+  let batch_json = [
+    "{",
+    "\"labels\":[{\"cell_id\":1,\"label\":\"A-json\"}],",
+    "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
+    "}",
+  ].join("")
+
+  let result_json = runtime.apply_mutation_batch_json(batch_json)
+  inspect(result_json.contains("\"label_results\":[true]"), content="true")
+  inspect(result_json.contains("\"edge_connection_results\":[true]"), content="true")
+
+  let quiver = @engine.Quiver::import_base64_v0(runtime.export_payload())
+  let mut source_vertex : @engine.Vertex? = None
+  let mut edge_value : @engine.Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      @engine.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => inspect(vertex.cell.label, content="A-json")
+    None => abort("expected updated source vertex")
+  }
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "browser runtime exposes dependency graph queries" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)

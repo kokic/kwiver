@@ -488,6 +488,291 @@ fn quiver_ui_snapshot_json(snapshot : QuiverUiSnapshot) -> Json {
 }
 
 ///|
+fn quiver_ui_bool_array_json(values : Array[Bool]) -> Json {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(Json::boolean(value))
+  }
+  Json::array(out)
+}
+
+///|
+fn quiver_ui_mutation_batch_result_json(
+  result : QuiverUiMutationBatchResult,
+) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("payload", Json::string(result.payload))
+  out.set("label_results", quiver_ui_bool_array_json(result.label_results))
+  out.set(
+    "label_colour_results",
+    quiver_ui_bool_array_json(result.label_colour_results),
+  )
+  out.set(
+    "vertex_position_results",
+    quiver_ui_bool_array_json(result.vertex_position_results),
+  )
+  out.set(
+    "edge_option_results",
+    quiver_ui_bool_array_json(result.edge_option_results),
+  )
+  out.set(
+    "edge_connection_results",
+    quiver_ui_bool_array_json(result.edge_connection_results),
+  )
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_json_required_field(root : Map[String, Json], key : String) -> Json {
+  match root.get(key) {
+    Some(value) => value
+    None => abort("missing required field in mutation batch json: " + key)
+  }
+}
+
+///|
+fn quiver_ui_json_array_field_or_empty(
+  root : Map[String, Json],
+  key : String,
+) -> Array[Json] raise {
+  match root.get(key) {
+    Some(value) => @json.from_json(value)
+    None => []
+  }
+}
+
+///|
+fn quiver_ui_colour_from_json(raw : Json) -> Colour raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  let h : Int = @json.from_json(quiver_ui_json_required_field(root, "h"))
+  let s : Int = @json.from_json(quiver_ui_json_required_field(root, "s"))
+  let l : Int = @json.from_json(quiver_ui_json_required_field(root, "l"))
+  let a : Double = @json.from_json(quiver_ui_json_required_field(root, "a"))
+  Colour::new(h, s, l, a)
+}
+
+///|
+fn quiver_ui_label_alignment_from_json(raw : Json) -> LabelAlignment raise {
+  let value : String = @json.from_json(raw)
+  if value == "left" {
+    return LabelAlignment::Left
+  }
+  if value == "centre" || value == "center" {
+    return LabelAlignment::Centre
+  }
+  if value == "right" {
+    return LabelAlignment::Right
+  }
+  if value == "over" {
+    return LabelAlignment::Over
+  }
+  abort("invalid label_alignment in mutation batch json: " + value)
+}
+
+///|
+fn quiver_ui_edge_shape_from_json(raw : Json) -> EdgeShape raise {
+  let value : String = @json.from_json(raw)
+  if value == "bezier" {
+    return EdgeShape::Bezier
+  }
+  if value == "arc" {
+    return EdgeShape::Arc
+  }
+  abort("invalid shape in mutation batch json: " + value)
+}
+
+///|
+fn quiver_ui_edge_endpoint_style_from_json(raw : Json) -> EdgeEndpointStyle raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    name: @json.from_json(quiver_ui_json_required_field(root, "name")),
+    side: @json.from_json(quiver_ui_json_required_field(root, "side")),
+  }
+}
+
+///|
+fn quiver_ui_edge_style_from_json(raw : Json) -> EdgeStyle raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    name: @json.from_json(quiver_ui_json_required_field(root, "name")),
+    tail: quiver_ui_edge_endpoint_style_from_json(
+      quiver_ui_json_required_field(root, "tail"),
+    ),
+    body: quiver_ui_edge_endpoint_style_from_json(
+      quiver_ui_json_required_field(root, "body"),
+    ),
+    head: quiver_ui_edge_endpoint_style_from_json(
+      quiver_ui_json_required_field(root, "head"),
+    ),
+  }
+}
+
+///|
+fn quiver_ui_edge_options_from_json(raw : Json) -> EdgeOptions raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  let label_alignment = quiver_ui_label_alignment_from_json(
+    quiver_ui_json_required_field(root, "label_alignment"),
+  )
+  let label_position : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "label_position"),
+  )
+  let offset : Int = @json.from_json(quiver_ui_json_required_field(root, "offset"))
+  let curve : Int = @json.from_json(quiver_ui_json_required_field(root, "curve"))
+  let radius : Int = @json.from_json(quiver_ui_json_required_field(root, "radius"))
+  let angle : Int = @json.from_json(quiver_ui_json_required_field(root, "angle"))
+  let shorten_source : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "shorten_source"),
+  )
+  let shorten_target : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "shorten_target"),
+  )
+  let level : Int = @json.from_json(quiver_ui_json_required_field(root, "level"))
+  let shape = quiver_ui_edge_shape_from_json(
+    quiver_ui_json_required_field(root, "shape"),
+  )
+  let colour = quiver_ui_colour_from_json(
+    quiver_ui_json_required_field(root, "colour"),
+  )
+  let edge_alignment_source : Bool = @json.from_json(
+    quiver_ui_json_required_field(root, "edge_alignment_source"),
+  )
+  let edge_alignment_target : Bool = @json.from_json(
+    quiver_ui_json_required_field(root, "edge_alignment_target"),
+  )
+  let style = quiver_ui_edge_style_from_json(
+    quiver_ui_json_required_field(root, "style"),
+  )
+
+  let mut options = EdgeOptions::at_level(level)
+  options = match label_alignment {
+    LabelAlignment::Left => options.with_label_alignment_left()
+    LabelAlignment::Centre => options.with_label_alignment_centre()
+    LabelAlignment::Right => options.with_label_alignment_right()
+    LabelAlignment::Over => options.with_label_alignment_over()
+  }
+  options = options
+    .with_label_position(label_position)
+    .with_offset(offset)
+    .with_curve(curve)
+    .with_radius(radius)
+    .with_angle(angle)
+    .with_shorten(shorten_source, shorten_target)
+  options = match shape {
+    EdgeShape::Bezier => options.with_shape_bezier()
+    EdgeShape::Arc => options.with_shape_arc()
+  }
+  options = options
+    .with_colour(colour)
+    .with_edge_alignment(edge_alignment_source, edge_alignment_target)
+    .with_style_name(style.name)
+    .with_style_tail(style.tail.name, side=style.tail.side)
+    .with_style_body(style.body.name, side=style.body.side)
+    .with_style_head(style.head.name, side=style.head.side)
+  options
+}
+
+///|
+fn quiver_ui_set_label_patch_from_json(
+  raw : Json,
+) -> QuiverUiSetLabelPatch raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    cell_id: @json.from_json(quiver_ui_json_required_field(root, "cell_id")),
+    label: @json.from_json(quiver_ui_json_required_field(root, "label")),
+  }
+}
+
+///|
+fn quiver_ui_set_label_colour_patch_from_json(
+  raw : Json,
+) -> QuiverUiSetLabelColourPatch raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    cell_id: @json.from_json(quiver_ui_json_required_field(root, "cell_id")),
+    label_colour: quiver_ui_colour_from_json(
+      quiver_ui_json_required_field(root, "label_colour"),
+    ),
+  }
+}
+
+///|
+fn quiver_ui_move_vertex_patch_from_json(
+  raw : Json,
+) -> QuiverUiMoveVertexPatch raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    vertex_id: @json.from_json(quiver_ui_json_required_field(root, "vertex_id")),
+    x: @json.from_json(quiver_ui_json_required_field(root, "x")),
+    y: @json.from_json(quiver_ui_json_required_field(root, "y")),
+  }
+}
+
+///|
+fn quiver_ui_set_edge_options_patch_from_json(
+  raw : Json,
+) -> QuiverUiSetEdgeOptionsPatch raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    edge_id: @json.from_json(quiver_ui_json_required_field(root, "edge_id")),
+    options: quiver_ui_edge_options_from_json(
+      quiver_ui_json_required_field(root, "options"),
+    ),
+  }
+}
+
+///|
+fn quiver_ui_reconnect_edge_patch_from_json(
+  raw : Json,
+) -> QuiverUiReconnectEdgePatch raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  {
+    edge_id: @json.from_json(quiver_ui_json_required_field(root, "edge_id")),
+    source_id: @json.from_json(quiver_ui_json_required_field(root, "source_id")),
+    target_id: @json.from_json(quiver_ui_json_required_field(root, "target_id")),
+  }
+}
+
+///|
+fn quiver_ui_mutation_batch_from_json(
+  input : String,
+) -> QuiverUiMutationBatch raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+
+  let labels : Array[QuiverUiSetLabelPatch] = []
+  for raw in quiver_ui_json_array_field_or_empty(root, "labels") {
+    labels.push(quiver_ui_set_label_patch_from_json(raw))
+  }
+
+  let label_colours : Array[QuiverUiSetLabelColourPatch] = []
+  for raw in quiver_ui_json_array_field_or_empty(root, "label_colours") {
+    label_colours.push(quiver_ui_set_label_colour_patch_from_json(raw))
+  }
+
+  let vertex_positions : Array[QuiverUiMoveVertexPatch] = []
+  for raw in quiver_ui_json_array_field_or_empty(root, "vertex_positions") {
+    vertex_positions.push(quiver_ui_move_vertex_patch_from_json(raw))
+  }
+
+  let edge_options : Array[QuiverUiSetEdgeOptionsPatch] = []
+  for raw in quiver_ui_json_array_field_or_empty(root, "edge_options") {
+    edge_options.push(quiver_ui_set_edge_options_patch_from_json(raw))
+  }
+
+  let edge_connections : Array[QuiverUiReconnectEdgePatch] = []
+  for raw in quiver_ui_json_array_field_or_empty(root, "edge_connections") {
+    edge_connections.push(quiver_ui_reconnect_edge_patch_from_json(raw))
+  }
+
+  QuiverUiMutationBatch::new(
+    labels,
+    label_colours,
+    vertex_positions,
+    edge_options,
+    edge_connections,
+  )
+}
+
+///|
 fn quiver_ui_looks_like_share_reference(input : String) -> Bool {
   input.contains("#q=") ||
   input.contains("?q=") ||
@@ -916,6 +1201,29 @@ pub fn QuiverUiAdapter::apply_mutation_batch(
 }
 
 ///|
+pub fn QuiverUiMutationBatchResult::to_json_string(
+  self : QuiverUiMutationBatchResult,
+) -> String {
+  quiver_ui_mutation_batch_result_json(self).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::apply_mutation_batch_json(
+  self : QuiverUiAdapter,
+  batch_json : String,
+) -> QuiverUiMutationBatchResult raise {
+  self.apply_mutation_batch(quiver_ui_mutation_batch_from_json(batch_json))
+}
+
+///|
+pub fn QuiverUiAdapter::apply_mutation_batch_json_result(
+  self : QuiverUiAdapter,
+  batch_json : String,
+) -> String raise {
+  self.apply_mutation_batch_json(batch_json).to_json_string()
+}
+
+///|
 pub fn QuiverUiAdapter::remove(
   self : QuiverUiAdapter,
   cell_id : Int,
@@ -1211,6 +1519,14 @@ pub fn ffi_adapter_apply_mutation_batch(
   batch : QuiverUiMutationBatch,
 ) -> QuiverUiMutationBatchResult {
   adapter.apply_mutation_batch(batch)
+}
+
+///|
+pub fn ffi_adapter_apply_mutation_batch_json(
+  adapter : QuiverUiAdapter,
+  batch_json : String,
+) -> String raise {
+  adapter.apply_mutation_batch_json_result(batch_json)
 }
 
 ///|

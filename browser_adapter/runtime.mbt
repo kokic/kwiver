@@ -139,6 +139,14 @@ pub fn BrowserRuntime::apply_mutation_batch(
 }
 
 ///|
+pub fn BrowserRuntime::apply_mutation_batch_json(
+  self : BrowserRuntime,
+  batch_json : String,
+) -> String raise {
+  @engine.ffi_adapter_apply_mutation_batch_json(self.adapter, batch_json)
+}
+
+///|
 pub fn BrowserRuntime::remove(
   self : BrowserRuntime,
   cell_id : Int,
