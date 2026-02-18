@@ -661,6 +661,14 @@ fn quiver_ui_payload_result_json(payload : String) -> Json {
 }
 
 ///|
+fn quiver_ui_ok_payload_result_json(ok : Bool, payload : String) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("ok", Json::boolean(ok))
+  out.set("payload", Json::string(payload))
+  Json::object(out)
+}
+
+///|
 fn quiver_ui_json_required_field(root : Map[String, Json], key : String) -> Json {
   match root.get(key) {
     Some(value) => value
@@ -954,6 +962,62 @@ fn quiver_ui_add_edge_from_json(
     None => Colour::black()
   }
   (source_id, target_id, label, options, label_colour)
+}
+
+///|
+fn quiver_ui_set_cell_label_from_json(input : String) -> (Int, String) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let cell_id : Int = @json.from_json(quiver_ui_json_required_field(root, "cell_id"))
+  let label : String = @json.from_json(quiver_ui_json_required_field(root, "label"))
+  (cell_id, label)
+}
+
+///|
+fn quiver_ui_set_cell_label_colour_from_json(
+  input : String,
+) -> (Int, Colour) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let cell_id : Int = @json.from_json(quiver_ui_json_required_field(root, "cell_id"))
+  let label_colour = quiver_ui_colour_from_json(
+    quiver_ui_json_required_field(root, "label_colour"),
+  )
+  (cell_id, label_colour)
+}
+
+///|
+fn quiver_ui_move_vertex_from_json(input : String) -> (Int, Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let vertex_id : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "vertex_id"),
+  )
+  let x : Int = @json.from_json(quiver_ui_json_required_field(root, "x"))
+  let y : Int = @json.from_json(quiver_ui_json_required_field(root, "y"))
+  (vertex_id, x, y)
+}
+
+///|
+fn quiver_ui_set_edge_options_from_json(
+  input : String,
+) -> (Int, EdgeOptions) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let options = quiver_ui_edge_options_from_json(
+    quiver_ui_json_required_field(root, "options"),
+  )
+  (edge_id, options)
+}
+
+///|
+fn quiver_ui_reconnect_edge_from_json(input : String) -> (Int, Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let source_id : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "source_id"),
+  )
+  let target_id : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "target_id"),
+  )
+  (edge_id, source_id, target_id)
 }
 
 ///|
@@ -1359,6 +1423,16 @@ pub fn QuiverUiAdapter::set_cell_label(
 }
 
 ///|
+pub fn QuiverUiAdapter::set_cell_label_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (cell_id, label) = quiver_ui_set_cell_label_from_json(input_json)
+  let ok = self.set_cell_label(cell_id, label)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
 pub fn QuiverUiAdapter::set_cell_label_colour(
   self : QuiverUiAdapter,
   cell_id : Int,
@@ -1405,6 +1479,16 @@ pub fn QuiverUiAdapter::set_cell_label_colour(
 }
 
 ///|
+pub fn QuiverUiAdapter::set_cell_label_colour_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (cell_id, label_colour) = quiver_ui_set_cell_label_colour_from_json(input_json)
+  let ok = self.set_cell_label_colour(cell_id, label_colour)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
 pub fn QuiverUiAdapter::move_vertex(
   self : QuiverUiAdapter,
   vertex_id : Int,
@@ -1433,6 +1517,16 @@ pub fn QuiverUiAdapter::move_vertex(
     }
     _ => false
   }
+}
+
+///|
+pub fn QuiverUiAdapter::move_vertex_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (vertex_id, x, y) = quiver_ui_move_vertex_from_json(input_json)
+  let ok = self.move_vertex(vertex_id, x, y)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
 }
 
 ///|
@@ -1468,6 +1562,16 @@ pub fn QuiverUiAdapter::set_edge_options(
 }
 
 ///|
+pub fn QuiverUiAdapter::set_edge_options_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, options) = quiver_ui_set_edge_options_from_json(input_json)
+  let ok = self.set_edge_options(edge_id, options)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
 pub fn QuiverUiAdapter::reconnect_edge(
   self : QuiverUiAdapter,
   edge_id : Int,
@@ -1487,6 +1591,16 @@ pub fn QuiverUiAdapter::reconnect_edge(
     }
     _ => false
   }
+}
+
+///|
+pub fn QuiverUiAdapter::reconnect_edge_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, source_id, target_id) = quiver_ui_reconnect_edge_from_json(input_json)
+  let ok = self.reconnect_edge(edge_id, source_id, target_id)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
 }
 
 ///|
@@ -1935,12 +2049,28 @@ pub fn ffi_adapter_set_cell_label(
 }
 
 ///|
+pub fn ffi_adapter_set_cell_label_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_cell_label_json(input_json)
+}
+
+///|
 pub fn ffi_adapter_set_cell_label_colour(
   adapter : QuiverUiAdapter,
   cell_id : Int,
   label_colour : Colour,
 ) -> Bool {
   adapter.set_cell_label_colour(cell_id, label_colour)
+}
+
+///|
+pub fn ffi_adapter_set_cell_label_colour_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_cell_label_colour_json(input_json)
 }
 
 ///|
@@ -1954,12 +2084,28 @@ pub fn ffi_adapter_move_vertex(
 }
 
 ///|
+pub fn ffi_adapter_move_vertex_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.move_vertex_json(input_json)
+}
+
+///|
 pub fn ffi_adapter_set_edge_options(
   adapter : QuiverUiAdapter,
   edge_id : Int,
   options : EdgeOptions,
 ) -> Bool {
   adapter.set_edge_options(edge_id, options)
+}
+
+///|
+pub fn ffi_adapter_set_edge_options_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_options_json(input_json)
 }
 
 ///|
@@ -1970,6 +2116,14 @@ pub fn ffi_adapter_reconnect_edge(
   target_id : Int,
 ) -> Bool {
   adapter.reconnect_edge(edge_id, source_id, target_id)
+}
+
+///|
+pub fn ffi_adapter_reconnect_edge_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.reconnect_edge_json(input_json)
 }
 
 ///|

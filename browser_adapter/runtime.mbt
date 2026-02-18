@@ -128,12 +128,28 @@ pub fn BrowserRuntime::set_label(
 }
 
 ///|
+pub fn BrowserRuntime::set_label_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_cell_label_json(self.adapter, input_json)
+}
+
+///|
 pub fn BrowserRuntime::set_label_colour(
   self : BrowserRuntime,
   cell_id : Int,
   label_colour : @engine.Colour,
 ) -> Bool {
   @engine.ffi_adapter_set_cell_label_colour(self.adapter, cell_id, label_colour)
+}
+
+///|
+pub fn BrowserRuntime::set_label_colour_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_cell_label_colour_json(self.adapter, input_json)
 }
 
 ///|
@@ -147,12 +163,28 @@ pub fn BrowserRuntime::move_vertex(
 }
 
 ///|
+pub fn BrowserRuntime::move_vertex_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_move_vertex_json(self.adapter, input_json)
+}
+
+///|
 pub fn BrowserRuntime::set_edge_options(
   self : BrowserRuntime,
   edge_id : Int,
   options : @engine.EdgeOptions,
 ) -> Bool {
   @engine.ffi_adapter_set_edge_options(self.adapter, edge_id, options)
+}
+
+///|
+pub fn BrowserRuntime::set_edge_options_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_options_json(self.adapter, input_json)
 }
 
 ///|
@@ -168,6 +200,14 @@ pub fn BrowserRuntime::reconnect_edge(
     source_id,
     target_id,
   )
+}
+
+///|
+pub fn BrowserRuntime::reconnect_edge_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_reconnect_edge_json(self.adapter, input_json)
 }
 
 ///|

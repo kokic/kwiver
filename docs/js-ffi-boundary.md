@@ -35,10 +35,15 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `ffi_adapter_add_edge(adapter, source_id, target_id, label?, options?, label_colour?) -> Int`
 - `ffi_adapter_add_edge_json(adapter, input_json) -> String`
 - `ffi_adapter_set_cell_label(adapter, cell_id, label) -> Bool`
+- `ffi_adapter_set_cell_label_json(adapter, input_json) -> String`
 - `ffi_adapter_set_cell_label_colour(adapter, cell_id, label_colour) -> Bool`
+- `ffi_adapter_set_cell_label_colour_json(adapter, input_json) -> String`
 - `ffi_adapter_move_vertex(adapter, vertex_id, x, y) -> Bool`
+- `ffi_adapter_move_vertex_json(adapter, input_json) -> String`
 - `ffi_adapter_set_edge_options(adapter, edge_id, options) -> Bool`
+- `ffi_adapter_set_edge_options_json(adapter, input_json) -> String`
 - `ffi_adapter_reconnect_edge(adapter, edge_id, source_id, target_id) -> Bool`
+- `ffi_adapter_reconnect_edge_json(adapter, input_json) -> String`
 - `ffi_adapter_apply_mutation_batch(adapter, batch) -> QuiverUiMutationBatchResult`
 - `ffi_adapter_apply_mutation_batch_json(adapter, batch_json) -> String`
 - `ffi_adapter_remove(adapter, cell_id, when) -> Array[Int]`
@@ -74,6 +79,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
 - `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `add/remove/flush` JSON wrappers return payload-carrying JSON results for JS state sync (`add*`: `{id,payload}`, `remove`: `{removed_ids,payload}`, `flush`: `{payload}`).
+- single mutation JSON wrappers (`set_label`, `set_label_colour`, `move_vertex`, `set_edge_options`, `reconnect_edge`) return `{ ok, payload }`.
 - `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `ffi_adapter_apply_mutation_batch_json` accepts the same batch shape as `QuiverUiMutationBatch` in JSON and returns JSON-serialized `QuiverUiMutationBatchResult`.
 - `ffi_adapter_export_tikz_cd_json` serializes `{ data, metadata }` where `metadata.dependencies` stays in set-like object form (`package -> { reason: true }`).

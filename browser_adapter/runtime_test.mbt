@@ -318,6 +318,123 @@ test "browser runtime applies incremental mutations via ffi surface" {
 }
 
 ///|
+test "browser runtime single mutation json wrappers expose ok payload contract" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 2, 0)
+  let edge_id = runtime.add_edge(source_id, target_id, label="f")
+
+  let set_label_json = runtime.set_label_json(
+    ["{\"cell_id\":", source_id.to_string(), ",\"label\":\"A-json\"}"].join(""),
+  )
+  inspect(set_label_json.contains("\"ok\":true"), content="true")
+  inspect(set_label_json.contains("\"payload\":\""), content="true")
+
+  let set_label_colour_json = runtime.set_label_colour_json(
+    [
+      "{\"cell_id\":",
+      edge_id.to_string(),
+      ",\"label_colour\":{\"h\":240,\"s\":100,\"l\":50,\"a\":1}}",
+    ].join(""),
+  )
+  inspect(set_label_colour_json.contains("\"ok\":true"), content="true")
+
+  let move_vertex_json = runtime.move_vertex_json(
+    [
+      "{\"vertex_id\":",
+      source_id.to_string(),
+      ",\"x\":5,\"y\":7}",
+    ].join(""),
+  )
+  inspect(move_vertex_json.contains("\"ok\":true"), content="true")
+
+  let set_edge_options_json = runtime.set_edge_options_json(
+    [
+      "{",
+      "\"edge_id\":", edge_id.to_string(), ",",
+      "\"options\":{",
+      "\"label_alignment\":\"left\",",
+      "\"label_position\":50,",
+      "\"offset\":0,",
+      "\"curve\":-2,",
+      "\"radius\":0,",
+      "\"angle\":0,",
+      "\"shorten_source\":0,",
+      "\"shorten_target\":0,",
+      "\"level\":9,",
+      "\"shape\":\"bezier\",",
+      "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+      "\"edge_alignment_source\":true,",
+      "\"edge_alignment_target\":true,",
+      "\"style\":{",
+      "\"name\":\"arrow\",",
+      "\"tail\":{\"name\":\"mono\",\"side\":\"top\"},",
+      "\"body\":{\"name\":\"barred\",\"side\":\"center\"},",
+      "\"head\":{\"name\":\"epi\",\"side\":\"bottom\"}",
+      "}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(set_edge_options_json.contains("\"ok\":true"), content="true")
+
+  let reconnect_edge_json = runtime.reconnect_edge_json(
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"source_id\":",
+      target_id.to_string(),
+      ",\"target_id\":",
+      source_id.to_string(),
+      "}",
+    ].join(""),
+  )
+  inspect(reconnect_edge_json.contains("\"ok\":true"), content="true")
+
+  let missing_json = runtime.set_label_json("{\"cell_id\":999,\"label\":\"missing\"}")
+  inspect(missing_json.contains("\"ok\":false"), content="true")
+
+  let quiver = @engine.Quiver::import_base64_v0(runtime.export_payload())
+  let mut source_vertex : @engine.Vertex? = None
+  let mut edge_value : @engine.Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      @engine.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A-json")
+      // Base64 canonical export normalises positions by top-left offset.
+      inspect(vertex.x, content="3")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="240")
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.style.body.name, content="barred")
+      inspect(edge.options.style.head.name, content="epi")
+      inspect(edge.options.level, content="1")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "browser runtime applies mutation batch through ffi adapter" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)

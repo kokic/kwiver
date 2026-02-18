@@ -163,6 +163,202 @@ test "ui ffi adapter add remove flush json wrappers carry payload" {
 }
 
 ///|
+test "ui ffi adapter single mutation json wrappers return ok and payload" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 2, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+
+  let set_label_json = ffi_adapter_set_cell_label_json(
+    adapter,
+    ["{\"cell_id\":", source_id.to_string(), ",\"label\":\"A-json\"}"].join(""),
+  )
+  let set_label_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_label_json),
+  )
+  let set_label_ok : Bool = @json.from_json(test_json_get(set_label_result, "ok"))
+  let payload_after_set_label : String = @json.from_json(
+    test_json_get(set_label_result, "payload"),
+  )
+  inspect(set_label_ok, content="true")
+  inspect(
+    payload_after_set_label == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let set_label_colour_json = ffi_adapter_set_cell_label_colour_json(
+    adapter,
+    [
+      "{\"cell_id\":",
+      edge_id.to_string(),
+      ",\"label_colour\":{\"h\":240,\"s\":100,\"l\":50,\"a\":1}}",
+    ].join(""),
+  )
+  let set_label_colour_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_label_colour_json),
+  )
+  let set_label_colour_ok : Bool = @json.from_json(
+    test_json_get(set_label_colour_result, "ok"),
+  )
+  let payload_after_set_label_colour : String = @json.from_json(
+    test_json_get(set_label_colour_result, "payload"),
+  )
+  inspect(set_label_colour_ok, content="true")
+  inspect(
+    payload_after_set_label_colour == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let move_vertex_json = ffi_adapter_move_vertex_json(
+    adapter,
+    [
+      "{\"vertex_id\":",
+      source_id.to_string(),
+      ",\"x\":5,\"y\":7}",
+    ].join(""),
+  )
+  let move_vertex_result : Map[String, Json] = @json.from_json(
+    @json.parse(move_vertex_json),
+  )
+  let move_vertex_ok : Bool = @json.from_json(test_json_get(move_vertex_result, "ok"))
+  let payload_after_move_vertex : String = @json.from_json(
+    test_json_get(move_vertex_result, "payload"),
+  )
+  inspect(move_vertex_ok, content="true")
+  inspect(
+    payload_after_move_vertex == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let set_edge_options_json = ffi_adapter_set_edge_options_json(
+    adapter,
+    [
+      "{",
+      "\"edge_id\":", edge_id.to_string(), ",",
+      "\"options\":{",
+      "\"label_alignment\":\"left\",",
+      "\"label_position\":50,",
+      "\"offset\":0,",
+      "\"curve\":-2,",
+      "\"radius\":0,",
+      "\"angle\":0,",
+      "\"shorten_source\":0,",
+      "\"shorten_target\":0,",
+      "\"level\":9,",
+      "\"shape\":\"bezier\",",
+      "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+      "\"edge_alignment_source\":true,",
+      "\"edge_alignment_target\":true,",
+      "\"style\":{",
+      "\"name\":\"arrow\",",
+      "\"tail\":{\"name\":\"mono\",\"side\":\"top\"},",
+      "\"body\":{\"name\":\"barred\",\"side\":\"center\"},",
+      "\"head\":{\"name\":\"epi\",\"side\":\"bottom\"}",
+      "}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  let set_edge_options_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_options_json),
+  )
+  let set_edge_options_ok : Bool = @json.from_json(
+    test_json_get(set_edge_options_result, "ok"),
+  )
+  let payload_after_set_edge_options : String = @json.from_json(
+    test_json_get(set_edge_options_result, "payload"),
+  )
+  inspect(set_edge_options_ok, content="true")
+  inspect(
+    payload_after_set_edge_options == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let reconnect_edge_json = ffi_adapter_reconnect_edge_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"source_id\":",
+      target_id.to_string(),
+      ",\"target_id\":",
+      source_id.to_string(),
+      "}",
+    ].join(""),
+  )
+  let reconnect_edge_result : Map[String, Json] = @json.from_json(
+    @json.parse(reconnect_edge_json),
+  )
+  let reconnect_edge_ok : Bool = @json.from_json(
+    test_json_get(reconnect_edge_result, "ok"),
+  )
+  let payload_after_reconnect_edge : String = @json.from_json(
+    test_json_get(reconnect_edge_result, "payload"),
+  )
+  inspect(reconnect_edge_ok, content="true")
+  inspect(
+    payload_after_reconnect_edge == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let missing_result_json = ffi_adapter_set_cell_label_json(
+    adapter,
+    "{\"cell_id\":999,\"label\":\"missing\"}",
+  )
+  let missing_result : Map[String, Json] = @json.from_json(
+    @json.parse(missing_result_json),
+  )
+  let missing_ok : Bool = @json.from_json(test_json_get(missing_result, "ok"))
+  let payload_after_missing : String = @json.from_json(
+    test_json_get(missing_result, "payload"),
+  )
+  inspect(missing_ok, content="false")
+  inspect(
+    payload_after_missing == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let quiver = Quiver::import_base64_v0(ffi_adapter_export_base64(adapter))
+  let mut source_vertex : Vertex? = None
+  let mut edge_value : Edge? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          source_vertex = Some(vertex)
+        }
+      CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          edge_value = Some(edge)
+        }
+    }
+  }
+
+  match source_vertex {
+    Some(vertex) => {
+      inspect(vertex.cell.label, content="A-json")
+      // Base64 canonical export normalises positions by top-left offset.
+      inspect(vertex.x, content="3")
+      inspect(vertex.y, content="7")
+    }
+    None => abort("expected updated source vertex")
+  }
+
+  match edge_value {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="240")
+      inspect(edge.source == target_id, content="true")
+      inspect(edge.target == source_id, content="true")
+      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.style.body.name, content="barred")
+      inspect(edge.options.style.head.name, content="epi")
+      inspect(edge.options.level, content="1")
+    }
+    None => abort("expected updated edge")
+  }
+}
+
+///|
 test "ui ffi adapter import tikz updates state with metadata defaults" {
   let adapter = ffi_adapter_new()
   let input = [
