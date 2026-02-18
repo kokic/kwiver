@@ -1082,6 +1082,69 @@ test "tikz-cd import parser supports ampersand replacement and brace arrow optio
 }
 
 ///|
+test "tikz-cd import parser maps basic arrow style flags" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"f\", dashed, no head, maps to] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.options.style.body.name, content="dashed")
+      inspect(edge.options.style.head.name, content="none")
+      inspect(edge.options.style.tail.name, content="maps to")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser maps advanced arrow style and level options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"g\", two heads, hook'] & B \\\\\n",
+    "C \\arrow[r, \"h\", harpoon', draw=none] & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => {
+      inspect(edge.options.style.head.name, content="epi")
+      inspect(edge.options.style.tail.name, content="hook")
+      inspect(edge.options.style.tail.side, content="bottom")
+    }
+    None => abort("expected edge g")
+  }
+  match tikz_test_find_edge_by_label(quiver, "h") {
+    Some(edge) => {
+      // draw=none takes precedence and normalises to empty arrow endpoints.
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.body.name, content="none")
+      inspect(edge.options.style.head.name, content="none")
+    }
+    None => abort("expected edge h")
+  }
+}
+
+///|
+test "tikz-cd import parser maps harpoon side option" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"p\", harpoon'] & B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "p") {
+    Some(edge) => {
+      inspect(edge.options.style.head.name, content="harpoon")
+      inspect(edge.options.style.head.side, content="bottom")
+    }
+    None => abort("expected edge p")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps commas inside quoted labels" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",

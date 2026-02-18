@@ -1636,6 +1636,7 @@ priv struct TikzParsedArrow {
   from_y : Int?
   to_x : Int?
   to_y : Int?
+  options : EdgeOptions
 }
 
 ///|
@@ -1645,6 +1646,7 @@ priv struct TikzPendingArrow {
   target_x : Int
   target_y : Int
   label : String
+  options : EdgeOptions
 }
 
 ///|
@@ -1972,6 +1974,75 @@ fn tikz_is_label_modifier(option : String) -> Bool {
 }
 
 ///|
+fn tikz_apply_empty_arrow_style(options : EdgeOptions) -> EdgeOptions {
+  options
+  .with_style_tail("none")
+  .with_style_body("none")
+  .with_style_head("none")
+}
+
+///|
+fn tikz_parse_level_option_value(value : String) -> Int? {
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+  tikz_parse_positive_int(text)
+}
+
+///|
+fn tikz_apply_arrow_flag_option(
+  options : EdgeOptions,
+  option : String,
+) -> EdgeOptions {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+  match token {
+    "dashed" => options.with_style_body("dashed")
+    "dotted" => options.with_style_body("dotted")
+    "squiggly" => options.with_style_body("squiggly")
+    "no body" => options.with_style_body("none")
+    "no head" => options.with_style_head("none")
+    "maps to" => options.with_style_tail("maps to")
+    "tail" => options.with_style_tail("mono")
+    "2tail" => options.with_level(2).with_style_tail("mono")
+    "tail reversed" => options.with_style_tail("arrowhead")
+    "2tail reversed" => options.with_level(2).with_style_tail("arrowhead")
+    "hook" => options.with_style_tail("hook", side="top")
+    "hook'" => options.with_style_tail("hook", side="bottom")
+    "harpoon" => options.with_style_head("harpoon", side="top")
+    "harpoon'" => options.with_style_head("harpoon", side="bottom")
+    "two heads" => options.with_style_head("epi")
+    "Rightarrow" =>
+      if options.level < 2 {
+        options.with_level(2)
+      } else {
+        options
+      }
+    "equals" => options.with_level(2).with_style_head("none")
+    _ => options
+  }
+}
+
+///|
+fn tikz_apply_arrow_key_value_option(
+  options : EdgeOptions,
+  key : String,
+  value : String,
+) -> EdgeOptions {
+  let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+  let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+  if key_token == "draw" && value_token == "none" {
+    return tikz_apply_empty_arrow_style(options)
+  }
+
+  if key_token == "scaling nfold" {
+    match tikz_parse_level_option_value(value_token) {
+      Some(level) => if level >= 2 { return options.with_level(level) }
+      None => ()
+    }
+  }
+
+  options
+}
+
+///|
 fn tikz_extract_arrow_label_option(option : String) -> String? {
   match tikz_extract_first_quoted(option) {
     Some(value) => return Some(value)
@@ -2176,6 +2247,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut from_y : Int? = None
             let mut to_x : Int? = None
             let mut to_y : Int? = None
+            let mut parsed_options = EdgeOptions::at_level(1)
 
             for option in options {
               match tikz_option_key_value(option) {
@@ -2196,6 +2268,12 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       }
                       None => ()
                     }
+                  } else {
+                    parsed_options = tikz_apply_arrow_key_value_option(
+                      parsed_options,
+                      key,
+                      value,
+                    )
                   }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
@@ -2209,11 +2287,23 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       None => ()
                     }
                   }
+                  parsed_options = tikz_apply_arrow_flag_option(
+                    parsed_options,
+                    option,
+                  )
                 }
               }
             }
 
-            arrows.push({ direction, label, from_x, from_y, to_x, to_y })
+            arrows.push({
+              direction,
+              label,
+              from_x,
+              from_y,
+              to_x,
+              to_y,
+              options: parsed_options,
+            })
 
             rest = after_arrow.unsafe_substring(
               start=end + 1,
@@ -2363,6 +2453,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
               target_x,
               target_y,
               label: parsed_arrow.label,
+              options: parsed_arrow.options,
             })
           None => ()
         }
@@ -2394,7 +2485,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
           pending.label,
           source_id,
           target_id,
-          EdgeOptions::at_level(1),
+          pending.options,
           Colour::black(),
         ),
       ),
