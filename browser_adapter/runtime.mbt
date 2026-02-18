@@ -165,6 +165,11 @@ pub fn BrowserRuntime::all_cells(self : BrowserRuntime) -> Array[@engine.CellDat
 }
 
 ///|
+pub fn BrowserRuntime::snapshot(self : BrowserRuntime) -> @engine.QuiverUiSnapshot {
+  @engine.ffi_adapter_snapshot(self.adapter)
+}
+
+///|
 pub fn BrowserRuntime::dependencies_of(
   self : BrowserRuntime,
   cell_id : Int,

@@ -76,6 +76,83 @@ pub struct QuiverUiMutationBatchResult {
 }
 
 ///|
+pub struct QuiverUiColourData {
+  h : Int
+  s : Int
+  l : Int
+  a : Double
+}
+
+///|
+pub struct QuiverUiEdgeEndpointStyleData {
+  name : String
+  side : String
+}
+
+///|
+pub struct QuiverUiEdgeStyleData {
+  name : String
+  tail : QuiverUiEdgeEndpointStyleData
+  body : QuiverUiEdgeEndpointStyleData
+  head : QuiverUiEdgeEndpointStyleData
+}
+
+///|
+pub struct QuiverUiEdgeOptionsData {
+  label_alignment : String
+  label_position : Int
+  offset : Int
+  curve : Int
+  radius : Int
+  angle : Int
+  shorten_source : Int
+  shorten_target : Int
+  level : Int
+  shape : String
+  colour : QuiverUiColourData
+  edge_alignment_source : Bool
+  edge_alignment_target : Bool
+  style : QuiverUiEdgeStyleData
+}
+
+///|
+pub struct QuiverUiVertexData {
+  id : Int
+  level : Int
+  label : String
+  label_colour : QuiverUiColourData
+  x : Int
+  y : Int
+}
+
+///|
+pub struct QuiverUiEdgeData {
+  id : Int
+  level : Int
+  label : String
+  label_colour : QuiverUiColourData
+  source_id : Int
+  target_id : Int
+  options : QuiverUiEdgeOptionsData
+}
+
+///|
+pub struct QuiverUiCellDependenciesData {
+  cell_id : Int
+  dependencies : Array[Int]
+  reverse_dependencies : Array[Int]
+}
+
+///|
+pub struct QuiverUiSnapshot {
+  payload : String
+  cell_ids : Array[Int]
+  vertices : Array[QuiverUiVertexData]
+  edges : Array[QuiverUiEdgeData]
+  dependencies : Array[QuiverUiCellDependenciesData]
+}
+
+///|
 pub fn QuiverUiAdapter::new() -> QuiverUiAdapter {
   { quiver: Quiver::new() }
 }
@@ -188,6 +265,106 @@ fn quiver_ui_order_reverse_dependency_ids(
     }
   }
   ordered
+}
+
+///|
+fn quiver_ui_colour_data(colour : Colour) -> QuiverUiColourData {
+  { h: colour.h, s: colour.s, l: colour.l, a: colour.a }
+}
+
+///|
+fn quiver_ui_edge_endpoint_style_data(
+  endpoint : EdgeEndpointStyle,
+) -> QuiverUiEdgeEndpointStyleData {
+  { name: endpoint.name, side: endpoint.side }
+}
+
+///|
+fn quiver_ui_edge_style_data(style : EdgeStyle) -> QuiverUiEdgeStyleData {
+  {
+    name: style.name,
+    tail: quiver_ui_edge_endpoint_style_data(style.tail),
+    body: quiver_ui_edge_endpoint_style_data(style.body),
+    head: quiver_ui_edge_endpoint_style_data(style.head),
+  }
+}
+
+///|
+fn quiver_ui_label_alignment_name(alignment : LabelAlignment) -> String {
+  match alignment {
+    LabelAlignment::Left => "left"
+    LabelAlignment::Centre => "centre"
+    LabelAlignment::Right => "right"
+    LabelAlignment::Over => "over"
+  }
+}
+
+///|
+fn quiver_ui_edge_shape_name(shape : EdgeShape) -> String {
+  match shape {
+    EdgeShape::Bezier => "bezier"
+    EdgeShape::Arc => "arc"
+  }
+}
+
+///|
+fn quiver_ui_edge_options_data(options : EdgeOptions) -> QuiverUiEdgeOptionsData {
+  {
+    label_alignment: quiver_ui_label_alignment_name(options.label_alignment),
+    label_position: options.label_position,
+    offset: options.offset,
+    curve: options.curve,
+    radius: options.radius,
+    angle: options.angle,
+    shorten_source: options.shorten.source,
+    shorten_target: options.shorten.target,
+    level: options.level,
+    shape: quiver_ui_edge_shape_name(options.shape),
+    colour: quiver_ui_colour_data(options.colour),
+    edge_alignment_source: options.edge_alignment.source,
+    edge_alignment_target: options.edge_alignment.target,
+    style: quiver_ui_edge_style_data(options.style),
+  }
+}
+
+///|
+fn quiver_ui_vertex_data(vertex : Vertex) -> QuiverUiVertexData {
+  {
+    id: vertex.cell.id,
+    level: vertex.cell.level,
+    label: vertex.cell.label,
+    label_colour: quiver_ui_colour_data(vertex.cell.label_colour),
+    x: vertex.x,
+    y: vertex.y,
+  }
+}
+
+///|
+fn quiver_ui_edge_data(edge : Edge) -> QuiverUiEdgeData {
+  {
+    id: edge.cell.id,
+    level: edge.cell.level,
+    label: edge.cell.label,
+    label_colour: quiver_ui_colour_data(edge.cell.label_colour),
+    source_id: edge.source,
+    target_id: edge.target,
+    options: quiver_ui_edge_options_data(edge.options),
+  }
+}
+
+///|
+fn quiver_ui_cell_dependencies_data(
+  quiver : Quiver,
+  cell_id : Int,
+) -> QuiverUiCellDependenciesData {
+  {
+    cell_id,
+    dependencies: quiver_ui_order_dependency_ids(quiver, quiver.dependencies_of(cell_id)),
+    reverse_dependencies: quiver_ui_order_reverse_dependency_ids(
+      quiver,
+      quiver.reverse_dependencies_of(cell_id),
+    ),
+  }
 }
 
 ///|
@@ -643,6 +820,23 @@ pub fn QuiverUiAdapter::all_cell_ids(self : QuiverUiAdapter) -> Array[Int] {
 }
 
 ///|
+pub fn QuiverUiAdapter::snapshot(self : QuiverUiAdapter) -> QuiverUiSnapshot {
+  let cell_ids = self.quiver.all_cell_ids()
+  let vertices : Array[QuiverUiVertexData] = []
+  let edges : Array[QuiverUiEdgeData] = []
+  let dependencies : Array[QuiverUiCellDependenciesData] = []
+  for cell_id in cell_ids {
+    dependencies.push(quiver_ui_cell_dependencies_data(self.quiver, cell_id))
+    match self.quiver.cells.get(cell_id) {
+      Some(CellData::Vertex(vertex)) => vertices.push(quiver_ui_vertex_data(vertex))
+      Some(CellData::Edge(edge)) => edges.push(quiver_ui_edge_data(edge))
+      None => ()
+    }
+  }
+  { payload: self.quiver.export_base64_v0(), cell_ids, vertices, edges, dependencies }
+}
+
+///|
 pub fn QuiverUiAdapter::dependencies_of(
   self : QuiverUiAdapter,
   cell_id : Int,
@@ -911,6 +1105,11 @@ pub fn ffi_adapter_all_cells(adapter : QuiverUiAdapter) -> Array[CellData] {
 ///|
 pub fn ffi_adapter_all_cell_ids(adapter : QuiverUiAdapter) -> Array[Int] {
   adapter.all_cell_ids()
+}
+
+///|
+pub fn ffi_adapter_snapshot(adapter : QuiverUiAdapter) -> QuiverUiSnapshot {
+  adapter.snapshot()
 }
 
 ///|

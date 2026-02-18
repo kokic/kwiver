@@ -356,3 +356,24 @@ test "browser runtime mutation helpers reject mismatched ids" {
   )
 }
 
+///|
+test "browser runtime snapshot mirrors ffi snapshot data" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 1, 0)
+  ignore(runtime.add_edge(source_id, target_id, label="f"))
+
+  let snapshot = runtime.snapshot()
+  inspect(snapshot.payload == runtime.export_payload(), content="true")
+  inspect(snapshot.cell_ids, content="[1, 2, 3]")
+  inspect(snapshot.vertices.length(), content="2")
+  inspect(snapshot.edges.length(), content="1")
+  inspect(snapshot.dependencies.length(), content="3")
+  inspect(snapshot.vertices[0].label, content="A")
+  inspect(snapshot.edges[0].label, content="f")
+  inspect(snapshot.edges[0].source_id, content="1")
+  inspect(snapshot.edges[0].target_id, content="2")
+  inspect(snapshot.dependencies[0].dependencies, content="[3]")
+  inspect(snapshot.dependencies[2].reverse_dependencies, content="[1, 2]")
+}
+

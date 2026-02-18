@@ -34,6 +34,7 @@ options(
         "ffi_adapter_flush",
         "ffi_adapter_all_cells",
         "ffi_adapter_all_cell_ids",
+        "ffi_adapter_snapshot",
         "ffi_adapter_dependencies_of",
         "ffi_adapter_reverse_dependencies_of",
         "ffi_adapter_transitive_dependencies",

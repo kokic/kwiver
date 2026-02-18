@@ -333,3 +333,79 @@ test "ui ffi adapter mutation APIs return false for invalid ids" {
   )
   inspect(ffi_adapter_all_cell_ids(adapter), content="[1]")
 }
+
+///|
+test "ui ffi adapter snapshot exposes js-friendly model data" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 2, 1)
+  let options = EdgeOptions::at_level(1)
+    .with_label_alignment_over()
+    .with_label_position(40)
+    .with_offset(5)
+    .with_curve(2)
+    .with_radius(7)
+    .with_angle(30)
+    .with_shorten(3, 4)
+    .with_shape_arc()
+    .with_colour(Colour::new(120, 100, 25, 1.0))
+    .with_edge_alignment(false, true)
+    .with_style_tail("mono", side="top")
+    .with_style_body("barred")
+    .with_style_head("epi", side="bottom")
+  ignore(
+    ffi_adapter_add_edge(
+      adapter,
+      source_id,
+      target_id,
+      label="f",
+      options~,
+      label_colour=Colour::new(240, 100, 50, 1.0),
+    ),
+  )
+
+  let snapshot = ffi_adapter_snapshot(adapter)
+  inspect(snapshot.payload == ffi_adapter_export_base64(adapter), content="true")
+  inspect(snapshot.cell_ids, content="[1, 2, 3]")
+  inspect(snapshot.vertices.length(), content="2")
+  inspect(snapshot.edges.length(), content="1")
+  inspect(snapshot.dependencies.length(), content="3")
+
+  inspect(snapshot.vertices[0].id, content="1")
+  inspect(snapshot.vertices[0].label, content="A")
+  inspect(snapshot.vertices[0].label_colour.h, content="0")
+  inspect(snapshot.vertices[1].id, content="2")
+  inspect(snapshot.vertices[1].x, content="2")
+  inspect(snapshot.vertices[1].y, content="1")
+
+  let edge = snapshot.edges[0]
+  inspect(edge.id, content="3")
+  inspect(edge.source_id, content="1")
+  inspect(edge.target_id, content="2")
+  inspect(edge.label, content="f")
+  inspect(edge.label_colour.h, content="240")
+  inspect(edge.options.label_alignment, content="over")
+  inspect(edge.options.label_position, content="40")
+  inspect(edge.options.offset, content="5")
+  inspect(edge.options.curve, content="2")
+  inspect(edge.options.radius, content="7")
+  inspect(edge.options.angle, content="30")
+  inspect(edge.options.shorten_source, content="3")
+  inspect(edge.options.shorten_target, content="4")
+  inspect(edge.options.shape, content="arc")
+  inspect(edge.options.colour.h, content="120")
+  inspect(edge.options.edge_alignment_source, content="false")
+  inspect(edge.options.edge_alignment_target, content="true")
+  inspect(edge.options.style.tail.name, content="mono")
+  inspect(edge.options.style.tail.side, content="top")
+  inspect(edge.options.style.body.name, content="barred")
+  inspect(edge.options.style.head.name, content="epi")
+  inspect(edge.options.style.head.side, content="bottom")
+
+  inspect(snapshot.dependencies[0].cell_id, content="1")
+  inspect(snapshot.dependencies[0].dependencies, content="[3]")
+  inspect(snapshot.dependencies[0].reverse_dependencies, content="[]")
+  inspect(snapshot.dependencies[2].cell_id, content="3")
+  inspect(snapshot.dependencies[2].dependencies, content="[]")
+  inspect(snapshot.dependencies[2].reverse_dependencies, content="[1, 2]")
+}
