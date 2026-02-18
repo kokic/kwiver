@@ -1988,12 +1988,40 @@ fn tikz_is_direction_token(token : String) -> Bool {
 }
 
 ///|
+fn tikz_is_escaped_at(value : String, index : Int) -> Bool {
+  let mut slash_count = 0
+  let mut i = index
+  while i > 0 && value.unsafe_get(i - 1) == '\\' {
+    slash_count = slash_count + 1
+    i = i - 1
+  }
+  slash_count % 2 == 1
+}
+
+///|
+fn tikz_find_unescaped_quote(value : String, start : Int) -> Int? {
+  let mut i = start
+  while i < value.length() {
+    if value.unsafe_get(i) == '"' && !tikz_is_escaped_at(value, i) {
+      return Some(i)
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
 fn tikz_extract_first_quoted(value : String) -> String? {
-  match value.find("\"") {
+  match tikz_find_unescaped_quote(value, 0) {
     Some(start) => {
-      let rest = value.unsafe_substring(start=start + 1, end=value.length())
-      match rest.find("\"") {
-        Some(end) => Some(rest.unsafe_substring(start=0, end~))
+      let content_start = start + 1
+      match tikz_find_unescaped_quote(value, content_start) {
+        Some(end) =>
+          Some(
+            value
+            .unsafe_substring(start=content_start, end=end)
+            .replace_all(old="\\\"", new="\""),
+          )
         None => None
       }
     }
