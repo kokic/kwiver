@@ -160,6 +160,56 @@ pub fn BrowserRuntime::all_cell_ids(self : BrowserRuntime) -> Array[Int] {
 }
 
 ///|
+pub fn BrowserRuntime::all_cells(self : BrowserRuntime) -> Array[@engine.CellData] {
+  @engine.ffi_adapter_all_cells(self.adapter)
+}
+
+///|
+pub fn BrowserRuntime::dependencies_of(
+  self : BrowserRuntime,
+  cell_id : Int,
+) -> Array[Int] {
+  @engine.ffi_adapter_dependencies_of(self.adapter, cell_id)
+}
+
+///|
+pub fn BrowserRuntime::reverse_dependencies_of(
+  self : BrowserRuntime,
+  cell_id : Int,
+) -> Array[Int] {
+  @engine.ffi_adapter_reverse_dependencies_of(self.adapter, cell_id)
+}
+
+///|
+pub fn BrowserRuntime::transitive_dependencies(
+  self : BrowserRuntime,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  @engine.ffi_adapter_transitive_dependencies(
+    self.adapter,
+    roots,
+    exclude_roots~,
+  )
+}
+
+///|
+pub fn BrowserRuntime::transitive_reverse_dependencies(
+  self : BrowserRuntime,
+  roots : Array[Int],
+) -> Array[Int] {
+  @engine.ffi_adapter_transitive_reverse_dependencies(self.adapter, roots)
+}
+
+///|
+pub fn BrowserRuntime::connected_components(
+  self : BrowserRuntime,
+  roots : Array[Int],
+) -> Array[Int] {
+  @engine.ffi_adapter_connected_components(self.adapter, roots)
+}
+
+///|
 pub fn BrowserRuntime::export_payload(self : BrowserRuntime) -> String {
   @engine.ffi_adapter_export_base64(self.adapter)
 }

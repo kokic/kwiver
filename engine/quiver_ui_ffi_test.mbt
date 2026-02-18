@@ -118,6 +118,41 @@ test "ui ffi adapter import text auto supports handwritten tikz and raw payload"
 }
 
 ///|
+test "ui ffi adapter exposes dependency graph queries" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+  let higher_edge_id = ffi_adapter_add_edge(
+    adapter,
+    edge_id,
+    target_id,
+    label="alpha",
+    options=EdgeOptions::at_level(2),
+  )
+
+  inspect(ffi_adapter_dependencies_of(adapter, source_id), content="[3]")
+  inspect(ffi_adapter_dependencies_of(adapter, target_id), content="[3, 4]")
+  inspect(ffi_adapter_reverse_dependencies_of(adapter, edge_id), content="[1, 2]")
+  inspect(
+    ffi_adapter_transitive_dependencies(adapter, [source_id]),
+    content="[1, 3, 4]",
+  )
+  inspect(
+    ffi_adapter_transitive_dependencies(adapter, [edge_id], exclude_roots=true),
+    content="[4]",
+  )
+  inspect(
+    ffi_adapter_transitive_reverse_dependencies(adapter, [higher_edge_id]),
+    content="[1, 2, 3, 4]",
+  )
+  inspect(
+    ffi_adapter_connected_components(adapter, [source_id]),
+    content="[1, 2, 3, 4]",
+  )
+}
+
+///|
 test "ui ffi adapter supports incremental mutation without reload" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

@@ -311,6 +311,35 @@ test "browser runtime applies mutation batch through ffi adapter" {
 }
 
 ///|
+test "browser runtime exposes dependency graph queries" {
+  let runtime = BrowserRuntime::new()
+  let source_id = runtime.add_vertex("A", 0, 0)
+  let target_id = runtime.add_vertex("B", 1, 0)
+  let edge_id = runtime.add_edge(source_id, target_id, label="f")
+  let higher_edge_id = runtime.add_edge(
+    edge_id,
+    target_id,
+    label="alpha",
+    options=@engine.EdgeOptions::at_level(2),
+  )
+
+  inspect(runtime.all_cells().length(), content="4")
+  inspect(runtime.dependencies_of(source_id), content="[3]")
+  inspect(runtime.dependencies_of(target_id), content="[3, 4]")
+  inspect(runtime.reverse_dependencies_of(edge_id), content="[1, 2]")
+  inspect(runtime.transitive_dependencies([source_id]), content="[1, 3, 4]")
+  inspect(
+    runtime.transitive_dependencies([edge_id], exclude_roots=true),
+    content="[4]",
+  )
+  inspect(
+    runtime.transitive_reverse_dependencies([higher_edge_id]),
+    content="[1, 2, 3, 4]",
+  )
+  inspect(runtime.connected_components([source_id]), content="[1, 2, 3, 4]")
+}
+
+///|
 test "browser runtime mutation helpers reject mismatched ids" {
   let runtime = BrowserRuntime::new()
   let vertex_id = runtime.add_vertex("A", 0, 0)

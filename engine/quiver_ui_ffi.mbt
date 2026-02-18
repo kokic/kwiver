@@ -163,6 +163,34 @@ fn quiver_ui_sorted_id_remap(remap : Map[Int, Int]) -> Array[QuiverUiIdRemap] {
 }
 
 ///|
+fn quiver_ui_order_dependency_ids(
+  quiver : Quiver,
+  dependencies : @hashmap.HashMap[Int, DependencyRole],
+) -> Array[Int] {
+  let ordered : Array[Int] = []
+  for cell_id in quiver.all_cell_ids() {
+    if dependencies.contains(cell_id) {
+      ordered.push(cell_id)
+    }
+  }
+  ordered
+}
+
+///|
+fn quiver_ui_order_reverse_dependency_ids(
+  quiver : Quiver,
+  reverse_dependencies : @hashmap.HashMap[Int, Bool],
+) -> Array[Int] {
+  let ordered : Array[Int] = []
+  for cell_id in quiver.all_cell_ids() {
+    if reverse_dependencies.contains(cell_id) {
+      ordered.push(cell_id)
+    }
+  }
+  ordered
+}
+
+///|
 fn quiver_ui_looks_like_share_reference(input : String) -> Bool {
   input.contains("#q=") ||
   input.contains("?q=") ||
@@ -615,6 +643,50 @@ pub fn QuiverUiAdapter::all_cell_ids(self : QuiverUiAdapter) -> Array[Int] {
 }
 
 ///|
+pub fn QuiverUiAdapter::dependencies_of(
+  self : QuiverUiAdapter,
+  cell_id : Int,
+) -> Array[Int] {
+  quiver_ui_order_dependency_ids(self.quiver, self.quiver.dependencies_of(cell_id))
+}
+
+///|
+pub fn QuiverUiAdapter::reverse_dependencies_of(
+  self : QuiverUiAdapter,
+  cell_id : Int,
+) -> Array[Int] {
+  quiver_ui_order_reverse_dependency_ids(
+    self.quiver,
+    self.quiver.reverse_dependencies_of(cell_id),
+  )
+}
+
+///|
+pub fn QuiverUiAdapter::transitive_dependencies(
+  self : QuiverUiAdapter,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  self.quiver.transitive_dependencies(roots, exclude_roots~)
+}
+
+///|
+pub fn QuiverUiAdapter::transitive_reverse_dependencies(
+  self : QuiverUiAdapter,
+  roots : Array[Int],
+) -> Array[Int] {
+  self.quiver.transitive_reverse_dependencies(roots)
+}
+
+///|
+pub fn QuiverUiAdapter::connected_components(
+  self : QuiverUiAdapter,
+  roots : Array[Int],
+) -> Array[Int] {
+  self.quiver.connected_components(roots)
+}
+
+///|
 pub fn QuiverUiAdapter::export_base64_state(self : QuiverUiAdapter) -> String {
   self.quiver.export_base64_v0()
 }
@@ -839,6 +911,47 @@ pub fn ffi_adapter_all_cells(adapter : QuiverUiAdapter) -> Array[CellData] {
 ///|
 pub fn ffi_adapter_all_cell_ids(adapter : QuiverUiAdapter) -> Array[Int] {
   adapter.all_cell_ids()
+}
+
+///|
+pub fn ffi_adapter_dependencies_of(
+  adapter : QuiverUiAdapter,
+  cell_id : Int,
+) -> Array[Int] {
+  adapter.dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_adapter_reverse_dependencies_of(
+  adapter : QuiverUiAdapter,
+  cell_id : Int,
+) -> Array[Int] {
+  adapter.reverse_dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_adapter_transitive_dependencies(
+  adapter : QuiverUiAdapter,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  adapter.transitive_dependencies(roots, exclude_roots~)
+}
+
+///|
+pub fn ffi_adapter_transitive_reverse_dependencies(
+  adapter : QuiverUiAdapter,
+  roots : Array[Int],
+) -> Array[Int] {
+  adapter.transitive_reverse_dependencies(roots)
+}
+
+///|
+pub fn ffi_adapter_connected_components(
+  adapter : QuiverUiAdapter,
+  roots : Array[Int],
+) -> Array[Int] {
+  adapter.connected_components(roots)
 }
 
 ///|

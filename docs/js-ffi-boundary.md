@@ -39,6 +39,11 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `ffi_adapter_all_cells(adapter) -> Array[CellData]`
 - `ffi_adapter_all_cell_ids(adapter) -> Array[Int]`
+- `ffi_adapter_dependencies_of(adapter, cell_id) -> Array[Int]`
+- `ffi_adapter_reverse_dependencies_of(adapter, cell_id) -> Array[Int]`
+- `ffi_adapter_transitive_dependencies(adapter, roots, exclude_roots?) -> Array[Int]`
+- `ffi_adapter_transitive_reverse_dependencies(adapter, roots) -> Array[Int]`
+- `ffi_adapter_connected_components(adapter, roots) -> Array[Int]`
 
 ## Export Calls
 
