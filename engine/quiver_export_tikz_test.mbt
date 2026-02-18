@@ -912,6 +912,38 @@ test "tikz-cd import minimal parser supports handwritten matrix and right arrow"
 }
 
 ///|
+test "tikz-cd import prefers minimal parser for non-share comment headers" {
+  let input = [
+    "% handwritten example\n", "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = Quiver::import_tikz_cd_result(input)
+  inspect(imported.macro_url, content="None")
+  inspect(imported.renderer, content="None")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match
+    tikz_test_find_vertex_id_by_label(imported.quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match
+    tikz_test_find_vertex_id_by_label(imported.quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import minimal parser supports diagonal direction shorthand" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[dr, \"g\"] & B \\\\\n", "C & D\n", "\\end{tikzcd}",

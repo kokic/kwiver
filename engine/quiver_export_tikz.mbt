@@ -2220,6 +2220,44 @@ fn tikz_grid_key(x : Int, y : Int) -> String {
 }
 
 ///|
+fn tikz_has_wrapper_marker(input : String) -> Bool {
+  for raw_line in input.split("\n") {
+    let line = raw_line.to_string().trim().to_string()
+    if line == "" {
+      continue
+    }
+    if line.has_prefix("% ") ||
+      line.has_prefix("// ") ||
+      line.contains("<!--") ||
+      line.contains("src=") {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn tikz_is_share_reference_candidate(reference : String) -> Bool {
+  if reference == "" {
+    return false
+  }
+
+  if reference.contains("q.uiver.app") ||
+    reference.contains("#q=") ||
+    reference.contains("?q=") ||
+    reference.contains("&q=") ||
+    reference.has_prefix("q=") ||
+    reference.has_prefix("r=") ||
+    reference.has_prefix("macro_url=") ||
+    reference.has_prefix("embed") {
+    return true
+  }
+
+  let parsed : Result[Quiver, Error] = try? Quiver::import_base64_v0(reference)
+  parsed is Ok(_)
+}
+
+///|
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
@@ -2324,19 +2362,14 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
 ///|
 fn tikz_has_share_reference_hint(input : String) -> Bool {
-  for raw_line in input.split("\n") {
-    let line = raw_line.to_string().trim().to_string()
-    if line == "" {
-      continue
-    }
-    if line.has_prefix("% ") ||
-      line.has_prefix("// ") ||
-      line.contains("<!--") ||
-      line.contains("src=") {
-      return true
-    }
+  if !tikz_has_wrapper_marker(input) {
+    return false
   }
-  false
+
+  match Quiver::extract_base64_share_reference(input) {
+    Some(reference) => tikz_is_share_reference_candidate(reference)
+    None => false
+  }
 }
 
 ///|
