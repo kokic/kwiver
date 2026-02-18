@@ -1997,6 +1997,149 @@ fn tikz_parse_level_option_value(value : String) -> Int? {
 }
 
 ///|
+fn tikz_parse_signed_double(value : String) -> Double? {
+  let text = value.trim().to_string()
+  if text == "" {
+    return None
+  }
+
+  let mut index = 0
+  let mut sign = 1.0
+  if text.unsafe_get(0) == '-' {
+    sign = -1.0
+    index = 1
+  } else if text.unsafe_get(0) == '+' {
+    index = 1
+  }
+  if index >= text.length() {
+    return None
+  }
+
+  let mut seen_digit = false
+  let mut seen_dot = false
+  let mut int_part = 0
+  let mut frac_part = 0
+  let mut frac_scale = 1
+  while index < text.length() {
+    let ch = text.unsafe_get(index)
+    if ch == '.' {
+      if seen_dot {
+        return None
+      }
+      seen_dot = true
+      index = index + 1
+      continue
+    }
+
+    if ch < '0' || ch > '9' {
+      return None
+    }
+    seen_digit = true
+    let digit = (ch - '0').to_int()
+    if !seen_dot {
+      int_part = int_part * 10 + digit
+    } else {
+      frac_part = frac_part * 10 + digit
+      frac_scale = frac_scale * 10
+    }
+    index = index + 1
+  }
+
+  if !seen_digit {
+    return None
+  }
+
+  Some(
+    sign * (int_part.to_double() + frac_part.to_double() / frac_scale.to_double()),
+  )
+}
+
+///|
+fn tikz_parse_shift_magnitude(value : String) -> Int? {
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+  tikz_parse_positive_int(text)
+}
+
+///|
+fn tikz_take_braced_group(input : String) -> (String, String)? {
+  let text = input.trim().to_string()
+  if !text.has_prefix("{") {
+    return None
+  }
+
+  let mut depth = 0
+  let mut i = 0
+  while i < text.length() {
+    let ch = text.unsafe_get(i)
+    if ch == '{' {
+      depth = depth + 1
+    } else if ch == '}' {
+      depth = depth - 1
+      if depth == 0 {
+        let inner = text.unsafe_substring(start=1, end=i)
+        let rest = text.unsafe_substring(start=i + 1, end=text.length())
+        return Some((inner, rest))
+      }
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn tikz_parse_between_option(value : String) -> (Int, Int)? {
+  match tikz_take_braced_group(value) {
+    Some((source_text, rest)) =>
+      match tikz_take_braced_group(rest) {
+        Some((target_text, _)) =>
+          match
+            (
+              tikz_parse_label_pos_percent(source_text),
+              tikz_parse_label_pos_percent(target_text),
+            ) {
+            (Some(source), Some(target_end)) =>
+              if source >= 0 && source <= 100 && target_end >= 0 &&
+                target_end <= 100 {
+                Some((source, 100 - target_end))
+              } else {
+                None
+              }
+            _ => None
+          }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn tikz_parse_curve_height_option(value : String) -> Int? {
+  let text = value.trim().to_string()
+  let inner = if text.has_prefix("{") && text.has_suffix("}") {
+    text.unsafe_substring(start=1, end=text.length() - 1).trim().to_string()
+  } else {
+    text
+  }
+
+  let compact = inner.replace_all(old=" ", new="")
+  if !compact.has_prefix("height=") {
+    return None
+  }
+  let mut height_text = compact.unsafe_substring(start=7, end=compact.length())
+  if height_text.has_suffix("pt") {
+    height_text = height_text.unsafe_substring(
+      start=0,
+      end=height_text.length() - 2,
+    )
+  }
+
+  match tikz_parse_signed_double(height_text) {
+    Some(height_pt) => Some(tikz_round_to_int(height_pt / 6.0))
+    None => None
+  }
+}
+
+///|
 fn tikz_parse_label_pos_percent(value : String) -> Int? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2086,6 +2229,8 @@ fn tikz_apply_arrow_flag_option(
     "hook'" => options.with_style_tail("hook", side="bottom")
     "harpoon" => options.with_style_head("harpoon", side="top")
     "harpoon'" => options.with_style_head("harpoon", side="bottom")
+    "shift right" => options.with_offset(1)
+    "shift left" => options.with_offset(-1)
     "two heads" => options.with_style_head("epi")
     "Rightarrow" =>
       if options.level < 2 {
@@ -2105,6 +2250,7 @@ fn tikz_apply_arrow_key_value_option(
   value : String,
 ) -> EdgeOptions {
   let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+  let value_raw = value.trim().to_string()
   let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
   if key_token == "draw" && value_token == "none" {
     return tikz_apply_empty_arrow_style(options)
@@ -2113,6 +2259,34 @@ fn tikz_apply_arrow_key_value_option(
   if key_token == "scaling nfold" {
     match tikz_parse_level_option_value(value_token) {
       Some(level) => if level >= 2 { return options.with_level(level) }
+      None => ()
+    }
+  }
+
+  if key_token == "shift right" {
+    match tikz_parse_shift_magnitude(value_raw) {
+      Some(magnitude) => return options.with_offset(magnitude)
+      None => ()
+    }
+  }
+
+  if key_token == "shift left" {
+    match tikz_parse_shift_magnitude(value_raw) {
+      Some(magnitude) => return options.with_offset(-magnitude)
+      None => ()
+    }
+  }
+
+  if key_token == "curve" {
+    match tikz_parse_curve_height_option(value_raw) {
+      Some(curve) => return options.with_curve(curve)
+      None => ()
+    }
+  }
+
+  if key_token == "between" {
+    match tikz_parse_between_option(value_raw) {
+      Some((source, target)) => return options.with_shorten(source, target)
       None => ()
     }
   }

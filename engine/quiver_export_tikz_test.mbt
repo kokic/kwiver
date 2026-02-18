@@ -1191,6 +1191,31 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
 }
 
 ///|
+test "tikz-cd import parser maps geometry shift curve and between options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"m\", shift right=2, curve={height=-6pt}, between={0.1}{0.8}] & B \\\\\n",
+    "C \\arrow[r, \"n\", shift left] & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "m") {
+    Some(edge) => {
+      inspect(edge.options.offset, content="2")
+      inspect(edge.options.curve, content="-1")
+      inspect(edge.options.shorten.source, content="10")
+      inspect(edge.options.shorten.target, content="20")
+    }
+    None => abort("expected edge m")
+  }
+  match tikz_test_find_edge_by_label(quiver, "n") {
+    Some(edge) => inspect(edge.options.offset, content="-1")
+    None => abort("expected edge n")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps commas inside quoted labels" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",
