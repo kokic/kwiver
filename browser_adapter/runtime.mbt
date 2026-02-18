@@ -565,3 +565,114 @@ pub fn BrowserRuntime::paste_selection_json(
   self.paste_selection(payload, origin_x, origin_y, start_id~).to_json_string()
 }
 
+///|
+pub fn ffi_browser_runtime_new() -> BrowserRuntime {
+  BrowserRuntime::new()
+}
+
+///|
+pub fn ffi_browser_runtime_reset(runtime : BrowserRuntime) -> Unit {
+  runtime.reset()
+}
+
+///|
+pub fn ffi_browser_runtime_set_selection(
+  runtime : BrowserRuntime,
+  selected_ids : Array[Int],
+) -> Unit {
+  runtime.set_selection(selected_ids)
+}
+
+///|
+pub fn ffi_browser_runtime_selection(runtime : BrowserRuntime) -> Array[Int] {
+  runtime.selection()
+}
+
+///|
+pub fn ffi_browser_runtime_add_vertex_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.add_vertex_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_add_edge_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.add_edge_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_remove_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.remove_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_flush_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.flush_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_apply_mutation_batch_json(
+  runtime : BrowserRuntime,
+  batch_json : String,
+) -> String raise {
+  runtime.apply_mutation_batch_json(batch_json)
+}
+
+///|
+pub fn ffi_browser_runtime_export_payload(runtime : BrowserRuntime) -> String {
+  runtime.export_payload()
+}
+
+///|
+pub fn ffi_browser_runtime_export_selection(
+  runtime : BrowserRuntime,
+  include_dependencies? : Bool = true,
+) -> String {
+  runtime.export_selection(include_dependencies~)
+}
+
+///|
+pub fn ffi_browser_runtime_snapshot_json(runtime : BrowserRuntime) -> String {
+  runtime.snapshot_json()
+}
+
+///|
+pub fn ffi_browser_runtime_render_tikz_json(
+  runtime : BrowserRuntime,
+  settings? : @engine.TikzCdExportSettings = @engine.TikzCdExportSettings::default(),
+  options? : @engine.TikzCdExportOptions = @engine.TikzCdExportOptions::default(),
+  definitions? : @engine.TikzCdExportDefinitions = @engine.TikzCdExportDefinitions::default(),
+) -> String {
+  runtime.render_tikz_json(settings~, options~, definitions~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_text_auto_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_text_auto_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_paste_selection_json(
+  runtime : BrowserRuntime,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> String raise {
+  runtime.paste_selection_json(payload, origin_x, origin_y, start_id~)
+}
+

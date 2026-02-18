@@ -630,3 +630,96 @@ test "browser runtime snapshot_json exposes plain json for js ui" {
   inspect(snapshot_json.contains("\"dependencies\":"), content="true")
 }
 
+///|
+test "browser runtime ffi wrappers expose js entrypoint surface" {
+  let runtime = ffi_browser_runtime_new()
+
+  let add_a_json = ffi_browser_runtime_add_vertex_json(
+    runtime,
+    "{\"label\":\"A\",\"x\":0,\"y\":0}",
+  )
+  inspect(add_a_json.contains("\"id\":1"), content="true")
+
+  let add_b_json = ffi_browser_runtime_add_vertex_json(
+    runtime,
+    "{\"label\":\"B\",\"x\":1,\"y\":0}",
+  )
+  inspect(add_b_json.contains("\"id\":2"), content="true")
+
+  let add_edge_json = ffi_browser_runtime_add_edge_json(
+    runtime,
+    "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
+  )
+  inspect(add_edge_json.contains("\"id\":3"), content="true")
+
+  ffi_browser_runtime_set_selection(runtime, [3])
+  inspect(ffi_browser_runtime_selection(runtime), content="[3]")
+
+  let selection_payload = ffi_browser_runtime_export_selection(runtime)
+  inspect(selection_payload != "", content="true")
+
+  let snapshot_json = ffi_browser_runtime_snapshot_json(runtime)
+  inspect(snapshot_json.contains("\"cell_ids\":[1,2,3]"), content="true")
+
+  let tikz_json = ffi_browser_runtime_render_tikz_json(runtime)
+  inspect(tikz_json.contains("\"data\":\""), content="true")
+  inspect(tikz_json.contains("\"metadata\":"), content="true")
+
+  let imported_json = ffi_browser_runtime_import_text_auto_json(
+    runtime,
+    "\\begin{tikzcd}\nX \\arrow[r, \"g\"] & Y\n\\end{tikzcd}",
+  )
+  inspect(imported_json.contains("\"payload\":\""), content="true")
+  inspect(imported_json.contains("\"embed\":false"), content="true")
+  inspect(ffi_browser_runtime_selection(runtime), content="[]")
+
+  let source = ffi_browser_runtime_new()
+  ignore(
+    ffi_browser_runtime_add_vertex_json(
+      source,
+      "{\"label\":\"L\",\"x\":2,\"y\":3}",
+    ),
+  )
+  ignore(
+    ffi_browser_runtime_add_vertex_json(
+      source,
+      "{\"label\":\"R\",\"x\":4,\"y\":3}",
+    ),
+  )
+  ignore(
+    ffi_browser_runtime_add_edge_json(
+      source,
+      "{\"source_id\":1,\"target_id\":2,\"label\":\"h\"}",
+    ),
+  )
+  ffi_browser_runtime_set_selection(source, [3])
+
+  let pasted_json = ffi_browser_runtime_paste_selection_json(
+    runtime,
+    ffi_browser_runtime_export_selection(source),
+    10,
+    20,
+    start_id=1,
+  )
+  inspect(pasted_json.contains("\"imported_ids\":"), content="true")
+
+  let batch_json = ffi_browser_runtime_apply_mutation_batch_json(
+    runtime,
+    "{\"labels\":[{\"cell_id\":1,\"label\":\"X2\"}]}",
+  )
+  inspect(batch_json.contains("\"label_results\":[true]"), content="true")
+
+  let remove_json = ffi_browser_runtime_remove_json(
+    runtime,
+    "{\"cell_id\":1,\"when\":9}",
+  )
+  inspect(remove_json.contains("\"removed_ids\":"), content="true")
+
+  let flush_json = ffi_browser_runtime_flush_json(runtime, "{\"when\":9}")
+  inspect(flush_json.contains("\"payload\":\""), content="true")
+
+  inspect(ffi_browser_runtime_export_payload(runtime) != "", content="true")
+  ffi_browser_runtime_reset(runtime)
+  inspect(ffi_browser_runtime_selection(runtime), content="[]")
+}
+

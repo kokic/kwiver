@@ -87,3 +87,15 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `ffi_adapter_snapshot_json` serializes the same snapshot shape into plain JSON for JS consumers that avoid MoonBit runtime data shapes.
 - `id_remap` is sorted by `old_id` to keep deterministic JS-side patch application.
 - Batch apply order is fixed: `labels -> label_colours -> vertex_positions -> edge_options -> edge_connections`.
+
+## Browser Runtime JS Exports
+
+`browser_adapter/moon.pkg` now exports a thin runtime entrypoint layer for JS:
+
+- lifecycle/selection: `ffi_browser_runtime_new`, `ffi_browser_runtime_reset`, `ffi_browser_runtime_set_selection`, `ffi_browser_runtime_selection`
+- add/remove/flush: `ffi_browser_runtime_add_vertex_json`, `ffi_browser_runtime_add_edge_json`, `ffi_browser_runtime_remove_json`, `ffi_browser_runtime_flush_json`
+- batch update: `ffi_browser_runtime_apply_mutation_batch_json`
+- import/export/render: `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_export_payload`, `ffi_browser_runtime_export_selection`, `ffi_browser_runtime_render_tikz_json`
+- snapshot/paste: `ffi_browser_runtime_snapshot_json`, `ffi_browser_runtime_paste_selection_json`
+
+This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.
