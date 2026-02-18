@@ -293,6 +293,15 @@ pub fn BrowserRuntime::import_share_url(
 }
 
 ///|
+pub fn BrowserRuntime::import_share_url_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_share_url(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn BrowserRuntime::import_share_text(
   self : BrowserRuntime,
   input : String,
@@ -305,6 +314,15 @@ pub fn BrowserRuntime::import_share_text(
   )
   self.selected_ids = []
   imported
+}
+
+///|
+pub fn BrowserRuntime::import_share_text_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_share_text(input, default_renderer~).to_json_string()
 }
 
 ///|
@@ -323,6 +341,15 @@ pub fn BrowserRuntime::import_text_auto(
 }
 
 ///|
+pub fn BrowserRuntime::import_text_auto_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_text_auto(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn BrowserRuntime::import_tikz_cd(
   self : BrowserRuntime,
   input : String,
@@ -335,6 +362,15 @@ pub fn BrowserRuntime::import_tikz_cd(
   )
   self.selected_ids = []
   imported
+}
+
+///|
+pub fn BrowserRuntime::import_tikz_cd_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_tikz_cd(input, default_renderer~).to_json_string()
 }
 
 ///|
@@ -353,6 +389,15 @@ pub fn BrowserRuntime::import_fletcher(
 }
 
 ///|
+pub fn BrowserRuntime::import_fletcher_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_fletcher(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn BrowserRuntime::import_html_embed(
   self : BrowserRuntime,
   input : String,
@@ -365,6 +410,15 @@ pub fn BrowserRuntime::import_html_embed(
   )
   self.selected_ids = []
   imported
+}
+
+///|
+pub fn BrowserRuntime::import_html_embed_json(
+  self : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_html_embed(input, default_renderer~).to_json_string()
 }
 
 ///|
@@ -384,5 +438,16 @@ pub fn BrowserRuntime::paste_selection(
   )
   self.selected_ids = imported.imported_ids.copy()
   imported
+}
+
+///|
+pub fn BrowserRuntime::paste_selection_json(
+  self : BrowserRuntime,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> String raise {
+  self.paste_selection(payload, origin_x, origin_y, start_id~).to_json_string()
 }
 

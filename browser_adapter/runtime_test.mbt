@@ -125,6 +125,34 @@ test "browser runtime import text auto supports handwritten tikz and raw payload
 }
 
 ///|
+test "browser runtime json import and paste wrappers support js consumers" {
+  let source = BrowserRuntime::new()
+  let left_id = source.add_vertex("L", 2, 3)
+  let right_id = source.add_vertex("R", 4, 3)
+  let edge_id = source.add_edge(left_id, right_id, label="h")
+  source.set_selection([edge_id])
+  let selection_payload = source.export_selection()
+
+  let target = BrowserRuntime::new()
+  let import_json = target.import_text_auto_json(source.render_tikz())
+  inspect(import_json.contains("\"payload\":\""), content="true")
+  inspect(import_json.contains("\"embed\":false"), content="true")
+  inspect(import_json.contains("\"renderer\":null"), content="true")
+  inspect(target.all_cell_ids(), content="[1, 2, 3]")
+  inspect(target.selection(), content="[]")
+
+  let pasted_json = target.paste_selection_json(
+    selection_payload,
+    10,
+    20,
+    start_id=1,
+  )
+  inspect(pasted_json.contains("\"imported_ids\":"), content="true")
+  inspect(pasted_json.contains("\"id_remap\":"), content="true")
+  inspect(target.selection().length(), content="3")
+}
+
+///|
 test "browser runtime fletcher import/export roundtrips with metadata" {
   let source = BrowserRuntime::new()
   let source_id = source.add_vertex("A", 0, 0)

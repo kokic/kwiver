@@ -127,6 +127,48 @@ test "ui ffi adapter import text auto supports handwritten tikz and raw payload"
 }
 
 ///|
+test "ui ffi adapter import and paste json wrappers expose plain contracts" {
+  let source = ffi_adapter_new()
+  let left_id = ffi_adapter_add_vertex(source, "L", 2, 3)
+  let right_id = ffi_adapter_add_vertex(source, "R", 4, 3)
+  let edge_id = ffi_adapter_add_edge(source, left_id, right_id, label="g")
+  let selection_payload = ffi_adapter_export_base64_selection(source, [edge_id])
+
+  let target = ffi_adapter_new()
+  let tikz = ffi_adapter_export_tikz_cd(source).data
+  let imported_json = ffi_adapter_import_text_auto_json(target, tikz)
+  let imported : Map[String, Json] = @json.from_json(@json.parse(imported_json))
+  let imported_payload : String = @json.from_json(test_json_get(imported, "payload"))
+  let imported_embed : Bool = @json.from_json(test_json_get(imported, "embed"))
+  inspect(imported_payload == ffi_adapter_export_base64(target), content="true")
+  inspect(imported_embed, content="false")
+  inspect(test_json_get(imported, "renderer") is Json::Null, content="true")
+  inspect(test_json_get(imported, "macro_url") is Json::Null, content="true")
+  inspect(ffi_adapter_all_cell_ids(target), content="[1, 2, 3]")
+
+  let target_paste = ffi_adapter_new()
+  ignore(ffi_adapter_add_vertex(target_paste, "Existing", 0, 0))
+  let pasted_json = ffi_adapter_paste_base64_selection_json(
+    target_paste,
+    selection_payload,
+    10,
+    20,
+    start_id=1,
+  )
+  let pasted : Map[String, Json] = @json.from_json(@json.parse(pasted_json))
+  let pasted_payload : String = @json.from_json(test_json_get(pasted, "payload"))
+  let imported_ids : Array[Int] = @json.from_json(test_json_get(pasted, "imported_ids"))
+  let remap : Array[Map[String, Json]] = @json.from_json(test_json_get(pasted, "id_remap"))
+  inspect(imported_ids, content="[2, 3, 4]")
+  inspect(remap.length(), content="3")
+  let remap0_old : Int = @json.from_json(test_json_get(remap[0], "old_id"))
+  let remap0_new : Int = @json.from_json(test_json_get(remap[0], "new_id"))
+  inspect(remap0_old, content="1")
+  inspect(remap0_new, content="2")
+  inspect(pasted_payload == ffi_adapter_export_base64(target_paste), content="true")
+}
+
+///|
 test "ui ffi adapter exposes dependency graph queries" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

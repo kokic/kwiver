@@ -14,12 +14,19 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `ffi_adapter_import_base64(adapter, payload) -> String`
 - `ffi_adapter_import_share_url(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_share_url_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_import_share_text(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_share_text_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_import_text_auto(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_text_auto_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_import_tikz_cd(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_tikz_cd_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_import_fletcher(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_fletcher_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_import_html_embed(adapter, input, default_renderer?) -> QuiverUiImportResult`
+- `ffi_adapter_import_html_embed_json(adapter, input, default_renderer?) -> String`
 - `ffi_adapter_paste_base64_selection(adapter, payload, origin_x, origin_y, start_id?) -> QuiverUiSelectionImportResult`
+- `ffi_adapter_paste_base64_selection_json(adapter, payload, origin_x, origin_y, start_id?) -> String`
 
 ## Update Calls
 
@@ -60,6 +67,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `QuiverUiImportResult` returns `{ payload, macro_url, renderer, embed }`.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
+- `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `ffi_adapter_apply_mutation_batch_json` accepts the same batch shape as `QuiverUiMutationBatch` in JSON and returns JSON-serialized `QuiverUiMutationBatchResult`.
 - `QuiverUiSnapshot` returns canonical `payload`, ordered `cell_ids`, flattened `vertices`, flattened `edges` (with stringified option enums), and per-cell dependency adjacency.

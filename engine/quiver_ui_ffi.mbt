@@ -488,6 +488,48 @@ fn quiver_ui_snapshot_json(snapshot : QuiverUiSnapshot) -> Json {
 }
 
 ///|
+fn quiver_ui_option_string_json(value : String?) -> Json {
+  match value {
+    Some(text) => Json::string(text)
+    None => Json::null()
+  }
+}
+
+///|
+fn quiver_ui_id_remap_json(data : QuiverUiIdRemap) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("old_id", Json::number(data.old_id.to_double()))
+  out.set("new_id", Json::number(data.new_id.to_double()))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_import_result_json(result : QuiverUiImportResult) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("payload", Json::string(result.payload))
+  out.set("macro_url", quiver_ui_option_string_json(result.macro_url))
+  out.set("renderer", quiver_ui_option_string_json(result.renderer))
+  out.set("embed", Json::boolean(result.embed))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_selection_import_result_json(
+  result : QuiverUiSelectionImportResult,
+) -> Json {
+  let remap : Array[Json] = []
+  for entry in result.id_remap {
+    remap.push(quiver_ui_id_remap_json(entry))
+  }
+
+  let out : Map[String, Json] = Map::new()
+  out.set("payload", Json::string(result.payload))
+  out.set("imported_ids", quiver_ui_int_array_json(result.imported_ids))
+  out.set("id_remap", Json::array(remap))
+  Json::object(out)
+}
+
+///|
 fn quiver_ui_bool_array_json(values : Array[Bool]) -> Json {
   let out : Array[Json] = []
   for value in values {
@@ -916,6 +958,65 @@ pub fn QuiverUiAdapter::import_html_embed(
 }
 
 ///|
+pub fn QuiverUiImportResult::to_json_string(self : QuiverUiImportResult) -> String {
+  quiver_ui_import_result_json(self).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::import_share_url_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_share_url(input, default_renderer~).to_json_string()
+}
+
+///|
+pub fn QuiverUiAdapter::import_share_text_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_share_text(input, default_renderer~).to_json_string()
+}
+
+///|
+pub fn QuiverUiAdapter::import_text_auto_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_text_auto(input, default_renderer~).to_json_string()
+}
+
+///|
+pub fn QuiverUiAdapter::import_tikz_cd_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_tikz_cd(input, default_renderer~).to_json_string()
+}
+
+///|
+pub fn QuiverUiAdapter::import_fletcher_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_fletcher(input, default_renderer~).to_json_string()
+}
+
+///|
+pub fn QuiverUiAdapter::import_html_embed_json(
+  self : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  self.import_html_embed(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn QuiverUiAdapter::paste_base64_selection(
   self : QuiverUiAdapter,
   payload : String,
@@ -934,6 +1035,24 @@ pub fn QuiverUiAdapter::paste_base64_selection(
     imported_ids: imported.imported_ids,
     id_remap: quiver_ui_sorted_id_remap(imported.id_remap),
   }
+}
+
+///|
+pub fn QuiverUiSelectionImportResult::to_json_string(
+  self : QuiverUiSelectionImportResult,
+) -> String {
+  quiver_ui_selection_import_result_json(self).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::paste_base64_selection_json(
+  self : QuiverUiAdapter,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> String raise {
+  self.paste_base64_selection(payload, origin_x, origin_y, start_id~).to_json_string()
 }
 
 ///|
@@ -1388,12 +1507,30 @@ pub fn ffi_adapter_import_share_url(
 }
 
 ///|
+pub fn ffi_adapter_import_share_url_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_share_url_json(input, default_renderer~)
+}
+
+///|
 pub fn ffi_adapter_import_share_text(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
   adapter.import_share_text(input, default_renderer~)
+}
+
+///|
+pub fn ffi_adapter_import_share_text_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_share_text_json(input, default_renderer~)
 }
 
 ///|
@@ -1406,12 +1543,30 @@ pub fn ffi_adapter_import_text_auto(
 }
 
 ///|
+pub fn ffi_adapter_import_text_auto_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_text_auto_json(input, default_renderer~)
+}
+
+///|
 pub fn ffi_adapter_import_tikz_cd(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
   adapter.import_tikz_cd(input, default_renderer~)
+}
+
+///|
+pub fn ffi_adapter_import_tikz_cd_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_tikz_cd_json(input, default_renderer~)
 }
 
 ///|
@@ -1424,12 +1579,30 @@ pub fn ffi_adapter_import_fletcher(
 }
 
 ///|
+pub fn ffi_adapter_import_fletcher_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_fletcher_json(input, default_renderer~)
+}
+
+///|
 pub fn ffi_adapter_import_html_embed(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
 ) -> QuiverUiImportResult raise {
   adapter.import_html_embed(input, default_renderer~)
+}
+
+///|
+pub fn ffi_adapter_import_html_embed_json(
+  adapter : QuiverUiAdapter,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  adapter.import_html_embed_json(input, default_renderer~)
 }
 
 ///|
@@ -1441,6 +1614,17 @@ pub fn ffi_adapter_paste_base64_selection(
   start_id? : Int = 1,
 ) -> QuiverUiSelectionImportResult raise {
   adapter.paste_base64_selection(payload, origin_x, origin_y, start_id~)
+}
+
+///|
+pub fn ffi_adapter_paste_base64_selection_json(
+  adapter : QuiverUiAdapter,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> String raise {
+  adapter.paste_base64_selection_json(payload, origin_x, origin_y, start_id~)
 }
 
 ///|
