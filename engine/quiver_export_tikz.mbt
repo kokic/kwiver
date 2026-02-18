@@ -3677,73 +3677,94 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   }
 
   let named_cell_ids : Map[String, Int] = Map::new()
-  for pending in pending_arrows {
-    let source_id = match
-      tikz_resolve_pending_endpoint_id(
-        pending.source_x,
-        pending.source_y,
-        pending.source_ref,
-        pending.default_source_x,
-        pending.default_source_y,
-        true,
-        vertex_by_key,
-        named_cell_ids,
-      ) {
-      Some(value) => value
-      None => continue
-    }
-    let target_id = match
-      tikz_resolve_pending_endpoint_id(
-        pending.target_x,
-        pending.target_y,
-        pending.target_ref,
-        pending.default_source_x,
-        pending.default_source_y,
-        false,
-        vertex_by_key,
-        named_cell_ids,
-      ) {
-      Some(value) => value
-      None => continue
-    }
+  let mut pending_round = pending_arrows.copy()
+  let mut made_progress = true
+  while pending_round.length() > 0 && made_progress {
+    made_progress = false
+    let next_round : Array[TikzPendingArrow] = []
+    for pending in pending_round {
+      let source_id = match
+        tikz_resolve_pending_endpoint_id(
+          pending.source_x,
+          pending.source_y,
+          pending.source_ref,
+          pending.default_source_x,
+          pending.default_source_y,
+          true,
+          vertex_by_key,
+          named_cell_ids,
+        ) {
+        Some(value) => value
+        None => {
+          next_round.push(pending)
+          continue
+        }
+      }
+      let target_id = match
+        tikz_resolve_pending_endpoint_id(
+          pending.target_x,
+          pending.target_y,
+          pending.target_ref,
+          pending.default_source_x,
+          pending.default_source_y,
+          false,
+          vertex_by_key,
+          named_cell_ids,
+        ) {
+        Some(value) => value
+        None => {
+          next_round.push(pending)
+          continue
+        }
+      }
 
-    if pending.is_phantom {
+      if pending.is_phantom {
+        let mut resolved = true
+        match pending.name {
+          Some(reference_name) =>
+            match
+              tikz_find_phantom_anchor_edge_id(
+                quiver,
+                source_id,
+                target_id,
+                pending.options,
+              ) {
+              Some(edge_id) => {
+                named_cell_ids.set(reference_name, edge_id)
+                made_progress = true
+              }
+              None => resolved = false
+            }
+          None => made_progress = true
+        }
+        if !resolved {
+          next_round.push(pending)
+        }
+        continue
+      }
+
+      let edge_id = next_id
+      next_id = next_id + 1
+      quiver.add(
+        CellData::from_edge(
+          Edge::new(
+            edge_id,
+            pending.label,
+            source_id,
+            target_id,
+            pending.options,
+            pending.label_colour,
+          ),
+        ),
+      )
+      quiver.connect(source_id, target_id, edge_id)
       match pending.name {
-        Some(reference_name) =>
-          match
-            tikz_find_phantom_anchor_edge_id(
-              quiver,
-              source_id,
-              target_id,
-              pending.options,
-            ) {
-            Some(edge_id) => named_cell_ids.set(reference_name, edge_id)
-            None => ()
-          }
+        Some(reference_name) => named_cell_ids.set(reference_name, edge_id)
         None => ()
       }
-      continue
+      made_progress = true
     }
-
-    let edge_id = next_id
-    next_id = next_id + 1
-    quiver.add(
-      CellData::from_edge(
-        Edge::new(
-          edge_id,
-          pending.label,
-          source_id,
-          target_id,
-          pending.options,
-          pending.label_colour,
-        ),
-      ),
-    )
-    quiver.connect(source_id, target_id, edge_id)
-    match pending.name {
-      Some(reference_name) => named_cell_ids.set(reference_name, edge_id)
-      None => ()
-    }
+    pending_round = next_round
   }
 
   quiver

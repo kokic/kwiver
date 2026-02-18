@@ -1202,6 +1202,76 @@ test "tikz-cd import parser maps phantom named anchors to referenced edges" {
 }
 
 ///|
+test "tikz-cd import parser resolves forward named edge references" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A & B\n",
+    "\\arrow[from=0, to=1-2, \"alpha\"]\n",
+    "\\arrow[\"\"{name=0, anchor=center, inner sep=0}, from=1-1, to=1-2, \"f\"]\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
+
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  let base_edge_id = match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => edge.cell.id
+    None => abort("expected edge f")
+  }
+  match tikz_test_find_edge_by_label(quiver, "alpha") {
+    Some(edge) => {
+      inspect(edge.source == base_edge_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge alpha")
+  }
+}
+
+///|
+test "tikz-cd import parser resolves forward phantom named anchors" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A & B\n",
+    "\\arrow[from=0p, to=1-2, \"beta\"]\n",
+    "\\arrow[\"\"{name=0, anchor=center, inner sep=0}, from=1-1, to=1-2, \"f\"]\n",
+    "\\arrow[\"\"{name=0p, anchor=center, inner sep=0}, phantom, from=1-1, to=1-2, start anchor=center, end anchor=center]\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
+
+  let mut edge_count = 0
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(_) => edge_count = edge_count + 1
+      _ => ()
+    }
+  }
+  inspect(edge_count, content="2")
+
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  let base_edge_id = match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => edge.cell.id
+    None => abort("expected edge f")
+  }
+  match tikz_test_find_edge_by_label(quiver, "beta") {
+    Some(edge) => {
+      inspect(edge.source == base_edge_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge beta")
+  }
+}
+
+///|
 test "tikz-cd import parser ignores phantom helper arrows" {
   let input = [
     "\\begin{tikzcd}\n",
