@@ -1633,21 +1633,30 @@ priv struct TikzParsedArrow {
   direction : String?
   is_loop : Bool
   is_phantom : Bool
+  name : String?
   label : String
   from_x : Int?
   from_y : Int?
+  from_ref : String?
   to_x : Int?
   to_y : Int?
+  to_ref : String?
   options : EdgeOptions
   label_colour : Colour
 }
 
 ///|
 priv struct TikzPendingArrow {
-  source_x : Int
-  source_y : Int
-  target_x : Int
-  target_y : Int
+  default_source_x : Int
+  default_source_y : Int
+  source_x : Int?
+  source_y : Int?
+  source_ref : String?
+  target_x : Int?
+  target_y : Int?
+  target_ref : String?
+  is_phantom : Bool
+  name : String?
   label : String
   options : EdgeOptions
   label_colour : Colour
@@ -1950,6 +1959,18 @@ fn tikz_parse_grid_reference(value : String) -> (Int, Int)? {
       }
     }
     None => None
+  }
+}
+
+///|
+fn tikz_parse_reference_name(value : String) -> String? {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if token == "" {
+    None
+  } else {
+    Some(token)
   }
 }
 
@@ -3193,9 +3214,12 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut label = ""
             let mut from_x : Int? = None
             let mut from_y : Int? = None
+            let mut from_ref : String? = None
             let mut to_x : Int? = None
             let mut to_y : Int? = None
+            let mut to_ref : String? = None
             let mut is_phantom = false
+            let mut name : String? = None
             let mut parsed_options = EdgeOptions::at_level(1)
             let mut parsed_label_options = tikz_label_options_default()
             let mut parsed_label_colour = Colour::black()
@@ -3254,7 +3278,11 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                         from_x = Some(x)
                         from_y = Some(y)
                       }
-                      None => ()
+                      None =>
+                        match tikz_parse_reference_name(value) {
+                          Some(reference_name) => from_ref = Some(reference_name)
+                          None => ()
+                        }
                     }
                   } else if key == "to" {
                     match tikz_parse_grid_reference(value) {
@@ -3262,12 +3290,22 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                         to_x = Some(x)
                         to_y = Some(y)
                       }
-                      None => ()
+                      None =>
+                        match tikz_parse_reference_name(value) {
+                          Some(reference_name) => to_ref = Some(reference_name)
+                          None => ()
+                        }
                     }
                   } else {
                     let key_token = tikz_strip_math_wrapper(
                       tikz_unwrap_braced_text(key),
                     )
+                    if key_token == "name" {
+                      match tikz_parse_reference_name(value) {
+                        Some(reference_name) => name = Some(reference_name)
+                        None => ()
+                      }
+                    }
                     if key_token == "draw" || key_token == "color" {
                       match tikz_parse_colour_option(value) {
                         Some(colour) => {
@@ -3333,12 +3371,22 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
               for suffix_option in tikz_label_suffix_options(option) {
                 match tikz_option_key_value(suffix_option) {
-                  Some((key, value)) =>
+                  Some((key, value)) => {
+                    let key_token = tikz_strip_math_wrapper(
+                      tikz_unwrap_braced_text(key),
+                    )
+                    if key_token == "name" {
+                      match tikz_parse_reference_name(value) {
+                        Some(reference_name) => name = Some(reference_name)
+                        None => ()
+                      }
+                    }
                     parsed_label_options = tikz_apply_label_key_value_option(
                       parsed_label_options,
                       key,
                       value,
                     )
+                  }
                   None =>
                     parsed_label_options = tikz_apply_label_flag_option(
                       parsed_label_options,
@@ -3365,11 +3413,14 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               direction,
               is_loop: parsed_loop_options.is_loop,
               is_phantom,
+              name,
               label,
               from_x,
               from_y,
+              from_ref,
               to_x,
               to_y,
+              to_ref,
               options: parsed_options,
               label_colour,
             })
@@ -3409,6 +3460,78 @@ fn tikz_direction_delta(direction : String) -> (Int, Int) {
 ///|
 fn tikz_grid_key(x : Int, y : Int) -> String {
   ["x=", x.to_string(), ",y=", y.to_string()].join("")
+}
+
+///|
+fn tikz_resolve_pending_endpoint_id(
+  grid_x : Int?,
+  grid_y : Int?,
+  reference_name : String?,
+  default_x : Int,
+  default_y : Int,
+  use_default : Bool,
+  vertex_by_key : Map[String, Int],
+  named_cell_ids : Map[String, Int],
+) -> Int? {
+  match reference_name {
+    Some(name) =>
+      match named_cell_ids.get(name) {
+        Some(id) => Some(id)
+        None =>
+          match tikz_parse_grid_reference(name) {
+            Some((x, y)) => vertex_by_key.get(tikz_grid_key(x, y))
+            None => None
+          }
+      }
+    None => {
+      let resolved_grid = match (grid_x, grid_y) {
+        (Some(x), Some(y)) => Some((x, y))
+        _ =>
+          if use_default {
+            Some((default_x, default_y))
+          } else {
+            None
+          }
+      }
+      match resolved_grid {
+        Some((x, y)) => vertex_by_key.get(tikz_grid_key(x, y))
+        None => None
+      }
+    }
+  }
+}
+
+///|
+fn tikz_edge_matches_phantom_anchor(
+  edge : Edge,
+  source_id : Int,
+  target_id : Int,
+  options : EdgeOptions,
+) -> Bool {
+  edge.source == source_id &&
+  edge.target == target_id &&
+  edge.options.offset == options.offset &&
+  edge.options.curve == options.curve
+}
+
+///|
+fn tikz_find_phantom_anchor_edge_id(
+  quiver : Quiver,
+  source_id : Int,
+  target_id : Int,
+  options : EdgeOptions,
+) -> Int? {
+  let mut matched : Int? = None
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(edge) =>
+        if tikz_edge_matches_phantom_anchor(edge, source_id, target_id, options) {
+          matched = Some(edge.cell.id)
+        }
+      _ => ()
+    }
+  }
+  matched
 }
 
 ///|
@@ -3496,48 +3619,56 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       }
 
       for parsed_arrow in tikz_collect_cell_arrows(cell) {
-        if parsed_arrow.is_phantom {
-          continue
-        }
-        let source_x = match parsed_arrow.from_x {
+        let default_source_x = match parsed_arrow.from_x {
           Some(value) => value
           None => x
         }
-        let source_y = match parsed_arrow.from_y {
+        let default_source_y = match parsed_arrow.from_y {
           Some(value) => value
           None => y
         }
 
-        let target_coords = match (parsed_arrow.to_x, parsed_arrow.to_y) {
-          (Some(tx), Some(ty)) => Some((tx, ty))
-          _ =>
-            match parsed_arrow.direction {
-              Some(direction) => {
-                let (dx, dy) = tikz_direction_delta(direction)
-                Some((source_x + dx, source_y + dy))
-              }
-              None =>
-                if parsed_arrow.is_loop {
-                  Some((source_x, source_y))
-                } else {
-                  None
+        let target_coords = if parsed_arrow.to_ref is Some(_) {
+          None
+        } else {
+          match (parsed_arrow.to_x, parsed_arrow.to_y) {
+            (Some(tx), Some(ty)) => Some((tx, ty))
+            _ =>
+              match parsed_arrow.direction {
+                Some(direction) => {
+                  let (dx, dy) = tikz_direction_delta(direction)
+                  Some((default_source_x + dx, default_source_y + dy))
                 }
-            }
+                None =>
+                  if parsed_arrow.is_loop {
+                    Some((default_source_x, default_source_y))
+                  } else {
+                    None
+                  }
+              }
+          }
         }
 
-        match target_coords {
-          Some((target_x, target_y)) =>
-            pending_arrows.push({
-              source_x,
-              source_y,
-              target_x,
-              target_y,
-              label: parsed_arrow.label,
-              options: parsed_arrow.options,
-              label_colour: parsed_arrow.label_colour,
-            })
-          None => ()
+        let (target_x, target_y) = match target_coords {
+          Some((tx, ty)) => (Some(tx), Some(ty))
+          None => (None, None)
         }
+
+        pending_arrows.push({
+          default_source_x,
+          default_source_y,
+          source_x: parsed_arrow.from_x,
+          source_y: parsed_arrow.from_y,
+          source_ref: parsed_arrow.from_ref,
+          target_x,
+          target_y,
+          target_ref: parsed_arrow.to_ref,
+          is_phantom: parsed_arrow.is_phantom,
+          name: parsed_arrow.name,
+          label: parsed_arrow.label,
+          options: parsed_arrow.options,
+          label_colour: parsed_arrow.label_colour,
+        })
       }
 
       x = x + 1
@@ -3545,16 +3676,53 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     y = y + 1
   }
 
+  let named_cell_ids : Map[String, Int] = Map::new()
   for pending in pending_arrows {
     let source_id = match
-      vertex_by_key.get(tikz_grid_key(pending.source_x, pending.source_y)) {
+      tikz_resolve_pending_endpoint_id(
+        pending.source_x,
+        pending.source_y,
+        pending.source_ref,
+        pending.default_source_x,
+        pending.default_source_y,
+        true,
+        vertex_by_key,
+        named_cell_ids,
+      ) {
       Some(value) => value
       None => continue
     }
     let target_id = match
-      vertex_by_key.get(tikz_grid_key(pending.target_x, pending.target_y)) {
+      tikz_resolve_pending_endpoint_id(
+        pending.target_x,
+        pending.target_y,
+        pending.target_ref,
+        pending.default_source_x,
+        pending.default_source_y,
+        false,
+        vertex_by_key,
+        named_cell_ids,
+      ) {
       Some(value) => value
       None => continue
+    }
+
+    if pending.is_phantom {
+      match pending.name {
+        Some(reference_name) =>
+          match
+            tikz_find_phantom_anchor_edge_id(
+              quiver,
+              source_id,
+              target_id,
+              pending.options,
+            ) {
+            Some(edge_id) => named_cell_ids.set(reference_name, edge_id)
+            None => ()
+          }
+        None => ()
+      }
+      continue
     }
 
     let edge_id = next_id
@@ -3572,6 +3740,10 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       ),
     )
     quiver.connect(source_id, target_id, edge_id)
+    match pending.name {
+      Some(reference_name) => named_cell_ids.set(reference_name, edge_id)
+      None => ()
+    }
   }
 
   quiver
