@@ -1632,6 +1632,7 @@ priv struct TikzArrowMatch {
 priv struct TikzParsedArrow {
   direction : String?
   is_loop : Bool
+  is_phantom : Bool
   label : String
   from_x : Int?
   from_y : Int?
@@ -2040,6 +2041,7 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
     "loop" => true
     "loop left" => true
     "loop right" => true
+    "phantom" => true
     _ => false
   }
 }
@@ -3187,6 +3189,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut from_y : Int? = None
             let mut to_x : Int? = None
             let mut to_y : Int? = None
+            let mut is_phantom = false
             let mut parsed_options = EdgeOptions::at_level(1)
             let mut parsed_label_options = tikz_label_options_default()
             let mut parsed_label_colour = Colour::black()
@@ -3293,9 +3296,13 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                   }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
+                  let option_token = tikz_strip_math_wrapper(direction_candidate)
+                  if option_token == "phantom" {
+                    is_phantom = true
+                  }
                   if direction is None &&
-                    tikz_is_direction_token(direction_candidate) {
-                    direction = Some(direction_candidate)
+                    tikz_is_direction_token(option_token) {
+                    direction = Some(option_token)
                   }
                   if label == "" {
                     match tikz_extract_arrow_label_option(option) {
@@ -3351,6 +3358,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             arrows.push({
               direction,
               is_loop: parsed_loop_options.is_loop,
+              is_phantom,
               label,
               from_x,
               from_y,
@@ -3479,6 +3487,9 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
 
       for parsed_arrow in tikz_collect_cell_arrows(cell) {
+        if parsed_arrow.is_phantom {
+          continue
+        }
         let source_x = match parsed_arrow.from_x {
           Some(value) => value
           None => x

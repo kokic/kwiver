@@ -1082,6 +1082,43 @@ test "tikz-cd import parser supports from/to matrix references" {
 }
 
 ///|
+test "tikz-cd import parser ignores phantom helper arrows" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] \\arrow[phantom, from={1-1}, to={1-2}] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let mut edge_count = 0
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(_) => edge_count = edge_count + 1
+      _ => ()
+    }
+  }
+  inspect(edge_count, content="1")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser supports ampersand replacement and brace arrow options" {
   let input = [
     "\\begin{tikzcd}[ampersand replacement=\\&]\n", "A \\arrow{r, \"k\"} \\& B\n",
