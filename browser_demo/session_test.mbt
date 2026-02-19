@@ -99,6 +99,51 @@ test "browser demo typed helper APIs cover add/import/render flow" {
 }
 
 ///|
+test "browser demo typed mutation helpers support incremental edits and removals" {
+  let session = BrowserDemoSession::new()
+  let source_id = session.add_vertex("A", 0, 0)
+  let target_id = session.add_vertex("B", 1, 0)
+  let edge_id = session.add_edge(source_id, target_id, label="f")
+
+  inspect(session.set_label(edge_id, "g"), content="true")
+  inspect(session.move_vertex(target_id, 2, 0), content="true")
+  inspect(
+    session.patch_edge_options_json(
+      edge_id,
+      "{\"curve\":2,\"shorten\":{\"source\":5,\"target\":7}}",
+    ),
+    content="true",
+  )
+  inspect(session.patch_edge_options_json(edge_id, "{"), content="false")
+
+  inspect(session.apply_selection([edge_id]), content="[3]")
+  let selection_payload = session.export_selection()
+  inspect(selection_payload != "", content="true")
+
+  let snapshot_json = session.snapshot_json()
+  inspect(snapshot_json.contains("\"curve\":2"), content="true")
+  inspect(snapshot_json.contains("\"shorten_source\":5"), content="true")
+  inspect(snapshot_json.contains("\"shorten_target\":7"), content="true")
+
+  let tikz = session.render_tikz()
+  inspect(tikz.contains("\"g\""), content="true")
+  inspect(
+    tikz.contains("shorten <=5pt") || tikz.contains("between={"),
+    content="true",
+  )
+  inspect(
+    tikz.contains("shorten >=7pt") || tikz.contains("between={"),
+    content="true",
+  )
+
+  let removed_ids = session.remove(source_id, when=9)
+  removed_ids.sort()
+  inspect(removed_ids, content="[1, 3]")
+  inspect(session.flush(9), content="true")
+  inspect(session.cell_ids(), content="[2]")
+}
+
+///|
 test "browser demo roundtrip scenario reimports payload through dispatch envelope" {
   let root : Map[String, Json] = @json.from_json(
     @json.parse(browser_demo_roundtrip_demo_json()),

@@ -125,6 +125,22 @@ fn browser_demo_dispatch_result_string(output_json : String) -> String? {
 }
 
 ///|
+fn browser_demo_dispatch_result_json(output_json : String) -> Json? {
+  match browser_demo_parse_json_object(output_json) {
+    Some(root) => root.get("result")
+    None => None
+  }
+}
+
+///|
+fn browser_demo_dispatch_ok(output_json : String) -> Bool {
+  match browser_demo_parse_json_object(output_json) {
+    Some(root) => browser_demo_json_bool_or(root, "ok", false)
+    None => false
+  }
+}
+
+///|
 fn browser_demo_action(action : String) -> String {
   Json::object({ "action": Json::string(action) }).stringify()
 }
@@ -255,6 +271,109 @@ pub fn BrowserDemoSession::add_edge(
 }
 
 ///|
+pub fn BrowserDemoSession::set_label(
+  self : BrowserDemoSession,
+  cell_id : Int,
+  label : String,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_label_json",
+      Json::object({
+        "cell_id": Json::number(cell_id.to_double()),
+        "label": Json::string(label),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::move_vertex(
+  self : BrowserDemoSession,
+  vertex_id : Int,
+  x : Int,
+  y : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "move_vertex_json",
+      Json::object({
+        "vertex_id": Json::number(vertex_id.to_double()),
+        "x": Json::number(x.to_double()),
+        "y": Json::number(y.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::patch_edge_options_json(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  patch_json : String,
+) -> Bool {
+  let patch_result : Result[Json, Error] = try? @json.parse(patch_json)
+  let patch = match patch_result {
+    Ok(value) => value
+    Err(_) => return false
+  }
+
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "patch_edge_options_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "patch": patch,
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::remove(
+  self : BrowserDemoSession,
+  cell_id : Int,
+  when? : Int = 0,
+) -> Array[Int] {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "remove_json",
+      Json::object({
+        "cell_id": Json::number(cell_id.to_double()),
+        "when": Json::number(when.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_int_array_or(result, "removed_ids", [])
+    None => []
+  }
+}
+
+///|
+pub fn BrowserDemoSession::flush(self : BrowserDemoSession, when : Int) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "flush_json",
+      Json::object({ "when": Json::number(when.to_double()) }),
+    ),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
 pub fn BrowserDemoSession::apply_selection(
   self : BrowserDemoSession,
   selected_ids : Array[Int],
@@ -268,6 +387,25 @@ pub fn BrowserDemoSession::apply_selection(
     browser_demo_action_with_input("set_selection", Json::array(payload)),
   ))
   self.selection
+}
+
+///|
+pub fn BrowserDemoSession::export_selection(
+  self : BrowserDemoSession,
+  include_dependencies? : Bool = true,
+) -> String {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "export_selection",
+      Json::object({
+        "include_dependencies": Json::boolean(include_dependencies),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_string(output) {
+    Some(payload) => payload
+    None => ""
+  }
 }
 
 ///|
@@ -296,6 +434,15 @@ pub fn BrowserDemoSession::render_tikz_json(self : BrowserDemoSession) -> String
   match browser_demo_dispatch_result_object(output) {
     Some(result) => browser_demo_json_string_or(result, "data", "")
     None => ""
+  }
+}
+
+///|
+pub fn BrowserDemoSession::snapshot_json(self : BrowserDemoSession) -> String {
+  let output = self.dispatch_json(browser_demo_action("snapshot_json"))
+  match browser_demo_dispatch_result_json(output) {
+    Some(snapshot) => snapshot.stringify()
+    None => "{}"
   }
 }
 
@@ -388,11 +535,61 @@ pub fn ffi_browser_demo_session_add_edge(
 }
 
 ///|
+pub fn ffi_browser_demo_session_set_label(
+  session : BrowserDemoSession,
+  cell_id : Int,
+  label : String,
+) -> Bool {
+  session.set_label(cell_id, label)
+}
+
+///|
+pub fn ffi_browser_demo_session_move_vertex(
+  session : BrowserDemoSession,
+  vertex_id : Int,
+  x : Int,
+  y : Int,
+) -> Bool {
+  session.move_vertex(vertex_id, x, y)
+}
+
+///|
+pub fn ffi_browser_demo_session_patch_edge_options_json(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  patch_json : String,
+) -> Bool {
+  session.patch_edge_options_json(edge_id, patch_json)
+}
+
+///|
+pub fn ffi_browser_demo_session_remove(
+  session : BrowserDemoSession,
+  cell_id : Int,
+  when? : Int = 0,
+) -> Array[Int] {
+  session.remove(cell_id, when~)
+}
+
+///|
+pub fn ffi_browser_demo_session_flush(session : BrowserDemoSession, when : Int) -> Bool {
+  session.flush(when)
+}
+
+///|
 pub fn ffi_browser_demo_session_set_selection(
   session : BrowserDemoSession,
   selected_ids : Array[Int],
 ) -> Array[Int] {
   session.apply_selection(selected_ids)
+}
+
+///|
+pub fn ffi_browser_demo_session_export_selection(
+  session : BrowserDemoSession,
+  include_dependencies? : Bool = true,
+) -> String {
+  session.export_selection(include_dependencies~)
 }
 
 ///|
@@ -413,6 +610,11 @@ pub fn ffi_browser_demo_session_render_tikz_json(
   session : BrowserDemoSession,
 ) -> String {
   session.render_tikz_json()
+}
+
+///|
+pub fn ffi_browser_demo_session_snapshot_json(session : BrowserDemoSession) -> String {
+  session.snapshot_json()
 }
 
 ///|
