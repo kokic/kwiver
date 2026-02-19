@@ -1721,17 +1721,19 @@ test "tikz-cd import parser maps label position aliases" {
     "C \\arrow[r, \"b\"{very near end}] & D \\\\\n",
     "E \\arrow[r, \"c\", midway] & F \\\\\n",
     "G \\arrow[r, \"d\", at start] & H \\\\\n",
-    "I \\arrow[r, \"e\", at end] & J\n",
+    "I \\arrow[r, \"e\", at end] & J \\\\\n",
+    "K \\arrow[r, \"f\", very near start] & L \\\\\n",
+    "M \\arrow[r, \"g\", near end] & N\n",
     "\\end{tikzcd}",
   ].join("")
 
   let quiver = Quiver::import_tikz_cd(input)
   match tikz_test_find_edge_by_label(quiver, "a") {
-    Some(edge) => inspect(edge.options.label_position, content="25")
+    Some(edge) => inspect(edge.options.label_position, content="20")
     None => abort("expected edge a")
   }
   match tikz_test_find_edge_by_label(quiver, "b") {
-    Some(edge) => inspect(edge.options.label_position, content="85")
+    Some(edge) => inspect(edge.options.label_position, content="90")
     None => abort("expected edge b")
   }
   match tikz_test_find_edge_by_label(quiver, "c") {
@@ -1743,8 +1745,16 @@ test "tikz-cd import parser maps label position aliases" {
     None => abort("expected edge d")
   }
   match tikz_test_find_edge_by_label(quiver, "e") {
-    Some(edge) => inspect(edge.options.label_position, content="100")
+    Some(edge) => inspect(edge.options.label_position, content="1")
     None => abort("expected edge e")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => inspect(edge.options.label_position, content="10")
+    None => abort("expected edge f")
+  }
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => inspect(edge.options.label_position, content="80")
+    None => abort("expected edge g")
   }
 }
 

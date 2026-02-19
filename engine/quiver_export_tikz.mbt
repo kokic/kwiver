@@ -3251,12 +3251,12 @@ fn tikz_apply_label_flag_option(
     "marking" => { ..label_options, marking: true }
     "allow upside down" => label_options
     "at start" => { ..label_options, pos: Some(0) }
-    "at end" => { ..label_options, pos: Some(100) }
-    "near start" => { ..label_options, pos: Some(25) }
-    "near end" => { ..label_options, pos: Some(75) }
-    "very near start" => { ..label_options, pos: Some(15) }
-    "very near end" => { ..label_options, pos: Some(85) }
+    "very near start" => { ..label_options, pos: Some(10) }
+    "near start" => { ..label_options, pos: Some(20) }
     "midway" => { ..label_options, pos: Some(50) }
+    "near end" => { ..label_options, pos: Some(80) }
+    "very near end" => { ..label_options, pos: Some(90) }
+    "at end" => { ..label_options, pos: Some(1) }
     _ => label_options
   }
 }
