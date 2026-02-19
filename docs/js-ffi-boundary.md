@@ -113,6 +113,13 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - snapshot/paste: `ffi_browser_runtime_snapshot_json`, `ffi_browser_runtime_paste_selection_json`
 
 `ffi_browser_runtime_dispatch_json` accepts `{ action|type, input?, default_renderer?, include_dependencies? }` and returns `{ ok, action, result, payload, selection, error }`.
-It supports mutation/import/export actions plus graph-query actions (`dependencies_of_json`, `reverse_dependencies_of_json`, `transitive_dependencies_json`, `transitive_reverse_dependencies_json`, `connected_components_json`).
+It supports mutation/import/export actions plus graph-query actions (`dependencies_of_json`, `reverse_dependencies_of_json`, `transitive_dependencies_json`, `transitive_reverse_dependencies_json`, `connected_components_json`) and lifecycle/render actions:
+- `reset`
+- `import_payload` (`input` can be raw payload string, payload object, or payload json scalar)
+- `render_tikz_json` (`input.settings` + `input.options` + `input.definitions.colours`, with shorthand fallback to flat keys)
+- `render_fletcher` (`input.settings` + `input.options`)
+- `render_html_embed` (`input.settings` + `input.options`, fixed/dynamic size inferred from `fixed_size` or width/height presence)
+- `render_tikz` (string output)
+- `export_selection` with `include_dependencies` accepted in either top-level envelope or `input`
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.

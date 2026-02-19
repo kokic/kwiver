@@ -102,6 +102,16 @@ fn browser_runtime_dispatch_input_object(
 }
 
 ///|
+fn browser_runtime_dispatch_input_object_or_empty(
+  root : Map[String, Json],
+) -> Map[String, Json] {
+  match root.get("input") {
+    Some(Json::Object(input)) => input
+    _ => Map::new()
+  }
+}
+
+///|
 fn browser_runtime_dispatch_bool_from_object(
   input : Map[String, Json],
   key : String,
@@ -111,6 +121,389 @@ fn browser_runtime_dispatch_bool_from_object(
     Some(value) => value
     None => default_value
   }
+}
+
+///|
+fn browser_runtime_dispatch_optional_int(
+  input : Map[String, Json],
+  key : String,
+) -> Int? raise {
+  match input.get(key) {
+    Some(Json::Null) => None
+    Some(value) => Some(@json.from_json(value))
+    None => None
+  }
+}
+
+///|
+fn browser_runtime_dispatch_optional_double(
+  input : Map[String, Json],
+  key : String,
+) -> Double? raise {
+  match input.get(key) {
+    Some(Json::Null) => None
+    Some(value) => Some(@json.from_json(value))
+    None => None
+  }
+}
+
+///|
+fn browser_runtime_dispatch_payload_input(root : Map[String, Json]) -> String raise {
+  match root.get("input") {
+    Some(Json::String(payload)) => payload
+    Some(Json::Object(input)) =>
+      @json.from_json(browser_json_required_field(input, "payload"))
+    Some(value) => @json.from_json(value)
+    None => abort("missing payload input")
+  }
+}
+
+///|
+fn browser_runtime_dispatch_optional_object(
+  root : Map[String, Json],
+  key : String,
+) -> Map[String, Json]? {
+  match root.get(key) {
+    Some(Json::Object(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn browser_runtime_dispatch_object_field_or_self(
+  input : Map[String, Json],
+  key : String,
+) -> Map[String, Json] {
+  match browser_runtime_dispatch_optional_object(input, key) {
+    Some(value) => value
+    None => input
+  }
+}
+
+///|
+fn browser_runtime_dispatch_colour_from_json(raw : Json) -> @engine.Colour raise {
+  let root : Map[String, Json] = @json.from_json(raw)
+  let h : Int = @json.from_json(browser_json_required_field(root, "h"))
+  let s : Int = @json.from_json(browser_json_required_field(root, "s"))
+  let l : Int = @json.from_json(browser_json_required_field(root, "l"))
+  let a : Double = @json.from_json(browser_json_required_field(root, "a"))
+  @engine.Colour::new(h, s, l, a)
+}
+
+///|
+fn browser_runtime_dispatch_tikz_settings_from_input(
+  input : Map[String, Json],
+) -> @engine.TikzCdExportSettings {
+  let settings_input = browser_runtime_dispatch_object_field_or_self(
+    input,
+    "settings",
+  )
+  let defaults = @engine.TikzCdExportSettings::default()
+  defaults
+    .with_centre_diagram(
+      value=
+      browser_runtime_dispatch_bool_from_object(
+        settings_input,
+        "centre_diagram",
+        defaults.centre_diagram,
+      ),
+    )
+    .with_ampersand_replacement(
+      value=
+      browser_runtime_dispatch_bool_from_object(
+        settings_input,
+        "ampersand_replacement",
+        defaults.ampersand_replacement,
+      ),
+    )
+    .with_cramped(
+      value=
+      browser_runtime_dispatch_bool_from_object(
+        settings_input,
+        "cramped",
+        defaults.cramped,
+      ),
+    )
+    .with_standalone(
+      value=
+      browser_runtime_dispatch_bool_from_object(
+        settings_input,
+        "standalone",
+        defaults.standalone,
+      ),
+    )
+}
+
+///|
+fn browser_runtime_dispatch_tikz_options_from_input(
+  input : Map[String, Json],
+) -> @engine.TikzCdExportOptions raise {
+  let options_input = browser_runtime_dispatch_object_field_or_self(input, "options")
+  let mut options = @engine.TikzCdExportOptions::default()
+
+  match browser_runtime_dispatch_optional_string(options_input, "share_base_url") {
+    Some(value) => options = options.with_share_base_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "macro_url") {
+    Some(value) => options = options.with_macro_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "renderer") {
+    Some(value) => options = options.with_renderer(value)
+    None => ()
+  }
+
+  match options_input.get("sep") {
+    Some(Json::Number(value, ..)) => options = options.with_sep_em(value)
+    Some(Json::Object(sep_input)) => {
+      let mut sep = @engine.TikzCdSepOptions::default()
+      let mut has_sep_override = false
+
+      match browser_runtime_dispatch_optional_double(sep_input, "em") {
+        Some(value) => {
+          sep = sep.with_em(value)
+          has_sep_override = true
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_int(sep_input, "column_hundredths") {
+        Some(value) => {
+          sep = sep.with_column_em(value.to_double() / 100.0)
+          has_sep_override = true
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_int(sep_input, "row_hundredths") {
+        Some(value) => {
+          sep = sep.with_row_em(value.to_double() / 100.0)
+          has_sep_override = true
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_double(sep_input, "column_em") {
+        Some(value) => {
+          sep = sep.with_column_em(value)
+          has_sep_override = true
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_double(sep_input, "row_em") {
+        Some(value) => {
+          sep = sep.with_row_em(value)
+          has_sep_override = true
+        }
+        None => ()
+      }
+
+      if has_sep_override {
+        options = options.with_sep(sep)
+      }
+    }
+    _ => ()
+  }
+
+  match browser_runtime_dispatch_optional_double(options_input, "sep_em") {
+    Some(value) => options = options.with_sep_em(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_double(options_input, "column_sep_em") {
+    Some(value) => options = options.with_column_sep_em(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_double(options_input, "row_sep_em") {
+    Some(value) => options = options.with_row_sep_em(value)
+    None => ()
+  }
+
+  options
+}
+
+///|
+fn browser_runtime_dispatch_tikz_definitions_from_input(
+  input : Map[String, Json],
+) -> @engine.TikzCdExportDefinitions raise {
+  let mut definitions = @engine.TikzCdExportDefinitions::default()
+  let definitions_input = match browser_runtime_dispatch_optional_object(
+    input,
+    "definitions",
+  ) {
+    Some(value) => value
+    None => return definitions
+  }
+  let colours_input = match browser_runtime_dispatch_optional_object(
+    definitions_input,
+    "colours",
+  ) {
+    Some(value) => value
+    None => return definitions
+  }
+
+  let colour_names : Array[String] = []
+  colours_input.each((name, _) => colour_names.push(name))
+  colour_names.sort()
+  for name in colour_names {
+    match colours_input.get(name) {
+      Some(value) =>
+        definitions = definitions.with_colour(
+          name,
+          browser_runtime_dispatch_colour_from_json(value),
+        )
+      None => ()
+    }
+  }
+  definitions
+}
+
+///|
+fn browser_runtime_dispatch_fletcher_settings_from_input(
+  input : Map[String, Json],
+) -> @engine.FletcherExportSettings {
+  let settings_input = browser_runtime_dispatch_object_field_or_self(
+    input,
+    "settings",
+  )
+  let defaults = @engine.FletcherExportSettings::default()
+  defaults.with_centre_diagram(
+    value=
+    browser_runtime_dispatch_bool_from_object(
+      settings_input,
+      "centre_diagram",
+      defaults.centre_diagram,
+    ),
+  )
+}
+
+///|
+fn browser_runtime_dispatch_fletcher_options_from_input(
+  input : Map[String, Json],
+) -> @engine.FletcherExportOptions {
+  let options_input = browser_runtime_dispatch_object_field_or_self(input, "options")
+  let mut options = @engine.FletcherExportOptions::default()
+
+  match browser_runtime_dispatch_optional_string(options_input, "share_base_url") {
+    Some(value) => options = options.with_share_base_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "macro_url") {
+    Some(value) => options = options.with_macro_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "renderer") {
+    Some(value) => options = options.with_renderer(value)
+    None => ()
+  }
+
+  options
+}
+
+///|
+fn browser_runtime_dispatch_html_options_from_input(
+  input : Map[String, Json],
+) -> @engine.HtmlEmbedExportOptions {
+  let options_input = browser_runtime_dispatch_object_field_or_self(input, "options")
+  let mut options = @engine.HtmlEmbedExportOptions::default()
+
+  match browser_runtime_dispatch_optional_string(options_input, "share_base_url") {
+    Some(value) => options = options.with_share_base_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "macro_url") {
+    Some(value) => options = options.with_macro_url(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(options_input, "renderer") {
+    Some(value) => options = options.with_renderer(value)
+    None => ()
+  }
+
+  options
+}
+
+///|
+fn browser_runtime_dispatch_html_settings_from_input(
+  input : Map[String, Json],
+  options : @engine.HtmlEmbedExportOptions,
+) -> @engine.HtmlEmbedExportSettings raise {
+  let settings_input = browser_runtime_dispatch_object_field_or_self(
+    input,
+    "settings",
+  )
+  let base_url = match browser_runtime_dispatch_optional_string(
+    settings_input,
+    "base_url",
+  ) {
+    Some(value) => value
+    None =>
+      match options.share_base_url {
+        Some(value) => value
+        None => "https://q.uiver.app"
+      }
+  }
+
+  let defaults = @engine.HtmlEmbedExportSettings::default(base_url)
+  let mut settings = defaults
+  let width = browser_runtime_dispatch_optional_int(settings_input, "width")
+  let height = browser_runtime_dispatch_optional_int(settings_input, "height")
+  let diagram_width = browser_runtime_dispatch_optional_int(
+    settings_input,
+    "diagram_width",
+  )
+  let diagram_height = browser_runtime_dispatch_optional_int(
+    settings_input,
+    "diagram_height",
+  )
+  let embed_padding = browser_runtime_dispatch_optional_int(
+    settings_input,
+    "embed_padding",
+  )
+
+  let use_fixed_size = match browser_runtime_dispatch_optional_bool(
+    settings_input,
+    "fixed_size",
+  ) {
+    Some(value) => value
+    None =>
+      match width {
+        Some(_) => true
+        None =>
+          match height {
+            Some(_) => true
+            None => false
+          }
+      }
+  }
+
+  if use_fixed_size {
+    settings = settings.with_fixed_size(
+      match width {
+        Some(value) => value
+        None => defaults.width
+      },
+      match height {
+        Some(value) => value
+        None => defaults.height
+      },
+    )
+  } else {
+    settings = settings.with_dynamic_size(
+      match diagram_width {
+        Some(value) => value
+        None => defaults.diagram_width
+      },
+      match diagram_height {
+        Some(value) => value
+        None => defaults.diagram_height
+      },
+      embed_padding=
+        match embed_padding {
+          Some(value) => value
+          None => defaults.embed_padding
+        },
+    )
+  }
+
+  settings
 }
 
 ///|
@@ -901,8 +1294,16 @@ pub fn BrowserRuntime::dispatch_json(
       result = @json.parse(self.reconnect_edge_json(input_json))
     "remove_json" => result = @json.parse(self.remove_json(input_json))
     "flush_json" => result = @json.parse(self.flush_json(input_json))
+    "reset" => {
+      self.reset()
+      result = Json::object({})
+    }
     "apply_mutation_batch_json" =>
       result = @json.parse(self.apply_mutation_batch_json(input_json))
+    "import_payload" => {
+      let payload = browser_runtime_dispatch_payload_input(root)
+      result = Json::string(self.import_payload(payload))
+    }
     "import_text_auto_json" => {
       let raw_input = browser_runtime_dispatch_raw_input(root)
       let default_renderer = match
@@ -1032,13 +1433,45 @@ pub fn BrowserRuntime::dispatch_json(
       )
       result = browser_int_array_json(self.connected_components(roots))
     }
-    "render_tikz_json" => result = @json.parse(self.render_tikz_json())
+    "render_tikz_json" => {
+      let input = browser_runtime_dispatch_input_object_or_empty(root)
+      let settings = browser_runtime_dispatch_tikz_settings_from_input(input)
+      let options = browser_runtime_dispatch_tikz_options_from_input(input)
+      let definitions = browser_runtime_dispatch_tikz_definitions_from_input(input)
+      result = @json.parse(self.render_tikz_json(settings~, options~, definitions~))
+    }
+    "render_fletcher" => {
+      let input = browser_runtime_dispatch_input_object_or_empty(root)
+      let settings = browser_runtime_dispatch_fletcher_settings_from_input(input)
+      let options = browser_runtime_dispatch_fletcher_options_from_input(input)
+      result = Json::string(self.render_fletcher(settings~, options~))
+    }
+    "render_html_embed" => {
+      let input = browser_runtime_dispatch_input_object_or_empty(root)
+      let options = browser_runtime_dispatch_html_options_from_input(input)
+      let settings = browser_runtime_dispatch_html_settings_from_input(
+        input,
+        options,
+      )
+      result = Json::string(self.render_html_embed(settings, options~))
+    }
+    "render_tikz" => result = Json::string(self.render_tikz())
     "export_payload" => result = Json::string(self.export_payload())
     "export_selection" => {
-      let include_dependencies = match
-        browser_runtime_dispatch_optional_bool(root, "include_dependencies") {
+      let input = browser_runtime_dispatch_input_object_or_empty(root)
+      let include_dependencies = match browser_runtime_dispatch_optional_bool(
+        input,
+        "include_dependencies",
+      ) {
         Some(value) => value
-        None => true
+        None =>
+          match browser_runtime_dispatch_optional_bool(
+            root,
+            "include_dependencies",
+          ) {
+            Some(value) => value
+            None => true
+          }
       }
       result = Json::string(self.export_selection(include_dependencies~))
     }

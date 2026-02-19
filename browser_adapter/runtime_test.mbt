@@ -603,6 +603,99 @@ test "browser runtime dispatch_json routes action envelopes for ui loop" {
   )
   inspect(payload_value == runtime.export_payload(), content="true")
 
+  let tikz_dispatch = runtime.dispatch_json(
+    [
+      "{",
+      "\"action\":\"render_tikz_json\",",
+      "\"input\":{",
+      "\"settings\":{\"centre_diagram\":true},",
+      "\"options\":{",
+      "\"share_base_url\":\"https://q.uiver.app\",",
+      "\"renderer\":\"svg\",",
+      "\"sep_em\":2.70",
+      "}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  let tikz_root : Map[String, Json] = @json.from_json(@json.parse(tikz_dispatch))
+  let tikz_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(tikz_root, "result"),
+  )
+  let tikz_data : String = @json.from_json(runtime_test_json_get(tikz_result, "data"))
+  inspect(tikz_data.contains("\\begin{tikzcd}[sep=large]"), content="true")
+  inspect(tikz_data.contains("% https://q.uiver.app#r=svg&q="), content="true")
+
+  let fletcher_dispatch = runtime.dispatch_json(
+    [
+      "{",
+      "\"action\":\"render_fletcher\",",
+      "\"input\":{\"options\":{\"share_base_url\":\"https://q.uiver.app\",\"renderer\":\"svg\"}}",
+      "}",
+    ].join(""),
+  )
+  let fletcher_root : Map[String, Json] = @json.from_json(
+    @json.parse(fletcher_dispatch),
+  )
+  let fletcher_data : String = @json.from_json(
+    runtime_test_json_get(fletcher_root, "result"),
+  )
+  inspect(fletcher_data.contains("#diagram({"), content="true")
+  inspect(fletcher_data.contains("// https://q.uiver.app#r=svg&q="), content="true")
+
+  let html_dispatch = runtime.dispatch_json(
+    [
+      "{",
+      "\"action\":\"render_html_embed\",",
+      "\"input\":{",
+      "\"settings\":{\"base_url\":\"https://q.uiver.app\",\"fixed_size\":true,\"width\":320,\"height\":240},",
+      "\"options\":{\"renderer\":\"svg\"}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  let html_root : Map[String, Json] = @json.from_json(@json.parse(html_dispatch))
+  let html_data : String = @json.from_json(runtime_test_json_get(html_root, "result"))
+  inspect(html_data.contains("<iframe class=\"quiver-embed\""), content="true")
+  inspect(html_data.contains("#r=svg&q="), content="true")
+
+  let export_selection_dispatch = runtime.dispatch_json(
+    "{\"action\":\"export_selection\",\"input\":{\"include_dependencies\":false}}",
+  )
+  let export_selection_root : Map[String, Json] = @json.from_json(
+    @json.parse(export_selection_dispatch),
+  )
+  let export_selection_value : String = @json.from_json(
+    runtime_test_json_get(export_selection_root, "result"),
+  )
+  inspect(
+    export_selection_value == runtime.export_selection(include_dependencies=false),
+    content="true",
+  )
+
+  let reset_dispatch = runtime.dispatch_json("{\"action\":\"reset\"}")
+  let reset_root : Map[String, Json] = @json.from_json(@json.parse(reset_dispatch))
+  let reset_ok : Bool = @json.from_json(runtime_test_json_get(reset_root, "ok"))
+  inspect(reset_ok, content="true")
+  inspect(runtime.all_cell_ids(), content="[]")
+  inspect(runtime.selection(), content="[]")
+
+  let import_payload_dispatch = runtime.dispatch_json(
+    [
+      "{\"action\":\"import_payload\",\"input\":{\"payload\":\"",
+      payload_value,
+      "\"}}",
+    ].join(""),
+  )
+  let import_payload_root : Map[String, Json] = @json.from_json(
+    @json.parse(import_payload_dispatch),
+  )
+  let import_payload_value : String = @json.from_json(
+    runtime_test_json_get(import_payload_root, "result"),
+  )
+  inspect(import_payload_value == payload_value, content="true")
+  inspect(runtime.all_cell_ids(), content="[1, 2, 3]")
+
   let set_selection_dispatch = runtime.dispatch_json(
     "{\"action\":\"set_selection\",\"input\":[3]}",
   )
@@ -1086,6 +1179,106 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
   let deps_result : Array[Int] = @json.from_json(runtime_test_json_get(deps_root, "result"))
   inspect(deps_action, content="dependencies_of_json")
   inspect(deps_result, content="[3]")
+
+  let payload_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"export_payload\"}",
+  )
+  let payload_root : Map[String, Json] = @json.from_json(
+    @json.parse(payload_dispatch),
+  )
+  let payload_value : String = @json.from_json(
+    runtime_test_json_get(payload_root, "result"),
+  )
+
+  let tikz_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    [
+      "{",
+      "\"action\":\"render_tikz_json\",",
+      "\"input\":{",
+      "\"settings\":{\"centre_diagram\":true},",
+      "\"options\":{\"share_base_url\":\"https://q.uiver.app\",\"renderer\":\"svg\",\"sep_em\":2.70}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  let tikz_root : Map[String, Json] = @json.from_json(@json.parse(tikz_dispatch))
+  let tikz_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(tikz_root, "result"),
+  )
+  let tikz_data : String = @json.from_json(runtime_test_json_get(tikz_result, "data"))
+  inspect(tikz_data.contains("\\begin{tikzcd}[sep=large]"), content="true")
+  inspect(tikz_data.contains("% https://q.uiver.app#r=svg&q="), content="true")
+
+  let fletcher_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    [
+      "{",
+      "\"action\":\"render_fletcher\",",
+      "\"input\":{\"options\":{\"share_base_url\":\"https://q.uiver.app\",\"renderer\":\"svg\"}}",
+      "}",
+    ].join(""),
+  )
+  let fletcher_root : Map[String, Json] = @json.from_json(
+    @json.parse(fletcher_dispatch),
+  )
+  let fletcher_data : String = @json.from_json(
+    runtime_test_json_get(fletcher_root, "result"),
+  )
+  inspect(fletcher_data.contains("#diagram({"), content="true")
+  inspect(fletcher_data.contains("// https://q.uiver.app#r=svg&q="), content="true")
+
+  let html_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    [
+      "{",
+      "\"action\":\"render_html_embed\",",
+      "\"input\":{",
+      "\"settings\":{\"base_url\":\"https://q.uiver.app\",\"fixed_size\":true,\"width\":320,\"height\":240},",
+      "\"options\":{\"renderer\":\"svg\"}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  let html_root : Map[String, Json] = @json.from_json(@json.parse(html_dispatch))
+  let html_data : String = @json.from_json(runtime_test_json_get(html_root, "result"))
+  inspect(html_data.contains("<iframe class=\"quiver-embed\""), content="true")
+  inspect(html_data.contains("#r=svg&q="), content="true")
+
+  let export_selection_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"export_selection\",\"input\":{\"include_dependencies\":false}}",
+  )
+  let export_selection_root : Map[String, Json] = @json.from_json(
+    @json.parse(export_selection_dispatch),
+  )
+  let export_selection_value : String = @json.from_json(
+    runtime_test_json_get(export_selection_root, "result"),
+  )
+  inspect(export_selection_value != "", content="true")
+
+  let reset_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"reset\"}",
+  )
+  let reset_root : Map[String, Json] = @json.from_json(@json.parse(reset_dispatch))
+  let reset_ok : Bool = @json.from_json(runtime_test_json_get(reset_root, "ok"))
+  inspect(reset_ok, content="true")
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[]")
+
+  let import_payload_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    ["{\"action\":\"import_payload\",\"input\":\"", payload_value, "\"}"].join(""),
+  )
+  let import_payload_root : Map[String, Json] = @json.from_json(
+    @json.parse(import_payload_dispatch),
+  )
+  let import_payload_value : String = @json.from_json(
+    runtime_test_json_get(import_payload_root, "result"),
+  )
+  inspect(import_payload_value == payload_value, content="true")
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1, 2, 3]")
 
   let unknown_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
