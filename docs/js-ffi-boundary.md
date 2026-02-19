@@ -95,7 +95,8 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - lifecycle/selection: `ffi_browser_runtime_new`, `ffi_browser_runtime_reset`, `ffi_browser_runtime_set_selection`, `ffi_browser_runtime_selection`
 - add/remove/flush: `ffi_browser_runtime_add_vertex_json`, `ffi_browser_runtime_add_edge_json`, `ffi_browser_runtime_remove_json`, `ffi_browser_runtime_flush_json`
 - batch update: `ffi_browser_runtime_apply_mutation_batch_json`
-- import/export/render: `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_export_payload`, `ffi_browser_runtime_export_selection`, `ffi_browser_runtime_render_tikz_json`
+- import wrappers: `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_import_share_url_json`, `ffi_browser_runtime_import_share_text_json`, `ffi_browser_runtime_import_tikz_cd_json`, `ffi_browser_runtime_import_fletcher_json`, `ffi_browser_runtime_import_html_embed_json`
+- export/render: `ffi_browser_runtime_export_payload`, `ffi_browser_runtime_export_selection`, `ffi_browser_runtime_render_tikz_json`
 - snapshot/paste: `ffi_browser_runtime_snapshot_json`, `ffi_browser_runtime_paste_selection_json`
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.

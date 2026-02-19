@@ -205,11 +205,13 @@ test "browser runtime fletcher import/export roundtrips with metadata" {
   let target_id = source.add_vertex("B", 1, 0)
   ignore(source.add_edge(source_id, target_id, label="f"))
 
-  let options = @engine.FletcherExportOptions::default()
-    .with_share_base_url("https://q.uiver.app")
-    .with_renderer("svg")
-    .with_macro_url("https://example.com/macros.tex")
-  let fletcher = source.render_fletcher(options~)
+  let fletcher = {
+    let options = @engine.FletcherExportOptions::default()
+      .with_share_base_url("https://q.uiver.app")
+      .with_renderer("svg")
+      .with_macro_url("https://example.com/macros.tex")
+    source.render_fletcher(options~)
+  }
 
   let target = BrowserRuntime::new()
   target.set_selection([999])
@@ -721,5 +723,64 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
   inspect(ffi_browser_runtime_export_payload(runtime) != "", content="true")
   ffi_browser_runtime_reset(runtime)
   inspect(ffi_browser_runtime_selection(runtime), content="[]")
+}
+
+///|
+test "browser runtime ffi wrappers support format-specific import json" {
+  let source = BrowserRuntime::new()
+  let source_id = source.add_vertex("A", 0, 0)
+  let target_id = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(source_id, target_id, label="f"))
+
+  let payload = source.export_payload()
+  let share_url = [
+    "https://q.uiver.app#r=svg&q=",
+    payload,
+    "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+  ].join("")
+
+  let target = ffi_browser_runtime_new()
+
+  let share_url_json = ffi_browser_runtime_import_share_url_json(target, share_url)
+  inspect(share_url_json.contains("\"renderer\":\"svg\""), content="true")
+  inspect(
+    share_url_json.contains("\"macro_url\":\"https://example.com/macros.tex\""),
+    content="true",
+  )
+
+  let tikz_json = ffi_browser_runtime_import_tikz_cd_json(target, source.render_tikz())
+  inspect(tikz_json.contains("\"renderer\":null"), content="true")
+  inspect(tikz_json.contains("\"embed\":false"), content="true")
+
+  let options = @engine.FletcherExportOptions::default()
+    .with_share_base_url("https://q.uiver.app")
+    .with_renderer("svg")
+    .with_macro_url("https://example.com/macros.tex")
+  let fletcher = source.render_fletcher(options~)
+
+  let share_text_json = ffi_browser_runtime_import_share_text_json(target, fletcher)
+  inspect(share_text_json.contains("\"renderer\":\"svg\""), content="true")
+  inspect(
+    share_text_json.contains("\"macro_url\":\"https://example.com/macros.tex\""),
+    content="true",
+  )
+
+  let fletcher_json = ffi_browser_runtime_import_fletcher_json(target, fletcher)
+  inspect(fletcher_json.contains("\"renderer\":\"svg\""), content="true")
+  inspect(fletcher_json.contains("\"embed\":false"), content="true")
+
+  let settings = @engine.HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 320)
+  let html = {
+    let options = @engine.HtmlEmbedExportOptions::default()
+      .with_share_base_url("https://q.uiver.app")
+      .with_renderer("svg")
+      .with_macro_url("https://example.com/macros.tex")
+    source.render_html_embed(settings, options~)
+  }
+
+  let html_json = ffi_browser_runtime_import_html_embed_json(target, html)
+  inspect(html_json.contains("\"renderer\":\"svg\""), content="true")
+  inspect(html_json.contains("\"embed\":true"), content="true")
 }
 

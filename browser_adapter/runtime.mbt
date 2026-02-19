@@ -666,6 +666,51 @@ pub fn ffi_browser_runtime_import_text_auto_json(
 }
 
 ///|
+pub fn ffi_browser_runtime_import_share_url_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_share_url_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_share_text_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_share_text_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_tikz_cd_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_tikz_cd_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_fletcher_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_fletcher_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_html_embed_json(
+  runtime : BrowserRuntime,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String raise {
+  runtime.import_html_embed_json(input, default_renderer~)
+}
+
+///|
 pub fn ffi_browser_runtime_paste_selection_json(
   runtime : BrowserRuntime,
   payload : String,
