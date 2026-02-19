@@ -159,6 +159,48 @@ fn browser_runtime_dispatch_payload_input(root : Map[String, Json]) -> String ra
 }
 
 ///|
+fn browser_runtime_dispatch_action_json_string(action : Json) -> String {
+  match action {
+    Json::String(raw_action_json) => raw_action_json
+    _ => action.stringify()
+  }
+}
+
+///|
+fn browser_runtime_dispatch_many_input(
+  batch_json : String,
+) -> (Array[Json], Bool) raise {
+  let root = @json.parse(batch_json)
+  match root {
+    Json::Array(actions) => (actions, false)
+    Json::Object(config) => {
+      let actions : Array[Json] = @json.from_json(
+        browser_json_required_field(config, "actions"),
+      )
+      let stop_on_error = browser_runtime_dispatch_bool_from_object(
+        config,
+        "stop_on_error",
+        false,
+      )
+      (actions, stop_on_error)
+    }
+    _ => abort("dispatch_many_json expects array or object with actions")
+  }
+}
+
+///|
+fn browser_runtime_dispatch_result_ok(result : Json) -> Bool {
+  match result {
+    Json::Object(root) =>
+      match root.get("ok") {
+        Some(Json::True) => true
+        _ => false
+      }
+    _ => false
+  }
+}
+
+///|
 fn browser_runtime_dispatch_optional_object(
   root : Map[String, Json],
   key : String,
@@ -1495,6 +1537,41 @@ pub fn BrowserRuntime::dispatch_json(
 }
 
 ///|
+pub fn BrowserRuntime::dispatch_many_json(
+  self : BrowserRuntime,
+  batch_json : String,
+) -> String raise {
+  let (actions, stop_on_error) = browser_runtime_dispatch_many_input(batch_json)
+  let results : Array[Json] = []
+  let mut ok = true
+  let mut processed = 0
+
+  for action in actions {
+    let result_json = self.dispatch_json(
+      browser_runtime_dispatch_action_json_string(action),
+    )
+    let result = @json.parse(result_json)
+    let result_ok = browser_runtime_dispatch_result_ok(result)
+    if !result_ok {
+      ok = false
+    }
+    results.push(result)
+    processed = processed + 1
+    if stop_on_error && !result_ok {
+      break
+    }
+  }
+
+  Json::object({
+    "ok": Json::boolean(ok),
+    "processed": Json::number(processed.to_double()),
+    "results": Json::array(results),
+    "payload": Json::string(self.export_payload()),
+    "selection": browser_int_array_json(self.selection()),
+  }).stringify()
+}
+
+///|
 pub fn ffi_browser_runtime_new() -> BrowserRuntime {
   BrowserRuntime::new()
 }
@@ -1749,6 +1826,14 @@ pub fn ffi_browser_runtime_dispatch_json(
   action_json : String,
 ) -> String raise {
   runtime.dispatch_json(action_json)
+}
+
+///|
+pub fn ffi_browser_runtime_dispatch_many_json(
+  runtime : BrowserRuntime,
+  batch_json : String,
+) -> String raise {
+  runtime.dispatch_many_json(batch_json)
 }
 
 ///|

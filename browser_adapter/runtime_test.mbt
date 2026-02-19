@@ -729,6 +729,90 @@ test "browser runtime dispatch_json routes action envelopes for ui loop" {
 }
 
 ///|
+test "browser runtime dispatch_many_json batches ordered action envelopes" {
+  let runtime = BrowserRuntime::new()
+  let batch_json = [
+    "[",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}},",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}},",
+    "{\"action\":\"add_edge_json\",\"input\":{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}},",
+    "{\"action\":\"set_selection\",\"input\":[1,3]},",
+    "{\"action\":\"export_selection\",\"input\":{\"include_dependencies\":false}}",
+    "]",
+  ].join("")
+
+  let batch_dispatch = runtime.dispatch_many_json(batch_json)
+  let batch_root : Map[String, Json] = @json.from_json(@json.parse(batch_dispatch))
+  let batch_ok : Bool = @json.from_json(runtime_test_json_get(batch_root, "ok"))
+  let processed : Int = @json.from_json(
+    runtime_test_json_get(batch_root, "processed"),
+  )
+  let results : Array[Json] = @json.from_json(
+    runtime_test_json_get(batch_root, "results"),
+  )
+
+  inspect(batch_ok, content="true")
+  inspect(processed, content="5")
+  inspect(results.length(), content="5")
+
+  let first_result : Map[String, Json] = @json.from_json(results[0])
+  let first_action : String = @json.from_json(
+    runtime_test_json_get(first_result, "action"),
+  )
+  inspect(first_action, content="add_vertex_json")
+
+  let last_result : Map[String, Json] = @json.from_json(results[4])
+  let exported_selection : String = @json.from_json(
+    runtime_test_json_get(last_result, "result"),
+  )
+  inspect(
+    exported_selection == runtime.export_selection(include_dependencies=false),
+    content="true",
+  )
+
+  let payload_value : String = @json.from_json(
+    runtime_test_json_get(batch_root, "payload"),
+  )
+  inspect(payload_value == runtime.export_payload(), content="true")
+  inspect(runtime.all_cell_ids(), content="[1, 2, 3]")
+  inspect(runtime.selection(), content="[1, 3]")
+}
+
+///|
+test "browser runtime dispatch_many_json supports stop_on_error short-circuit" {
+  let runtime = BrowserRuntime::new()
+  let batch_json = [
+    "{",
+    "\"stop_on_error\":true,",
+    "\"actions\":[",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}},",
+    "{\"action\":\"unknown-action\"},",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":2,\"y\":0}}",
+    "]",
+    "}",
+  ].join("")
+
+  let batch_dispatch = runtime.dispatch_many_json(batch_json)
+  let batch_root : Map[String, Json] = @json.from_json(@json.parse(batch_dispatch))
+  let batch_ok : Bool = @json.from_json(runtime_test_json_get(batch_root, "ok"))
+  let processed : Int = @json.from_json(
+    runtime_test_json_get(batch_root, "processed"),
+  )
+  let results : Array[Json] = @json.from_json(
+    runtime_test_json_get(batch_root, "results"),
+  )
+  inspect(batch_ok, content="false")
+  inspect(processed, content="2")
+  inspect(results.length(), content="2")
+
+  let second_result : Map[String, Json] = @json.from_json(results[1])
+  let second_ok : Bool = @json.from_json(runtime_test_json_get(second_result, "ok"))
+  inspect(second_ok, content="false")
+  inspect(runtime.all_cell_ids(), content="[1]")
+  inspect(runtime.selection(), content="[1]")
+}
+
+///|
 test "browser runtime applies mutation batch through ffi adapter" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
@@ -1289,6 +1373,42 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
   )
   let unknown_ok : Bool = @json.from_json(runtime_test_json_get(unknown_root, "ok"))
   inspect(unknown_ok, content="false")
+}
+
+///|
+test "browser runtime ffi dispatch_many wrapper batches ui envelopes" {
+  let runtime = ffi_browser_runtime_new()
+  let batch_json = [
+    "[",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}},",
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}},",
+    "{\"action\":\"add_edge_json\",\"input\":{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}},",
+    "{\"action\":\"snapshot_json\"}",
+    "]",
+  ].join("")
+
+  let batch_dispatch = ffi_browser_runtime_dispatch_many_json(runtime, batch_json)
+  let batch_root : Map[String, Json] = @json.from_json(@json.parse(batch_dispatch))
+  let batch_ok : Bool = @json.from_json(runtime_test_json_get(batch_root, "ok"))
+  let processed : Int = @json.from_json(
+    runtime_test_json_get(batch_root, "processed"),
+  )
+  let results : Array[Json] = @json.from_json(
+    runtime_test_json_get(batch_root, "results"),
+  )
+  inspect(batch_ok, content="true")
+  inspect(processed, content="4")
+  inspect(results.length(), content="4")
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1, 2, 3]")
+
+  let snapshot_entry : Map[String, Json] = @json.from_json(results[3])
+  let snapshot_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(snapshot_entry, "result"),
+  )
+  let cell_ids : Array[Int] = @json.from_json(
+    runtime_test_json_get(snapshot_result, "cell_ids"),
+  )
+  inspect(cell_ids, content="[1, 2, 3]")
 }
 
 ///|
