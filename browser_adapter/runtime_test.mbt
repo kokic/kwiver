@@ -666,6 +666,16 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
   let tikz_json = ffi_browser_runtime_render_tikz_json(runtime)
   inspect(tikz_json.contains("\"data\":\""), content="true")
   inspect(tikz_json.contains("\"metadata\":"), content="true")
+  let fletcher_out = ffi_browser_runtime_render_fletcher(runtime)
+  inspect(fletcher_out.contains("#diagram({"), content="true")
+  let html_out = ffi_browser_runtime_render_html_embed(
+    runtime,
+    @engine.HtmlEmbedExportSettings::default("https://q.uiver.app").with_fixed_size(
+      320,
+      240,
+    ),
+  )
+  inspect(html_out.contains("<iframe class=\"quiver-embed\""), content="true")
 
   let imported_json = ffi_browser_runtime_import_text_auto_json(
     runtime,

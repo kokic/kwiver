@@ -657,6 +657,24 @@ pub fn ffi_browser_runtime_render_tikz_json(
 }
 
 ///|
+pub fn ffi_browser_runtime_render_fletcher(
+  runtime : BrowserRuntime,
+  settings? : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
+  options? : @engine.FletcherExportOptions = @engine.FletcherExportOptions::default(),
+) -> String {
+  runtime.render_fletcher(settings~, options~)
+}
+
+///|
+pub fn ffi_browser_runtime_render_html_embed(
+  runtime : BrowserRuntime,
+  settings : @engine.HtmlEmbedExportSettings,
+  options? : @engine.HtmlEmbedExportOptions = @engine.HtmlEmbedExportOptions::default(),
+) -> String {
+  runtime.render_html_embed(settings, options~)
+}
+
+///|
 pub fn ffi_browser_runtime_import_text_auto_json(
   runtime : BrowserRuntime,
   input : String,

@@ -20,6 +20,8 @@ options(
         "ffi_browser_runtime_export_selection",
         "ffi_browser_runtime_snapshot_json",
         "ffi_browser_runtime_render_tikz_json",
+        "ffi_browser_runtime_render_fletcher",
+        "ffi_browser_runtime_render_html_embed",
         "ffi_browser_runtime_import_text_auto_json",
         "ffi_browser_runtime_import_share_url_json",
         "ffi_browser_runtime_import_share_text_json",
