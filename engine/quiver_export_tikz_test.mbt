@@ -1360,6 +1360,34 @@ test "tikz-cd import parser supports ampersand replacement and brace arrow optio
 }
 
 ///|
+test "tikz-cd import parser supports custom ampersand replacement token" {
+  let input = [
+    "\\begin{tikzcd}[ampersand replacement=\\amp]\n",
+    "A \\arrow{r, \"k\"} \\amp B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "k") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge k")
+  }
+}
+
+///|
 test "tikz-cd import parser maps basic arrow style flags" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\", dashed, no head, maps to] & B\n",

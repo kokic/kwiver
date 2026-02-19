@@ -1617,7 +1617,7 @@ fn tikz_is_whitespace(ch : UInt16) -> Bool {
 ///|
 priv struct TikzEnvironmentBody {
   body : String
-  ampersand_replacement : Bool
+  ampersand_replacement : String?
 }
 
 ///|
@@ -1711,11 +1711,24 @@ priv struct TikzParsedLoopOptions {
 }
 
 ///|
-fn tikz_ampersand_replacement_enabled(options : String) -> Bool {
-  let compact = options
-    .replace_all(old=" ", new="")
-    .replace_all(old="\t", new="")
-  compact.contains("ampersandreplacement=\\&")
+fn tikz_parse_ampersand_replacement(options : String) -> String? {
+  for option in tikz_split_arrow_options(options) {
+    match tikz_option_key_value(option) {
+      Some((key, value)) => {
+        let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+          .replace_all(old=" ", new="")
+          .replace_all(old="\t", new="")
+        if key_token == "ampersandreplacement" {
+          let token = tikz_unwrap_braced_text(value).trim().to_string()
+          if token != "" {
+            return Some(token)
+          }
+        }
+      }
+      None => ()
+    }
+  }
+  None
 }
 
 ///|
@@ -1729,7 +1742,7 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
         end=input.length(),
       )
       let mut rest = tikz_trim_left(after_begin)
-      let mut ampersand_replacement = false
+      let mut ampersand_replacement : String? = None
       if rest.has_prefix("[") {
         let mut depth = 0
         let mut i = 0
@@ -1741,9 +1754,7 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
             depth = depth - 1
             if depth == 0 {
               let options = rest.unsafe_substring(start=1, end=i)
-              ampersand_replacement = tikz_ampersand_replacement_enabled(
-                options,
-              )
+              ampersand_replacement = tikz_parse_ampersand_replacement(options)
               rest = rest.unsafe_substring(start=i + 1, end=rest.length())
               break
             }
@@ -1841,7 +1852,7 @@ fn tikz_strip_line_comments(body : String) -> String {
 ///|
 fn tikz_split_cells(
   row : String,
-  ampersand_replacement : Bool,
+  ampersand_replacement : String?,
 ) -> Array[String] {
   let cells : Array[String] = []
   let mut segment_start = 0
@@ -1851,21 +1862,27 @@ fn tikz_split_cells(
   let mut paren_depth = 0
   let mut in_quotes = false
   while i < row.length() {
+    if !in_quotes &&
+      brace_depth == 0 &&
+      bracket_depth == 0 &&
+      paren_depth == 0 {
+      match ampersand_replacement {
+        Some(token) =>
+          if token != "" &&
+            i + token.length() <= row.length() &&
+            row.unsafe_substring(start=i, end=i + token.length()) == token {
+            cells.push(row.unsafe_substring(start=segment_start, end=i))
+            i = i + token.length()
+            segment_start = i
+            continue
+          }
+        None => ()
+      }
+    }
+
     let ch = row.unsafe_get(i)
     if ch == '\\' {
       if i + 1 < row.length() {
-        let next = row.unsafe_get(i + 1)
-        if ampersand_replacement &&
-          !in_quotes &&
-          brace_depth == 0 &&
-          bracket_depth == 0 &&
-          paren_depth == 0 &&
-          next == '&' {
-          cells.push(row.unsafe_substring(start=segment_start, end=i))
-          i = i + 2
-          segment_start = i
-          continue
-        }
         // Skip escaped next char so it cannot act as a delimiter.
         i = i + 2
         continue
@@ -1893,7 +1910,7 @@ fn tikz_split_cells(
         paren_depth = paren_depth + 1
       } else if ch == ')' && paren_depth > 0 {
         paren_depth = paren_depth - 1
-      } else if !ampersand_replacement &&
+      } else if ampersand_replacement is None &&
         ch == '&' &&
         brace_depth == 0 &&
         bracket_depth == 0 &&
