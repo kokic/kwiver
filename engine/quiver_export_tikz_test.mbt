@@ -1790,6 +1790,58 @@ test "tikz-cd import parser keeps escaped quotes inside quoted labels" {
 }
 
 ///|
+test "tikz-cd import parser keeps closing bracket inside quoted labels" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[r, \"f]g\"] & B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f]g") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge label with closing bracket")
+  }
+}
+
+///|
+test "tikz-cd import parser keeps closing brace inside brace-delimited quoted labels" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow{r, \"f}g\"} & B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f}g") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge label with closing brace")
+  }
+}
+
+///|
 test "tikz-cd import parser supports arrow spacing and row option separators" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow [d, \"f,g\"] \\\\[0.6em]\n", "B\n",

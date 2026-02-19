@@ -3205,18 +3205,85 @@ fn tikz_find_closing_delimiter(
   open_delimiter : UInt16,
   close_delimiter : UInt16,
 ) -> Int? {
-  let mut depth = 0
+  let mut in_quotes = false
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
   let mut i = 0
   while i < input.length() {
     let ch = input.unsafe_get(i)
-    if ch == open_delimiter {
-      depth = depth + 1
-    } else if ch == close_delimiter {
-      if depth == 0 {
+
+    if ch == '\\' {
+      if i + 1 < input.length() {
+        i = i + 2
+      } else {
+        i = i + 1
+      }
+      continue
+    }
+
+    if ch == '"' {
+      in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if in_quotes {
+      i = i + 1
+      continue
+    }
+
+    if ch == '{' {
+      brace_depth = brace_depth + 1
+      i = i + 1
+      continue
+    }
+    if ch == '[' {
+      bracket_depth = bracket_depth + 1
+      i = i + 1
+      continue
+    }
+    if ch == '(' {
+      paren_depth = paren_depth + 1
+      i = i + 1
+      continue
+    }
+    if ch == '}' {
+      if open_delimiter == '{' &&
+        close_delimiter == '}' &&
+        brace_depth == 0 &&
+        bracket_depth == 0 &&
+        paren_depth == 0 {
         return Some(i)
       }
-      depth = depth - 1
+      if brace_depth > 0 {
+        brace_depth = brace_depth - 1
+      }
+      i = i + 1
+      continue
     }
+    if ch == ']' {
+      if open_delimiter == '[' &&
+        close_delimiter == ']' &&
+        bracket_depth == 0 &&
+        brace_depth == 0 &&
+        paren_depth == 0 {
+        return Some(i)
+      }
+      if bracket_depth > 0 {
+        bracket_depth = bracket_depth - 1
+      }
+      i = i + 1
+      continue
+    }
+    if ch == ')' {
+      if paren_depth > 0 {
+        paren_depth = paren_depth - 1
+      }
+      i = i + 1
+      continue
+    }
+
     i = i + 1
   }
   None
