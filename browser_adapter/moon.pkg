@@ -31,6 +31,8 @@ options(
         "ffi_browser_runtime_set_label_colour_json",
         "ffi_browser_runtime_move_vertex_json",
         "ffi_browser_runtime_set_edge_options_json",
+        "ffi_browser_runtime_set_edge_label_alignment_json",
+        "ffi_browser_runtime_set_edge_label_position_json",
         "ffi_browser_runtime_reconnect_edge_json",
         "ffi_browser_runtime_remove_json",
         "ffi_browser_runtime_flush_json",

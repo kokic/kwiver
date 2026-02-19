@@ -274,6 +274,52 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
     content="true",
   )
 
+  let set_edge_label_alignment_json = ffi_adapter_set_edge_label_alignment_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"label_alignment\":\"right\"}",
+    ].join(""),
+  )
+  let set_edge_label_alignment_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_label_alignment_json),
+  )
+  let set_edge_label_alignment_ok : Bool = @json.from_json(
+    test_json_get(set_edge_label_alignment_result, "ok"),
+  )
+  let payload_after_set_edge_label_alignment : String = @json.from_json(
+    test_json_get(set_edge_label_alignment_result, "payload"),
+  )
+  inspect(set_edge_label_alignment_ok, content="true")
+  inspect(
+    payload_after_set_edge_label_alignment == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let set_edge_label_position_json = ffi_adapter_set_edge_label_position_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"label_position\":80}",
+    ].join(""),
+  )
+  let set_edge_label_position_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_label_position_json),
+  )
+  let set_edge_label_position_ok : Bool = @json.from_json(
+    test_json_get(set_edge_label_position_result, "ok"),
+  )
+  let payload_after_set_edge_label_position : String = @json.from_json(
+    test_json_get(set_edge_label_position_result, "payload"),
+  )
+  inspect(set_edge_label_position_ok, content="true")
+  inspect(
+    payload_after_set_edge_label_position == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
   let reconnect_edge_json = ffi_adapter_reconnect_edge_json(
     adapter,
     [
@@ -353,6 +399,8 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
       inspect(edge.options.style.body.name, content="barred")
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
+      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(edge.options.label_position, content="80")
     }
     None => abort("expected updated edge")
   }
@@ -531,6 +579,14 @@ test "ui ffi adapter supports incremental mutation without reload" {
     content="true",
   )
   inspect(
+    ffi_adapter_set_edge_label_alignment(adapter, edge_id, "right"),
+    content="true",
+  )
+  inspect(
+    ffi_adapter_set_edge_label_position(adapter, edge_id, 80),
+    content="true",
+  )
+  inspect(
     ffi_adapter_reconnect_edge(adapter, edge_id, target_id, source_id),
     content="true",
   )
@@ -572,6 +628,8 @@ test "ui ffi adapter supports incremental mutation without reload" {
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
       inspect(edge.options.colour.h, content="0")
+      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(edge.options.label_position, content="80")
     }
     None => abort("expected updated edge")
   }
@@ -781,6 +839,14 @@ test "ui ffi adapter mutation APIs return false for invalid ids" {
   inspect(ffi_adapter_move_vertex(adapter, 999, 1, 1), content="false")
   inspect(
     ffi_adapter_set_edge_options(adapter, vertex_id, EdgeOptions::at_level(1)),
+    content="false",
+  )
+  inspect(
+    ffi_adapter_set_edge_label_alignment(adapter, vertex_id, "left"),
+    content="false",
+  )
+  inspect(
+    ffi_adapter_set_edge_label_position(adapter, vertex_id, 50),
     content="false",
   )
   inspect(

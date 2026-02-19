@@ -305,6 +305,48 @@ pub fn BrowserRuntime::set_edge_options_json(
 }
 
 ///|
+pub fn BrowserRuntime::set_edge_label_alignment(
+  self : BrowserRuntime,
+  edge_id : Int,
+  label_alignment : String,
+) -> Bool {
+  @engine.ffi_adapter_set_edge_label_alignment(
+    self.adapter,
+    edge_id,
+    label_alignment,
+  )
+}
+
+///|
+pub fn BrowserRuntime::set_edge_label_alignment_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_label_alignment_json(self.adapter, input_json)
+}
+
+///|
+pub fn BrowserRuntime::set_edge_label_position(
+  self : BrowserRuntime,
+  edge_id : Int,
+  label_position : Int,
+) -> Bool {
+  @engine.ffi_adapter_set_edge_label_position(
+    self.adapter,
+    edge_id,
+    label_position,
+  )
+}
+
+///|
+pub fn BrowserRuntime::set_edge_label_position_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_label_position_json(self.adapter, input_json)
+}
+
+///|
 pub fn BrowserRuntime::reconnect_edge(
   self : BrowserRuntime,
   edge_id : Int,
@@ -857,6 +899,22 @@ pub fn ffi_browser_runtime_set_edge_options_json(
   input_json : String,
 ) -> String raise {
   runtime.set_edge_options_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_label_alignment_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_label_alignment_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_label_position_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_label_position_json(input_json)
 }
 
 ///|

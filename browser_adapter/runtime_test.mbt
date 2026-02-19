@@ -591,6 +591,11 @@ test "browser runtime mutation helpers reject mismatched ids" {
     content="false",
   )
   inspect(
+    runtime.set_edge_label_alignment(vertex_id, "left"),
+    content="false",
+  )
+  inspect(runtime.set_edge_label_position(vertex_id, 50), content="false")
+  inspect(
     runtime.reconnect_edge(vertex_id, vertex_id, vertex_id),
     content="false",
   )
@@ -706,6 +711,17 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
     ].join(""),
   )
   inspect(set_edge_options_json.contains("\"ok\":true"), content="true")
+  let set_edge_label_alignment_json =
+    ffi_browser_runtime_set_edge_label_alignment_json(
+      runtime,
+      "{\"edge_id\":3,\"label_alignment\":\"right\"}",
+    )
+  inspect(set_edge_label_alignment_json.contains("\"ok\":true"), content="true")
+  let set_edge_label_position_json = ffi_browser_runtime_set_edge_label_position_json(
+    runtime,
+    "{\"edge_id\":3,\"label_position\":80}",
+  )
+  inspect(set_edge_label_position_json.contains("\"ok\":true"), content="true")
   let reconnect_edge_json = ffi_browser_runtime_reconnect_edge_json(
     runtime,
     "{\"edge_id\":3,\"source_id\":2,\"target_id\":1}",

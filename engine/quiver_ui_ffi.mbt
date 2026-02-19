@@ -1008,6 +1008,30 @@ fn quiver_ui_set_edge_options_from_json(
 }
 
 ///|
+fn quiver_ui_set_edge_label_alignment_from_json(
+  input : String,
+) -> (Int, LabelAlignment) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let label_alignment = quiver_ui_label_alignment_from_json(
+    quiver_ui_json_required_field(root, "label_alignment"),
+  )
+  (edge_id, label_alignment)
+}
+
+///|
+fn quiver_ui_set_edge_label_position_from_json(
+  input : String,
+) -> (Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let label_position : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "label_position"),
+  )
+  (edge_id, label_position)
+}
+
+///|
 fn quiver_ui_reconnect_edge_from_json(input : String) -> (Int, Int, Int) raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(input))
   let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
@@ -1572,6 +1596,104 @@ pub fn QuiverUiAdapter::set_edge_options_json(
 }
 
 ///|
+pub fn QuiverUiAdapter::set_edge_label_alignment(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  label_alignment : String,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let updated_options = match label_alignment.trim().to_string() {
+        "left" => edge.options.with_label_alignment_left()
+        "centre" => edge.options.with_label_alignment_centre()
+        "center" => edge.options.with_label_alignment_centre()
+        "right" => edge.options.with_label_alignment_right()
+        "over" => edge.options.with_label_alignment_over()
+        _ => return false
+      }
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            updated_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_label_alignment_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, label_alignment) = quiver_ui_set_edge_label_alignment_from_json(
+    input_json,
+  )
+  let ok = self.set_edge_label_alignment(
+    edge_id,
+    quiver_ui_label_alignment_name(label_alignment),
+  )
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_label_position(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  label_position : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let updated_options = edge.options.with_label_position(label_position)
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            updated_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_label_position_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, label_position) = quiver_ui_set_edge_label_position_from_json(
+    input_json,
+  )
+  let ok = self.set_edge_label_position(edge_id, label_position)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
 pub fn QuiverUiAdapter::reconnect_edge(
   self : QuiverUiAdapter,
   edge_id : Int,
@@ -2106,6 +2228,40 @@ pub fn ffi_adapter_set_edge_options_json(
   input_json : String,
 ) -> String raise {
   adapter.set_edge_options_json(input_json)
+}
+
+///|
+pub fn ffi_adapter_set_edge_label_alignment(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  label_alignment : String,
+) -> Bool {
+  adapter.set_edge_label_alignment(edge_id, label_alignment)
+}
+
+///|
+pub fn ffi_adapter_set_edge_label_alignment_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_label_alignment_json(input_json)
+}
+
+///|
+pub fn ffi_adapter_set_edge_label_position(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  label_position : Int,
+) -> Bool {
+  adapter.set_edge_label_position(edge_id, label_position)
+}
+
+///|
+pub fn ffi_adapter_set_edge_label_position_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_label_position_json(input_json)
 }
 
 ///|
