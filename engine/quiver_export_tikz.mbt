@@ -1634,6 +1634,8 @@ priv struct TikzParsedArrow {
   is_loop : Bool
   is_phantom : Bool
   name : String?
+  source_center_anchor : Bool
+  target_center_anchor : Bool
   label : String
   from_x : Int?
   from_y : Int?
@@ -1652,14 +1654,28 @@ priv struct TikzPendingArrow {
   source_x : Int?
   source_y : Int?
   source_ref : String?
+  source_center_anchor : Bool
   target_x : Int?
   target_y : Int?
   target_ref : String?
+  target_center_anchor : Bool
   is_phantom : Bool
   name : String?
   label : String
   options : EdgeOptions
   label_colour : Colour
+}
+
+///|
+priv struct TikzNamedCellRef {
+  id : Int
+  center_anchor : Bool
+}
+
+///|
+priv struct TikzResolvedEndpoint {
+  id : Int
+  center_anchor : Bool
 }
 
 ///|
@@ -3248,6 +3264,8 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut to_ref : String? = None
             let mut is_phantom = false
             let mut name : String? = None
+            let mut source_center_anchor = false
+            let mut target_center_anchor = false
             let mut parsed_options = EdgeOptions::at_level(1)
             let mut parsed_label_options = tikz_label_options_default()
             let mut parsed_label_colour = Colour::black()
@@ -3328,6 +3346,9 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                     let key_token = tikz_strip_math_wrapper(
                       tikz_unwrap_braced_text(key),
                     )
+                    let value_token = tikz_strip_math_wrapper(
+                      tikz_unwrap_braced_text(value),
+                    )
                     if key_token == "name" {
                       match tikz_parse_reference_name(value) {
                         Some(reference_name) => name = Some(reference_name)
@@ -3343,6 +3364,14 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                           }
                         }
                         None => ()
+                      }
+                    } else if key_token == "start anchor" {
+                      if value_token == "center" {
+                        source_center_anchor = true
+                      }
+                    } else if key_token == "end anchor" {
+                      if value_token == "center" {
+                        target_center_anchor = true
                       }
                     } else if key_token == "text" {
                       match tikz_parse_colour_option(value) {
@@ -3442,6 +3471,8 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               is_loop: parsed_loop_options.is_loop,
               is_phantom,
               name,
+              source_center_anchor,
+              target_center_anchor,
               label,
               from_x,
               from_y,
@@ -3499,15 +3530,19 @@ fn tikz_resolve_pending_endpoint_id(
   default_y : Int,
   use_default : Bool,
   vertex_by_key : Map[String, Int],
-  named_cell_ids : Map[String, Int],
-) -> Int? {
+  named_cell_ids : Map[String, TikzNamedCellRef],
+) -> TikzResolvedEndpoint? {
   match reference_name {
     Some(name) =>
       match named_cell_ids.get(name) {
-        Some(id) => Some(id)
+        Some(named) => Some({ id: named.id, center_anchor: named.center_anchor })
         None =>
           match tikz_parse_grid_reference(name) {
-            Some((x, y)) => vertex_by_key.get(tikz_grid_key(x, y))
+            Some((x, y)) =>
+              match vertex_by_key.get(tikz_grid_key(x, y)) {
+                Some(id) => Some({ id, center_anchor: false })
+                None => None
+              }
             None => None
           }
       }
@@ -3522,7 +3557,11 @@ fn tikz_resolve_pending_endpoint_id(
           }
       }
       match resolved_grid {
-        Some((x, y)) => vertex_by_key.get(tikz_grid_key(x, y))
+        Some((x, y)) =>
+          match vertex_by_key.get(tikz_grid_key(x, y)) {
+            Some(id) => Some({ id, center_anchor: false })
+            None => None
+          }
         None => None
       }
     }
@@ -3688,9 +3727,11 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
           source_x: parsed_arrow.from_x,
           source_y: parsed_arrow.from_y,
           source_ref: parsed_arrow.from_ref,
+          source_center_anchor: parsed_arrow.source_center_anchor,
           target_x,
           target_y,
           target_ref: parsed_arrow.to_ref,
+          target_center_anchor: parsed_arrow.target_center_anchor,
           is_phantom: parsed_arrow.is_phantom,
           name: parsed_arrow.name,
           label: parsed_arrow.label,
@@ -3704,14 +3745,14 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     y = y + 1
   }
 
-  let named_cell_ids : Map[String, Int] = Map::new()
+  let named_cell_ids : Map[String, TikzNamedCellRef] = Map::new()
   let mut pending_round = pending_arrows.copy()
   let mut made_progress = true
   while pending_round.length() > 0 && made_progress {
     made_progress = false
     let next_round : Array[TikzPendingArrow] = []
     for pending in pending_round {
-      let source_id = match
+      let source_endpoint = match
         tikz_resolve_pending_endpoint_id(
           pending.source_x,
           pending.source_y,
@@ -3728,7 +3769,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
           continue
         }
       }
-      let target_id = match
+      let target_endpoint = match
         tikz_resolve_pending_endpoint_id(
           pending.target_x,
           pending.target_y,
@@ -3746,6 +3787,9 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
         }
       }
 
+      let source_id = source_endpoint.id
+      let target_id = target_endpoint.id
+
       if pending.is_phantom {
         let mut resolved = true
         match pending.name {
@@ -3758,7 +3802,11 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
                 pending.options,
               ) {
               Some(edge_id) => {
-                named_cell_ids.set(reference_name, edge_id)
+                named_cell_ids.set(reference_name, {
+                  id: edge_id,
+                  center_anchor: pending.source_center_anchor ||
+                    pending.target_center_anchor,
+                })
                 made_progress = true
               }
               None => resolved = false
@@ -3773,6 +3821,13 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
       let edge_id = next_id
       next_id = next_id + 1
+      let source_center_anchor = pending.source_center_anchor ||
+        source_endpoint.center_anchor
+      let target_center_anchor = pending.target_center_anchor ||
+        target_endpoint.center_anchor
+      let edge_options = pending.options
+        .with_edge_alignment_source(!source_center_anchor)
+        .with_edge_alignment_target(!target_center_anchor)
       quiver.add(
         CellData::from_edge(
           Edge::new(
@@ -3780,14 +3835,18 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
             pending.label,
             source_id,
             target_id,
-            pending.options,
+            edge_options,
             pending.label_colour,
           ),
         ),
       )
       quiver.connect(source_id, target_id, edge_id)
       match pending.name {
-        Some(reference_name) => named_cell_ids.set(reference_name, edge_id)
+        Some(reference_name) =>
+          named_cell_ids.set(reference_name, {
+            id: edge_id,
+            center_anchor: false,
+          })
         None => ()
       }
       made_progress = true

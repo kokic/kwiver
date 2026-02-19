@@ -1156,6 +1156,8 @@ test "tikz-cd import parser supports named edge references in from/to" {
     Some(edge) => {
       inspect(edge.source == base_edge_id, content="true")
       inspect(edge.target == target_id, content="true")
+      inspect(edge.options.edge_alignment.source, content="true")
+      inspect(edge.options.edge_alignment.target, content="true")
     }
     None => abort("expected edge alpha")
   }
@@ -1266,8 +1268,30 @@ test "tikz-cd import parser resolves forward phantom named anchors" {
     Some(edge) => {
       inspect(edge.source == base_edge_id, content="true")
       inspect(edge.target == target_id, content="true")
+      inspect(edge.options.edge_alignment.source, content="false")
+      inspect(edge.options.edge_alignment.target, content="true")
     }
     None => abort("expected edge beta")
+  }
+}
+
+///|
+test "tikz-cd import parser maps explicit start/end center anchors to edge alignment" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\", start anchor=center, end anchor=center] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.options.edge_alignment.source, content="false")
+      inspect(edge.options.edge_alignment.target, content="false")
+    }
+    None => abort("expected edge f")
   }
 }
 
