@@ -95,6 +95,25 @@ fn browser_runtime_dispatch_raw_input(root : Map[String, Json]) -> String {
 }
 
 ///|
+fn browser_runtime_dispatch_input_object(
+  root : Map[String, Json],
+) -> Map[String, Json] raise {
+  @json.from_json(browser_json_required_field(root, "input"))
+}
+
+///|
+fn browser_runtime_dispatch_bool_from_object(
+  input : Map[String, Json],
+  key : String,
+  default_value : Bool,
+) -> Bool {
+  match browser_runtime_dispatch_optional_bool(input, key) {
+    Some(value) => value
+    None => default_value
+  }
+}
+
+///|
 fn browser_runtime_label_alignment_name(
   alignment : @engine.LabelAlignment,
 ) -> String {
@@ -971,6 +990,48 @@ pub fn BrowserRuntime::dispatch_json(
     "snapshot_json" => result = @json.parse(self.snapshot_json())
     "all_cells_json" => result = @json.parse(browser_runtime_cell_data_array_json_string(self.all_cells()))
     "all_cell_ids_json" => result = @json.parse(browser_int_array_json_string(self.all_cell_ids()))
+    "dependencies_of_json" => {
+      let input = browser_runtime_dispatch_input_object(root)
+      let cell_id : Int = @json.from_json(
+        browser_json_required_field(input, "cell_id"),
+      )
+      result = browser_int_array_json(self.dependencies_of(cell_id))
+    }
+    "reverse_dependencies_of_json" => {
+      let input = browser_runtime_dispatch_input_object(root)
+      let cell_id : Int = @json.from_json(
+        browser_json_required_field(input, "cell_id"),
+      )
+      result = browser_int_array_json(self.reverse_dependencies_of(cell_id))
+    }
+    "transitive_dependencies_json" => {
+      let input = browser_runtime_dispatch_input_object(root)
+      let roots : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "roots"),
+      )
+      let exclude_roots = browser_runtime_dispatch_bool_from_object(
+        input,
+        "exclude_roots",
+        false,
+      )
+      result = browser_int_array_json(
+        self.transitive_dependencies(roots, exclude_roots~),
+      )
+    }
+    "transitive_reverse_dependencies_json" => {
+      let input = browser_runtime_dispatch_input_object(root)
+      let roots : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "roots"),
+      )
+      result = browser_int_array_json(self.transitive_reverse_dependencies(roots))
+    }
+    "connected_components_json" => {
+      let input = browser_runtime_dispatch_input_object(root)
+      let roots : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "roots"),
+      )
+      result = browser_int_array_json(self.connected_components(roots))
+    }
     "render_tikz_json" => result = @json.parse(self.render_tikz_json())
     "export_payload" => result = Json::string(self.export_payload())
     "export_selection" => {

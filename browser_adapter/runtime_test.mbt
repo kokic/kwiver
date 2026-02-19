@@ -541,6 +541,61 @@ test "browser runtime dispatch_json routes action envelopes for ui loop" {
   )
   inspect(snapshot_cell_ids, content="[1, 2, 3]")
 
+  let deps_dispatch = runtime.dispatch_json(
+    "{\"action\":\"dependencies_of_json\",\"input\":{\"cell_id\":1}}",
+  )
+  let deps_root : Map[String, Json] = @json.from_json(@json.parse(deps_dispatch))
+  let deps_result : Array[Int] = @json.from_json(runtime_test_json_get(deps_root, "result"))
+  inspect(deps_result, content="[3]")
+
+  let reverse_deps_dispatch = runtime.dispatch_json(
+    "{\"action\":\"reverse_dependencies_of_json\",\"input\":{\"cell_id\":3}}",
+  )
+  let reverse_deps_root : Map[String, Json] = @json.from_json(
+    @json.parse(reverse_deps_dispatch),
+  )
+  let reverse_deps_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(reverse_deps_root, "result"),
+  )
+  inspect(reverse_deps_result, content="[1, 2]")
+
+  let transitive_deps_dispatch = runtime.dispatch_json(
+    "{\"action\":\"transitive_dependencies_json\",\"input\":{\"roots\":[1],\"exclude_roots\":true}}",
+  )
+  let transitive_deps_root : Map[String, Json] = @json.from_json(
+    @json.parse(transitive_deps_dispatch),
+  )
+  let transitive_deps_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(transitive_deps_root, "result"),
+  )
+  inspect(transitive_deps_result, content="[3]")
+
+  let transitive_reverse_dispatch = runtime.dispatch_json(
+    "{\"action\":\"transitive_reverse_dependencies_json\",\"input\":{\"roots\":[3]}}",
+  )
+  let transitive_reverse_root : Map[String, Json] = @json.from_json(
+    @json.parse(transitive_reverse_dispatch),
+  )
+  let transitive_reverse_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(transitive_reverse_root, "result"),
+  )
+  inspect(transitive_reverse_result, content="[1, 2, 3]")
+
+  let components_dispatch = runtime.dispatch_json(
+    "{\"type\":\"connected_components_json\",\"input\":{\"roots\":[1]}}",
+  )
+  let components_root : Map[String, Json] = @json.from_json(
+    @json.parse(components_dispatch),
+  )
+  let components_action : String = @json.from_json(
+    runtime_test_json_get(components_root, "action"),
+  )
+  let components_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(components_root, "result"),
+  )
+  inspect(components_action, content="connected_components_json")
+  inspect(components_result, content="[1, 2, 3]")
+
   let payload_dispatch = runtime.dispatch_json("{\"action\":\"export_payload\"}")
   let payload_root : Map[String, Json] = @json.from_json(@json.parse(payload_dispatch))
   let payload_value : String = @json.from_json(
@@ -975,15 +1030,37 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
 test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface" {
   let runtime = ffi_browser_runtime_new()
 
-  let add_dispatch = ffi_browser_runtime_dispatch_json(
+  let add_a_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
     "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
-  let add_root : Map[String, Json] = @json.from_json(@json.parse(add_dispatch))
-  let add_ok : Bool = @json.from_json(runtime_test_json_get(add_root, "ok"))
-  let add_action : String = @json.from_json(runtime_test_json_get(add_root, "action"))
-  inspect(add_ok, content="true")
-  inspect(add_action, content="add_vertex_json")
+  let add_a_root : Map[String, Json] = @json.from_json(@json.parse(add_a_dispatch))
+  let add_a_ok : Bool = @json.from_json(runtime_test_json_get(add_a_root, "ok"))
+  let add_a_action : String = @json.from_json(
+    runtime_test_json_get(add_a_root, "action"),
+  )
+  inspect(add_a_ok, content="true")
+  inspect(add_a_action, content="add_vertex_json")
+
+  let add_b_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}}",
+  )
+  let add_b_root : Map[String, Json] = @json.from_json(@json.parse(add_b_dispatch))
+  let add_b_ok : Bool = @json.from_json(runtime_test_json_get(add_b_root, "ok"))
+  inspect(add_b_ok, content="true")
+
+  let add_edge_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"add_edge_json\",\"input\":{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}}",
+  )
+  let add_edge_root : Map[String, Json] = @json.from_json(
+    @json.parse(add_edge_dispatch),
+  )
+  let add_edge_ok : Bool = @json.from_json(
+    runtime_test_json_get(add_edge_root, "ok"),
+  )
+  inspect(add_edge_ok, content="true")
 
   let snapshot_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
@@ -998,7 +1075,17 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
   let cell_ids : Array[Int] = @json.from_json(
     runtime_test_json_get(snapshot_result, "cell_ids"),
   )
-  inspect(cell_ids, content="[1]")
+  inspect(cell_ids, content="[1, 2, 3]")
+
+  let deps_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"type\":\"dependencies_of_json\",\"input\":{\"cell_id\":1}}",
+  )
+  let deps_root : Map[String, Json] = @json.from_json(@json.parse(deps_dispatch))
+  let deps_action : String = @json.from_json(runtime_test_json_get(deps_root, "action"))
+  let deps_result : Array[Int] = @json.from_json(runtime_test_json_get(deps_root, "result"))
+  inspect(deps_action, content="dependencies_of_json")
+  inspect(deps_result, content="[3]")
 
   let unknown_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
