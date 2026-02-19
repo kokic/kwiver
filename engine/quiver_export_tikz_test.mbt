@@ -1714,6 +1714,44 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
 }
 
 ///|
+test "tikz-cd import parser toggles swap for repeated suffix and option flags" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"a\"''] & B \\\\\n",
+    "C \\arrow[r, \"b\"', swap] & D \\\\\n",
+    "E \\arrow[r, \"c\", swap, swap] & F \\\\\n",
+    "G \\arrow[r, \"d\", swap] & H\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_label(quiver, "a") {
+    Some(edge) =>
+      inspect(edge.options.label_alignment is LabelAlignment::Left, content="true")
+    None => abort("expected edge a")
+  }
+  match tikz_test_find_edge_by_label(quiver, "b") {
+    Some(edge) =>
+      inspect(edge.options.label_alignment is LabelAlignment::Left, content="true")
+    None => abort("expected edge b")
+  }
+  match tikz_test_find_edge_by_label(quiver, "c") {
+    Some(edge) =>
+      inspect(edge.options.label_alignment is LabelAlignment::Left, content="true")
+    None => abort("expected edge c")
+  }
+  match tikz_test_find_edge_by_label(quiver, "d") {
+    Some(edge) =>
+      inspect(
+        edge.options.label_alignment is LabelAlignment::Right,
+        content="true",
+      )
+    None => abort("expected edge d")
+  }
+}
+
+///|
 test "tikz-cd import parser maps label position aliases" {
   let input = [
     "\\begin{tikzcd}\n",

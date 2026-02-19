@@ -3245,8 +3245,8 @@ fn tikz_apply_label_flag_option(
 ) -> TikzParsedLabelOptions {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   match token {
-    "'" => { ..label_options, swap: true }
-    "swap" => { ..label_options, swap: true }
+    "'" => { ..label_options, swap: !label_options.swap }
+    "swap" => { ..label_options, swap: !label_options.swap }
     "description" => { ..label_options, description: true }
     "marking" => { ..label_options, marking: true }
     "allow upside down" => label_options
