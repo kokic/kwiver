@@ -4314,6 +4314,26 @@ fn tikz_promote_imported_edge_level(
 }
 
 ///|
+fn tikz_ensure_implicit_vertex_at(
+  quiver : Quiver,
+  vertex_by_key : Map[String, Int],
+  x : Int,
+  y : Int,
+  next_id : Int,
+) -> Int {
+  let key = tikz_grid_key(x, y)
+  match vertex_by_key.get(key) {
+    Some(_) => next_id
+    None => {
+      let vertex_id = next_id
+      quiver.add(CellData::from_vertex(Vertex::new_black(vertex_id, "", x, y)))
+      vertex_by_key.set(key, vertex_id)
+      vertex_id + 1
+    }
+  }
+}
+
+///|
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
@@ -4416,6 +4436,36 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       x = x + 1
     }
     y = y + 1
+  }
+
+  for pending in pending_arrows {
+    if pending.source_ref is None {
+      let (source_x, source_y) = match (pending.source_x, pending.source_y) {
+        (Some(x), Some(y)) => (x, y)
+        _ => (pending.default_source_x, pending.default_source_y)
+      }
+      next_id = tikz_ensure_implicit_vertex_at(
+        quiver,
+        vertex_by_key,
+        source_x,
+        source_y,
+        next_id,
+      )
+    }
+
+    if pending.target_ref is None {
+      match (pending.target_x, pending.target_y) {
+        (Some(x), Some(y)) =>
+          next_id = tikz_ensure_implicit_vertex_at(
+            quiver,
+            vertex_by_key,
+            x,
+            y,
+            next_id,
+          )
+        _ => ()
+      }
+    }
   }
 
   let named_cell_ids : Map[String, TikzNamedCellRef] = Map::new()
