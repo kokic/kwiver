@@ -1539,6 +1539,49 @@ test "tikz-cd import parser maps advanced arrow style and level options" {
   }
 }
 
+///|
+test "tikz-cd import parser clamps scaling nfold level like js parser" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"lo\", scaling nfold=1] & B \\\\\n",
+    "C \\arrow[r, \"ok\", scaling nfold=3] & D \\\\\n",
+    "E \\arrow[r, \"hi\", scaling nfold=9] & F \\\\\n",
+    "G \\arrow[r, \"bad\", scaling nfold=unknown] & H\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "lo") {
+    Some(edge) => {
+      inspect(edge.cell.level, content="2")
+      inspect(edge.options.level, content="2")
+    }
+    None => abort("expected edge lo")
+  }
+  match tikz_test_find_edge_by_label(quiver, "ok") {
+    Some(edge) => {
+      inspect(edge.cell.level, content="3")
+      inspect(edge.options.level, content="3")
+    }
+    None => abort("expected edge ok")
+  }
+  match tikz_test_find_edge_by_label(quiver, "hi") {
+    Some(edge) => {
+      inspect(edge.cell.level, content="4")
+      inspect(edge.options.level, content="4")
+    }
+    None => abort("expected edge hi")
+  }
+  match tikz_test_find_edge_by_label(quiver, "bad") {
+    Some(edge) => {
+      inspect(edge.cell.level, content="1")
+      inspect(edge.options.level, content="1")
+    }
+    None => abort("expected edge bad")
+  }
+}
+
+///|
 test "tikz-cd import parser maps preset reverse arrow tokens" {
   let input = [
     "\\begin{tikzcd}\n",

@@ -3168,7 +3168,16 @@ fn tikz_apply_arrow_key_value_option(
 
   if key_token == "scaling nfold" {
     match tikz_parse_level_option_value(value_token) {
-      Some(level) => if level >= 2 { return options.with_level(level) }
+      Some(level) => {
+        let clamped = if level < 2 {
+          2
+        } else if level > 4 {
+          4
+        } else {
+          level
+        }
+        return options.with_level(clamped)
+      }
       None => ()
     }
   }
@@ -4237,6 +4246,34 @@ fn tikz_is_share_reference_candidate(reference : String) -> Bool {
 }
 
 ///|
+fn tikz_promote_imported_edge_level(
+  quiver : Quiver,
+  edge_id : Int,
+  minimum_level : Int,
+) -> Unit {
+  if minimum_level < 1 {
+    return
+  }
+
+  match quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      if edge.cell.level >= minimum_level {
+        return
+      }
+      let old_level = edge.cell.level
+      quiver.remove_from_level(old_level, edge_id)
+      quiver.ensure_level(minimum_level)
+      quiver.cells_by_level[minimum_level].set(edge_id, true)
+      quiver.cells.set(
+        edge_id,
+        CellData::Edge(edge.reconnected(edge.source, edge.target, minimum_level)),
+      )
+    }
+    _ => ()
+  }
+}
+
+///|
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
@@ -4455,6 +4492,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
         ),
       )
       quiver.connect(resolved_source_id, resolved_target_id, edge_id)
+      tikz_promote_imported_edge_level(quiver, edge_id, pending.options.level)
       match pending.name {
         Some(reference_name) =>
           named_cell_ids.set(reference_name, {
