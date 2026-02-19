@@ -2285,7 +2285,7 @@ fn tikz_parse_shift_magnitude(value : String) -> Int? {
     Some(shift_value) => {
       let shift_abs = tikz_abs_double(shift_value)
       if shift_abs == 0.0 {
-        return None
+        return Some(0)
       }
       let rounded = tikz_round_to_int(shift_abs)
       if rounded < 1 {

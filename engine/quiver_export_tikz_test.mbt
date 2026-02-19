@@ -1838,6 +1838,31 @@ test "tikz-cd import parser maps decimal shift magnitudes with units" {
 }
 
 ///|
+test "tikz-cd import parser applies zero shift magnitudes in option order" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"u\", shift right=2, shift right=0] & B \\\\\n",
+    "C \\arrow[r, \"v\", shift left=3, shift left=0] & D \\\\\n",
+    "E \\arrow[r, \"w\", shift right=0, shift left=2] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "u") {
+    Some(edge) => inspect(edge.options.offset, content="0")
+    None => abort("expected edge u")
+  }
+  match tikz_test_find_edge_by_label(quiver, "v") {
+    Some(edge) => inspect(edge.options.offset, content="0")
+    None => abort("expected edge v")
+  }
+  match tikz_test_find_edge_by_label(quiver, "w") {
+    Some(edge) => inspect(edge.options.offset, content="-2")
+    None => abort("expected edge w")
+  }
+}
+
+///|
 test "tikz-cd import parser maps bend left and bend right options" {
   let input = [
     "\\begin{tikzcd}\n",
