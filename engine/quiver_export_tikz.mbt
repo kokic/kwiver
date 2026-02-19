@@ -3975,6 +3975,13 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                   let option_token = tikz_strip_math_wrapper(direction_candidate)
                   if option_token == "phantom" {
                     is_phantom = true
+                    parsed_options = tikz_apply_empty_arrow_style(
+                      parsed_options,
+                    )
+                    parsed_label_options = {
+                      ..parsed_label_options,
+                      description: true,
+                    }
                   }
                   if direction is None &&
                     tikz_is_direction_token(option_token) {
@@ -4194,6 +4201,27 @@ fn tikz_find_phantom_anchor_edge_id(
     }
   }
   matched
+}
+
+///|
+fn tikz_is_phantom_helper_name(reference_name : String) -> Bool {
+  let name = reference_name.trim().to_string()
+  if name.length() < 2 || !name.has_suffix("p") {
+    return false
+  }
+
+  let prefix = name.unsafe_substring(start=0, end=name.length() - 1)
+  if prefix == "" {
+    return false
+  }
+
+  for byte in @utf8.encode(prefix) {
+    let code = byte.to_int()
+    if code < 48 || code > 57 {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -4446,16 +4474,24 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       }
 
       if pending.is_phantom {
-        let mut resolved = true
-        match pending.name {
+        let matched_helper_edge_id = tikz_find_phantom_anchor_edge_id(
+          quiver,
+          resolved_source_id,
+          resolved_target_id,
+          pending.options,
+        )
+        let helper_reference = match pending.name {
           Some(reference_name) =>
-            match
-              tikz_find_phantom_anchor_edge_id(
-                quiver,
-                resolved_source_id,
-                resolved_target_id,
-                pending.options,
-              ) {
+            if tikz_is_phantom_helper_name(reference_name) {
+              Some(reference_name)
+            } else {
+              None
+            }
+          None => None
+        }
+        match helper_reference {
+          Some(reference_name) =>
+            match matched_helper_edge_id {
               Some(edge_id) => {
                 named_cell_ids.set(reference_name, {
                   id: edge_id,
@@ -4464,14 +4500,20 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
                 })
                 made_progress = true
               }
-              None => resolved = false
+              None => next_round.push(pending)
             }
-          None => made_progress = true
+          None => ()
         }
-        if !resolved {
-          next_round.push(pending)
+        if helper_reference is Some(_) {
+          continue
         }
-        continue
+
+        if pending.name is None {
+          if matched_helper_edge_id is Some(_) {
+            made_progress = true
+            continue
+          }
+        }
       }
 
       let edge_id = next_id

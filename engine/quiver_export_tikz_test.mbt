@@ -1347,6 +1347,26 @@ test "tikz-cd import parser ignores phantom helper arrows" {
 }
 
 ///|
+test "tikz-cd import parser keeps non-helper phantom arrows as edges" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, phantom, \"p\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "p") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.body.name, content="none")
+      inspect(edge.options.style.head.name, content="none")
+      inspect(edge.options.label_alignment is LabelAlignment::Centre, content="true")
+    }
+    None => abort("expected non-helper phantom edge p")
+  }
+}
+
+///|
 test "tikz-cd import parser supports ampersand replacement and brace arrow options" {
   let input = [
     "\\begin{tikzcd}[ampersand replacement=\\&]\n", "A \\arrow{r, \"k\"} \\& B\n",
