@@ -1436,6 +1436,31 @@ test "tikz-cd import parser supports caret and underscore label suffix syntax" {
 }
 
 ///|
+test "tikz-cd import parser supports vertical bar centred label suffix syntax" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\ar[r]|{h} & B \\\\\n",
+    "C \\ar[r]|-{k} & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5, 6]")
+
+  match tikz_test_find_edge_by_label(quiver, "h") {
+    Some(edge) =>
+      inspect(edge.options.label_alignment is LabelAlignment::Centre, content="true")
+    None => abort("expected edge h")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "k") {
+    Some(edge) =>
+      inspect(edge.options.label_alignment is LabelAlignment::Centre, content="true")
+    None => abort("expected edge k")
+  }
+}
+
+///|
 test "tikz-cd import parser maps basic arrow style flags" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\", dashed, no head, maps to] & B\n",
@@ -1497,6 +1522,132 @@ test "tikz-cd import parser maps advanced arrow style and level options" {
       inspect(edge.options.style.head.name, content="none")
     }
     None => abort("expected edge h")
+  }
+}
+
+test "tikz-cd import parser maps preset reverse arrow tokens" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"l\", Leftarrow] & B \\\\\n",
+    "C \\arrow[r, \"m\", mapsfrom] & D \\\\\n",
+    "E \\arrow[r, \"h\", hookleftarrow] & F \\\\\n",
+    "G \\arrow[r, \"d\", dashleftarrow] & H\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "B", "A") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="l")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed Leftarrow edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "D", "C") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="m")
+      inspect(edge.options.style.tail.name, content="maps to")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed mapsfrom edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "F", "E") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="h")
+      inspect(edge.options.style.tail.name, content="hook")
+      inspect(edge.options.style.tail.side, content="top")
+    }
+    None => abort("expected reversed hookleftarrow edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "H", "G") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="d")
+      inspect(edge.options.style.body.name, content="dashed")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed dashleftarrow edge")
+  }
+}
+
+///|
+test "tikz-cd import parser maps preset aliases and line tokens" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"map\", mapsto] & B \\\\\n",
+    "C \\arrow[r, \"Map\", Mapsto] & D \\\\\n",
+    "E \\arrow[r, double line] & F \\\\\n",
+    "G \\arrow[r, \"eq\", equal] & H \\\\\n",
+    "I \\arrow[r, \"eqs\", equals] & J \\\\\n",
+    "K \\arrow[r, \"th\", to head] & L \\\\\n",
+    "M \\arrow[r, \"sq\", leftrightsquigarrow] & N \\\\\n",
+    "O \\arrow[r, \"hp\", rightharpoondown] & P\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_label(quiver, "map") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="maps to")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected mapsto edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "Map") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="maps to")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected Mapsto edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "E", "F") {
+    Some(edge) => inspect(edge.cell.label, content="")
+    None => abort("expected double line edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "eq") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="none")
+    }
+    None => abort("expected equal edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "eqs") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="none")
+    }
+    None => abort("expected equals edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "th") {
+    Some(edge) => inspect(edge.options.style.head.name, content="cell")
+    None => abort("expected to head edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "sq") {
+    Some(edge) => {
+      inspect(edge.options.style.body.name, content="squiggly")
+      inspect(edge.options.style.tail.name, content="arrowhead")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected leftrightsquigarrow edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "hp") {
+    Some(edge) => {
+      inspect(edge.options.style.head.name, content="harpoon")
+      inspect(edge.options.style.head.side, content="bottom")
+    }
+    None => abort("expected rightharpoondown edge")
   }
 }
 

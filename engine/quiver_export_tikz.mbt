@@ -1631,6 +1631,7 @@ priv struct TikzArrowMatch {
 ///|
 priv struct TikzParsedArrow {
   direction : String?
+  reverse : Bool
   is_loop : Bool
   is_phantom : Bool
   name : String?
@@ -1651,6 +1652,7 @@ priv struct TikzParsedArrow {
 priv struct TikzPendingArrow {
   default_source_x : Int
   default_source_y : Int
+  reverse : Bool
   source_x : Int?
   source_y : Int?
   source_ref : String?
@@ -2106,6 +2108,34 @@ fn tikz_is_label_modifier(option : String) -> Bool {
 ///|
 fn tikz_is_arrow_flag_token(option : String) -> Bool {
   match option {
+    "Rightarrow" => true
+    "Leftarrow" => true
+    "Leftrightarrow" => true
+    "mapsto" => true
+    "mapsfrom" => true
+    "Mapsto" => true
+    "Mapsfrom" => true
+    "hookrightarrow" => true
+    "hookleftarrow" => true
+    "rightarrowtail" => true
+    "leftarrowtail" => true
+    "rightarrow" => true
+    "leftarrow" => true
+    "leftrightarrow" => true
+    "twoheadrightarrow" => true
+    "twoheadleftarrow" => true
+    "rightharpoonup" => true
+    "rightharpoondown" => true
+    "leftharpoonup" => true
+    "leftharpoondown" => true
+    "dashrightarrow" => true
+    "dashleftarrow" => true
+    "rightsquigarrow" => true
+    "leftsquigarrow" => true
+    "leftrightsquigarrow" => true
+    "dash" => true
+    "equal" => true
+    "double line" => true
     "dashed" => true
     "dotted" => true
     "squiggly" => true
@@ -2125,14 +2155,44 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
     "shift left" => true
     "bend left" => true
     "bend right" => true
+    "to head" => true
     "two heads" => true
-    "Rightarrow" => true
     "equals" => true
     "loop" => true
     "loop left" => true
     "loop right" => true
     "phantom" => true
     _ => false
+  }
+}
+
+///|
+fn tikz_arrow_flag_reverse(option : String) -> Bool? {
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+  match token {
+    "Rightarrow" => Some(false)
+    "Leftarrow" => Some(true)
+    "mapsto" => Some(false)
+    "mapsfrom" => Some(true)
+    "Mapsto" => Some(false)
+    "Mapsfrom" => Some(true)
+    "hookrightarrow" => Some(false)
+    "hookleftarrow" => Some(true)
+    "rightarrowtail" => Some(false)
+    "leftarrowtail" => Some(true)
+    "rightarrow" => Some(false)
+    "leftarrow" => Some(true)
+    "twoheadrightarrow" => Some(false)
+    "twoheadleftarrow" => Some(true)
+    "rightharpoonup" => Some(false)
+    "rightharpoondown" => Some(false)
+    "leftharpoonup" => Some(true)
+    "leftharpoondown" => Some(true)
+    "dashrightarrow" => Some(false)
+    "dashleftarrow" => Some(true)
+    "rightsquigarrow" => Some(false)
+    "leftsquigarrow" => Some(true)
+    _ => None
   }
 }
 
@@ -2883,6 +2943,176 @@ fn tikz_apply_arrow_flag_option(
 ) -> EdgeOptions {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   match token {
+    "Rightarrow" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "Leftarrow" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "Leftrightarrow" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("arrowhead")
+      .with_style_head("arrowhead")
+    "mapsto" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "mapsfrom" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "Mapsto" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "Mapsfrom" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "hookrightarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("hook", side="top")
+      .with_style_head("arrowhead")
+    "hookleftarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("hook", side="top")
+      .with_style_head("arrowhead")
+    "rightarrowtail" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("mono")
+      .with_style_head("arrowhead")
+    "leftarrowtail" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("mono")
+      .with_style_head("arrowhead")
+    "rightarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "leftarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "leftrightarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("arrowhead")
+      .with_style_head("arrowhead")
+    "twoheadrightarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("epi")
+    "twoheadleftarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("epi")
+    "rightharpoonup" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("harpoon", side="top")
+    "rightharpoondown" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("harpoon", side="bottom")
+    "leftharpoonup" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("harpoon", side="top")
+    "leftharpoondown" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("harpoon", side="bottom")
+    "dashrightarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("dashed")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "dashleftarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("dashed")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "rightsquigarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("squiggly")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "leftsquigarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("squiggly")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "leftrightsquigarrow" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("squiggly")
+      .with_style_tail("arrowhead")
+      .with_style_head("arrowhead")
+    "dash" =>
+      options
+      .with_level(1)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("none")
+    "equal" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("none")
+    "double line" => options.with_level(2)
     "dashed" => options.with_style_body("dashed")
     "dotted" => options.with_style_body("dotted")
     "squiggly" => options.with_style_body("squiggly")
@@ -2902,14 +3132,15 @@ fn tikz_apply_arrow_flag_option(
     "shift left" => options.with_offset(-1)
     "bend left" => options.with_curve(1)
     "bend right" => options.with_curve(-1)
+    "to head" => options.with_style_head("cell")
     "two heads" => options.with_style_head("epi")
-    "Rightarrow" =>
-      if options.level < 2 {
-        options.with_level(2)
-      } else {
-        options
-      }
-    "equals" => options.with_level(2).with_style_head("none")
+    "equals" =>
+      options
+      .with_level(2)
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("none")
     _ => options
   }
 }
@@ -3120,7 +3351,7 @@ fn tikz_extract_arrow_label_option(option : String) -> String? {
 }
 
 ///|
-fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
+fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
   let mut i = 0
   while i < input.length() && tikz_is_whitespace(input.unsafe_get(i)) {
     i = i + 1
@@ -3130,11 +3361,22 @@ fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
   }
 
   let marker = input.unsafe_get(i)
-  if marker != '^' && marker != '_' {
+  if marker != '^' && marker != '_' && marker != '|' {
     return None
   }
-  let is_swap = marker == '_'
+  let alignment = if marker == '_' {
+    "right"
+  } else if marker == '|' {
+    "centre"
+  } else {
+    "left"
+  }
   i = i + 1
+  if marker == '|' &&
+    i < input.length() &&
+    input.unsafe_get(i) == '-' {
+    i = i + 1
+  }
   while i < input.length() && tikz_is_whitespace(input.unsafe_get(i)) {
     i = i + 1
   }
@@ -3176,7 +3418,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
     if normalised == "" {
       None
     } else {
-      Some((normalised, is_swap))
+      Some((normalised, alignment))
     }
   } else if first == '"' {
     match tikz_find_unescaped_quote(input, i + 1) {
@@ -3191,7 +3433,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
           if normalised == "" {
             None
           } else {
-            Some((normalised, is_swap))
+            Some((normalised, alignment))
           }
         }
       None => None
@@ -3219,7 +3461,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
     if normalised == "" {
       None
     } else {
-      Some((normalised, is_swap))
+      Some((normalised, alignment))
     }
   }
 }
@@ -3488,6 +3730,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             let mut source_center_anchor = false
             let mut target_center_anchor = false
             let mut parsed_options = EdgeOptions::at_level(1)
+            let mut parsed_reverse = false
             let mut parsed_label_options = tikz_label_options_default()
             let mut parsed_label_colour = Colour::black()
             let mut parsed_loop_options = tikz_loop_options_default()
@@ -3632,6 +3875,10 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       None => ()
                     }
                   }
+                  match tikz_arrow_flag_reverse(option) {
+                    Some(reverse) => parsed_reverse = reverse
+                    None => ()
+                  }
                   parsed_options = tikz_apply_arrow_flag_option(
                       parsed_options,
                       option,
@@ -3693,10 +3940,12 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
             )
             if label == "" {
               match tikz_take_leading_positional_label(remaining_after_arrow) {
-                Some((suffix_label, is_swap)) => {
+                Some((suffix_label, alignment)) => {
                   label = suffix_label
-                  if is_swap {
-                    parsed_options = parsed_options.with_label_alignment_right()
+                  parsed_options = match alignment {
+                    "right" => parsed_options.with_label_alignment_right()
+                    "centre" => parsed_options.with_label_alignment_centre()
+                    _ => parsed_options
                   }
                 }
                 None => ()
@@ -3705,6 +3954,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
             arrows.push({
               direction,
+              reverse: parsed_reverse,
               is_loop: parsed_loop_options.is_loop,
               is_phantom,
               name,
@@ -3958,6 +4208,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
         pending_arrows.push({
           default_source_x,
           default_source_y,
+          reverse: parsed_arrow.reverse,
           source_x: parsed_arrow.from_x,
           source_y: parsed_arrow.from_y,
           source_ref: parsed_arrow.from_ref,
@@ -4023,6 +4274,20 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
       let source_id = source_endpoint.id
       let target_id = target_endpoint.id
+      let source_center_anchor = pending.source_center_anchor ||
+        source_endpoint.center_anchor
+      let target_center_anchor = pending.target_center_anchor ||
+        target_endpoint.center_anchor
+      let (
+        resolved_source_id,
+        resolved_target_id,
+        resolved_source_center_anchor,
+        resolved_target_center_anchor,
+      ) = if pending.reverse {
+        (target_id, source_id, target_center_anchor, source_center_anchor)
+      } else {
+        (source_id, target_id, source_center_anchor, target_center_anchor)
+      }
 
       if pending.is_phantom {
         let mut resolved = true
@@ -4031,15 +4296,15 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
             match
               tikz_find_phantom_anchor_edge_id(
                 quiver,
-                source_id,
-                target_id,
+                resolved_source_id,
+                resolved_target_id,
                 pending.options,
               ) {
               Some(edge_id) => {
                 named_cell_ids.set(reference_name, {
                   id: edge_id,
-                  center_anchor: pending.source_center_anchor ||
-                    pending.target_center_anchor,
+                  center_anchor: resolved_source_center_anchor ||
+                    resolved_target_center_anchor,
                 })
                 made_progress = true
               }
@@ -4055,26 +4320,22 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
       let edge_id = next_id
       next_id = next_id + 1
-      let source_center_anchor = pending.source_center_anchor ||
-        source_endpoint.center_anchor
-      let target_center_anchor = pending.target_center_anchor ||
-        target_endpoint.center_anchor
       let edge_options = pending.options
-        .with_edge_alignment_source(!source_center_anchor)
-        .with_edge_alignment_target(!target_center_anchor)
+        .with_edge_alignment_source(!resolved_source_center_anchor)
+        .with_edge_alignment_target(!resolved_target_center_anchor)
       quiver.add(
         CellData::from_edge(
           Edge::new(
             edge_id,
             pending.label,
-            source_id,
-            target_id,
+            resolved_source_id,
+            resolved_target_id,
             edge_options,
             pending.label_colour,
           ),
         ),
       )
-      quiver.connect(source_id, target_id, edge_id)
+      quiver.connect(resolved_source_id, resolved_target_id, edge_id)
       match pending.name {
         Some(reference_name) =>
           named_cell_ids.set(reference_name, {
