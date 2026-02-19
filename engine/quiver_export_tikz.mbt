@@ -3800,7 +3800,17 @@ fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabe
                 label: tikz_unwrap_braced_text(label_text),
                 label_colour,
               })
-            None => None
+            None => {
+              let plain_label = tikz_trim_left(after_colour).trim().to_string()
+              if plain_label == "" {
+                None
+              } else {
+                Some({
+                  label: tikz_unwrap_braced_text(plain_label),
+                  label_colour,
+                })
+              }
+            }
           }
         None => None
       }

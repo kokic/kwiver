@@ -18,15 +18,15 @@ A first-pass browser integration surface is documented in docs/js-ffi-boundary.m
 ## Tokei
 
 ```sh
-> tokei -e *_test.mbt # commit 0081cd015d46e5f3fa6fbb34d467ad7f839218ca
+> tokei -e *_test.mbt # fcb5839 feat: create implicit vertices for coordinate-only tikz arrows
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  Language              Files        Lines         Code     Comments       Blanks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  JSON                      1           11           11            0            0
- Markdown                  2          121            0           95           26
- MoonBit                  16        12202        10461          751          990
+ Markdown                  2          140            0          112           28
+ MoonBit                  16        12643        10857          770         1016
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Total                    19        12334        10472          846         1016
+ Total                    19        12794        10868          882         1044
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
