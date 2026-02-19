@@ -2209,8 +2209,31 @@ fn tikz_parse_signed_double(value : String) -> Double? {
 
 ///|
 fn tikz_parse_shift_magnitude(value : String) -> Int? {
-  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
-  tikz_parse_positive_int(text)
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_suffix("pt") {
+    text = text.unsafe_substring(start=0, end=text.length() - 2)
+  } else if text.has_suffix("ex") {
+    text = text.unsafe_substring(start=0, end=text.length() - 2)
+  } else if text.has_suffix("em") {
+    text = text.unsafe_substring(start=0, end=text.length() - 2)
+  }
+  match tikz_parse_signed_double(text) {
+    Some(shift_value) => {
+      let shift_abs = tikz_abs_double(shift_value)
+      if shift_abs == 0.0 {
+        return None
+      }
+      let rounded = tikz_round_to_int(shift_abs)
+      if rounded < 1 {
+        Some(1)
+      } else {
+        Some(rounded)
+      }
+    }
+    None => None
+  }
 }
 
 ///|

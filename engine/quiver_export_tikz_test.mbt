@@ -1595,6 +1595,26 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
 }
 
 ///|
+test "tikz-cd import parser maps decimal shift magnitudes with units" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"p\", shift right=.5ex] & B \\\\\n",
+    "C \\arrow[r, \"q\", shift left=1.6pt] & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "p") {
+    Some(edge) => inspect(edge.options.offset, content="1")
+    None => abort("expected edge p")
+  }
+  match tikz_test_find_edge_by_label(quiver, "q") {
+    Some(edge) => inspect(edge.options.offset, content="-2")
+    None => abort("expected edge q")
+  }
+}
+
+///|
 test "tikz-cd import parser maps bend left and bend right options" {
   let input = [
     "\\begin{tikzcd}\n",
