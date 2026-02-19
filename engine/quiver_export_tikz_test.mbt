@@ -1454,6 +1454,24 @@ test "tikz-cd import parser maps basic arrow style flags" {
 }
 
 ///|
+test "tikz-cd import parser maps no tail flag and keeps option order" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"t\", tail reversed, no tail] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "t") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected edge t")
+  }
+}
+
+///|
 test "tikz-cd import parser maps advanced arrow style and level options" {
   let input = [
     "\\begin{tikzcd}\n",

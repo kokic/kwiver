@@ -2111,6 +2111,7 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
     "squiggly" => true
     "no body" => true
     "no head" => true
+    "no tail" => true
     "maps to" => true
     "tail" => true
     "2tail" => true
@@ -2887,6 +2888,7 @@ fn tikz_apply_arrow_flag_option(
     "squiggly" => options.with_style_body("squiggly")
     "no body" => options.with_style_body("none")
     "no head" => options.with_style_head("none")
+    "no tail" => options.with_style_tail("none")
     "maps to" => options.with_style_tail("maps to")
     "tail" => options.with_style_tail("mono")
     "2tail" => options.with_level(2).with_style_tail("mono")
