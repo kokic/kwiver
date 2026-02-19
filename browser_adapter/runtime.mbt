@@ -1,4 +1,4 @@
-﻿///|
+///|
 fn browser_contains_id(ids : Array[Int], target : Int) -> Bool {
   for id in ids {
     if id == target {
@@ -30,11 +30,68 @@ fn browser_parse_removed_ids(result_json : String) -> Array[Int] raise {
 
 ///|
 fn browser_int_array_json_string(values : Array[Int]) -> String {
+  browser_int_array_json(values).stringify()
+}
+
+///|
+fn browser_int_array_json(values : Array[Int]) -> Json {
   let out : Array[Json] = []
   for value in values {
     out.push(Json::number(value.to_double()))
   }
-  Json::array(out).stringify()
+  Json::array(out)
+}
+
+///|
+fn browser_runtime_dispatch_action_name(root : Map[String, Json]) -> String raise {
+  match root.get("action") {
+    Some(action_json) => @json.from_json(action_json)
+    None =>
+      match root.get("type") {
+        Some(action_json) => @json.from_json(action_json)
+        None => abort("missing runtime dispatch action")
+      }
+  }
+}
+
+///|
+fn browser_runtime_dispatch_input_json(root : Map[String, Json]) -> String {
+  match root.get("input") {
+    Some(input) => input.stringify()
+    None => "{}"
+  }
+}
+
+///|
+fn browser_runtime_dispatch_optional_string(
+  root : Map[String, Json],
+  key : String,
+) -> String? {
+  match root.get(key) {
+    Some(Json::String(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn browser_runtime_dispatch_optional_bool(
+  root : Map[String, Json],
+  key : String,
+) -> Bool? {
+  match root.get(key) {
+    Some(Json::True) => Some(true)
+    Some(Json::False) => Some(false)
+    _ => None
+  }
+}
+
+///|
+fn browser_runtime_dispatch_raw_input(root : Map[String, Json]) -> String {
+  match root.get("input") {
+    Some(Json::String(value)) => value
+    Some(value) => value.stringify()
+    None => ""
+  }
 }
 
 ///|
@@ -790,6 +847,160 @@ pub fn BrowserRuntime::paste_selection_json(
 }
 
 ///|
+pub fn BrowserRuntime::dispatch_json(
+  self : BrowserRuntime,
+  action_json : String,
+) -> String raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(action_json))
+  let action = browser_runtime_dispatch_action_name(root)
+  let input_json = browser_runtime_dispatch_input_json(root)
+
+  let mut ok = true
+  let mut result : Json = Json::null()
+  let mut error : String? = None
+
+  match action {
+    "add_vertex_json" => result = @json.parse(self.add_vertex_json(input_json))
+    "add_edge_json" => result = @json.parse(self.add_edge_json(input_json))
+    "set_label_json" => result = @json.parse(self.set_label_json(input_json))
+    "set_label_colour_json" =>
+      result = @json.parse(self.set_label_colour_json(input_json))
+    "move_vertex_json" => result = @json.parse(self.move_vertex_json(input_json))
+    "set_edge_options_json" =>
+      result = @json.parse(self.set_edge_options_json(input_json))
+    "set_edge_label_alignment_json" =>
+      result = @json.parse(self.set_edge_label_alignment_json(input_json))
+    "set_edge_label_position_json" =>
+      result = @json.parse(self.set_edge_label_position_json(input_json))
+    "set_edge_offset_json" =>
+      result = @json.parse(self.set_edge_offset_json(input_json))
+    "set_edge_curve_json" =>
+      result = @json.parse(self.set_edge_curve_json(input_json))
+    "set_edge_shorten_json" =>
+      result = @json.parse(self.set_edge_shorten_json(input_json))
+    "reconnect_edge_json" =>
+      result = @json.parse(self.reconnect_edge_json(input_json))
+    "remove_json" => result = @json.parse(self.remove_json(input_json))
+    "flush_json" => result = @json.parse(self.flush_json(input_json))
+    "apply_mutation_batch_json" =>
+      result = @json.parse(self.apply_mutation_batch_json(input_json))
+    "import_text_auto_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_text_auto_json(raw_input, default_renderer~))
+    }
+    "import_share_url_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_share_url_json(raw_input, default_renderer~))
+    }
+    "import_share_text_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_share_text_json(raw_input, default_renderer~))
+    }
+    "import_tikz_cd_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_tikz_cd_json(raw_input, default_renderer~))
+    }
+    "import_fletcher_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_fletcher_json(raw_input, default_renderer~))
+    }
+    "import_html_embed_json" => {
+      let raw_input = browser_runtime_dispatch_raw_input(root)
+      let default_renderer = match
+        browser_runtime_dispatch_optional_string(root, "default_renderer") {
+        Some(value) => value
+        None => "canvas"
+      }
+      result = @json.parse(self.import_html_embed_json(raw_input, default_renderer~))
+    }
+    "paste_selection_json" => {
+      let input : Map[String, Json] = @json.from_json(
+        browser_json_required_field(root, "input"),
+      )
+      let payload : String = @json.from_json(
+        browser_json_required_field(input, "payload"),
+      )
+      let origin_x : Int = @json.from_json(
+        browser_json_required_field(input, "origin_x"),
+      )
+      let origin_y : Int = @json.from_json(
+        browser_json_required_field(input, "origin_y"),
+      )
+      let start_id : Int = match input.get("start_id") {
+        Some(value) => @json.from_json(value)
+        None => 1
+      }
+      result = @json.parse(
+        self.paste_selection_json(payload, origin_x, origin_y, start_id~),
+      )
+    }
+    "set_selection" => {
+      let selected_ids : Array[Int] = match root.get("input") {
+        Some(value) => @json.from_json(value)
+        None => []
+      }
+      self.set_selection(selected_ids)
+      result = browser_int_array_json(self.selection())
+    }
+    "selection" => result = browser_int_array_json(self.selection())
+    "snapshot_json" => result = @json.parse(self.snapshot_json())
+    "all_cells_json" => result = @json.parse(browser_runtime_cell_data_array_json_string(self.all_cells()))
+    "all_cell_ids_json" => result = @json.parse(browser_int_array_json_string(self.all_cell_ids()))
+    "render_tikz_json" => result = @json.parse(self.render_tikz_json())
+    "export_payload" => result = Json::string(self.export_payload())
+    "export_selection" => {
+      let include_dependencies = match
+        browser_runtime_dispatch_optional_bool(root, "include_dependencies") {
+        Some(value) => value
+        None => true
+      }
+      result = Json::string(self.export_selection(include_dependencies~))
+    }
+    _ => {
+      ok = false
+      error = Some(["unknown runtime dispatch action: ", action].join(""))
+    }
+  }
+
+  Json::object({
+    "ok": Json::boolean(ok),
+    "action": Json::string(action),
+    "result": result,
+    "payload": Json::string(self.export_payload()),
+    "selection": browser_int_array_json(self.selection()),
+    "error": match error {
+      Some(message) => Json::string(message)
+      None => Json::null()
+    },
+  }).stringify()
+}
+
+///|
 pub fn ffi_browser_runtime_new() -> BrowserRuntime {
   BrowserRuntime::new()
 }
@@ -1039,6 +1250,14 @@ pub fn ffi_browser_runtime_apply_mutation_batch_json(
 }
 
 ///|
+pub fn ffi_browser_runtime_dispatch_json(
+  runtime : BrowserRuntime,
+  action_json : String,
+) -> String raise {
+  runtime.dispatch_json(action_json)
+}
+
+///|
 pub fn ffi_browser_runtime_export_payload(runtime : BrowserRuntime) -> String {
   runtime.export_payload()
 }
@@ -1148,4 +1367,3 @@ pub fn ffi_browser_runtime_paste_selection_json(
 ) -> String raise {
   runtime.paste_selection_json(payload, origin_x, origin_y, start_id~)
 }
-

@@ -1,4 +1,11 @@
-﻿///|
+///|
+fn runtime_test_json_get(root : Map[String, Json], key : String) -> Json {
+  match root.get(key) {
+    Some(value) => value
+    None => abort("missing json key")
+  }
+}
+///|
 test "browser runtime roundtrips payload across sessions" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
@@ -470,6 +477,110 @@ test "browser runtime single mutation json wrappers expose ok payload contract" 
 }
 
 ///|
+test "browser runtime dispatch_json routes action envelopes for ui loop" {
+  let runtime = BrowserRuntime::new()
+
+  let add_a_dispatch = runtime.dispatch_json(
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+  )
+  let add_a_root : Map[String, Json] = @json.from_json(@json.parse(add_a_dispatch))
+  let add_a_ok : Bool = @json.from_json(runtime_test_json_get(add_a_root, "ok"))
+  inspect(add_a_ok, content="true")
+  let add_a_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(add_a_root, "result"),
+  )
+  let add_a_id : Int = @json.from_json(runtime_test_json_get(add_a_result, "id"))
+  inspect(add_a_id, content="1")
+
+  let add_b_dispatch = runtime.dispatch_json(
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}}",
+  )
+  let add_b_root : Map[String, Json] = @json.from_json(@json.parse(add_b_dispatch))
+  let add_b_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(add_b_root, "result"),
+  )
+  let add_b_id : Int = @json.from_json(runtime_test_json_get(add_b_result, "id"))
+  inspect(add_b_id, content="2")
+
+  let add_edge_dispatch = runtime.dispatch_json(
+    "{\"action\":\"add_edge_json\",\"input\":{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}}",
+  )
+  let add_edge_root : Map[String, Json] = @json.from_json(
+    @json.parse(add_edge_dispatch),
+  )
+  let add_edge_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(add_edge_root, "result"),
+  )
+  let edge_id : Int = @json.from_json(runtime_test_json_get(add_edge_result, "id"))
+  inspect(edge_id, content="3")
+  inspect(runtime.selection(), content="[3]")
+
+  let set_offset_dispatch = runtime.dispatch_json(
+    "{\"action\":\"set_edge_offset_json\",\"input\":{\"edge_id\":3,\"offset\":11}}",
+  )
+  let set_offset_root : Map[String, Json] = @json.from_json(
+    @json.parse(set_offset_dispatch),
+  )
+  let set_offset_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(set_offset_root, "result"),
+  )
+  let set_offset_ok : Bool = @json.from_json(
+    runtime_test_json_get(set_offset_result, "ok"),
+  )
+  inspect(set_offset_ok, content="true")
+
+  let snapshot_dispatch = runtime.dispatch_json("{\"action\":\"snapshot_json\"}")
+  let snapshot_root : Map[String, Json] = @json.from_json(
+    @json.parse(snapshot_dispatch),
+  )
+  let snapshot_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(snapshot_root, "result"),
+  )
+  let snapshot_cell_ids : Array[Int] = @json.from_json(
+    runtime_test_json_get(snapshot_result, "cell_ids"),
+  )
+  inspect(snapshot_cell_ids, content="[1, 2, 3]")
+
+  let payload_dispatch = runtime.dispatch_json("{\"action\":\"export_payload\"}")
+  let payload_root : Map[String, Json] = @json.from_json(@json.parse(payload_dispatch))
+  let payload_value : String = @json.from_json(
+    runtime_test_json_get(payload_root, "result"),
+  )
+  inspect(payload_value == runtime.export_payload(), content="true")
+
+  let set_selection_dispatch = runtime.dispatch_json(
+    "{\"action\":\"set_selection\",\"input\":[3]}",
+  )
+  let set_selection_root : Map[String, Json] = @json.from_json(
+    @json.parse(set_selection_dispatch),
+  )
+  let set_selection_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(set_selection_root, "result"),
+  )
+  inspect(set_selection_result, content="[3]")
+
+  let selection_dispatch = runtime.dispatch_json("{\"action\":\"selection\"}")
+  let selection_root : Map[String, Json] = @json.from_json(
+    @json.parse(selection_dispatch),
+  )
+  let selection_result : Array[Int] = @json.from_json(
+    runtime_test_json_get(selection_root, "result"),
+  )
+  inspect(selection_result, content="[3]")
+
+  let unknown_dispatch = runtime.dispatch_json("{\"action\":\"unknown-action\"}")
+  let unknown_root : Map[String, Json] = @json.from_json(
+    @json.parse(unknown_dispatch),
+  )
+  let unknown_ok : Bool = @json.from_json(runtime_test_json_get(unknown_root, "ok"))
+  let unknown_error : String = @json.from_json(
+    runtime_test_json_get(unknown_root, "error"),
+  )
+  inspect(unknown_ok, content="false")
+  inspect(unknown_error.contains("unknown runtime dispatch action"), content="true")
+}
+
+///|
 test "browser runtime applies mutation batch through ffi adapter" {
   let runtime = BrowserRuntime::new()
   let source_id = runtime.add_vertex("A", 0, 0)
@@ -861,6 +972,46 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
 }
 
 ///|
+test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface" {
+  let runtime = ffi_browser_runtime_new()
+
+  let add_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+  )
+  let add_root : Map[String, Json] = @json.from_json(@json.parse(add_dispatch))
+  let add_ok : Bool = @json.from_json(runtime_test_json_get(add_root, "ok"))
+  let add_action : String = @json.from_json(runtime_test_json_get(add_root, "action"))
+  inspect(add_ok, content="true")
+  inspect(add_action, content="add_vertex_json")
+
+  let snapshot_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"snapshot_json\"}",
+  )
+  let snapshot_root : Map[String, Json] = @json.from_json(
+    @json.parse(snapshot_dispatch),
+  )
+  let snapshot_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(snapshot_root, "result"),
+  )
+  let cell_ids : Array[Int] = @json.from_json(
+    runtime_test_json_get(snapshot_result, "cell_ids"),
+  )
+  inspect(cell_ids, content="[1]")
+
+  let unknown_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"unknown-action\"}",
+  )
+  let unknown_root : Map[String, Json] = @json.from_json(
+    @json.parse(unknown_dispatch),
+  )
+  let unknown_ok : Bool = @json.from_json(runtime_test_json_get(unknown_root, "ok"))
+  inspect(unknown_ok, content="false")
+}
+
+///|
 test "browser runtime ffi wrappers support format-specific import json" {
   let source = BrowserRuntime::new()
   let source_id = source.add_vertex("A", 0, 0)
@@ -978,4 +1129,3 @@ test "browser runtime ffi wrappers expose graph query arrays and json" {
     content="[1,2,3,4]",
   )
 }
-
