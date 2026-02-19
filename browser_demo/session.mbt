@@ -329,6 +329,55 @@ pub fn BrowserDemoSession::move_vertex(
 }
 
 ///|
+pub fn BrowserDemoSession::set_edge_options_json(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  options_json : String,
+) -> Bool {
+  let options_result : Result[Json, Error] = try? @json.parse(options_json)
+  let options_object = match options_result {
+    Ok(Json::Object(value)) => value
+    _ => return false
+  }
+
+  let required_fields = [
+    "label_alignment",
+    "label_position",
+    "offset",
+    "curve",
+    "radius",
+    "angle",
+    "shorten_source",
+    "shorten_target",
+    "level",
+    "shape",
+    "colour",
+    "edge_alignment_source",
+    "edge_alignment_target",
+    "style",
+  ]
+  for required in required_fields {
+    if options_object.get(required) is None {
+      return false
+    }
+  }
+
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_options_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "options": Json::object(options_object),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
 pub fn BrowserDemoSession::patch_edge_options_json(
   self : BrowserDemoSession,
   edge_id : Int,
@@ -346,6 +395,145 @@ pub fn BrowserDemoSession::patch_edge_options_json(
       Json::object({
         "edge_id": Json::number(edge_id.to_double()),
         "patch": patch,
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_edge_label_alignment(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  label_alignment : String,
+) -> Bool {
+  let alignment = label_alignment.trim().to_string()
+  if alignment != "left" &&
+    alignment != "centre" &&
+    alignment != "center" &&
+    alignment != "right" &&
+    alignment != "over" {
+    return false
+  }
+
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_label_alignment_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "label_alignment": Json::string(alignment),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_edge_label_position(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  label_position : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_label_position_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "label_position": Json::number(label_position.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_edge_offset(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  offset : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_offset_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "offset": Json::number(offset.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_edge_curve(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  curve : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_curve_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "curve": Json::number(curve.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_edge_shorten(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  shorten_source : Int,
+  shorten_target : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_edge_shorten_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "shorten_source": Json::number(shorten_source.to_double()),
+        "shorten_target": Json::number(shorten_target.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::reconnect_edge(
+  self : BrowserDemoSession,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "reconnect_edge_json",
+      Json::object({
+        "edge_id": Json::number(edge_id.to_double()),
+        "source_id": Json::number(source_id.to_double()),
+        "target_id": Json::number(target_id.to_double()),
       }),
     ),
   )
@@ -423,6 +611,31 @@ pub fn BrowserDemoSession::export_selection(
 }
 
 ///|
+pub fn BrowserDemoSession::paste_selection(
+  self : BrowserDemoSession,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> Array[Int] {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "paste_selection_json",
+      Json::object({
+        "payload": Json::string(payload),
+        "origin_x": Json::number(origin_x.to_double()),
+        "origin_y": Json::number(origin_y.to_double()),
+        "start_id": Json::number(start_id.to_double()),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_int_array_or(result, "imported_ids", [])
+    None => []
+  }
+}
+
+///|
 pub fn BrowserDemoSession::import_payload(self : BrowserDemoSession, payload : String) -> Bool {
   let output = self.dispatch_json(
     browser_demo_action_with_input("import_payload", Json::string(payload)),
@@ -489,6 +702,22 @@ pub fn BrowserDemoSession::import_text_auto(
 }
 
 ///|
+pub fn BrowserDemoSession::import_share_url(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_share_url_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
 pub fn BrowserDemoSession::import_tikz_cd(
   self : BrowserDemoSession,
   input : String,
@@ -497,6 +726,38 @@ pub fn BrowserDemoSession::import_tikz_cd(
   let output = self.dispatch_json(
     Json::object({
       "action": Json::string("import_tikz_cd_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
+pub fn BrowserDemoSession::import_fletcher(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_fletcher_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
+pub fn BrowserDemoSession::import_html_embed(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_html_embed_json"),
       "input": Json::string(input),
       "default_renderer": Json::string(default_renderer),
     }).stringify(),
@@ -747,6 +1008,71 @@ pub fn ffi_browser_demo_session_set_label(
 }
 
 ///|
+pub fn ffi_browser_demo_session_set_edge_options_json(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  options_json : String,
+) -> Bool {
+  session.set_edge_options_json(edge_id, options_json)
+}
+
+///|
+pub fn ffi_browser_demo_session_set_edge_label_alignment(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  label_alignment : String,
+) -> Bool {
+  session.set_edge_label_alignment(edge_id, label_alignment)
+}
+
+///|
+pub fn ffi_browser_demo_session_set_edge_label_position(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  label_position : Int,
+) -> Bool {
+  session.set_edge_label_position(edge_id, label_position)
+}
+
+///|
+pub fn ffi_browser_demo_session_set_edge_offset(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  offset : Int,
+) -> Bool {
+  session.set_edge_offset(edge_id, offset)
+}
+
+///|
+pub fn ffi_browser_demo_session_set_edge_curve(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  curve : Int,
+) -> Bool {
+  session.set_edge_curve(edge_id, curve)
+}
+
+///|
+pub fn ffi_browser_demo_session_set_edge_shorten(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  shorten_source : Int,
+  shorten_target : Int,
+) -> Bool {
+  session.set_edge_shorten(edge_id, shorten_source, shorten_target)
+}
+
+///|
+pub fn ffi_browser_demo_session_reconnect_edge(
+  session : BrowserDemoSession,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> Bool {
+  session.reconnect_edge(edge_id, source_id, target_id)
+}
+
+///|
 pub fn ffi_browser_demo_session_move_vertex(
   session : BrowserDemoSession,
   vertex_id : Int,
@@ -793,6 +1119,17 @@ pub fn ffi_browser_demo_session_export_selection(
   include_dependencies? : Bool = true,
 ) -> String {
   session.export_selection(include_dependencies~)
+}
+
+///|
+pub fn ffi_browser_demo_session_paste_selection(
+  session : BrowserDemoSession,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> Array[Int] {
+  session.paste_selection(payload, origin_x, origin_y, start_id~)
 }
 
 ///|
@@ -856,12 +1193,39 @@ pub fn ffi_browser_demo_session_import_text_auto(
 }
 
 ///|
+pub fn ffi_browser_demo_session_import_share_url(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_share_url(input, default_renderer~)
+}
+
+///|
 pub fn ffi_browser_demo_session_import_tikz_cd(
   session : BrowserDemoSession,
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
   session.import_tikz_cd(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_fletcher(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_fletcher(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_html_embed(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_html_embed(input, default_renderer~)
 }
 
 ///|

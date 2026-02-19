@@ -157,6 +157,77 @@ test "browser demo typed mutation helpers support incremental edits and removals
 }
 
 ///|
+test "browser demo typed edge mutation helpers cover granular runtime actions" {
+  let session = BrowserDemoSession::new()
+  let source_id = session.add_vertex("A", 0, 0)
+  let target_id = session.add_vertex("B", 1, 0)
+  let next_target_id = session.add_vertex("C", 2, 0)
+  let edge_id = session.add_edge(source_id, target_id, label="f")
+
+  inspect(
+    session.set_edge_options_json(
+      edge_id,
+      [
+        "{",
+        "\"label_alignment\":\"over\",",
+        "\"label_position\":40,",
+        "\"offset\":1,",
+        "\"curve\":3,",
+        "\"radius\":0,",
+        "\"angle\":0,",
+        "\"shorten_source\":0,",
+        "\"shorten_target\":0,",
+        "\"level\":0,",
+        "\"shape\":\"bezier\",",
+        "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+        "\"edge_alignment_source\":true,",
+        "\"edge_alignment_target\":true,",
+        "\"style\":{",
+        "\"name\":\"arrow\",",
+        "\"tail\":{\"name\":\"none\",\"side\":\"center\"},",
+        "\"body\":{\"name\":\"none\",\"side\":\"center\"},",
+        "\"head\":{\"name\":\"epi\",\"side\":\"center\"}",
+        "}",
+        "}",
+      ].join(""),
+    ),
+    content="true",
+  )
+  inspect(session.set_edge_label_alignment(edge_id, "left"), content="true")
+  inspect(session.set_edge_label_position(edge_id, 25), content="true")
+  inspect(session.set_edge_offset(edge_id, 2), content="true")
+  inspect(session.set_edge_curve(edge_id, 8), content="true")
+  inspect(session.set_edge_shorten(edge_id, 4, 6), content="true")
+  inspect(session.reconnect_edge(edge_id, source_id, next_target_id), content="true")
+
+  inspect(session.set_edge_label_alignment(edge_id, "invalid"), content="false")
+  inspect(session.set_edge_options_json(edge_id, "{"), content="false")
+
+  let mut saw_edge = false
+  for cell in session.all_cells() {
+    match cell {
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          saw_edge = true
+          inspect(edge.source, content="1")
+          inspect(edge.target, content="3")
+          inspect(
+            edge.options.label_alignment is @engine.LabelAlignment::Left,
+            content="true",
+          )
+          inspect(edge.options.label_position, content="25")
+          inspect(edge.options.offset, content="2")
+          inspect(edge.options.curve, content="8")
+          inspect(edge.options.shorten.source, content="4")
+          inspect(edge.options.shorten.target, content="6")
+        }
+      _ => ()
+    }
+  }
+  inspect(saw_edge, content="true")
+}
+
+///|
 test "browser demo typed query helpers expose dependency closures" {
   let session = BrowserDemoSession::new()
   let a = session.add_vertex("A", 0, 0)
@@ -210,6 +281,43 @@ test "browser demo typed import and render helpers support text formats" {
     @json.parse(source.all_cells_json()),
   )
   inspect(cells_json.length(), content="3")
+}
+
+///|
+test "browser demo typed format-specific import and paste helpers" {
+  let source = BrowserDemoSession::new()
+  let source_id = source.add_vertex("A", 0, 0)
+  let target_id = source.add_vertex("B", 1, 0)
+  let edge_id = source.add_edge(source_id, target_id, label="f")
+
+  let share_url = ["https://q.uiver.app#q=", source.payload()].join("")
+  let imported_share_url = BrowserDemoSession::new()
+  inspect(imported_share_url.import_share_url(share_url), content="true")
+  inspect(imported_share_url.cell_ids(), content="[1, 2, 3]")
+
+  let fletcher = source.render_fletcher()
+  let imported_fletcher = BrowserDemoSession::new()
+  inspect(imported_fletcher.import_fletcher(fletcher), content="true")
+  inspect(imported_fletcher.cell_ids(), content="[1, 2, 3]")
+
+  let html = source.render_html_embed()
+  let imported_html = BrowserDemoSession::new()
+  inspect(imported_html.import_html_embed(html), content="true")
+  inspect(imported_html.cell_ids(), content="[1, 2, 3]")
+
+  inspect(source.apply_selection([edge_id]), content="[3]")
+  let selection_payload = source.export_selection()
+
+  let target = BrowserDemoSession::new()
+  ignore(target.add_vertex("Existing", 0, 0))
+  let imported_ids = target.paste_selection(
+    selection_payload,
+    10,
+    20,
+    start_id=1,
+  )
+  inspect(imported_ids, content="[2, 3, 4]")
+  inspect(target.cell_ids(), content="[1, 2, 3, 4]")
 }
 
 ///|

@@ -142,6 +142,13 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `add_vertex`
   - `add_edge`
   - `set_label`
+  - `set_edge_options_json`
+  - `set_edge_label_alignment`
+  - `set_edge_label_position`
+  - `set_edge_offset`
+  - `set_edge_curve`
+  - `set_edge_shorten`
+  - `reconnect_edge`
   - `move_vertex`
   - `patch_edge_options_json`
   - `remove`
@@ -153,9 +160,13 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `connected_components`
   - `apply_selection`
   - `export_selection`
+  - `paste_selection`
   - `import_payload`
   - `import_text_auto`
+  - `import_share_url`
   - `import_tikz_cd`
+  - `import_fletcher`
+  - `import_html_embed`
   - `import_share_text`
   - `all_cells`
   - `all_cells_json`
@@ -172,6 +183,13 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_add_vertex`
   - `ffi_browser_demo_session_add_edge`
   - `ffi_browser_demo_session_set_label`
+  - `ffi_browser_demo_session_set_edge_options_json`
+  - `ffi_browser_demo_session_set_edge_label_alignment`
+  - `ffi_browser_demo_session_set_edge_label_position`
+  - `ffi_browser_demo_session_set_edge_offset`
+  - `ffi_browser_demo_session_set_edge_curve`
+  - `ffi_browser_demo_session_set_edge_shorten`
+  - `ffi_browser_demo_session_reconnect_edge`
   - `ffi_browser_demo_session_move_vertex`
   - `ffi_browser_demo_session_patch_edge_options_json`
   - `ffi_browser_demo_session_remove`
@@ -183,12 +201,16 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_connected_components`
   - `ffi_browser_demo_session_set_selection`
   - `ffi_browser_demo_session_export_selection`
+  - `ffi_browser_demo_session_paste_selection`
   - `ffi_browser_demo_session_import_payload`
   - `ffi_browser_demo_session_all_cells`
   - `ffi_browser_demo_session_all_cells_json`
   - `ffi_browser_demo_session_all_cell_ids`
   - `ffi_browser_demo_session_import_text_auto`
+  - `ffi_browser_demo_session_import_share_url`
   - `ffi_browser_demo_session_import_tikz_cd`
+  - `ffi_browser_demo_session_import_fletcher`
+  - `ffi_browser_demo_session_import_html_embed`
   - `ffi_browser_demo_session_import_share_text`
   - `ffi_browser_demo_session_render_tikz`
   - `ffi_browser_demo_session_render_tikz_json`
