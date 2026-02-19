@@ -1930,6 +1930,62 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
 }
 
 ///|
+test "tikz-cd import parser supports unbraced quoted-label suffix options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"d\" description] & B \\\\\n",
+    "C \\arrow[r, \"m\" marking] & D \\\\\n",
+    "E \\arrow[r, \"n\" near start] & F \\\\\n",
+    "G \\arrow[r, \"e\" at end] & H \\\\\n",
+    "I \\arrow[r, \"t\" text=red] & J\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_label(quiver, "d") {
+    Some(edge) => {
+      inspect(
+        edge.options.label_alignment is LabelAlignment::Centre,
+        content="true",
+      )
+      inspect(edge.options.label_position, content="50")
+    }
+    None => abort("expected edge d")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "m") {
+    Some(edge) => {
+      inspect(edge.options.label_alignment is LabelAlignment::Over, content="true")
+      inspect(edge.options.label_position, content="50")
+    }
+    None => abort("expected edge m")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "n") {
+    Some(edge) => {
+      inspect(edge.options.label_alignment is LabelAlignment::Left, content="true")
+      inspect(edge.options.label_position, content="20")
+    }
+    None => abort("expected edge n")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "e") {
+    Some(edge) => inspect(edge.options.label_position, content="1")
+    None => abort("expected edge e")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "t") {
+    Some(edge) => {
+      inspect(edge.cell.label_colour.h, content="0")
+      inspect(edge.cell.label_colour.s, content="100")
+      inspect(edge.cell.label_colour.l, content="50")
+    }
+    None => abort("expected edge t")
+  }
+}
+
+///|
 test "tikz-cd import parser toggles swap for repeated suffix and option flags" {
   let input = [
     "\\begin{tikzcd}\n",

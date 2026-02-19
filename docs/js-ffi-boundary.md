@@ -138,10 +138,23 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
 
 - `BrowserDemoSession` wraps a runtime instance and caches `{ payload, selection }` from dispatch envelopes.
 - `BrowserDemoSession::state_json()` provides a small JS-friendly state snapshot (`payload`, `selection`, `cell_ids`).
+- `BrowserDemoSession` also exposes typed helper methods above dispatch envelopes:
+  - `add_vertex`
+  - `add_edge`
+  - `apply_selection`
+  - `import_payload`
+  - `render_tikz`
+  - `render_tikz_json`
 - JS exports in `browser_demo/moon.pkg`:
   - `ffi_browser_demo_session_new`
   - `ffi_browser_demo_session_dispatch_json`
   - `ffi_browser_demo_session_dispatch_many_json`
+  - `ffi_browser_demo_session_add_vertex`
+  - `ffi_browser_demo_session_add_edge`
+  - `ffi_browser_demo_session_set_selection`
+  - `ffi_browser_demo_session_import_payload`
+  - `ffi_browser_demo_session_render_tikz`
+  - `ffi_browser_demo_session_render_tikz_json`
   - `ffi_browser_demo_session_state_json`
   - `ffi_browser_demo_roundtrip_demo_json`
 
