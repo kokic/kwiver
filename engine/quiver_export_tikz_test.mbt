@@ -1990,6 +1990,34 @@ test "tikz-cd import parser maps loop flag and loop geometry options" {
 }
 
 ///|
+test "tikz-cd import parser keeps only valid loop edge source-target pairs" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, loop, \"bad\"] & B \\\\\n",
+    "C \\arrow[loop, \"ok\"] & D \\\\\n",
+    "E \\arrow[from=3-1, to=3-1, \"self\"] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  let mut edge_count = 0
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(_) => edge_count = edge_count + 1
+      _ => ()
+    }
+  }
+
+  inspect(edge_count, content="1")
+  inspect(tikz_test_find_edge_by_label(quiver, "bad") is None, content="true")
+  inspect(tikz_test_find_edge_by_label(quiver, "self") is None, content="true")
+  match tikz_test_find_edge_by_label(quiver, "ok") {
+    Some(edge) => inspect(edge.source == edge.target, content="true")
+    None => abort("expected loop edge ok")
+  }
+}
+
+///|
 test "tikz-cd import parser maps draw text and shared colour options" {
   let input = [
     "\\begin{tikzcd}\n",

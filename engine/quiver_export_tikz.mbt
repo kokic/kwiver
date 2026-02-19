@@ -1653,6 +1653,7 @@ priv struct TikzPendingArrow {
   default_source_x : Int
   default_source_y : Int
   reverse : Bool
+  is_loop : Bool
   source_x : Int?
   source_y : Int?
   source_ref : String?
@@ -4253,6 +4254,7 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
           default_source_x,
           default_source_y,
           reverse: parsed_arrow.reverse,
+          is_loop: parsed_arrow.is_loop,
           source_x: parsed_arrow.from_x,
           source_y: parsed_arrow.from_y,
           source_ref: parsed_arrow.from_ref,
@@ -4331,6 +4333,14 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
         (target_id, source_id, target_center_anchor, source_center_anchor)
       } else {
         (source_id, target_id, source_center_anchor, target_center_anchor)
+      }
+
+      if pending.is_loop {
+        if resolved_source_id != resolved_target_id {
+          continue
+        }
+      } else if resolved_source_id == resolved_target_id {
+        continue
       }
 
       if pending.is_phantom {
