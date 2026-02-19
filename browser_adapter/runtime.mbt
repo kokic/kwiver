@@ -38,6 +38,114 @@ fn browser_int_array_json_string(values : Array[Int]) -> String {
 }
 
 ///|
+fn browser_runtime_label_alignment_name(
+  alignment : @engine.LabelAlignment,
+) -> String {
+  match alignment {
+    @engine.LabelAlignment::Left => "left"
+    @engine.LabelAlignment::Centre => "centre"
+    @engine.LabelAlignment::Right => "right"
+    @engine.LabelAlignment::Over => "over"
+  }
+}
+
+///|
+fn browser_runtime_shape_name(shape : @engine.EdgeShape) -> String {
+  match shape {
+    @engine.EdgeShape::Bezier => "bezier"
+    @engine.EdgeShape::Arc => "arc"
+  }
+}
+
+///|
+fn browser_runtime_colour_json(colour : @engine.Colour) -> Json {
+  Json::object({
+    "h": Json::number(colour.h.to_double()),
+    "s": Json::number(colour.s.to_double()),
+    "l": Json::number(colour.l.to_double()),
+    "a": Json::number(colour.a),
+  })
+}
+
+///|
+fn browser_runtime_endpoint_style_json(style : @engine.EdgeEndpointStyle) -> Json {
+  Json::object({
+    "name": Json::string(style.name),
+    "side": Json::string(style.side),
+  })
+}
+
+///|
+fn browser_runtime_style_json(style : @engine.EdgeStyle) -> Json {
+  Json::object({
+    "name": Json::string(style.name),
+    "tail": browser_runtime_endpoint_style_json(style.tail),
+    "body": browser_runtime_endpoint_style_json(style.body),
+    "head": browser_runtime_endpoint_style_json(style.head),
+  })
+}
+
+///|
+fn browser_runtime_edge_options_json(options : @engine.EdgeOptions) -> Json {
+  Json::object({
+    "label_alignment": Json::string(
+      browser_runtime_label_alignment_name(options.label_alignment),
+    ),
+    "label_position": Json::number(options.label_position.to_double()),
+    "offset": Json::number(options.offset.to_double()),
+    "curve": Json::number(options.curve.to_double()),
+    "radius": Json::number(options.radius.to_double()),
+    "angle": Json::number(options.angle.to_double()),
+    "shorten_source": Json::number(options.shorten.source.to_double()),
+    "shorten_target": Json::number(options.shorten.target.to_double()),
+    "level": Json::number(options.level.to_double()),
+    "shape": Json::string(browser_runtime_shape_name(options.shape)),
+    "colour": browser_runtime_colour_json(options.colour),
+    "edge_alignment_source": Json::boolean(options.edge_alignment.source),
+    "edge_alignment_target": Json::boolean(options.edge_alignment.target),
+    "style": browser_runtime_style_json(options.style),
+  })
+}
+
+///|
+fn browser_runtime_cell_data_json(cell_data : @engine.CellData) -> Json {
+  match cell_data {
+    @engine.CellData::Vertex(vertex) =>
+      Json::object({
+        "kind": Json::string("vertex"),
+        "id": Json::number(vertex.cell.id.to_double()),
+        "level": Json::number(vertex.cell.level.to_double()),
+        "label": Json::string(vertex.cell.label),
+        "label_colour": browser_runtime_colour_json(vertex.cell.label_colour),
+        "x": Json::number(vertex.x.to_double()),
+        "y": Json::number(vertex.y.to_double()),
+      })
+    @engine.CellData::Edge(edge) =>
+      Json::object({
+        "kind": Json::string("edge"),
+        "id": Json::number(edge.cell.id.to_double()),
+        "level": Json::number(edge.cell.level.to_double()),
+        "label": Json::string(edge.cell.label),
+        "label_colour": browser_runtime_colour_json(edge.cell.label_colour),
+        "source_id": Json::number(edge.source.to_double()),
+        "target_id": Json::number(edge.target.to_double()),
+        "options": browser_runtime_edge_options_json(edge.options),
+      })
+  }
+}
+
+///|
+fn browser_runtime_cell_data_array_json_string(
+  cell_data : Array[@engine.CellData],
+) -> String {
+  let out : Array[Json] = []
+  for cell in cell_data {
+    out.push(browser_runtime_cell_data_json(cell))
+  }
+  Json::array(out).stringify()
+}
+
+///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
   mut selected_ids : Array[Int]
@@ -607,6 +715,11 @@ pub fn ffi_browser_runtime_all_cells(
   runtime : BrowserRuntime,
 ) -> Array[@engine.CellData] {
   runtime.all_cells()
+}
+
+///|
+pub fn ffi_browser_runtime_all_cells_json(runtime : BrowserRuntime) -> String {
+  browser_runtime_cell_data_array_json_string(runtime.all_cells())
 }
 
 ///|

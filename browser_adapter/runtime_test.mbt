@@ -654,6 +654,12 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
   )
   inspect(add_edge_json.contains("\"id\":3"), content="true")
   inspect(ffi_browser_runtime_all_cells(runtime).length(), content="3")
+  let all_cells_json = ffi_browser_runtime_all_cells_json(runtime)
+  inspect(all_cells_json.contains("\"kind\":\"vertex\""), content="true")
+  inspect(all_cells_json.contains("\"kind\":\"edge\""), content="true")
+  inspect(all_cells_json.contains("\"source_id\":1"), content="true")
+  inspect(all_cells_json.contains("\"target_id\":2"), content="true")
+  inspect(all_cells_json.contains("\"options\":"), content="true")
 
   let set_label_json = ffi_browser_runtime_set_label_json(
     runtime,

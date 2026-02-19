@@ -13,6 +13,7 @@ options(
         "ffi_browser_runtime_selection",
         "ffi_browser_runtime_all_cell_ids",
         "ffi_browser_runtime_all_cells",
+        "ffi_browser_runtime_all_cells_json",
         "ffi_browser_runtime_all_cell_ids_json",
         "ffi_browser_runtime_dependencies_of",
         "ffi_browser_runtime_dependencies_of_json",
