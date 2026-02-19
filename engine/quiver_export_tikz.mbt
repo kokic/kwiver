@@ -1649,6 +1649,12 @@ priv struct TikzParsedArrow {
 }
 
 ///|
+priv struct TikzParsedVertexLabel {
+  label : String
+  label_colour : Colour
+}
+
+///|
 priv struct TikzPendingArrow {
   default_source_x : Int
   default_source_y : Int
@@ -3737,8 +3743,59 @@ fn tikz_cell_label_raw(cell : String) -> String {
 }
 
 ///|
-fn tikz_cell_label_text(cell : String) -> String {
-  tikz_unwrap_braced_text(tikz_cell_label_raw(cell))
+fn tikz_take_leading_braced_group(input : String) -> (String, String)? {
+  let trimmed = tikz_trim_left(input)
+  if trimmed == "" || trimmed.unsafe_get(0) != '{' {
+    return None
+  }
+
+  let after_open = trimmed.unsafe_substring(start=1, end=trimmed.length())
+  match tikz_find_closing_delimiter(after_open, '{', '}') {
+    Some(close_index) =>
+      Some(
+        (
+          after_open.unsafe_substring(start=0, end=close_index),
+          after_open.unsafe_substring(start=close_index + 1, end=after_open.length()),
+        ),
+      )
+    None => None
+  }
+}
+
+///|
+fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabel? {
+  let trimmed = label_raw.trim().to_string()
+  if !trimmed.has_prefix("\\textcolor") {
+    return None
+  }
+  let rest = trimmed.unsafe_substring(start=10, end=trimmed.length())
+  match tikz_take_leading_braced_group(rest) {
+    Some((colour_text, after_colour)) =>
+      match tikz_parse_colour_option(colour_text) {
+        Some(label_colour) =>
+          match tikz_take_leading_braced_group(after_colour) {
+            Some((label_text, _)) =>
+              Some({
+                label: tikz_unwrap_braced_text(label_text),
+                label_colour,
+              })
+            None => None
+          }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn tikz_parse_vertex_label(label_raw : String) -> TikzParsedVertexLabel {
+  match tikz_parse_textcolor_vertex_label(label_raw) {
+    Some(parsed) => parsed
+    None => {
+      label: tikz_unwrap_braced_text(label_raw),
+      label_colour: Colour::black(),
+    }
+  }
 }
 
 ///|
@@ -4205,11 +4262,19 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
       let cell = cell_raw.trim().to_string()
       let label_raw = tikz_cell_label_raw(cell)
       if label_raw != "" {
-        let label = tikz_cell_label_text(cell)
+        let parsed_vertex = tikz_parse_vertex_label(label_raw)
         let vertex_id = next_id
         next_id = next_id + 1
         quiver.add(
-          CellData::from_vertex(Vertex::new_black(vertex_id, label, x, y)),
+          CellData::from_vertex(
+            Vertex::new(
+              vertex_id,
+              parsed_vertex.label,
+              x,
+              y,
+              parsed_vertex.label_colour,
+            ),
+          ),
         )
         vertex_by_key.set(tikz_grid_key(x, y), vertex_id)
       }
