@@ -119,6 +119,10 @@ test "browser demo typed mutation helpers support incremental edits and removals
   let edge_id = session.add_edge(source_id, target_id, label="f")
 
   inspect(session.set_label(edge_id, "g"), content="true")
+  inspect(
+    session.set_label_colour_hsla(source_id, 210, 80, 40, 0.5),
+    content="true",
+  )
   inspect(session.move_vertex(target_id, 2, 0), content="true")
   inspect(
     session.patch_edge_options_json(
@@ -165,6 +169,10 @@ test "browser demo typed edge mutation helpers cover granular runtime actions" {
   let edge_id = session.add_edge(source_id, target_id, label="f")
 
   inspect(
+    session.set_label_colour_hsla(source_id, 210, 80, 40, 0.5),
+    content="true",
+  )
+  inspect(
     session.set_edge_options_json(
       edge_id,
       [
@@ -203,9 +211,18 @@ test "browser demo typed edge mutation helpers cover granular runtime actions" {
   inspect(session.set_edge_label_alignment(edge_id, "invalid"), content="false")
   inspect(session.set_edge_options_json(edge_id, "{"), content="false")
 
+  let mut saw_source = false
   let mut saw_edge = false
   for cell in session.all_cells() {
     match cell {
+      @engine.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          saw_source = true
+          inspect(vertex.cell.label_colour.h, content="210")
+          inspect(vertex.cell.label_colour.s, content="80")
+          inspect(vertex.cell.label_colour.l, content="40")
+          inspect(vertex.cell.label_colour.a, content="0.5")
+        }
       @engine.CellData::Edge(edge) =>
         if edge.cell.id == edge_id {
           saw_edge = true
@@ -221,9 +238,9 @@ test "browser demo typed edge mutation helpers cover granular runtime actions" {
           inspect(edge.options.shorten.source, content="4")
           inspect(edge.options.shorten.target, content="6")
         }
-      _ => ()
     }
   }
+  inspect(saw_source, content="true")
   inspect(saw_edge, content="true")
 }
 
@@ -290,19 +307,33 @@ test "browser demo typed format-specific import and paste helpers" {
   let target_id = source.add_vertex("B", 1, 0)
   let edge_id = source.add_edge(source_id, target_id, label="f")
 
-  let share_url = ["https://q.uiver.app#q=", source.payload()].join("")
+  let share_url = ["https://q.uiver.app#r=svg&q=", source.payload(), "&embed"].join("")
   let imported_share_url = BrowserDemoSession::new()
-  inspect(imported_share_url.import_share_url(share_url), content="true")
+  let imported_share_url_result = imported_share_url.import_share_url_result(
+    share_url,
+  )
+  inspect(imported_share_url_result.ok, content="true")
+  inspect(imported_share_url_result.renderer, content="Some(\"svg\")")
+  inspect(imported_share_url_result.embed, content="true")
+  inspect(
+    imported_share_url_result.payload == imported_share_url.payload(),
+    content="true",
+  )
   inspect(imported_share_url.cell_ids(), content="[1, 2, 3]")
 
   let fletcher = source.render_fletcher()
   let imported_fletcher = BrowserDemoSession::new()
-  inspect(imported_fletcher.import_fletcher(fletcher), content="true")
+  let imported_fletcher_result = imported_fletcher.import_fletcher_result(fletcher)
+  inspect(imported_fletcher_result.ok, content="true")
+  inspect(imported_fletcher_result.renderer, content="None")
+  inspect(imported_fletcher_result.embed, content="false")
   inspect(imported_fletcher.cell_ids(), content="[1, 2, 3]")
 
   let html = source.render_html_embed()
   let imported_html = BrowserDemoSession::new()
-  inspect(imported_html.import_html_embed(html), content="true")
+  let imported_html_result = imported_html.import_html_embed_result(html)
+  inspect(imported_html_result.ok, content="true")
+  inspect(imported_html_result.embed, content="true")
   inspect(imported_html.cell_ids(), content="[1, 2, 3]")
 
   inspect(source.apply_selection([edge_id]), content="[3]")
@@ -310,14 +341,71 @@ test "browser demo typed format-specific import and paste helpers" {
 
   let target = BrowserDemoSession::new()
   ignore(target.add_vertex("Existing", 0, 0))
-  let imported_ids = target.paste_selection(
+  let paste_result = target.paste_selection_result(
     selection_payload,
     10,
     20,
     start_id=1,
   )
-  inspect(imported_ids, content="[2, 3, 4]")
+  inspect(paste_result.ok, content="true")
+  inspect(paste_result.imported_ids, content="[2, 3, 4]")
+  inspect(paste_result.id_remap.length(), content="3")
   inspect(target.cell_ids(), content="[1, 2, 3, 4]")
+}
+
+///|
+test "browser demo ffi result json wrappers expose import and paste metadata" {
+  let source = ffi_browser_demo_session_new()
+  ignore(ffi_browser_demo_session_add_vertex(source, "A", 0, 0))
+  ignore(ffi_browser_demo_session_add_vertex(source, "B", 1, 0))
+  ignore(ffi_browser_demo_session_add_edge(source, 1, 2, label="f"))
+
+  let share_url = [
+    "https://q.uiver.app#r=svg&q=",
+    source.payload(),
+    "&embed",
+  ].join("")
+
+  let target = ffi_browser_demo_session_new()
+  let import_json = ffi_browser_demo_session_import_share_url_result_json(
+    target,
+    share_url,
+  )
+  let import_root : Map[String, Json] = @json.from_json(@json.parse(import_json))
+  let import_ok : Bool = @json.from_json(browser_demo_test_json_get(import_root, "ok"))
+  let import_renderer : String = @json.from_json(
+    browser_demo_test_json_get(import_root, "renderer"),
+  )
+  let import_embed : Bool = @json.from_json(
+    browser_demo_test_json_get(import_root, "embed"),
+  )
+  inspect(import_ok, content="true")
+  inspect(import_renderer, content="svg")
+  inspect(import_embed, content="true")
+
+  inspect(ffi_browser_demo_session_set_selection(source, [3]), content="[3]")
+  let selection_payload = ffi_browser_demo_session_export_selection(source)
+  let target_paste = ffi_browser_demo_session_new()
+  ignore(ffi_browser_demo_session_add_vertex(target_paste, "X", 0, 0))
+
+  let paste_json = ffi_browser_demo_session_paste_selection_result_json(
+    target_paste,
+    selection_payload,
+    10,
+    20,
+    start_id=1,
+  )
+  let paste_root : Map[String, Json] = @json.from_json(@json.parse(paste_json))
+  let paste_ok : Bool = @json.from_json(browser_demo_test_json_get(paste_root, "ok"))
+  let imported_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(paste_root, "imported_ids"),
+  )
+  let id_remap : Array[Map[String, Json]] = @json.from_json(
+    browser_demo_test_json_get(paste_root, "id_remap"),
+  )
+  inspect(paste_ok, content="true")
+  inspect(imported_ids, content="[2, 3, 4]")
+  inspect(id_remap.length(), content="3")
 }
 
 ///|

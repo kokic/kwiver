@@ -168,6 +168,202 @@ fn browser_demo_action_with_input(action : String, input : Json) -> String {
 }
 
 ///|
+pub struct BrowserDemoImportResult {
+  ok : Bool
+  payload : String
+  macro_url : String?
+  renderer : String?
+  embed : Bool
+}
+
+///|
+pub struct BrowserDemoIdRemap {
+  old_id : Int
+  new_id : Int
+}
+
+///|
+pub struct BrowserDemoSelectionImportResult {
+  ok : Bool
+  payload : String
+  imported_ids : Array[Int]
+  id_remap : Array[BrowserDemoIdRemap]
+}
+
+///|
+fn browser_demo_optional_string_json(value : String?) -> Json {
+  match value {
+    Some(raw) => Json::string(raw)
+    None => Json::null()
+  }
+}
+
+///|
+fn browser_demo_json_optional_string(
+  root : Map[String, Json],
+  key : String,
+) -> String? {
+  match root.get(key) {
+    Some(Json::Null) => None
+    Some(raw) => {
+      let parsed : Result[String, Error] = try? @json.from_json(raw)
+      match parsed {
+        Ok(value) => Some(value)
+        Err(_) => None
+      }
+    }
+    None => None
+  }
+}
+
+///|
+fn browser_demo_id_remap_json(entry : BrowserDemoIdRemap) -> Json {
+  Json::object({
+    "old_id": Json::number(entry.old_id.to_double()),
+    "new_id": Json::number(entry.new_id.to_double()),
+  })
+}
+
+///|
+fn browser_demo_import_result_json(result : BrowserDemoImportResult) -> Json {
+  Json::object({
+    "ok": Json::boolean(result.ok),
+    "payload": Json::string(result.payload),
+    "macro_url": browser_demo_optional_string_json(result.macro_url),
+    "renderer": browser_demo_optional_string_json(result.renderer),
+    "embed": Json::boolean(result.embed),
+  })
+}
+
+///|
+fn browser_demo_selection_import_result_json(
+  result : BrowserDemoSelectionImportResult,
+) -> Json {
+  let remap : Array[Json] = []
+  for entry in result.id_remap {
+    remap.push(browser_demo_id_remap_json(entry))
+  }
+  Json::object({
+    "ok": Json::boolean(result.ok),
+    "payload": Json::string(result.payload),
+    "imported_ids": browser_demo_int_array_json(result.imported_ids),
+    "id_remap": Json::array(remap),
+  })
+}
+
+///|
+pub fn BrowserDemoImportResult::to_json_string(self : BrowserDemoImportResult) -> String {
+  browser_demo_import_result_json(self).stringify()
+}
+
+///|
+pub fn BrowserDemoSelectionImportResult::to_json_string(
+  self : BrowserDemoSelectionImportResult,
+) -> String {
+  browser_demo_selection_import_result_json(self).stringify()
+}
+
+///|
+fn browser_demo_import_result_from_output(
+  output_json : String,
+  fallback_payload : String,
+) -> BrowserDemoImportResult {
+  match browser_demo_parse_json_object(output_json) {
+    Some(root) => {
+      let ok = browser_demo_json_bool_or(root, "ok", false)
+      match browser_demo_dispatch_result_object(output_json) {
+        Some(result) => {
+          let payload = browser_demo_json_string_or(
+            result,
+            "payload",
+            browser_demo_json_string_or(root, "payload", fallback_payload),
+          )
+          {
+            ok,
+            payload,
+            macro_url: browser_demo_json_optional_string(result, "macro_url"),
+            renderer: browser_demo_json_optional_string(result, "renderer"),
+            embed: browser_demo_json_bool_or(result, "embed", false),
+          }
+        }
+        None => {
+          ok,
+          payload: browser_demo_json_string_or(root, "payload", fallback_payload),
+          macro_url: None,
+          renderer: None,
+          embed: false,
+        }
+      }
+    }
+    None => {
+      ok: false,
+      payload: fallback_payload,
+      macro_url: None,
+      renderer: None,
+      embed: false,
+    }
+  }
+}
+
+///|
+fn browser_demo_selection_import_result_from_output(
+  output_json : String,
+  fallback_payload : String,
+) -> BrowserDemoSelectionImportResult {
+  match browser_demo_parse_json_object(output_json) {
+    Some(root) => {
+      let ok = browser_demo_json_bool_or(root, "ok", false)
+      match browser_demo_dispatch_result_object(output_json) {
+        Some(result) => {
+          let id_remap : Array[BrowserDemoIdRemap] = []
+          match result.get("id_remap") {
+            Some(raw_remap) => {
+              let parsed : Result[Array[Map[String, Json]], Error] = try? @json.from_json(
+                raw_remap,
+              )
+              match parsed {
+                Ok(entries) => {
+                  for entry in entries {
+                    id_remap.push({
+                      old_id: browser_demo_json_int_or(entry, "old_id", -1),
+                      new_id: browser_demo_json_int_or(entry, "new_id", -1),
+                    })
+                  }
+                }
+                Err(_) => ()
+              }
+            }
+            None => ()
+          }
+          {
+            ok,
+            payload: browser_demo_json_string_or(
+              result,
+              "payload",
+              browser_demo_json_string_or(root, "payload", fallback_payload),
+            ),
+            imported_ids: browser_demo_json_int_array_or(result, "imported_ids", []),
+            id_remap,
+          }
+        }
+        None => {
+          ok,
+          payload: browser_demo_json_string_or(root, "payload", fallback_payload),
+          imported_ids: [],
+          id_remap: [],
+        }
+      }
+    }
+    None => {
+      ok: false,
+      payload: fallback_payload,
+      imported_ids: [],
+      id_remap: [],
+    }
+  }
+}
+
+///|
 pub struct BrowserDemoSession {
   runtime : @browser_adapter.BrowserRuntime
   mut payload : String
@@ -303,6 +499,44 @@ pub fn BrowserDemoSession::set_label(
     Some(result) => browser_demo_json_bool_or(result, "ok", false)
     None => false
   }
+}
+
+///|
+pub fn BrowserDemoSession::set_label_colour(
+  self : BrowserDemoSession,
+  cell_id : Int,
+  label_colour : @engine.Colour,
+) -> Bool {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "set_label_colour_json",
+      Json::object({
+        "cell_id": Json::number(cell_id.to_double()),
+        "label_colour": Json::object({
+          "h": Json::number(label_colour.h.to_double()),
+          "s": Json::number(label_colour.s.to_double()),
+          "l": Json::number(label_colour.l.to_double()),
+          "a": Json::number(label_colour.a),
+        }),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_object(output) {
+    Some(result) => browser_demo_json_bool_or(result, "ok", false)
+    None => false
+  }
+}
+
+///|
+pub fn BrowserDemoSession::set_label_colour_hsla(
+  self : BrowserDemoSession,
+  cell_id : Int,
+  h : Int,
+  s : Int,
+  l : Int,
+  a : Double,
+) -> Bool {
+  self.set_label_colour(cell_id, @engine.Colour::new(h, s, l, a))
 }
 
 ///|
@@ -618,6 +852,17 @@ pub fn BrowserDemoSession::paste_selection(
   origin_y : Int,
   start_id? : Int = 1,
 ) -> Array[Int] {
+  self.paste_selection_result(payload, origin_x, origin_y, start_id~).imported_ids
+}
+
+///|
+pub fn BrowserDemoSession::paste_selection_result(
+  self : BrowserDemoSession,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> BrowserDemoSelectionImportResult {
   let output = self.dispatch_json(
     browser_demo_action_with_input(
       "paste_selection_json",
@@ -629,10 +874,7 @@ pub fn BrowserDemoSession::paste_selection(
       }),
     ),
   )
-  match browser_demo_dispatch_result_object(output) {
-    Some(result) => browser_demo_json_int_array_or(result, "imported_ids", [])
-    None => []
-  }
+  browser_demo_selection_import_result_from_output(output, self.payload)
 }
 
 ///|
@@ -686,19 +928,47 @@ pub fn BrowserDemoSession::render_html_embed(self : BrowserDemoSession) -> Strin
 }
 
 ///|
+fn BrowserDemoSession::import_action_result(
+  self : BrowserDemoSession,
+  action : String,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string(action),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_import_result_from_output(output, self.payload)
+}
+
+///|
+pub fn BrowserDemoSession::import_text_auto_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_text_auto_json", input, default_renderer~)
+}
+
+///|
 pub fn BrowserDemoSession::import_text_auto(
   self : BrowserDemoSession,
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_text_auto_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_text_auto_result(input, default_renderer~).ok
+}
+
+///|
+pub fn BrowserDemoSession::import_share_url_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_share_url_json", input, default_renderer~)
 }
 
 ///|
@@ -707,14 +977,16 @@ pub fn BrowserDemoSession::import_share_url(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_share_url_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_share_url_result(input, default_renderer~).ok
+}
+
+///|
+pub fn BrowserDemoSession::import_tikz_cd_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_tikz_cd_json", input, default_renderer~)
 }
 
 ///|
@@ -723,14 +995,16 @@ pub fn BrowserDemoSession::import_tikz_cd(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_tikz_cd_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_tikz_cd_result(input, default_renderer~).ok
+}
+
+///|
+pub fn BrowserDemoSession::import_fletcher_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_fletcher_json", input, default_renderer~)
 }
 
 ///|
@@ -739,14 +1013,16 @@ pub fn BrowserDemoSession::import_fletcher(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_fletcher_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_fletcher_result(input, default_renderer~).ok
+}
+
+///|
+pub fn BrowserDemoSession::import_html_embed_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_html_embed_json", input, default_renderer~)
 }
 
 ///|
@@ -755,14 +1031,16 @@ pub fn BrowserDemoSession::import_html_embed(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_html_embed_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_html_embed_result(input, default_renderer~).ok
+}
+
+///|
+pub fn BrowserDemoSession::import_share_text_result(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> BrowserDemoImportResult {
+  self.import_action_result("import_share_text_json", input, default_renderer~)
 }
 
 ///|
@@ -771,14 +1049,7 @@ pub fn BrowserDemoSession::import_share_text(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
-  let output = self.dispatch_json(
-    Json::object({
-      "action": Json::string("import_share_text_json"),
-      "input": Json::string(input),
-      "default_renderer": Json::string(default_renderer),
-    }).stringify(),
-  )
-  browser_demo_dispatch_ok(output)
+  self.import_share_text_result(input, default_renderer~).ok
 }
 
 ///|
@@ -1008,6 +1279,18 @@ pub fn ffi_browser_demo_session_set_label(
 }
 
 ///|
+pub fn ffi_browser_demo_session_set_label_colour_hsla(
+  session : BrowserDemoSession,
+  cell_id : Int,
+  h : Int,
+  s : Int,
+  l : Int,
+  a : Double,
+) -> Bool {
+  session.set_label_colour_hsla(cell_id, h, s, l, a)
+}
+
+///|
 pub fn ffi_browser_demo_session_set_edge_options_json(
   session : BrowserDemoSession,
   edge_id : Int,
@@ -1133,6 +1416,18 @@ pub fn ffi_browser_demo_session_paste_selection(
 }
 
 ///|
+pub fn ffi_browser_demo_session_paste_selection_result_json(
+  session : BrowserDemoSession,
+  payload : String,
+  origin_x : Int,
+  origin_y : Int,
+  start_id? : Int = 1,
+) -> String {
+  session.paste_selection_result(payload, origin_x, origin_y, start_id~)
+    .to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_import_payload(
   session : BrowserDemoSession,
   payload : String,
@@ -1193,12 +1488,30 @@ pub fn ffi_browser_demo_session_import_text_auto(
 }
 
 ///|
+pub fn ffi_browser_demo_session_import_text_auto_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_text_auto_result(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_import_share_url(
   session : BrowserDemoSession,
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
   session.import_share_url(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_share_url_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_share_url_result(input, default_renderer~).to_json_string()
 }
 
 ///|
@@ -1211,12 +1524,30 @@ pub fn ffi_browser_demo_session_import_tikz_cd(
 }
 
 ///|
+pub fn ffi_browser_demo_session_import_tikz_cd_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_tikz_cd_result(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_import_fletcher(
   session : BrowserDemoSession,
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
   session.import_fletcher(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_fletcher_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_fletcher_result(input, default_renderer~).to_json_string()
 }
 
 ///|
@@ -1229,12 +1560,30 @@ pub fn ffi_browser_demo_session_import_html_embed(
 }
 
 ///|
+pub fn ffi_browser_demo_session_import_html_embed_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_html_embed_result(input, default_renderer~).to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_import_share_text(
   session : BrowserDemoSession,
   input : String,
   default_renderer? : String = "canvas",
 ) -> Bool {
   session.import_share_text(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_share_text_result_json(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> String {
+  session.import_share_text_result(input, default_renderer~).to_json_string()
 }
 
 ///|

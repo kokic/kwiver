@@ -142,6 +142,8 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `add_vertex`
   - `add_edge`
   - `set_label`
+  - `set_label_colour`
+  - `set_label_colour_hsla`
   - `set_edge_options_json`
   - `set_edge_label_alignment`
   - `set_edge_label_position`
@@ -161,13 +163,20 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `apply_selection`
   - `export_selection`
   - `paste_selection`
+  - `paste_selection_result`
   - `import_payload`
   - `import_text_auto`
+  - `import_text_auto_result`
   - `import_share_url`
+  - `import_share_url_result`
   - `import_tikz_cd`
+  - `import_tikz_cd_result`
   - `import_fletcher`
+  - `import_fletcher_result`
   - `import_html_embed`
+  - `import_html_embed_result`
   - `import_share_text`
+  - `import_share_text_result`
   - `all_cells`
   - `all_cells_json`
   - `all_cell_ids`
@@ -183,6 +192,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_add_vertex`
   - `ffi_browser_demo_session_add_edge`
   - `ffi_browser_demo_session_set_label`
+  - `ffi_browser_demo_session_set_label_colour_hsla`
   - `ffi_browser_demo_session_set_edge_options_json`
   - `ffi_browser_demo_session_set_edge_label_alignment`
   - `ffi_browser_demo_session_set_edge_label_position`
@@ -202,16 +212,23 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_set_selection`
   - `ffi_browser_demo_session_export_selection`
   - `ffi_browser_demo_session_paste_selection`
+  - `ffi_browser_demo_session_paste_selection_result_json`
   - `ffi_browser_demo_session_import_payload`
   - `ffi_browser_demo_session_all_cells`
   - `ffi_browser_demo_session_all_cells_json`
   - `ffi_browser_demo_session_all_cell_ids`
   - `ffi_browser_demo_session_import_text_auto`
+  - `ffi_browser_demo_session_import_text_auto_result_json`
   - `ffi_browser_demo_session_import_share_url`
+  - `ffi_browser_demo_session_import_share_url_result_json`
   - `ffi_browser_demo_session_import_tikz_cd`
+  - `ffi_browser_demo_session_import_tikz_cd_result_json`
   - `ffi_browser_demo_session_import_fletcher`
+  - `ffi_browser_demo_session_import_fletcher_result_json`
   - `ffi_browser_demo_session_import_html_embed`
+  - `ffi_browser_demo_session_import_html_embed_result_json`
   - `ffi_browser_demo_session_import_share_text`
+  - `ffi_browser_demo_session_import_share_text_result_json`
   - `ffi_browser_demo_session_render_tikz`
   - `ffi_browser_demo_session_render_tikz_json`
   - `ffi_browser_demo_session_render_fletcher`
