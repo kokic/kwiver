@@ -707,6 +707,277 @@ fn browser_runtime_cell_data_array_json_string(
 }
 
 ///|
+fn browser_runtime_edge_options_with_label_alignment(
+  options : @engine.EdgeOptions,
+  label_alignment : String,
+) -> @engine.EdgeOptions {
+  if label_alignment == "left" {
+    return options.with_label_alignment_left()
+  }
+  if label_alignment == "centre" || label_alignment == "center" {
+    return options.with_label_alignment_centre()
+  }
+  if label_alignment == "right" {
+    return options.with_label_alignment_right()
+  }
+  if label_alignment == "over" {
+    return options.with_label_alignment_over()
+  }
+  abort("invalid label_alignment in edge options patch: " + label_alignment)
+}
+
+///|
+fn browser_runtime_edge_options_with_shape(
+  options : @engine.EdgeOptions,
+  shape : String,
+) -> @engine.EdgeOptions {
+  if shape == "bezier" {
+    return options.with_shape_bezier()
+  }
+  if shape == "arc" {
+    return options.with_shape_arc()
+  }
+  abort("invalid shape in edge options patch: " + shape)
+}
+
+///|
+fn browser_runtime_patch_edge_options_from_map(
+  options : @engine.EdgeOptions,
+  patch : Map[String, Json],
+) -> @engine.EdgeOptions raise {
+  let mut out = options
+
+  match browser_runtime_dispatch_optional_string(patch, "label_alignment") {
+    Some(value) => out = browser_runtime_edge_options_with_label_alignment(out, value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "label_position") {
+    Some(value) => out = out.with_label_position(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "offset") {
+    Some(value) => out = out.with_offset(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "curve") {
+    Some(value) => out = out.with_curve(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "radius") {
+    Some(value) => out = out.with_radius(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "angle") {
+    Some(value) => out = out.with_angle(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "level") {
+    Some(value) => out = out.with_level(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_string(patch, "shape") {
+    Some(value) => out = browser_runtime_edge_options_with_shape(out, value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_object(patch, "colour") {
+    Some(value) =>
+      out = out.with_colour(
+        browser_runtime_dispatch_colour_from_json(Json::object(value)),
+      )
+    None => ()
+  }
+
+  match browser_runtime_dispatch_optional_object(patch, "shorten") {
+    Some(value) => {
+      let source = match browser_runtime_dispatch_optional_int(value, "source") {
+        Some(raw) => raw
+        None => out.shorten.source
+      }
+      let target = match browser_runtime_dispatch_optional_int(value, "target") {
+        Some(raw) => raw
+        None => out.shorten.target
+      }
+      out = out.with_shorten(source, target)
+    }
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "shorten_source") {
+    Some(value) => out = out.with_shorten(value, out.shorten.target)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_int(patch, "shorten_target") {
+    Some(value) => out = out.with_shorten(out.shorten.source, value)
+    None => ()
+  }
+
+  match browser_runtime_dispatch_optional_object(patch, "edge_alignment") {
+    Some(value) => {
+      let source = match browser_runtime_dispatch_optional_bool(value, "source") {
+        Some(raw) => raw
+        None => out.edge_alignment.source
+      }
+      let target = match browser_runtime_dispatch_optional_bool(value, "target") {
+        Some(raw) => raw
+        None => out.edge_alignment.target
+      }
+      out = out.with_edge_alignment(source, target)
+    }
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_bool(patch, "edge_alignment_source") {
+    Some(value) => out = out.with_edge_alignment_source(value)
+    None => ()
+  }
+  match browser_runtime_dispatch_optional_bool(patch, "edge_alignment_target") {
+    Some(value) => out = out.with_edge_alignment_target(value)
+    None => ()
+  }
+
+  match browser_runtime_dispatch_optional_string(patch, "style_name") {
+    Some(value) => out = out.with_style_name(value)
+    None => ()
+  }
+  let tail_name = browser_runtime_dispatch_optional_string(patch, "style_tail_name")
+  let tail_side = browser_runtime_dispatch_optional_string(patch, "style_tail_side")
+  if tail_name is Some(_) || tail_side is Some(_) {
+    out = out.with_style_tail(
+      match tail_name {
+        Some(value) => value
+        None => out.style.tail.name
+      },
+      side=
+        match tail_side {
+          Some(value) => value
+          None => out.style.tail.side
+        },
+    )
+  }
+  let body_name = browser_runtime_dispatch_optional_string(patch, "style_body_name")
+  let body_side = browser_runtime_dispatch_optional_string(patch, "style_body_side")
+  if body_name is Some(_) || body_side is Some(_) {
+    out = out.with_style_body(
+      match body_name {
+        Some(value) => value
+        None => out.style.body.name
+      },
+      side=
+        match body_side {
+          Some(value) => value
+          None => out.style.body.side
+        },
+    )
+  }
+  let head_name = browser_runtime_dispatch_optional_string(patch, "style_head_name")
+  let head_side = browser_runtime_dispatch_optional_string(patch, "style_head_side")
+  if head_name is Some(_) || head_side is Some(_) {
+    out = out.with_style_head(
+      match head_name {
+        Some(value) => value
+        None => out.style.head.name
+      },
+      side=
+        match head_side {
+          Some(value) => value
+          None => out.style.head.side
+        },
+    )
+  }
+
+  match browser_runtime_dispatch_optional_object(patch, "style") {
+    Some(style_patch) => {
+      match browser_runtime_dispatch_optional_string(style_patch, "name") {
+        Some(value) => out = out.with_style_name(value)
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_object(style_patch, "tail") {
+        Some(tail_patch) => {
+          let tail_name = match browser_runtime_dispatch_optional_string(
+            tail_patch,
+            "name",
+          ) {
+            Some(value) => value
+            None => out.style.tail.name
+          }
+          let tail_side = match browser_runtime_dispatch_optional_string(
+            tail_patch,
+            "side",
+          ) {
+            Some(value) => value
+            None => out.style.tail.side
+          }
+          out = out.with_style_tail(tail_name, side=tail_side)
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_object(style_patch, "body") {
+        Some(body_patch) => {
+          let body_name = match browser_runtime_dispatch_optional_string(
+            body_patch,
+            "name",
+          ) {
+            Some(value) => value
+            None => out.style.body.name
+          }
+          let body_side = match browser_runtime_dispatch_optional_string(
+            body_patch,
+            "side",
+          ) {
+            Some(value) => value
+            None => out.style.body.side
+          }
+          out = out.with_style_body(body_name, side=body_side)
+        }
+        None => ()
+      }
+      match browser_runtime_dispatch_optional_object(style_patch, "head") {
+        Some(head_patch) => {
+          let head_name = match browser_runtime_dispatch_optional_string(
+            head_patch,
+            "name",
+          ) {
+            Some(value) => value
+            None => out.style.head.name
+          }
+          let head_side = match browser_runtime_dispatch_optional_string(
+            head_patch,
+            "side",
+          ) {
+            Some(value) => value
+            None => out.style.head.side
+          }
+          out = out.with_style_head(head_name, side=head_side)
+        }
+        None => ()
+      }
+    }
+    None => ()
+  }
+
+  out
+}
+
+///|
+fn browser_runtime_patch_edge_options_input_from_json(
+  input_json : String,
+) -> (Int, Map[String, Json]) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input_json))
+  let edge_id : Int = @json.from_json(browser_json_required_field(root, "edge_id"))
+
+  let patch = match browser_runtime_dispatch_optional_object(root, "patch") {
+    Some(value) => value
+    None => root
+  }
+  let options_patch = match browser_runtime_dispatch_optional_object(
+    patch,
+    "options",
+  ) {
+    Some(value) => value
+    None => patch
+  }
+  (edge_id, options_patch)
+}
+
+///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
   mut selected_ids : Array[Int]
@@ -863,6 +1134,49 @@ pub fn BrowserRuntime::set_edge_options_json(
   input_json : String,
 ) -> String raise {
   @engine.ffi_adapter_set_edge_options_json(self.adapter, input_json)
+}
+
+///|
+pub fn BrowserRuntime::patch_edge_options(
+  self : BrowserRuntime,
+  edge_id : Int,
+  options_patch : Map[String, Json],
+) -> Bool raise {
+  let mut current : @engine.Edge? = None
+  for cell in self.all_cells() {
+    match cell {
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          current = Some(edge)
+        }
+      _ => ()
+    }
+  }
+
+  match current {
+    Some(edge) => {
+      let patched_options = browser_runtime_patch_edge_options_from_map(
+        edge.options,
+        options_patch,
+      )
+      self.set_edge_options(edge_id, patched_options)
+    }
+    None => false
+  }
+}
+
+///|
+pub fn BrowserRuntime::patch_edge_options_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let (edge_id, options_patch) = browser_runtime_patch_edge_options_input_from_json(
+    input_json,
+  )
+  Json::object({
+    "ok": Json::boolean(self.patch_edge_options(edge_id, options_patch)),
+    "payload": Json::string(self.export_payload()),
+  }).stringify()
 }
 
 ///|
@@ -1372,6 +1686,8 @@ pub fn BrowserRuntime::dispatch_json(
     "move_vertex_json" => result = @json.parse(self.move_vertex_json(input_json))
     "set_edge_options_json" =>
       result = @json.parse(self.set_edge_options_json(input_json))
+    "patch_edge_options_json" =>
+      result = @json.parse(self.patch_edge_options_json(input_json))
     "set_edge_label_alignment_json" =>
       result = @json.parse(self.set_edge_label_alignment_json(input_json))
     "set_edge_label_position_json" =>
@@ -1832,6 +2148,14 @@ pub fn ffi_browser_runtime_set_edge_options_json(
   input_json : String,
 ) -> String raise {
   runtime.set_edge_options_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_patch_edge_options_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.patch_edge_options_json(input_json)
 }
 
 ///|

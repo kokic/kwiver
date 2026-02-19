@@ -89,7 +89,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
 - `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `add/remove/flush` JSON wrappers return payload-carrying JSON results for JS state sync (`add*`: `{id,payload}`, `remove`: `{removed_ids,payload}`, `flush`: `{payload}`).
-- single mutation JSON wrappers (`set_label`, `set_label_colour`, `move_vertex`, `set_edge_options`, `set_edge_label_alignment`, `set_edge_label_position`, `set_edge_offset`, `set_edge_curve`, `set_edge_shorten`, `reconnect_edge`) return `{ ok, payload }`.
+- single mutation JSON wrappers (`set_label`, `set_label_colour`, `move_vertex`, `set_edge_options`, `patch_edge_options`, `set_edge_label_alignment`, `set_edge_label_position`, `set_edge_offset`, `set_edge_curve`, `set_edge_shorten`, `reconnect_edge`) return `{ ok, payload }`.
 - `QuiverUiMutationBatchResult` returns per-operation success arrays plus canonical `payload`.
 - `ffi_adapter_apply_mutation_batch_json` accepts the same batch shape as `QuiverUiMutationBatch` in JSON and returns JSON-serialized `QuiverUiMutationBatchResult`.
 - `ffi_adapter_export_tikz_cd_json` serializes `{ data, metadata }` where `metadata.dependencies` stays in set-like object form (`package -> { reason: true }`).
@@ -105,7 +105,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - lifecycle/selection: `ffi_browser_runtime_new`, `ffi_browser_runtime_reset`, `ffi_browser_runtime_set_selection`, `ffi_browser_runtime_selection`
 - graph queries: `ffi_browser_runtime_all_cell_ids`, `ffi_browser_runtime_all_cells`, `ffi_browser_runtime_all_cells_json`, `ffi_browser_runtime_all_cell_ids_json`, `ffi_browser_runtime_dependencies_of`, `ffi_browser_runtime_dependencies_of_json`, `ffi_browser_runtime_reverse_dependencies_of`, `ffi_browser_runtime_reverse_dependencies_of_json`, `ffi_browser_runtime_transitive_dependencies`, `ffi_browser_runtime_transitive_dependencies_json`, `ffi_browser_runtime_transitive_reverse_dependencies`, `ffi_browser_runtime_transitive_reverse_dependencies_json`, `ffi_browser_runtime_connected_components`, `ffi_browser_runtime_connected_components_json`
 - add/remove/flush: `ffi_browser_runtime_add_vertex_json`, `ffi_browser_runtime_add_edge_json`, `ffi_browser_runtime_remove_json`, `ffi_browser_runtime_flush_json`
-- single mutation json wrappers: `ffi_browser_runtime_set_label_json`, `ffi_browser_runtime_set_label_colour_json`, `ffi_browser_runtime_move_vertex_json`, `ffi_browser_runtime_set_edge_options_json`, `ffi_browser_runtime_set_edge_label_alignment_json`, `ffi_browser_runtime_set_edge_label_position_json`, `ffi_browser_runtime_set_edge_offset_json`, `ffi_browser_runtime_set_edge_curve_json`, `ffi_browser_runtime_set_edge_shorten_json`, `ffi_browser_runtime_reconnect_edge_json`
+- single mutation json wrappers: `ffi_browser_runtime_set_label_json`, `ffi_browser_runtime_set_label_colour_json`, `ffi_browser_runtime_move_vertex_json`, `ffi_browser_runtime_set_edge_options_json`, `ffi_browser_runtime_patch_edge_options_json`, `ffi_browser_runtime_set_edge_label_alignment_json`, `ffi_browser_runtime_set_edge_label_position_json`, `ffi_browser_runtime_set_edge_offset_json`, `ffi_browser_runtime_set_edge_curve_json`, `ffi_browser_runtime_set_edge_shorten_json`, `ffi_browser_runtime_reconnect_edge_json`
 - batch update: `ffi_browser_runtime_apply_mutation_batch_json`
 - action dispatch: `ffi_browser_runtime_dispatch_json` (single-envelope UI reducer entrypoint), `ffi_browser_runtime_dispatch_many_json` (batch envelope reducer entrypoint)
 - import wrappers: `ffi_browser_runtime_import_payload`, `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_import_share_url_json`, `ffi_browser_runtime_import_share_text_json`, `ffi_browser_runtime_import_tikz_cd_json`, `ffi_browser_runtime_import_fletcher_json`, `ffi_browser_runtime_import_html_embed_json`
@@ -114,6 +114,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 `ffi_browser_runtime_dispatch_json` accepts `{ action|type, input?, default_renderer?, include_dependencies? }` and returns `{ ok, action, result, payload, selection, error }`.
 It supports mutation/import/export actions plus graph-query actions (`dependencies_of_json`, `reverse_dependencies_of_json`, `transitive_dependencies_json`, `transitive_reverse_dependencies_json`, `connected_components_json`) and lifecycle/render actions:
+- Includes partial edge patch mutation action `patch_edge_options_json` for sparse options updates.
 - `reset`
 - `import_payload` (`input` can be raw payload string, payload object, or payload json scalar)
 - `render_tikz_json` (`input.settings` + `input.options` + `input.definitions.colours`, with shorthand fallback to flat keys)

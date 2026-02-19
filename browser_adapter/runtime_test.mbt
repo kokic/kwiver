@@ -416,6 +416,25 @@ test "browser runtime single mutation json wrappers expose ok payload contract" 
     ].join(""),
   )
   inspect(set_edge_shorten_json.contains("\"ok\":true"), content="true")
+  let patch_edge_options_json = runtime.patch_edge_options_json(
+    [
+      "{",
+      "\"edge_id\":", edge_id.to_string(), ",",
+      "\"patch\":{",
+      "\"label_alignment\":\"over\",",
+      "\"label_position\":25,",
+      "\"shape\":\"arc\",",
+      "\"radius\":9,",
+      "\"angle\":45,",
+      "\"shorten\":{\"source\":2},",
+      "\"edge_alignment\":{\"target\":false},",
+      "\"style\":{\"tail\":{\"name\":\"hook\",\"side\":\"top\"}},",
+      "\"style_head_name\":\"maps to\"",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(patch_edge_options_json.contains("\"ok\":true"), content="true")
 
   let reconnect_edge_json = runtime.reconnect_edge_json(
     [
@@ -465,15 +484,25 @@ test "browser runtime single mutation json wrappers expose ok payload contract" 
       inspect(edge.source == target_id, content="true")
       inspect(edge.target == source_id, content="true")
       inspect(edge.options.offset, content="11")
-      inspect(edge.options.curve, content="-3")
-      inspect(edge.options.shorten.source, content="6")
+      inspect(edge.options.curve, content="0")
+      inspect(edge.options.label_position, content="25")
+      inspect(edge.options.radius, content="9")
+      inspect(edge.options.angle, content="45")
+      inspect(edge.options.shorten.source, content="2")
       inspect(edge.options.shorten.target, content="4")
+      inspect(edge.options.edge_alignment.source, content="true")
+      inspect(edge.options.edge_alignment.target, content="false")
+      inspect(edge.options.style.tail.name, content="hook")
+      inspect(edge.options.style.tail.side, content="top")
       inspect(edge.options.style.body.name, content="barred")
-      inspect(edge.options.style.head.name, content="epi")
+      inspect(edge.options.style.head.name, content="maps to")
       inspect(edge.options.level, content="1")
     }
     None => abort("expected updated edge")
   }
+  let all_cells_json = ffi_browser_runtime_all_cells_json(runtime)
+  inspect(all_cells_json.contains("\"label_alignment\":\"over\""), content="true")
+  inspect(all_cells_json.contains("\"shape\":\"arc\""), content="true")
 }
 
 ///|
@@ -528,6 +557,38 @@ test "browser runtime dispatch_json routes action envelopes for ui loop" {
     runtime_test_json_get(set_offset_result, "ok"),
   )
   inspect(set_offset_ok, content="true")
+
+  let patch_edge_options_dispatch = runtime.dispatch_json(
+    "{\"action\":\"patch_edge_options_json\",\"input\":{\"edge_id\":3,\"patch\":{\"radius\":12,\"shape\":\"arc\"}}}",
+  )
+  let patch_edge_options_root : Map[String, Json] = @json.from_json(
+    @json.parse(patch_edge_options_dispatch),
+  )
+  let patch_edge_options_result : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(patch_edge_options_root, "result"),
+  )
+  let patch_edge_options_ok : Bool = @json.from_json(
+    runtime_test_json_get(patch_edge_options_result, "ok"),
+  )
+  inspect(patch_edge_options_ok, content="true")
+  let mut patched_edge : @engine.Edge? = None
+  for cell in runtime.all_cells() {
+    match cell {
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          patched_edge = Some(edge)
+        }
+      _ => ()
+    }
+  }
+  match patched_edge {
+    Some(edge) => {
+      inspect(edge.options.radius, content="12")
+    }
+    None => abort("expected patched edge")
+  }
+  let all_cells_json = ffi_browser_runtime_all_cells_json(runtime)
+  inspect(all_cells_json.contains("\"shape\":\"arc\""), content="true")
 
   let snapshot_dispatch = runtime.dispatch_json("{\"action\":\"snapshot_json\"}")
   let snapshot_root : Map[String, Json] = @json.from_json(
@@ -1094,6 +1155,11 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
     ].join(""),
   )
   inspect(set_edge_options_json.contains("\"ok\":true"), content="true")
+  let patch_edge_options_json = ffi_browser_runtime_patch_edge_options_json(
+    runtime,
+    "{\"edge_id\":3,\"patch\":{\"radius\":8,\"shape\":\"arc\",\"style\":{\"tail\":{\"name\":\"hook\",\"side\":\"top\"}}}}",
+  )
+  inspect(patch_edge_options_json.contains("\"ok\":true"), content="true")
   let set_edge_label_alignment_json =
     ffi_browser_runtime_set_edge_label_alignment_json(
       runtime,
@@ -1249,6 +1315,14 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
     runtime_test_json_get(add_edge_root, "ok"),
   )
   inspect(add_edge_ok, content="true")
+
+  let patch_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"patch_edge_options_json\",\"input\":{\"edge_id\":3,\"patch\":{\"radius\":7}}}",
+  )
+  let patch_root : Map[String, Json] = @json.from_json(@json.parse(patch_dispatch))
+  let patch_ok : Bool = @json.from_json(runtime_test_json_get(patch_root, "ok"))
+  inspect(patch_ok, content="true")
 
   let snapshot_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
