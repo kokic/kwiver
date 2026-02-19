@@ -96,6 +96,19 @@ test "browser demo typed helper APIs cover add/import/render flow" {
   let restored = BrowserDemoSession::new()
   inspect(restored.import_payload(payload), content="true")
   inspect(restored.cell_ids(), content="[1, 2, 3]")
+
+  let all_cells = restored.all_cells()
+  inspect(all_cells.length(), content="3")
+  let mut vertex_count = 0
+  let mut edge_count = 0
+  for cell in all_cells {
+    match cell {
+      @engine.CellData::Vertex(_) => vertex_count += 1
+      @engine.CellData::Edge(_) => edge_count += 1
+    }
+  }
+  inspect(vertex_count, content="2")
+  inspect(edge_count, content="1")
 }
 
 ///|
@@ -141,6 +154,62 @@ test "browser demo typed mutation helpers support incremental edits and removals
   inspect(removed_ids, content="[1, 3]")
   inspect(session.flush(9), content="true")
   inspect(session.cell_ids(), content="[2]")
+}
+
+///|
+test "browser demo typed query helpers expose dependency closures" {
+  let session = BrowserDemoSession::new()
+  let a = session.add_vertex("A", 0, 0)
+  let b = session.add_vertex("B", 1, 0)
+  let f = session.add_edge(a, b, label="f")
+
+  inspect(session.dependencies_of(a), content="[3]")
+  inspect(session.reverse_dependencies_of(f), content="[1, 2]")
+  inspect(
+    session.transitive_dependencies([a], exclude_roots=true),
+    content="[3]",
+  )
+  inspect(session.transitive_reverse_dependencies([f]), content="[1, 2, 3]")
+  inspect(session.connected_components([a]), content="[1, 2, 3]")
+}
+
+///|
+test "browser demo typed import and render helpers support text formats" {
+  let source = BrowserDemoSession::new()
+  let a = source.add_vertex("A", 0, 0)
+  let b = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(a, b, label="f"))
+
+  let tikz = source.render_tikz()
+  inspect(tikz.contains("\\begin{tikzcd}"), content="true")
+  let fletcher = source.render_fletcher()
+  inspect(fletcher.contains("#diagram({"), content="true")
+  let html = source.render_html_embed()
+  inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
+
+  let imported_tikz = BrowserDemoSession::new()
+  inspect(imported_tikz.import_tikz_cd(tikz), content="true")
+  inspect(imported_tikz.cell_ids(), content="[1, 2, 3]")
+
+  let imported_auto = BrowserDemoSession::new()
+  inspect(imported_auto.import_text_auto(tikz), content="true")
+  inspect(imported_auto.cell_ids(), content="[1, 2, 3]")
+
+  let starred_tikz = [
+    "\\begin{tikzcd*}\n", "X \\arrow[r, \"g\"] & Y\n", "\\end{tikzcd*}",
+  ].join("")
+  let imported_starred = BrowserDemoSession::new()
+  inspect(imported_starred.import_text_auto(starred_tikz), content="true")
+  inspect(imported_starred.cell_ids(), content="[1, 2, 3]")
+
+  let imported_share_text = BrowserDemoSession::new()
+  inspect(imported_share_text.import_share_text(fletcher), content="true")
+  inspect(imported_share_text.cell_ids(), content="[1, 2, 3]")
+
+  let cells_json : Array[Map[String, Json]] = @json.from_json(
+    @json.parse(source.all_cells_json()),
+  )
+  inspect(cells_json.length(), content="3")
 }
 
 ///|

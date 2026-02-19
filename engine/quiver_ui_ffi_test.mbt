@@ -536,6 +536,14 @@ test "ui ffi adapter import text auto supports handwritten tikz and raw payload"
   inspect(imported_tikz.embed, content="false")
   inspect(ffi_adapter_all_cell_ids(adapter), content="[1, 2, 3]")
 
+  let starred_tikz = [
+    "\\begin{tikzcd*}\n", "X \\arrow[r, \"g\"] & Y\n", "\\end{tikzcd*}",
+  ].join("")
+  let imported_starred = ffi_adapter_import_text_auto(adapter, starred_tikz)
+  inspect(imported_starred.renderer, content="None")
+  inspect(imported_starred.embed, content="false")
+  inspect(ffi_adapter_all_cell_ids(adapter), content="[1, 2, 3]")
+
   let source = ffi_adapter_new()
   ignore(ffi_adapter_add_vertex(source, "X", 0, 0))
   let payload = ffi_adapter_export_base64(source)

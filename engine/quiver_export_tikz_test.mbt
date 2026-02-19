@@ -953,6 +953,37 @@ test "tikz-cd import minimal parser supports handwritten matrix and right arrow"
 }
 
 ///|
+test "tikz-cd import minimal parser supports starred tikzcd environment" {
+  let input = [
+    "\\begin{tikzcd*}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd*}",
+  ].join("")
+
+  let imported = Quiver::import_tikz_cd_result(input)
+  inspect(imported.macro_url is None, content="true")
+  inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match
+    tikz_test_find_vertex_id_by_label(imported.quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match
+    tikz_test_find_vertex_id_by_label(imported.quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser creates implicit vertices for coordinate arrows" {
   let input = [
     "\\begin{tikzcd}\n", "\\arrow[from=1-1, to=1-2, \"f\"]\n", "\\end{tikzcd}",

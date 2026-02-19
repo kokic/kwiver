@@ -1740,11 +1740,51 @@ fn tikz_parse_ampersand_replacement(options : String) -> String? {
 }
 
 ///|
-fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
+fn tikz_find_environment_tokens(input : String) -> (Int, String, String)? {
   let begin_token = "\\begin{tikzcd}"
   let end_token = "\\end{tikzcd}"
-  match input.find(begin_token) {
-    Some(begin_index) => {
+  let begin_star_token = "\\begin{tikzcd*}"
+  let end_star_token = "\\end{tikzcd*}"
+
+  let begin_index = input.find(begin_token)
+  let begin_star_index = input.find(begin_star_token)
+  match begin_index {
+    Some(index) =>
+      match begin_star_index {
+        Some(star_index) =>
+          if star_index < index {
+            Some((star_index, begin_star_token, end_star_token))
+          } else {
+            Some((index, begin_token, end_token))
+          }
+        None => Some((index, begin_token, end_token))
+      }
+    None =>
+      match begin_star_index {
+        Some(star_index) => Some((star_index, begin_star_token, end_star_token))
+        None => None
+      }
+  }
+}
+
+///|
+fn tikz_looks_like_environment(input : String) -> Bool {
+  match tikz_find_environment_tokens(input) {
+    Some((begin_index, begin_token, end_token)) => {
+      let after_begin = input.unsafe_substring(
+        start=begin_index + begin_token.length(),
+        end=input.length(),
+      )
+      after_begin.contains(end_token)
+    }
+    None => false
+  }
+}
+
+///|
+fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
+  match tikz_find_environment_tokens(input) {
+    Some((begin_index, begin_token, end_token)) => {
       let after_begin = input.unsafe_substring(
         start=begin_index + begin_token.length(),
         end=input.length(),
@@ -4640,8 +4680,7 @@ pub fn Quiver::import_tikz_cd_result(
   input : String,
   default_renderer? : String = "canvas",
 ) -> Base64ShareImportResult raise {
-  let looks_like_tikz = input.contains("\\begin{tikzcd}") &&
-    input.contains("\\end{tikzcd}")
+  let looks_like_tikz = tikz_looks_like_environment(input)
   if looks_like_tikz {
     if !tikz_has_share_reference_hint(input) {
       return {

@@ -133,6 +133,20 @@ fn browser_demo_dispatch_result_json(output_json : String) -> Json? {
 }
 
 ///|
+fn browser_demo_dispatch_result_int_array(output_json : String) -> Array[Int]? {
+  match browser_demo_dispatch_result_json(output_json) {
+    Some(raw) => {
+      let parsed : Result[Array[Int], Error] = try? @json.from_json(raw)
+      match parsed {
+        Ok(values) => Some(values)
+        Err(_) => None
+      }
+    }
+    None => None
+  }
+}
+
+///|
 fn browser_demo_dispatch_ok(output_json : String) -> Bool {
   match browser_demo_parse_json_object(output_json) {
     Some(root) => browser_demo_json_bool_or(root, "ok", false)
@@ -438,6 +452,176 @@ pub fn BrowserDemoSession::render_tikz_json(self : BrowserDemoSession) -> String
 }
 
 ///|
+pub fn BrowserDemoSession::render_fletcher(self : BrowserDemoSession) -> String {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input("render_fletcher", Json::object({})),
+  )
+  match browser_demo_dispatch_result_string(output) {
+    Some(result) => result
+    None => ""
+  }
+}
+
+///|
+pub fn BrowserDemoSession::render_html_embed(self : BrowserDemoSession) -> String {
+  let settings = @engine.HtmlEmbedExportSettings::default("https://q.uiver.app")
+    .with_fixed_size(400, 300)
+  @browser_adapter.ffi_browser_runtime_render_html_embed(
+    self.runtime,
+    settings,
+  )
+}
+
+///|
+pub fn BrowserDemoSession::import_text_auto(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_text_auto_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
+pub fn BrowserDemoSession::import_tikz_cd(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_tikz_cd_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
+pub fn BrowserDemoSession::import_share_text(
+  self : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  let output = self.dispatch_json(
+    Json::object({
+      "action": Json::string("import_share_text_json"),
+      "input": Json::string(input),
+      "default_renderer": Json::string(default_renderer),
+    }).stringify(),
+  )
+  browser_demo_dispatch_ok(output)
+}
+
+///|
+pub fn BrowserDemoSession::dependencies_of(
+  self : BrowserDemoSession,
+  cell_id : Int,
+) -> Array[Int] {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "dependencies_of_json",
+      Json::object({ "cell_id": Json::number(cell_id.to_double()) }),
+    ),
+  )
+  match browser_demo_dispatch_result_int_array(output) {
+    Some(values) => values
+    None => []
+  }
+}
+
+///|
+pub fn BrowserDemoSession::reverse_dependencies_of(
+  self : BrowserDemoSession,
+  cell_id : Int,
+) -> Array[Int] {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "reverse_dependencies_of_json",
+      Json::object({ "cell_id": Json::number(cell_id.to_double()) }),
+    ),
+  )
+  match browser_demo_dispatch_result_int_array(output) {
+    Some(values) => values
+    None => []
+  }
+}
+
+///|
+pub fn BrowserDemoSession::transitive_dependencies(
+  self : BrowserDemoSession,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  let roots_json : Array[Json] = []
+  for root in roots {
+    roots_json.push(Json::number(root.to_double()))
+  }
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "transitive_dependencies_json",
+      Json::object({
+        "roots": Json::array(roots_json),
+        "exclude_roots": Json::boolean(exclude_roots),
+      }),
+    ),
+  )
+  match browser_demo_dispatch_result_int_array(output) {
+    Some(values) => values
+    None => []
+  }
+}
+
+///|
+pub fn BrowserDemoSession::transitive_reverse_dependencies(
+  self : BrowserDemoSession,
+  roots : Array[Int],
+) -> Array[Int] {
+  let roots_json : Array[Json] = []
+  for root in roots {
+    roots_json.push(Json::number(root.to_double()))
+  }
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "transitive_reverse_dependencies_json",
+      Json::object({ "roots": Json::array(roots_json) }),
+    ),
+  )
+  match browser_demo_dispatch_result_int_array(output) {
+    Some(values) => values
+    None => []
+  }
+}
+
+///|
+pub fn BrowserDemoSession::connected_components(
+  self : BrowserDemoSession,
+  roots : Array[Int],
+) -> Array[Int] {
+  let roots_json : Array[Json] = []
+  for root in roots {
+    roots_json.push(Json::number(root.to_double()))
+  }
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "connected_components_json",
+      Json::object({ "roots": Json::array(roots_json) }),
+    ),
+  )
+  match browser_demo_dispatch_result_int_array(output) {
+    Some(values) => values
+    None => []
+  }
+}
+
+///|
 pub fn BrowserDemoSession::snapshot_json(self : BrowserDemoSession) -> String {
   let output = self.dispatch_json(browser_demo_action("snapshot_json"))
   match browser_demo_dispatch_result_json(output) {
@@ -457,8 +641,27 @@ pub fn BrowserDemoSession::selection(self : BrowserDemoSession) -> Array[Int] {
 }
 
 ///|
-pub fn BrowserDemoSession::cell_ids(self : BrowserDemoSession) -> Array[Int] {
+pub fn BrowserDemoSession::all_cells(self : BrowserDemoSession) -> Array[@engine.CellData] {
+  @browser_adapter.ffi_browser_runtime_all_cells(self.runtime)
+}
+
+///|
+pub fn BrowserDemoSession::all_cells_json(self : BrowserDemoSession) -> String {
+  let output = self.dispatch_json(browser_demo_action("all_cells_json"))
+  match browser_demo_dispatch_result_json(output) {
+    Some(cells) => cells.stringify()
+    None => "[]"
+  }
+}
+
+///|
+pub fn BrowserDemoSession::all_cell_ids(self : BrowserDemoSession) -> Array[Int] {
   @browser_adapter.ffi_browser_runtime_all_cell_ids(self.runtime)
+}
+
+///|
+pub fn BrowserDemoSession::cell_ids(self : BrowserDemoSession) -> Array[Int] {
+  self.all_cell_ids()
 }
 
 ///|
@@ -466,7 +669,7 @@ pub fn BrowserDemoSession::state_json(self : BrowserDemoSession) -> String {
   Json::object({
     "payload": Json::string(self.payload),
     "selection": browser_demo_int_array_json(self.selection),
-    "cell_ids": browser_demo_int_array_json(self.cell_ids()),
+    "cell_ids": browser_demo_int_array_json(self.all_cell_ids()),
   }).stringify()
 }
 
@@ -601,6 +804,27 @@ pub fn ffi_browser_demo_session_import_payload(
 }
 
 ///|
+pub fn ffi_browser_demo_session_all_cells(
+  session : BrowserDemoSession,
+) -> Array[@engine.CellData] {
+  session.all_cells()
+}
+
+///|
+pub fn ffi_browser_demo_session_all_cells_json(
+  session : BrowserDemoSession,
+) -> String {
+  session.all_cells_json()
+}
+
+///|
+pub fn ffi_browser_demo_session_all_cell_ids(
+  session : BrowserDemoSession,
+) -> Array[Int] {
+  session.all_cell_ids()
+}
+
+///|
 pub fn ffi_browser_demo_session_render_tikz(session : BrowserDemoSession) -> String {
   session.render_tikz()
 }
@@ -610,6 +834,84 @@ pub fn ffi_browser_demo_session_render_tikz_json(
   session : BrowserDemoSession,
 ) -> String {
   session.render_tikz_json()
+}
+
+///|
+pub fn ffi_browser_demo_session_render_fletcher(session : BrowserDemoSession) -> String {
+  session.render_fletcher()
+}
+
+///|
+pub fn ffi_browser_demo_session_render_html_embed(session : BrowserDemoSession) -> String {
+  session.render_html_embed()
+}
+
+///|
+pub fn ffi_browser_demo_session_import_text_auto(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_text_auto(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_tikz_cd(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_tikz_cd(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_import_share_text(
+  session : BrowserDemoSession,
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Bool {
+  session.import_share_text(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_demo_session_dependencies_of(
+  session : BrowserDemoSession,
+  cell_id : Int,
+) -> Array[Int] {
+  session.dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_browser_demo_session_reverse_dependencies_of(
+  session : BrowserDemoSession,
+  cell_id : Int,
+) -> Array[Int] {
+  session.reverse_dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_browser_demo_session_transitive_dependencies(
+  session : BrowserDemoSession,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  session.transitive_dependencies(roots, exclude_roots~)
+}
+
+///|
+pub fn ffi_browser_demo_session_transitive_reverse_dependencies(
+  session : BrowserDemoSession,
+  roots : Array[Int],
+) -> Array[Int] {
+  session.transitive_reverse_dependencies(roots)
+}
+
+///|
+pub fn ffi_browser_demo_session_connected_components(
+  session : BrowserDemoSession,
+  roots : Array[Int],
+) -> Array[Int] {
+  session.connected_components(roots)
 }
 
 ///|

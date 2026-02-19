@@ -1,5 +1,6 @@
 import {
   "kokic/kwiver/browser_adapter",
+  "kokic/kwiver/engine",
   "moonbitlang/core/json",
 }
 
@@ -20,8 +21,21 @@ options(
         "ffi_browser_demo_session_set_selection",
         "ffi_browser_demo_session_export_selection",
         "ffi_browser_demo_session_import_payload",
+        "ffi_browser_demo_session_all_cells",
+        "ffi_browser_demo_session_all_cells_json",
+        "ffi_browser_demo_session_all_cell_ids",
+        "ffi_browser_demo_session_import_text_auto",
+        "ffi_browser_demo_session_import_tikz_cd",
+        "ffi_browser_demo_session_import_share_text",
         "ffi_browser_demo_session_render_tikz",
         "ffi_browser_demo_session_render_tikz_json",
+        "ffi_browser_demo_session_render_fletcher",
+        "ffi_browser_demo_session_render_html_embed",
+        "ffi_browser_demo_session_dependencies_of",
+        "ffi_browser_demo_session_reverse_dependencies_of",
+        "ffi_browser_demo_session_transitive_dependencies",
+        "ffi_browser_demo_session_transitive_reverse_dependencies",
+        "ffi_browser_demo_session_connected_components",
         "ffi_browser_demo_session_snapshot_json",
         "ffi_browser_demo_session_state_json",
         "ffi_browser_demo_roundtrip_demo_json",

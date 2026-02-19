@@ -165,6 +165,16 @@ test "browser runtime import text auto supports handwritten tikz and raw payload
   inspect(runtime.all_cell_ids(), content="[1, 2, 3]")
   inspect(runtime.selection(), content="[]")
 
+  let starred_tikz = [
+    "\\begin{tikzcd*}\n", "X \\arrow[r, \"g\"] & Y\n", "\\end{tikzcd*}",
+  ].join("")
+  let imported_starred = runtime.import_text_auto(starred_tikz)
+  inspect(imported_starred.payload == runtime.export_payload(), content="true")
+  inspect(imported_starred.renderer, content="None")
+  inspect(imported_starred.embed, content="false")
+  inspect(runtime.all_cell_ids(), content="[1, 2, 3]")
+  inspect(runtime.selection(), content="[]")
+
   let source = BrowserRuntime::new()
   ignore(source.add_vertex("X", 0, 0))
   let payload = source.export_payload()

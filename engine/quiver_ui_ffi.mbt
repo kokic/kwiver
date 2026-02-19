@@ -1103,7 +1103,11 @@ fn quiver_ui_looks_like_share_reference(input : String) -> Bool {
 
 ///|
 fn quiver_ui_looks_like_tikz(input : String) -> Bool {
-  input.contains("\\begin{tikzcd}") && input.contains("\\end{tikzcd}")
+  let plain_env = input.contains("\\begin{tikzcd}") &&
+    input.contains("\\end{tikzcd}")
+  let starred_env = input.contains("\\begin{tikzcd*}") &&
+    input.contains("\\end{tikzcd*}")
+  plain_env || starred_env
 }
 
 ///|
