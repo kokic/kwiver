@@ -1776,6 +1776,13 @@ fn tikz_split_rows(body : String) -> Array[String] {
       while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
         i = i + 1
       }
+      if i < body.length() && body.unsafe_get(i) == '*' {
+        // Support starred row breaks (e.g. "\\*" and "\\* [0.6em]").
+        i = i + 1
+        while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
+          i = i + 1
+        }
+      }
       if i < body.length() && body.unsafe_get(i) == '[' {
         let mut depth = 1
         i = i + 1
