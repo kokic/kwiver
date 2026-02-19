@@ -108,8 +108,8 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 - single mutation json wrappers: `ffi_browser_runtime_set_label_json`, `ffi_browser_runtime_set_label_colour_json`, `ffi_browser_runtime_move_vertex_json`, `ffi_browser_runtime_set_edge_options_json`, `ffi_browser_runtime_set_edge_label_alignment_json`, `ffi_browser_runtime_set_edge_label_position_json`, `ffi_browser_runtime_set_edge_offset_json`, `ffi_browser_runtime_set_edge_curve_json`, `ffi_browser_runtime_set_edge_shorten_json`, `ffi_browser_runtime_reconnect_edge_json`
 - batch update: `ffi_browser_runtime_apply_mutation_batch_json`
 - action dispatch: `ffi_browser_runtime_dispatch_json` (single-envelope UI reducer entrypoint), `ffi_browser_runtime_dispatch_many_json` (batch envelope reducer entrypoint)
-- import wrappers: `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_import_share_url_json`, `ffi_browser_runtime_import_share_text_json`, `ffi_browser_runtime_import_tikz_cd_json`, `ffi_browser_runtime_import_fletcher_json`, `ffi_browser_runtime_import_html_embed_json`
-- export/render: `ffi_browser_runtime_export_payload`, `ffi_browser_runtime_export_selection`, `ffi_browser_runtime_render_tikz_json`, `ffi_browser_runtime_render_fletcher`, `ffi_browser_runtime_render_html_embed`
+- import wrappers: `ffi_browser_runtime_import_payload`, `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_import_share_url_json`, `ffi_browser_runtime_import_share_text_json`, `ffi_browser_runtime_import_tikz_cd_json`, `ffi_browser_runtime_import_fletcher_json`, `ffi_browser_runtime_import_html_embed_json`
+- export/render: `ffi_browser_runtime_export_payload`, `ffi_browser_runtime_export_selection`, `ffi_browser_runtime_render_tikz`, `ffi_browser_runtime_render_tikz_json`, `ffi_browser_runtime_render_fletcher`, `ffi_browser_runtime_render_html_embed`
 - snapshot/paste: `ffi_browser_runtime_snapshot_json`, `ffi_browser_runtime_paste_selection_json`
 
 `ffi_browser_runtime_dispatch_json` accepts `{ action|type, input?, default_renderer?, include_dependencies? }` and returns `{ ok, action, result, payload, selection, error }`.
@@ -121,10 +121,12 @@ It supports mutation/import/export actions plus graph-query actions (`dependenci
 - `render_html_embed` (`input.settings` + `input.options`, fixed/dynamic size inferred from `fixed_size` or width/height presence)
 - `render_tikz` (string output)
 - `export_selection` with `include_dependencies` accepted in either top-level envelope or `input`
+The FFI wrapper is safe for JS callers: malformed envelope JSON and decode failures are converted into `{ ok: false, ... }` error payloads instead of raising.
 
 `ffi_browser_runtime_dispatch_many_json` accepts either:
 - `Array[DispatchEnvelope]`
 - `{ actions: Array[DispatchEnvelope], stop_on_error?: Bool }`
-and returns `{ ok, processed, results, payload, selection }`, where each `results[i]` is the same contract as `dispatch_json`.
+and returns `{ ok, processed, results, payload, selection, error }`, where each `results[i]` is the same contract as `dispatch_json`.
+For malformed batch JSON, the wrapper returns `{ ok: false, processed: 0, results: [], ... }` with a non-null `error`.
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.

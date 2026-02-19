@@ -750,10 +750,12 @@ test "browser runtime dispatch_many_json batches ordered action envelopes" {
   let results : Array[Json] = @json.from_json(
     runtime_test_json_get(batch_root, "results"),
   )
+  let batch_error = runtime_test_json_get(batch_root, "error")
 
   inspect(batch_ok, content="true")
   inspect(processed, content="5")
   inspect(results.length(), content="5")
+  inspect(batch_error, content="Null")
 
   let first_result : Map[String, Json] = @json.from_json(results[0])
   let first_action : String = @json.from_json(
@@ -801,9 +803,11 @@ test "browser runtime dispatch_many_json supports stop_on_error short-circuit" {
   let results : Array[Json] = @json.from_json(
     runtime_test_json_get(batch_root, "results"),
   )
+  let batch_error = runtime_test_json_get(batch_root, "error")
   inspect(batch_ok, content="false")
   inspect(processed, content="2")
   inspect(results.length(), content="2")
+  inspect(batch_error, content="Null")
 
   let second_result : Map[String, Json] = @json.from_json(results[1])
   let second_ok : Bool = @json.from_json(runtime_test_json_get(second_result, "ok"))
@@ -1131,6 +1135,8 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
   let snapshot_json = ffi_browser_runtime_snapshot_json(runtime)
   inspect(snapshot_json.contains("\"cell_ids\":[1,2,3]"), content="true")
 
+  let tikz_out = ffi_browser_runtime_render_tikz(runtime)
+  inspect(tikz_out.contains("\\begin{tikzcd}"), content="true")
   let tikz_json = ffi_browser_runtime_render_tikz_json(runtime)
   inspect(tikz_json.contains("\"data\":\""), content="true")
   inspect(tikz_json.contains("\"metadata\":"), content="true")
@@ -1152,6 +1158,11 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
   inspect(imported_json.contains("\"payload\":\""), content="true")
   inspect(imported_json.contains("\"embed\":false"), content="true")
   inspect(ffi_browser_runtime_selection(runtime), content="[]")
+  let imported_payload = ffi_browser_runtime_import_payload(
+    runtime,
+    ffi_browser_runtime_export_payload(runtime),
+  )
+  inspect(imported_payload == ffi_browser_runtime_export_payload(runtime), content="true")
 
   let source = ffi_browser_runtime_new()
   ignore(
@@ -1376,6 +1387,52 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
 }
 
 ///|
+test "browser runtime ffi dispatch wrappers return error envelopes for malformed input" {
+  let runtime = ffi_browser_runtime_new()
+  ignore(ffi_browser_runtime_add_vertex_json(runtime, "{\"label\":\"A\",\"x\":0,\"y\":0}"))
+
+  let malformed_dispatch = ffi_browser_runtime_dispatch_json(runtime, "{")
+  let malformed_root : Map[String, Json] = @json.from_json(
+    @json.parse(malformed_dispatch),
+  )
+  let malformed_ok : Bool = @json.from_json(
+    runtime_test_json_get(malformed_root, "ok"),
+  )
+  let malformed_action : String = @json.from_json(
+    runtime_test_json_get(malformed_root, "action"),
+  )
+  let malformed_error : String = @json.from_json(
+    runtime_test_json_get(malformed_root, "error"),
+  )
+  inspect(malformed_ok, content="false")
+  inspect(malformed_action, content="unknown")
+  inspect(malformed_error != "", content="true")
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1]")
+
+  let malformed_batch = ffi_browser_runtime_dispatch_many_json(runtime, "{")
+  let malformed_batch_root : Map[String, Json] = @json.from_json(
+    @json.parse(malformed_batch),
+  )
+  let malformed_batch_ok : Bool = @json.from_json(
+    runtime_test_json_get(malformed_batch_root, "ok"),
+  )
+  let malformed_batch_processed : Int = @json.from_json(
+    runtime_test_json_get(malformed_batch_root, "processed"),
+  )
+  let malformed_batch_results : Array[Json] = @json.from_json(
+    runtime_test_json_get(malformed_batch_root, "results"),
+  )
+  let malformed_batch_error : String = @json.from_json(
+    runtime_test_json_get(malformed_batch_root, "error"),
+  )
+  inspect(malformed_batch_ok, content="false")
+  inspect(malformed_batch_processed, content="0")
+  inspect(malformed_batch_results.length(), content="0")
+  inspect(malformed_batch_error != "", content="true")
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1]")
+}
+
+///|
 test "browser runtime ffi dispatch_many wrapper batches ui envelopes" {
   let runtime = ffi_browser_runtime_new()
   let batch_json = [
@@ -1396,9 +1453,11 @@ test "browser runtime ffi dispatch_many wrapper batches ui envelopes" {
   let results : Array[Json] = @json.from_json(
     runtime_test_json_get(batch_root, "results"),
   )
+  let batch_error = runtime_test_json_get(batch_root, "error")
   inspect(batch_ok, content="true")
   inspect(processed, content="4")
   inspect(results.length(), content="4")
+  inspect(batch_error, content="Null")
   inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1, 2, 3]")
 
   let snapshot_entry : Map[String, Json] = @json.from_json(results[3])

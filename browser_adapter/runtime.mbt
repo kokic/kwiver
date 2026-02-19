@@ -201,6 +201,56 @@ fn browser_runtime_dispatch_result_ok(result : Json) -> Bool {
 }
 
 ///|
+fn browser_runtime_dispatch_action_hint(action_json : String) -> String {
+  let parsed : Result[Json, Error] = try? @json.parse(action_json)
+  match parsed {
+    Ok(Json::Object(root)) =>
+      match root.get("action") {
+        Some(Json::String(action)) => action
+        _ =>
+          match root.get("type") {
+            Some(Json::String(action)) => action
+            _ => "unknown"
+          }
+      }
+    _ => "unknown"
+  }
+}
+
+///|
+fn browser_runtime_dispatch_safe_error_json(
+  action : String,
+  error : String,
+  payload : String,
+  selection : Array[Int],
+) -> String {
+  Json::object({
+    "ok": Json::boolean(false),
+    "action": Json::string(action),
+    "result": Json::null(),
+    "payload": Json::string(payload),
+    "selection": browser_int_array_json(selection),
+    "error": Json::string(error),
+  }).stringify()
+}
+
+///|
+fn browser_runtime_dispatch_many_safe_error_json(
+  error : String,
+  payload : String,
+  selection : Array[Int],
+) -> String {
+  Json::object({
+    "ok": Json::boolean(false),
+    "processed": Json::number(0.0),
+    "results": Json::array([]),
+    "payload": Json::string(payload),
+    "selection": browser_int_array_json(selection),
+    "error": Json::string(error),
+  }).stringify()
+}
+
+///|
 fn browser_runtime_dispatch_optional_object(
   root : Map[String, Json],
   key : String,
@@ -1568,7 +1618,43 @@ pub fn BrowserRuntime::dispatch_many_json(
     "results": Json::array(results),
     "payload": Json::string(self.export_payload()),
     "selection": browser_int_array_json(self.selection()),
+    "error": Json::null(),
   }).stringify()
+}
+
+///|
+pub fn BrowserRuntime::dispatch_json_safe(
+  self : BrowserRuntime,
+  action_json : String,
+) -> String {
+  let dispatched : Result[String, Error] = try? self.dispatch_json(action_json)
+  match dispatched {
+    Ok(result) => result
+    Err(error) =>
+      browser_runtime_dispatch_safe_error_json(
+        browser_runtime_dispatch_action_hint(action_json),
+        error.to_string(),
+        self.export_payload(),
+        self.selection(),
+      )
+  }
+}
+
+///|
+pub fn BrowserRuntime::dispatch_many_json_safe(
+  self : BrowserRuntime,
+  batch_json : String,
+) -> String {
+  let dispatched : Result[String, Error] = try? self.dispatch_many_json(batch_json)
+  match dispatched {
+    Ok(result) => result
+    Err(error) =>
+      browser_runtime_dispatch_many_safe_error_json(
+        error.to_string(),
+        self.export_payload(),
+        self.selection(),
+      )
+  }
 }
 
 ///|
@@ -1824,16 +1910,16 @@ pub fn ffi_browser_runtime_apply_mutation_batch_json(
 pub fn ffi_browser_runtime_dispatch_json(
   runtime : BrowserRuntime,
   action_json : String,
-) -> String raise {
-  runtime.dispatch_json(action_json)
+) -> String {
+  runtime.dispatch_json_safe(action_json)
 }
 
 ///|
 pub fn ffi_browser_runtime_dispatch_many_json(
   runtime : BrowserRuntime,
   batch_json : String,
-) -> String raise {
-  runtime.dispatch_many_json(batch_json)
+) -> String {
+  runtime.dispatch_many_json_safe(batch_json)
 }
 
 ///|
@@ -1865,6 +1951,11 @@ pub fn ffi_browser_runtime_render_tikz_json(
 }
 
 ///|
+pub fn ffi_browser_runtime_render_tikz(runtime : BrowserRuntime) -> String {
+  runtime.render_tikz()
+}
+
+///|
 pub fn ffi_browser_runtime_render_fletcher(
   runtime : BrowserRuntime,
   settings? : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
@@ -1889,6 +1980,14 @@ pub fn ffi_browser_runtime_import_text_auto_json(
   default_renderer? : String = "canvas",
 ) -> String raise {
   runtime.import_text_auto_json(input, default_renderer~)
+}
+
+///|
+pub fn ffi_browser_runtime_import_payload(
+  runtime : BrowserRuntime,
+  payload : String,
+) -> String raise {
+  runtime.import_payload(payload)
 }
 
 ///|
