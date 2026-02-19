@@ -1719,7 +1719,9 @@ test "tikz-cd import parser maps label position aliases" {
     "\\begin{tikzcd}\n",
     "A \\arrow[r, \"a\"{near start}] & B \\\\\n",
     "C \\arrow[r, \"b\"{very near end}] & D \\\\\n",
-    "E \\arrow[r, \"c\", midway] & F\n",
+    "E \\arrow[r, \"c\", midway] & F \\\\\n",
+    "G \\arrow[r, \"d\", at start] & H \\\\\n",
+    "I \\arrow[r, \"e\", at end] & J\n",
     "\\end{tikzcd}",
   ].join("")
 
@@ -1735,6 +1737,48 @@ test "tikz-cd import parser maps label position aliases" {
   match tikz_test_find_edge_by_label(quiver, "c") {
     Some(edge) => inspect(edge.options.label_position, content="50")
     None => abort("expected edge c")
+  }
+  match tikz_test_find_edge_by_label(quiver, "d") {
+    Some(edge) => inspect(edge.options.label_position, content="0")
+    None => abort("expected edge d")
+  }
+  match tikz_test_find_edge_by_label(quiver, "e") {
+    Some(edge) => inspect(edge.options.label_position, content="100")
+    None => abort("expected edge e")
+  }
+}
+
+///|
+test "tikz-cd import parser maps shorten less/greater options and preserves order" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"s\", shorten <=8pt, shorten >=12pt] & B \\\\\n",
+    "C \\arrow[r, \"x\", between={0.2}{0.7}, shorten <=5pt] & D \\\\\n",
+    "E \\arrow[r, \"y\", shorten <=5pt, between={0.2}{0.7}] & F\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_edge_by_label(quiver, "s") {
+    Some(edge) => {
+      inspect(edge.options.shorten.source, content="8")
+      inspect(edge.options.shorten.target, content="12")
+    }
+    None => abort("expected edge s")
+  }
+  match tikz_test_find_edge_by_label(quiver, "x") {
+    Some(edge) => {
+      inspect(edge.options.shorten.source, content="5")
+      inspect(edge.options.shorten.target, content="30")
+    }
+    None => abort("expected edge x")
+  }
+  match tikz_test_find_edge_by_label(quiver, "y") {
+    Some(edge) => {
+      inspect(edge.options.shorten.source, content="20")
+      inspect(edge.options.shorten.target, content="30")
+    }
+    None => abort("expected edge y")
   }
 }
 

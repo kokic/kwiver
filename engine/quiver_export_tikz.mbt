@@ -1685,7 +1685,6 @@ priv struct TikzParsedLabelOptions {
   swap : Bool
   description : Bool
   marking : Bool
-  allow_upside_down : Bool
   pos : Int?
   colour : Colour?
 }
@@ -2096,6 +2095,8 @@ fn tikz_is_label_modifier(option : String) -> Bool {
     "description" => true
     "marking" => true
     "allow upside down" => true
+    "at start" => true
+    "at end" => true
     "near start" => true
     "near end" => true
     "very near start" => true
@@ -3200,6 +3201,22 @@ fn tikz_apply_arrow_key_value_option(
     }
   }
 
+  let key_compact = key_token
+    .replace_all(old=" ", new="")
+    .replace_all(old="\t", new="")
+  if key_compact == "shorten<" {
+    match tikz_parse_shorten_magnitude(value_raw) {
+      Some(source) => return options.with_shorten(source, options.shorten.target)
+      None => ()
+    }
+  }
+  if key_compact == "shorten>" {
+    match tikz_parse_shorten_magnitude(value_raw) {
+      Some(target) => return options.with_shorten(options.shorten.source, target)
+      None => ()
+    }
+  }
+
   if key_token == "between" {
     match tikz_parse_between_option(value_raw) {
       Some((source, target)) => return options.with_shorten(source, target)
@@ -3216,7 +3233,6 @@ fn tikz_label_options_default() -> TikzParsedLabelOptions {
     swap: false,
     description: false,
     marking: false,
-    allow_upside_down: false,
     pos: None,
     colour: None,
   }
@@ -3233,7 +3249,9 @@ fn tikz_apply_label_flag_option(
     "swap" => { ..label_options, swap: true }
     "description" => { ..label_options, description: true }
     "marking" => { ..label_options, marking: true }
-    "allow upside down" => { ..label_options, allow_upside_down: true }
+    "allow upside down" => label_options
+    "at start" => { ..label_options, pos: Some(0) }
+    "at end" => { ..label_options, pos: Some(100) }
     "near start" => { ..label_options, pos: Some(25) }
     "near end" => { ..label_options, pos: Some(75) }
     "very near start" => { ..label_options, pos: Some(15) }
@@ -3312,7 +3330,7 @@ fn tikz_apply_label_options_to_edge_options(
   options : EdgeOptions,
   label_options : TikzParsedLabelOptions,
 ) -> EdgeOptions {
-  let aligned = if label_options.marking || label_options.allow_upside_down {
+  let aligned = if label_options.marking {
     options.with_label_alignment_over()
   } else if label_options.description {
     options.with_label_alignment_centre()
@@ -3325,6 +3343,32 @@ fn tikz_apply_label_options_to_edge_options(
   match label_options.pos {
     Some(pos) => aligned.with_label_position(pos)
     None => aligned
+  }
+}
+
+///|
+fn tikz_parse_shorten_magnitude(value : String) -> Int? {
+  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+  if text.has_suffix("pt") {
+    text = text.unsafe_substring(start=0, end=text.length() - 2)
+  } else {
+    return None
+  }
+
+  match tikz_parse_signed_double(text) {
+    Some(raw_value) => {
+      let rounded = tikz_round_to_int(raw_value)
+      if rounded < 0 {
+        None
+      } else if rounded > 100 {
+        Some(100)
+      } else {
+        Some(rounded)
+      }
+    }
+    None => None
   }
 }
 
