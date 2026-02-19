@@ -278,6 +278,9 @@ test "browser runtime applies incremental mutations via ffi surface" {
     .with_curve(-2)
     .with_style_tail("hook", side="top")
   inspect(runtime.set_edge_options(edge_id, options), content="true")
+  inspect(runtime.set_edge_offset(edge_id, 11), content="true")
+  inspect(runtime.set_edge_curve(edge_id, -3), content="true")
+  inspect(runtime.set_edge_shorten(edge_id, 6, 4), content="true")
   inspect(runtime.reconnect_edge(edge_id, target_id, source_id), content="true")
 
   let quiver = @engine.Quiver::import_base64_v0(runtime.export_payload())
@@ -311,7 +314,10 @@ test "browser runtime applies incremental mutations via ffi surface" {
       inspect(edge.cell.label_colour.h, content="240")
       inspect(edge.source == target_id, content="true")
       inspect(edge.target == source_id, content="true")
-      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.offset, content="11")
+      inspect(edge.options.curve, content="-3")
+      inspect(edge.options.shorten.source, content="6")
+      inspect(edge.options.shorten.target, content="4")
       inspect(edge.options.style.tail.name, content="hook")
       inspect(edge.options.level, content="1")
     }
@@ -379,6 +385,30 @@ test "browser runtime single mutation json wrappers expose ok payload contract" 
     ].join(""),
   )
   inspect(set_edge_options_json.contains("\"ok\":true"), content="true")
+  let set_edge_offset_json = runtime.set_edge_offset_json(
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"offset\":11}",
+    ].join(""),
+  )
+  inspect(set_edge_offset_json.contains("\"ok\":true"), content="true")
+  let set_edge_curve_json = runtime.set_edge_curve_json(
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"curve\":-3}",
+    ].join(""),
+  )
+  inspect(set_edge_curve_json.contains("\"ok\":true"), content="true")
+  let set_edge_shorten_json = runtime.set_edge_shorten_json(
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"shorten_source\":6,\"shorten_target\":4}",
+    ].join(""),
+  )
+  inspect(set_edge_shorten_json.contains("\"ok\":true"), content="true")
 
   let reconnect_edge_json = runtime.reconnect_edge_json(
     [
@@ -427,7 +457,10 @@ test "browser runtime single mutation json wrappers expose ok payload contract" 
       inspect(edge.cell.label_colour.h, content="240")
       inspect(edge.source == target_id, content="true")
       inspect(edge.target == source_id, content="true")
-      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.offset, content="11")
+      inspect(edge.options.curve, content="-3")
+      inspect(edge.options.shorten.source, content="6")
+      inspect(edge.options.shorten.target, content="4")
       inspect(edge.options.style.body.name, content="barred")
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
@@ -595,6 +628,9 @@ test "browser runtime mutation helpers reject mismatched ids" {
     content="false",
   )
   inspect(runtime.set_edge_label_position(vertex_id, 50), content="false")
+  inspect(runtime.set_edge_offset(vertex_id, 1), content="false")
+  inspect(runtime.set_edge_curve(vertex_id, 1), content="false")
+  inspect(runtime.set_edge_shorten(vertex_id, 1, 1), content="false")
   inspect(
     runtime.reconnect_edge(vertex_id, vertex_id, vertex_id),
     content="false",
@@ -722,6 +758,21 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
     "{\"edge_id\":3,\"label_position\":80}",
   )
   inspect(set_edge_label_position_json.contains("\"ok\":true"), content="true")
+  let set_edge_offset_json = ffi_browser_runtime_set_edge_offset_json(
+    runtime,
+    "{\"edge_id\":3,\"offset\":11}",
+  )
+  inspect(set_edge_offset_json.contains("\"ok\":true"), content="true")
+  let set_edge_curve_json = ffi_browser_runtime_set_edge_curve_json(
+    runtime,
+    "{\"edge_id\":3,\"curve\":-3}",
+  )
+  inspect(set_edge_curve_json.contains("\"ok\":true"), content="true")
+  let set_edge_shorten_json = ffi_browser_runtime_set_edge_shorten_json(
+    runtime,
+    "{\"edge_id\":3,\"shorten_source\":6,\"shorten_target\":4}",
+  )
+  inspect(set_edge_shorten_json.contains("\"ok\":true"), content="true")
   let reconnect_edge_json = ffi_browser_runtime_reconnect_edge_json(
     runtime,
     "{\"edge_id\":3,\"source_id\":2,\"target_id\":1}",

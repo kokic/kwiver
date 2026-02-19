@@ -320,6 +320,75 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
     content="true",
   )
 
+  let set_edge_offset_json = ffi_adapter_set_edge_offset_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"offset\":11}",
+    ].join(""),
+  )
+  let set_edge_offset_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_offset_json),
+  )
+  let set_edge_offset_ok : Bool = @json.from_json(
+    test_json_get(set_edge_offset_result, "ok"),
+  )
+  let payload_after_set_edge_offset : String = @json.from_json(
+    test_json_get(set_edge_offset_result, "payload"),
+  )
+  inspect(set_edge_offset_ok, content="true")
+  inspect(
+    payload_after_set_edge_offset == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let set_edge_curve_json = ffi_adapter_set_edge_curve_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"curve\":-3}",
+    ].join(""),
+  )
+  let set_edge_curve_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_curve_json),
+  )
+  let set_edge_curve_ok : Bool = @json.from_json(
+    test_json_get(set_edge_curve_result, "ok"),
+  )
+  let payload_after_set_edge_curve : String = @json.from_json(
+    test_json_get(set_edge_curve_result, "payload"),
+  )
+  inspect(set_edge_curve_ok, content="true")
+  inspect(
+    payload_after_set_edge_curve == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
+  let set_edge_shorten_json = ffi_adapter_set_edge_shorten_json(
+    adapter,
+    [
+      "{\"edge_id\":",
+      edge_id.to_string(),
+      ",\"shorten_source\":6,\"shorten_target\":4}",
+    ].join(""),
+  )
+  let set_edge_shorten_result : Map[String, Json] = @json.from_json(
+    @json.parse(set_edge_shorten_json),
+  )
+  let set_edge_shorten_ok : Bool = @json.from_json(
+    test_json_get(set_edge_shorten_result, "ok"),
+  )
+  let payload_after_set_edge_shorten : String = @json.from_json(
+    test_json_get(set_edge_shorten_result, "payload"),
+  )
+  inspect(set_edge_shorten_ok, content="true")
+  inspect(
+    payload_after_set_edge_shorten == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
+
   let reconnect_edge_json = ffi_adapter_reconnect_edge_json(
     adapter,
     [
@@ -395,7 +464,10 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
       inspect(edge.cell.label_colour.h, content="240")
       inspect(edge.source == target_id, content="true")
       inspect(edge.target == source_id, content="true")
-      inspect(edge.options.curve, content="-2")
+      inspect(edge.options.offset, content="11")
+      inspect(edge.options.curve, content="-3")
+      inspect(edge.options.shorten.source, content="6")
+      inspect(edge.options.shorten.target, content="4")
       inspect(edge.options.style.body.name, content="barred")
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
@@ -587,6 +659,18 @@ test "ui ffi adapter supports incremental mutation without reload" {
     content="true",
   )
   inspect(
+    ffi_adapter_set_edge_offset(adapter, edge_id, 11),
+    content="true",
+  )
+  inspect(
+    ffi_adapter_set_edge_curve(adapter, edge_id, -3),
+    content="true",
+  )
+  inspect(
+    ffi_adapter_set_edge_shorten(adapter, edge_id, 6, 4),
+    content="true",
+  )
+  inspect(
     ffi_adapter_reconnect_edge(adapter, edge_id, target_id, source_id),
     content="true",
   )
@@ -624,7 +708,10 @@ test "ui ffi adapter supports incremental mutation without reload" {
       inspect(edge.cell.label_colour.h, content="120")
       inspect(edge.source == target_id, content="true")
       inspect(edge.target == source_id, content="true")
-      inspect(edge.options.curve, content="2")
+      inspect(edge.options.offset, content="11")
+      inspect(edge.options.curve, content="-3")
+      inspect(edge.options.shorten.source, content="6")
+      inspect(edge.options.shorten.target, content="4")
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
       inspect(edge.options.colour.h, content="0")
@@ -847,6 +934,18 @@ test "ui ffi adapter mutation APIs return false for invalid ids" {
   )
   inspect(
     ffi_adapter_set_edge_label_position(adapter, vertex_id, 50),
+    content="false",
+  )
+  inspect(
+    ffi_adapter_set_edge_offset(adapter, vertex_id, 1),
+    content="false",
+  )
+  inspect(
+    ffi_adapter_set_edge_curve(adapter, vertex_id, 1),
+    content="false",
+  )
+  inspect(
+    ffi_adapter_set_edge_shorten(adapter, vertex_id, 1, 1),
     content="false",
   )
   inspect(

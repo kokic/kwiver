@@ -347,6 +347,71 @@ pub fn BrowserRuntime::set_edge_label_position_json(
 }
 
 ///|
+pub fn BrowserRuntime::set_edge_offset(
+  self : BrowserRuntime,
+  edge_id : Int,
+  offset : Int,
+) -> Bool {
+  @engine.ffi_adapter_set_edge_offset(
+    self.adapter,
+    edge_id,
+    offset,
+  )
+}
+
+///|
+pub fn BrowserRuntime::set_edge_offset_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_offset_json(self.adapter, input_json)
+}
+
+///|
+pub fn BrowserRuntime::set_edge_curve(
+  self : BrowserRuntime,
+  edge_id : Int,
+  curve : Int,
+) -> Bool {
+  @engine.ffi_adapter_set_edge_curve(
+    self.adapter,
+    edge_id,
+    curve,
+  )
+}
+
+///|
+pub fn BrowserRuntime::set_edge_curve_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_curve_json(self.adapter, input_json)
+}
+
+///|
+pub fn BrowserRuntime::set_edge_shorten(
+  self : BrowserRuntime,
+  edge_id : Int,
+  shorten_source : Int,
+  shorten_target : Int,
+) -> Bool {
+  @engine.ffi_adapter_set_edge_shorten(
+    self.adapter,
+    edge_id,
+    shorten_source,
+    shorten_target,
+  )
+}
+
+///|
+pub fn BrowserRuntime::set_edge_shorten_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  @engine.ffi_adapter_set_edge_shorten_json(self.adapter, input_json)
+}
+
+///|
 pub fn BrowserRuntime::reconnect_edge(
   self : BrowserRuntime,
   edge_id : Int,
@@ -915,6 +980,30 @@ pub fn ffi_browser_runtime_set_edge_label_position_json(
   input_json : String,
 ) -> String raise {
   runtime.set_edge_label_position_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_offset_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_offset_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_curve_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_curve_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_shorten_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_shorten_json(input_json)
 }
 
 ///|

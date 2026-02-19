@@ -1032,6 +1032,41 @@ fn quiver_ui_set_edge_label_position_from_json(
 }
 
 ///|
+fn quiver_ui_set_edge_offset_from_json(
+  input : String,
+) -> (Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let offset : Int = @json.from_json(quiver_ui_json_required_field(root, "offset"))
+  (edge_id, offset)
+}
+
+///|
+fn quiver_ui_set_edge_curve_from_json(
+  input : String,
+) -> (Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let curve : Int = @json.from_json(quiver_ui_json_required_field(root, "curve"))
+  (edge_id, curve)
+}
+
+///|
+fn quiver_ui_set_edge_shorten_from_json(
+  input : String,
+) -> (Int, Int, Int) raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input))
+  let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
+  let shorten_source : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "shorten_source"),
+  )
+  let shorten_target : Int = @json.from_json(
+    quiver_ui_json_required_field(root, "shorten_target"),
+  )
+  (edge_id, shorten_source, shorten_target)
+}
+
+///|
 fn quiver_ui_reconnect_edge_from_json(input : String) -> (Int, Int, Int) raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(input))
   let edge_id : Int = @json.from_json(quiver_ui_json_required_field(root, "edge_id"))
@@ -1694,6 +1729,135 @@ pub fn QuiverUiAdapter::set_edge_label_position_json(
 }
 
 ///|
+pub fn QuiverUiAdapter::set_edge_offset(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  offset : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let updated_options = edge.options.with_offset(offset)
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            updated_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_offset_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, offset) = quiver_ui_set_edge_offset_from_json(input_json)
+  let ok = self.set_edge_offset(edge_id, offset)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_curve(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  curve : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let updated_options = edge.options.with_curve(curve)
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            updated_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_curve_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, curve) = quiver_ui_set_edge_curve_from_json(input_json)
+  let ok = self.set_edge_curve(edge_id, curve)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_shorten(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  shorten_source : Int,
+  shorten_target : Int,
+) -> Bool {
+  if !self.quiver.contains_cell(edge_id) {
+    return false
+  }
+
+  match self.quiver.cells.get(edge_id) {
+    Some(CellData::Edge(edge)) => {
+      let updated_options = edge.options.with_shorten(shorten_source, shorten_target)
+      self.quiver.cells.set(
+        edge_id,
+        CellData::from_edge(
+          Edge::new(
+            edge.cell.id,
+            edge.cell.label,
+            edge.source,
+            edge.target,
+            updated_options,
+            edge.cell.label_colour,
+          ),
+        ),
+      )
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn QuiverUiAdapter::set_edge_shorten_json(
+  self : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  let (edge_id, shorten_source, shorten_target) = quiver_ui_set_edge_shorten_from_json(
+    input_json,
+  )
+  let ok = self.set_edge_shorten(edge_id, shorten_source, shorten_target)
+  quiver_ui_ok_payload_result_json(ok, self.quiver.export_base64_v0()).stringify()
+}
+
+///|
 pub fn QuiverUiAdapter::reconnect_edge(
   self : QuiverUiAdapter,
   edge_id : Int,
@@ -2262,6 +2426,58 @@ pub fn ffi_adapter_set_edge_label_position_json(
   input_json : String,
 ) -> String raise {
   adapter.set_edge_label_position_json(input_json)
+}
+
+///|
+pub fn ffi_adapter_set_edge_offset(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  offset : Int,
+) -> Bool {
+  adapter.set_edge_offset(edge_id, offset)
+}
+
+///|
+pub fn ffi_adapter_set_edge_offset_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_offset_json(input_json)
+}
+
+///|
+pub fn ffi_adapter_set_edge_curve(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  curve : Int,
+) -> Bool {
+  adapter.set_edge_curve(edge_id, curve)
+}
+
+///|
+pub fn ffi_adapter_set_edge_curve_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_curve_json(input_json)
+}
+
+///|
+pub fn ffi_adapter_set_edge_shorten(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  shorten_source : Int,
+  shorten_target : Int,
+) -> Bool {
+  adapter.set_edge_shorten(edge_id, shorten_source, shorten_target)
+}
+
+///|
+pub fn ffi_adapter_set_edge_shorten_json(
+  adapter : QuiverUiAdapter,
+  input_json : String,
+) -> String raise {
+  adapter.set_edge_shorten_json(input_json)
 }
 
 ///|
