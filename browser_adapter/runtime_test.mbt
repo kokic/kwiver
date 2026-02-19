@@ -653,6 +653,58 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
     "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
   )
   inspect(add_edge_json.contains("\"id\":3"), content="true")
+  inspect(ffi_browser_runtime_all_cells(runtime).length(), content="3")
+
+  let set_label_json = ffi_browser_runtime_set_label_json(
+    runtime,
+    "{\"cell_id\":3,\"label\":\"f-updated\"}",
+  )
+  inspect(set_label_json.contains("\"ok\":true"), content="true")
+  let set_label_colour_json = ffi_browser_runtime_set_label_colour_json(
+    runtime,
+    "{\"cell_id\":3,\"label_colour\":{\"h\":240,\"s\":100,\"l\":50,\"a\":1}}",
+  )
+  inspect(set_label_colour_json.contains("\"ok\":true"), content="true")
+  let move_vertex_json = ffi_browser_runtime_move_vertex_json(
+    runtime,
+    "{\"vertex_id\":1,\"x\":2,\"y\":3}",
+  )
+  inspect(move_vertex_json.contains("\"ok\":true"), content="true")
+  let set_edge_options_json = ffi_browser_runtime_set_edge_options_json(
+    runtime,
+    [
+      "{",
+      "\"edge_id\":3,",
+      "\"options\":{",
+      "\"label_alignment\":\"left\",",
+      "\"label_position\":50,",
+      "\"offset\":0,",
+      "\"curve\":-2,",
+      "\"radius\":0,",
+      "\"angle\":0,",
+      "\"shorten_source\":0,",
+      "\"shorten_target\":0,",
+      "\"level\":9,",
+      "\"shape\":\"bezier\",",
+      "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+      "\"edge_alignment_source\":true,",
+      "\"edge_alignment_target\":true,",
+      "\"style\":{",
+      "\"name\":\"arrow\",",
+      "\"tail\":{\"name\":\"mono\",\"side\":\"top\"},",
+      "\"body\":{\"name\":\"barred\",\"side\":\"center\"},",
+      "\"head\":{\"name\":\"epi\",\"side\":\"bottom\"}",
+      "}",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(set_edge_options_json.contains("\"ok\":true"), content="true")
+  let reconnect_edge_json = ffi_browser_runtime_reconnect_edge_json(
+    runtime,
+    "{\"edge_id\":3,\"source_id\":2,\"target_id\":1}",
+  )
+  inspect(reconnect_edge_json.contains("\"ok\":true"), content="true")
 
   ffi_browser_runtime_set_selection(runtime, [3])
   inspect(ffi_browser_runtime_selection(runtime), content="[3]")

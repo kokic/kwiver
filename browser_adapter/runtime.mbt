@@ -603,6 +603,13 @@ pub fn ffi_browser_runtime_all_cell_ids(runtime : BrowserRuntime) -> Array[Int] 
 }
 
 ///|
+pub fn ffi_browser_runtime_all_cells(
+  runtime : BrowserRuntime,
+) -> Array[@engine.CellData] {
+  runtime.all_cells()
+}
+
+///|
 pub fn ffi_browser_runtime_all_cell_ids_json(runtime : BrowserRuntime) -> String {
   browser_int_array_json_string(runtime.all_cell_ids())
 }
@@ -705,6 +712,46 @@ pub fn ffi_browser_runtime_add_edge_json(
   input_json : String,
 ) -> String raise {
   runtime.add_edge_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_label_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_label_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_label_colour_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_label_colour_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_move_vertex_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.move_vertex_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_set_edge_options_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.set_edge_options_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_reconnect_edge_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.reconnect_edge_json(input_json)
 }
 
 ///|
