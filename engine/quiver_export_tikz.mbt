@@ -3773,7 +3773,19 @@ fn tikz_take_leading_braced_group(input : String) -> (String, String)? {
 
 ///|
 fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabel? {
-  let trimmed = label_raw.trim().to_string()
+  let mut trimmed = label_raw.trim().to_string()
+  while true {
+    match tikz_take_leading_braced_group(trimmed) {
+      Some((inner, rest)) =>
+        if tikz_trim_left(rest) == "" {
+          trimmed = inner.trim().to_string()
+          continue
+        } else {
+          break
+        }
+      None => break
+    }
+  }
   if !trimmed.has_prefix("\\textcolor") {
     return None
   }

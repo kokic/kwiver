@@ -2135,6 +2135,33 @@ test "tikz-cd import parser maps vertex textcolor labels" {
 }
 
 ///|
+test "tikz-cd import parser maps vertex textcolor labels wrapped in braces" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "{\\textcolor{red}{A}} & {{\\textcolor{blue}{B}}}\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  match tikz_test_find_vertex_by_label(quiver, "A") {
+    Some(vertex) => {
+      inspect(vertex.cell.label_colour.h, content="0")
+      inspect(vertex.cell.label_colour.s, content="100")
+      inspect(vertex.cell.label_colour.l, content="50")
+    }
+    None => abort("expected vertex A")
+  }
+  match tikz_test_find_vertex_by_label(quiver, "B") {
+    Some(vertex) => {
+      inspect(vertex.cell.label_colour.h, content="240")
+      inspect(vertex.cell.label_colour.s, content="100")
+      inspect(vertex.cell.label_colour.l, content="50")
+    }
+    None => abort("expected vertex B")
+  }
+}
+
+///|
 test "tikz-cd import parser maps draw text and shared colour options" {
   let input = [
     "\\begin{tikzcd}\n",
