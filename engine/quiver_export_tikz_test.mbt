@@ -1893,7 +1893,9 @@ test "tikz-cd import parser maps loop flag and loop geometry options" {
     "\\begin{tikzcd}\n",
     "A \\arrow[loop, \"a\"] \\\\\n",
     "B \\arrow[loop, in=55, out=125, distance=10mm, \"b\"] \\\\\n",
-    "C \\arrow[loop left, in=305, out=235, distance=10mm, \"c\"]\n",
+    "C \\arrow[loop left, in=305, out=235, distance=10mm, \"c\"] \\\\\n",
+    "D \\arrow[loop, in=55, out=125, distance=10pt, \"d\"] \\\\\n",
+    "E \\arrow[loop, in=55, out=125, distance=7.5em, \"e\"]\n",
     "\\end{tikzcd}",
   ].join("")
 
@@ -1926,6 +1928,26 @@ test "tikz-cd import parser maps loop flag and loop geometry options" {
       inspect(edge.options.angle, content="0")
     }
     None => abort("expected loop edge C->C")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "D", "D") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="d")
+      inspect(edge.source == edge.target, content="true")
+      inspect(edge.options.radius, content="3")
+      inspect(edge.options.angle, content="0")
+    }
+    None => abort("expected loop edge D->D")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "E", "E") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="e")
+      inspect(edge.source == edge.target, content="true")
+      inspect(edge.options.radius, content="2")
+      inspect(edge.options.angle, content="0")
+    }
+    None => abort("expected loop edge E->E")
   }
 }
 

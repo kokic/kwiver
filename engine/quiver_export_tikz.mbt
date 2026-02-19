@@ -2743,11 +2743,11 @@ fn tikz_parse_angle_option(value : String) -> Double? {
 }
 
 ///|
-fn tikz_parse_distance_mm_option(value : String) -> Double? {
+fn tikz_parse_distance_option(value : String) -> Double? {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
-  if text.has_suffix("mm") {
+  if text.has_suffix("mm") || text.has_suffix("pt") || text.has_suffix("em") {
     text = text.unsafe_substring(start=0, end=text.length() - 2)
   }
   match tikz_parse_signed_double(text) {
@@ -2796,7 +2796,7 @@ fn tikz_apply_loop_key_value_option(
     }
   }
   if key_token == "distance" {
-    match tikz_parse_distance_mm_option(value) {
+    match tikz_parse_distance_option(value) {
       Some(distance_mm) => return { ..loop_options, distance_mm: Some(distance_mm) }
       None => ()
     }
