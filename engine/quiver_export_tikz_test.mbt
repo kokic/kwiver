@@ -1388,6 +1388,54 @@ test "tikz-cd import parser supports custom ampersand replacement token" {
 }
 
 ///|
+test "tikz-cd import parser supports caret and underscore label suffix syntax" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\ar[r]^f & B \\\\\n",
+    "C \\ar[r]_{g} & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5, 6]")
+
+  let a_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let b_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  let c_id = match tikz_test_find_vertex_id_by_label(quiver, "C") {
+    Some(value) => value
+    None => abort("expected vertex C")
+  }
+  let d_id = match tikz_test_find_vertex_id_by_label(quiver, "D") {
+    Some(value) => value
+    None => abort("expected vertex D")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == a_id, content="true")
+      inspect(edge.target == b_id, content="true")
+      inspect(edge.options.label_alignment is LabelAlignment::Left, content="true")
+    }
+    None => abort("expected edge f")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(edge) => {
+      inspect(edge.source == c_id, content="true")
+      inspect(edge.target == d_id, content="true")
+      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+    }
+    None => abort("expected edge g")
+  }
+}
+
+///|
 test "tikz-cd import parser maps basic arrow style flags" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\", dashed, no head, maps to] & B\n",

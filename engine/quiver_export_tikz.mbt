@@ -3094,6 +3094,111 @@ fn tikz_extract_arrow_label_option(option : String) -> String? {
   }
 }
 
+///|
+fn tikz_take_leading_positional_label(input : String) -> (String, Bool)? {
+  let mut i = 0
+  while i < input.length() && tikz_is_whitespace(input.unsafe_get(i)) {
+    i = i + 1
+  }
+  if i >= input.length() {
+    return None
+  }
+
+  let marker = input.unsafe_get(i)
+  if marker != '^' && marker != '_' {
+    return None
+  }
+  let is_swap = marker == '_'
+  i = i + 1
+  while i < input.length() && tikz_is_whitespace(input.unsafe_get(i)) {
+    i = i + 1
+  }
+  if i >= input.length() {
+    return None
+  }
+
+  let start = i
+  let first = input.unsafe_get(i)
+  if first == '{' {
+    let mut depth = 1
+    let mut j = i + 1
+    while j < input.length() && depth > 0 {
+      let ch = input.unsafe_get(j)
+      if ch == '\\' {
+        if j + 1 < input.length() {
+          j = j + 2
+          continue
+        } else {
+          break
+        }
+      }
+      if ch == '{' {
+        depth = depth + 1
+      } else if ch == '}' {
+        depth = depth - 1
+      }
+      j = j + 1
+    }
+    if depth != 0 || j <= start + 1 {
+      return None
+    }
+
+    let label = input
+      .unsafe_substring(start=start + 1, end=j - 1)
+      .trim()
+      .to_string()
+    let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+    if normalised == "" {
+      None
+    } else {
+      Some((normalised, is_swap))
+    }
+  } else if first == '"' {
+    match tikz_find_unescaped_quote(input, i + 1) {
+      Some(end_quote) =>
+        if end_quote <= i + 1 {
+          None
+        } else {
+          let label = input
+            .unsafe_substring(start=i + 1, end=end_quote)
+            .replace_all(old="\\\"", new="\"")
+          let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+          if normalised == "" {
+            None
+          } else {
+            Some((normalised, is_swap))
+          }
+        }
+      None => None
+    }
+  } else {
+    let mut j = i
+    while j < input.length() {
+      let ch = input.unsafe_get(j)
+      if tikz_is_whitespace(ch) ||
+        ch == '\\' ||
+        ch == '&' ||
+        ch == '[' ||
+        ch == ']' ||
+        ch == ',' {
+        break
+      }
+      j = j + 1
+    }
+    if j == i {
+      return None
+    }
+
+    let label = input.unsafe_substring(start=i, end=j).trim().to_string()
+    let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+    if normalised == "" {
+      None
+    } else {
+      Some((normalised, is_swap))
+    }
+  }
+}
+
 fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
   let mut i = 0
   while i < input.length() {
@@ -3557,6 +3662,22 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               None => parsed_label_colour
             }
 
+            let remaining_after_arrow = after_arrow.unsafe_substring(
+              start=end + 1,
+              end=after_arrow.length(),
+            )
+            if label == "" {
+              match tikz_take_leading_positional_label(remaining_after_arrow) {
+                Some((suffix_label, is_swap)) => {
+                  label = suffix_label
+                  if is_swap {
+                    parsed_options = parsed_options.with_label_alignment_right()
+                  }
+                }
+                None => ()
+              }
+            }
+
             arrows.push({
               direction,
               is_loop: parsed_loop_options.is_loop,
@@ -3575,10 +3696,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               label_colour,
             })
 
-            rest = after_arrow.unsafe_substring(
-              start=end + 1,
-              end=after_arrow.length(),
-            )
+            rest = remaining_after_arrow
           }
           None => break
         }
