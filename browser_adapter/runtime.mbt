@@ -29,6 +29,15 @@ fn browser_parse_removed_ids(result_json : String) -> Array[Int] raise {
 }
 
 ///|
+fn browser_int_array_json_string(values : Array[Int]) -> String {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(Json::number(value.to_double()))
+  }
+  Json::array(out).stringify()
+}
+
+///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
   mut selected_ids : Array[Int]
@@ -586,6 +595,100 @@ pub fn ffi_browser_runtime_set_selection(
 ///|
 pub fn ffi_browser_runtime_selection(runtime : BrowserRuntime) -> Array[Int] {
   runtime.selection()
+}
+
+///|
+pub fn ffi_browser_runtime_all_cell_ids(runtime : BrowserRuntime) -> Array[Int] {
+  runtime.all_cell_ids()
+}
+
+///|
+pub fn ffi_browser_runtime_all_cell_ids_json(runtime : BrowserRuntime) -> String {
+  browser_int_array_json_string(runtime.all_cell_ids())
+}
+
+///|
+pub fn ffi_browser_runtime_dependencies_of(
+  runtime : BrowserRuntime,
+  cell_id : Int,
+) -> Array[Int] {
+  runtime.dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_browser_runtime_dependencies_of_json(
+  runtime : BrowserRuntime,
+  cell_id : Int,
+) -> String {
+  browser_int_array_json_string(runtime.dependencies_of(cell_id))
+}
+
+///|
+pub fn ffi_browser_runtime_reverse_dependencies_of(
+  runtime : BrowserRuntime,
+  cell_id : Int,
+) -> Array[Int] {
+  runtime.reverse_dependencies_of(cell_id)
+}
+
+///|
+pub fn ffi_browser_runtime_reverse_dependencies_of_json(
+  runtime : BrowserRuntime,
+  cell_id : Int,
+) -> String {
+  browser_int_array_json_string(runtime.reverse_dependencies_of(cell_id))
+}
+
+///|
+pub fn ffi_browser_runtime_transitive_dependencies(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> Array[Int] {
+  runtime.transitive_dependencies(roots, exclude_roots~)
+}
+
+///|
+pub fn ffi_browser_runtime_transitive_dependencies_json(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+  exclude_roots? : Bool = false,
+) -> String {
+  browser_int_array_json_string(
+    runtime.transitive_dependencies(roots, exclude_roots~),
+  )
+}
+
+///|
+pub fn ffi_browser_runtime_transitive_reverse_dependencies(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+) -> Array[Int] {
+  runtime.transitive_reverse_dependencies(roots)
+}
+
+///|
+pub fn ffi_browser_runtime_transitive_reverse_dependencies_json(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+) -> String {
+  browser_int_array_json_string(runtime.transitive_reverse_dependencies(roots))
+}
+
+///|
+pub fn ffi_browser_runtime_connected_components(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+) -> Array[Int] {
+  runtime.connected_components(roots)
+}
+
+///|
+pub fn ffi_browser_runtime_connected_components_json(
+  runtime : BrowserRuntime,
+  roots : Array[Int],
+) -> String {
+  browser_int_array_json_string(runtime.connected_components(roots))
 }
 
 ///|

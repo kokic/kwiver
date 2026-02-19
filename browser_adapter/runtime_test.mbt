@@ -794,3 +794,63 @@ test "browser runtime ffi wrappers support format-specific import json" {
   inspect(html_json.contains("\"embed\":true"), content="true")
 }
 
+///|
+test "browser runtime ffi wrappers expose graph query arrays and json" {
+  let runtime = ffi_browser_runtime_new()
+  ignore(ffi_browser_runtime_add_vertex_json(runtime, "{\"label\":\"A\",\"x\":0,\"y\":0}"))
+  ignore(ffi_browser_runtime_add_vertex_json(runtime, "{\"label\":\"B\",\"x\":1,\"y\":0}"))
+  ignore(
+    ffi_browser_runtime_add_edge_json(
+      runtime,
+      "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
+    ),
+  )
+  ignore(
+    ffi_browser_runtime_add_edge_json(
+      runtime,
+      "{\"source_id\":3,\"target_id\":2,\"label\":\"alpha\"}",
+    ),
+  )
+
+  inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1, 2, 3, 4]")
+  inspect(ffi_browser_runtime_all_cell_ids_json(runtime), content="[1,2,3,4]")
+
+  inspect(ffi_browser_runtime_dependencies_of(runtime, 1), content="[3]")
+  inspect(ffi_browser_runtime_dependencies_of_json(runtime, 1), content="[3]")
+  inspect(ffi_browser_runtime_dependencies_of(runtime, 2), content="[3, 4]")
+  inspect(ffi_browser_runtime_dependencies_of_json(runtime, 2), content="[3,4]")
+
+  inspect(ffi_browser_runtime_reverse_dependencies_of(runtime, 3), content="[1, 2]")
+  inspect(
+    ffi_browser_runtime_reverse_dependencies_of_json(runtime, 3),
+    content="[1,2]",
+  )
+
+  inspect(
+    ffi_browser_runtime_transitive_dependencies(runtime, [1]),
+    content="[1, 3, 4]",
+  )
+  inspect(
+    ffi_browser_runtime_transitive_dependencies_json(runtime, [3], exclude_roots=true),
+    content="[4]",
+  )
+
+  inspect(
+    ffi_browser_runtime_transitive_reverse_dependencies(runtime, [4]),
+    content="[1, 2, 3, 4]",
+  )
+  inspect(
+    ffi_browser_runtime_transitive_reverse_dependencies_json(runtime, [4]),
+    content="[1,2,3,4]",
+  )
+
+  inspect(
+    ffi_browser_runtime_connected_components(runtime, [1]),
+    content="[1, 2, 3, 4]",
+  )
+  inspect(
+    ffi_browser_runtime_connected_components_json(runtime, [1]),
+    content="[1,2,3,4]",
+  )
+}
+

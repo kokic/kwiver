@@ -93,6 +93,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 `browser_adapter/moon.pkg` now exports a thin runtime entrypoint layer for JS:
 
 - lifecycle/selection: `ffi_browser_runtime_new`, `ffi_browser_runtime_reset`, `ffi_browser_runtime_set_selection`, `ffi_browser_runtime_selection`
+- graph queries: `ffi_browser_runtime_all_cell_ids`, `ffi_browser_runtime_all_cell_ids_json`, `ffi_browser_runtime_dependencies_of`, `ffi_browser_runtime_dependencies_of_json`, `ffi_browser_runtime_reverse_dependencies_of`, `ffi_browser_runtime_reverse_dependencies_of_json`, `ffi_browser_runtime_transitive_dependencies`, `ffi_browser_runtime_transitive_dependencies_json`, `ffi_browser_runtime_transitive_reverse_dependencies`, `ffi_browser_runtime_transitive_reverse_dependencies_json`, `ffi_browser_runtime_connected_components`, `ffi_browser_runtime_connected_components_json`
 - add/remove/flush: `ffi_browser_runtime_add_vertex_json`, `ffi_browser_runtime_add_edge_json`, `ffi_browser_runtime_remove_json`, `ffi_browser_runtime_flush_json`
 - batch update: `ffi_browser_runtime_apply_mutation_batch_json`
 - import wrappers: `ffi_browser_runtime_import_text_auto_json`, `ffi_browser_runtime_import_share_url_json`, `ffi_browser_runtime_import_share_text_json`, `ffi_browser_runtime_import_tikz_cd_json`, `ffi_browser_runtime_import_fletcher_json`, `ffi_browser_runtime_import_html_embed_json`
