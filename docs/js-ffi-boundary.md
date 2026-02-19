@@ -131,3 +131,18 @@ and returns `{ ok, processed, results, payload, selection, error }`, where each 
 For malformed batch JSON, the wrapper returns `{ ok: false, processed: 0, results: [], ... }` with a non-null `error`.
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.
+
+## Browser Demo Package (Task 6 scaffold)
+
+A thin integration package now exists at `browser_demo/` to exercise a UI-loop style flow on top of `ffi_browser_runtime_dispatch_json` and `ffi_browser_runtime_dispatch_many_json`.
+
+- `BrowserDemoSession` wraps a runtime instance and caches `{ payload, selection }` from dispatch envelopes.
+- `BrowserDemoSession::state_json()` provides a small JS-friendly state snapshot (`payload`, `selection`, `cell_ids`).
+- JS exports in `browser_demo/moon.pkg`:
+  - `ffi_browser_demo_session_new`
+  - `ffi_browser_demo_session_dispatch_json`
+  - `ffi_browser_demo_session_dispatch_many_json`
+  - `ffi_browser_demo_session_state_json`
+  - `ffi_browser_demo_roundtrip_demo_json`
+
+This package is intentionally minimal and acts as an end-to-end reference for wiring add/remove/import/export roundtrips via JSON action envelopes.

@@ -1,0 +1,18 @@
+import {
+  "kokic/kwiver/browser_adapter",
+  "moonbitlang/core/json",
+}
+
+options(
+  link: {
+    "js": {
+      "exports": [
+        "ffi_browser_demo_session_new",
+        "ffi_browser_demo_session_dispatch_json",
+        "ffi_browser_demo_session_dispatch_many_json",
+        "ffi_browser_demo_session_state_json",
+        "ffi_browser_demo_roundtrip_demo_json",
+      ],
+    },
+  },
+)

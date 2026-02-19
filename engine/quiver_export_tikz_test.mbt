@@ -1759,6 +1759,115 @@ test "tikz-cd import parser maps preset aliases and line tokens" {
 }
 
 ///|
+test "tikz-cd import parser maps additional preset arrow aliases" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"lr\", Leftrightarrow] & B \\\\\n",
+    "C \\arrow[r, \"bi\", leftrightarrow] & D \\\\\n",
+    "E \\arrow[r, \"rt\", rightarrowtail] & F \\\\\n",
+    "G \\arrow[r, \"lt\", leftarrowtail] & H \\\\\n",
+    "I \\arrow[r, \"2r\", twoheadrightarrow] & J \\\\\n",
+    "K \\arrow[r, \"2l\", twoheadleftarrow] & L \\\\\n",
+    "M \\arrow[r, \"rs\", rightsquigarrow] & N \\\\\n",
+    "O \\arrow[r, \"ls\", leftsquigarrow] & P \\\\\n",
+    "Q \\arrow[r, \"ra\", rightarrow] & R \\\\\n",
+    "S \\arrow[r, \"la\", leftarrow] & T\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_label(quiver, "lr") {
+    Some(edge) => {
+      inspect(edge.options.level, content="2")
+      inspect(edge.options.style.body.name, content="cell")
+      inspect(edge.options.style.tail.name, content="arrowhead")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected Leftrightarrow edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "bi") {
+    Some(edge) => {
+      inspect(edge.options.level, content="1")
+      inspect(edge.options.style.tail.name, content="arrowhead")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected leftrightarrow edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "rt") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="mono")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected rightarrowtail edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "H", "G") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="lt")
+      inspect(edge.options.style.tail.name, content="mono")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed leftarrowtail edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "2r") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="epi")
+    }
+    None => abort("expected twoheadrightarrow edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "L", "K") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="2l")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="epi")
+    }
+    None => abort("expected reversed twoheadleftarrow edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "rs") {
+    Some(edge) => {
+      inspect(edge.options.style.body.name, content="squiggly")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected rightsquigarrow edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "P", "O") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="ls")
+      inspect(edge.options.style.body.name, content="squiggly")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed leftsquigarrow edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "ra") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected rightarrow edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "T", "S") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="la")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed leftarrow edge")
+  }
+}
+
+///|
 test "tikz-cd import parser maps harpoon side option" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"p\", harpoon'] & B\n", "\\end{tikzcd}",
