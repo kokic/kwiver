@@ -26,6 +26,7 @@ options(
         "ffi_browser_demo_session_patch_edge_options_json",
         "ffi_browser_demo_session_remove",
         "ffi_browser_demo_session_flush",
+        "ffi_browser_demo_session_apply_mutation_batch_json",
         "ffi_browser_demo_session_set_selection",
         "ffi_browser_demo_session_export_selection",
         "ffi_browser_demo_session_paste_selection",

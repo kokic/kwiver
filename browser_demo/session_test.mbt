@@ -245,6 +245,90 @@ test "browser demo typed edge mutation helpers cover granular runtime actions" {
 }
 
 ///|
+test "browser demo typed mutation batch helper returns per-op results" {
+  let session = BrowserDemoSession::new()
+  let source_id = session.add_vertex("A", 0, 0)
+  let target_id = session.add_vertex("B", 1, 0)
+  let edge_id = session.add_edge(source_id, target_id, label="f")
+
+  let batch_json = [
+    "{",
+    "\"labels\":[{\"cell_id\":1,\"label\":\"A-batch\"}],",
+    "\"label_colours\":[{\"cell_id\":1,\"label_colour\":{\"h\":30,\"s\":90,\"l\":60,\"a\":1}}],",
+    "\"vertex_positions\":[{\"vertex_id\":1,\"x\":5,\"y\":7}],",
+    "\"edge_options\":[{\"edge_id\":3,\"options\":{",
+    "\"label_alignment\":\"right\",",
+    "\"label_position\":80,",
+    "\"offset\":0,",
+    "\"curve\":-1,",
+    "\"radius\":0,",
+    "\"angle\":0,",
+    "\"shorten_source\":1,",
+    "\"shorten_target\":2,",
+    "\"level\":0,",
+    "\"shape\":\"bezier\",",
+    "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+    "\"edge_alignment_source\":true,",
+    "\"edge_alignment_target\":true,",
+    "\"style\":{",
+    "\"name\":\"arrow\",",
+    "\"tail\":{\"name\":\"none\",\"side\":\"center\"},",
+    "\"body\":{\"name\":\"none\",\"side\":\"center\"},",
+    "\"head\":{\"name\":\"epi\",\"side\":\"center\"}",
+    "}}}],",
+    "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
+    "}",
+  ].join("")
+
+  let result = session.apply_mutation_batch_json(batch_json)
+  inspect(result.label_results, content="[true]")
+  inspect(result.label_colour_results, content="[true]")
+  inspect(result.vertex_position_results, content="[true]")
+  inspect(result.edge_option_results, content="[true]")
+  inspect(result.edge_connection_results, content="[true]")
+  inspect(result.payload == session.payload(), content="true")
+
+  let snapshot = session.snapshot()
+  inspect(snapshot.payload == session.payload(), content="true")
+  inspect(snapshot.cell_ids, content="[1, 2, 3]")
+  inspect(snapshot.vertices.length(), content="2")
+  inspect(snapshot.edges.length(), content="1")
+
+  let mut saw_source = false
+  let mut saw_edge = false
+  for cell in session.all_cells() {
+    match cell {
+      @engine.CellData::Vertex(vertex) =>
+        if vertex.cell.id == source_id {
+          saw_source = true
+          inspect(vertex.cell.label, content="A-batch")
+          inspect(vertex.x, content="5")
+          inspect(vertex.y, content="7")
+          inspect(vertex.cell.label_colour.h, content="30")
+          inspect(vertex.cell.label_colour.s, content="90")
+          inspect(vertex.cell.label_colour.l, content="60")
+        }
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          saw_edge = true
+          inspect(edge.source, content="2")
+          inspect(edge.target, content="1")
+          inspect(edge.options.curve, content="-1")
+          inspect(edge.options.shorten.source, content="1")
+          inspect(edge.options.shorten.target, content="2")
+          inspect(
+            edge.options.label_alignment is @engine.LabelAlignment::Right,
+            content="true",
+          )
+          inspect(edge.options.label_position, content="80")
+        }
+    }
+  }
+  inspect(saw_source, content="true")
+  inspect(saw_edge, content="true")
+}
+
+///|
 test "browser demo typed query helpers expose dependency closures" {
   let session = BrowserDemoSession::new()
   let a = session.add_vertex("A", 0, 0)
@@ -406,6 +490,28 @@ test "browser demo ffi result json wrappers expose import and paste metadata" {
   inspect(paste_ok, content="true")
   inspect(imported_ids, content="[2, 3, 4]")
   inspect(id_remap.length(), content="3")
+
+  let batch_json = [
+    "{",
+    "\"labels\":[{\"cell_id\":1,\"label\":\"A-ffi\"}],",
+    "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
+    "}",
+  ].join("")
+  let batch_result_json = ffi_browser_demo_session_apply_mutation_batch_json(
+    target,
+    batch_json,
+  )
+  let batch_root : Map[String, Json] = @json.from_json(
+    @json.parse(batch_result_json),
+  )
+  let label_results : Array[Bool] = @json.from_json(
+    browser_demo_test_json_get(batch_root, "label_results"),
+  )
+  let edge_connection_results : Array[Bool] = @json.from_json(
+    browser_demo_test_json_get(batch_root, "edge_connection_results"),
+  )
+  inspect(label_results, content="[true]")
+  inspect(edge_connection_results, content="[true]")
 }
 
 ///|

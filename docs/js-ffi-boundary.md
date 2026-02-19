@@ -153,6 +153,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `reconnect_edge`
   - `move_vertex`
   - `patch_edge_options_json`
+  - `apply_mutation_batch_json`
   - `remove`
   - `flush`
   - `dependencies_of`
@@ -185,6 +186,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `render_fletcher`
   - `render_html_embed`
   - `snapshot_json`
+  - `snapshot`
 - JS exports in `browser_demo/moon.pkg`:
   - `ffi_browser_demo_session_new`
   - `ffi_browser_demo_session_dispatch_json`
@@ -204,6 +206,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_patch_edge_options_json`
   - `ffi_browser_demo_session_remove`
   - `ffi_browser_demo_session_flush`
+  - `ffi_browser_demo_session_apply_mutation_batch_json`
   - `ffi_browser_demo_session_dependencies_of`
   - `ffi_browser_demo_session_reverse_dependencies_of`
   - `ffi_browser_demo_session_transitive_dependencies`

@@ -89,6 +89,24 @@ fn browser_demo_json_bool_or(
 }
 
 ///|
+fn browser_demo_json_bool_array_or(
+  root : Map[String, Json],
+  key : String,
+  fallback : Array[Bool],
+) -> Array[Bool] {
+  match root.get(key) {
+    Some(raw) => {
+      let parsed : Result[Array[Bool], Error] = try? @json.from_json(raw)
+      match parsed {
+        Ok(value) => value
+        Err(_) => fallback
+      }
+    }
+    None => fallback
+  }
+}
+
+///|
 fn browser_demo_dispatch_result_object(output_json : String) -> Map[String, Json]? {
   match browser_demo_parse_json_object(output_json) {
     Some(root) =>
@@ -191,6 +209,16 @@ pub struct BrowserDemoSelectionImportResult {
 }
 
 ///|
+pub struct BrowserDemoMutationBatchResult {
+  payload : String
+  label_results : Array[Bool]
+  label_colour_results : Array[Bool]
+  vertex_position_results : Array[Bool]
+  edge_option_results : Array[Bool]
+  edge_connection_results : Array[Bool]
+}
+
+///|
 fn browser_demo_optional_string_json(value : String?) -> Json {
   match value {
     Some(raw) => Json::string(raw)
@@ -252,6 +280,35 @@ fn browser_demo_selection_import_result_json(
 }
 
 ///|
+fn browser_demo_bool_array_json(values : Array[Bool]) -> Json {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(Json::boolean(value))
+  }
+  Json::array(out)
+}
+
+///|
+fn browser_demo_mutation_batch_result_json(
+  result : BrowserDemoMutationBatchResult,
+) -> Json {
+  Json::object({
+    "payload": Json::string(result.payload),
+    "label_results": browser_demo_bool_array_json(result.label_results),
+    "label_colour_results": browser_demo_bool_array_json(
+      result.label_colour_results,
+    ),
+    "vertex_position_results": browser_demo_bool_array_json(
+      result.vertex_position_results,
+    ),
+    "edge_option_results": browser_demo_bool_array_json(result.edge_option_results),
+    "edge_connection_results": browser_demo_bool_array_json(
+      result.edge_connection_results,
+    ),
+  })
+}
+
+///|
 pub fn BrowserDemoImportResult::to_json_string(self : BrowserDemoImportResult) -> String {
   browser_demo_import_result_json(self).stringify()
 }
@@ -261,6 +318,13 @@ pub fn BrowserDemoSelectionImportResult::to_json_string(
   self : BrowserDemoSelectionImportResult,
 ) -> String {
   browser_demo_selection_import_result_json(self).stringify()
+}
+
+///|
+pub fn BrowserDemoMutationBatchResult::to_json_string(
+  self : BrowserDemoMutationBatchResult,
+) -> String {
+  browser_demo_mutation_batch_result_json(self).stringify()
 }
 
 ///|
@@ -301,6 +365,47 @@ fn browser_demo_import_result_from_output(
       macro_url: None,
       renderer: None,
       embed: false,
+    }
+  }
+}
+
+///|
+fn browser_demo_mutation_batch_result_from_output(
+  output_json : String,
+  fallback_payload : String,
+) -> BrowserDemoMutationBatchResult {
+  match browser_demo_dispatch_result_object(output_json) {
+    Some(result) => {
+      payload: browser_demo_json_string_or(result, "payload", fallback_payload),
+      label_results: browser_demo_json_bool_array_or(result, "label_results", []),
+      label_colour_results: browser_demo_json_bool_array_or(
+        result,
+        "label_colour_results",
+        [],
+      ),
+      vertex_position_results: browser_demo_json_bool_array_or(
+        result,
+        "vertex_position_results",
+        [],
+      ),
+      edge_option_results: browser_demo_json_bool_array_or(
+        result,
+        "edge_option_results",
+        [],
+      ),
+      edge_connection_results: browser_demo_json_bool_array_or(
+        result,
+        "edge_connection_results",
+        [],
+      ),
+    }
+    None => {
+      payload: fallback_payload,
+      label_results: [],
+      label_colour_results: [],
+      vertex_position_results: [],
+      edge_option_results: [],
+      edge_connection_results: [],
     }
   }
 }
@@ -810,6 +915,31 @@ pub fn BrowserDemoSession::flush(self : BrowserDemoSession, when : Int) -> Bool 
 }
 
 ///|
+pub fn BrowserDemoSession::apply_mutation_batch_json(
+  self : BrowserDemoSession,
+  batch_json : String,
+) -> BrowserDemoMutationBatchResult {
+  let parsed : Result[Json, Error] = try? @json.parse(batch_json)
+  let input = match parsed {
+    Ok(Json::Object(value)) => Json::object(value)
+    _ =>
+      return {
+        payload: self.payload,
+        label_results: [],
+        label_colour_results: [],
+        vertex_position_results: [],
+        edge_option_results: [],
+        edge_connection_results: [],
+      }
+  }
+
+  let output = self.dispatch_json(
+    browser_demo_action_with_input("apply_mutation_batch_json", input),
+  )
+  browser_demo_mutation_batch_result_from_output(output, self.payload)
+}
+
+///|
 pub fn BrowserDemoSession::apply_selection(
   self : BrowserDemoSession,
   selected_ids : Array[Int],
@@ -1163,6 +1293,11 @@ pub fn BrowserDemoSession::snapshot_json(self : BrowserDemoSession) -> String {
 }
 
 ///|
+pub fn BrowserDemoSession::snapshot(self : BrowserDemoSession) -> @engine.QuiverUiSnapshot {
+  self.runtime.snapshot()
+}
+
+///|
 pub fn BrowserDemoSession::payload(self : BrowserDemoSession) -> String {
   self.payload
 }
@@ -1386,6 +1521,14 @@ pub fn ffi_browser_demo_session_remove(
 ///|
 pub fn ffi_browser_demo_session_flush(session : BrowserDemoSession, when : Int) -> Bool {
   session.flush(when)
+}
+
+///|
+pub fn ffi_browser_demo_session_apply_mutation_batch_json(
+  session : BrowserDemoSession,
+  batch_json : String,
+) -> String {
+  session.apply_mutation_batch_json(batch_json).to_json_string()
 }
 
 ///|
