@@ -134,7 +134,7 @@ For malformed batch JSON, the wrapper returns `{ ok: false, processed: 0, result
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.
 
-## Browser Demo Package (Task 6 scaffold)
+## Browser Demo Package (Task 6 runtime layer)
 
 A thin integration package now exists at `browser_demo/` to exercise a UI-loop style flow on top of `ffi_browser_runtime_dispatch_json` and `ffi_browser_runtime_dispatch_many_json`.
 
@@ -264,3 +264,24 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
 
 This package is intentionally minimal and acts as an end-to-end reference for wiring add/remove/import/export roundtrips via JSON action envelopes.
 `import_text_auto` now recognizes both `\begin{tikzcd}...\end{tikzcd}` and `\begin{tikzcd*}...\end{tikzcd*}` handwritten inputs.
+
+## Runnable Browser UI Demo (Task 6 deliverable)
+
+A runnable static UI demo is provided in `browser_ui_demo/`:
+
+- `browser_ui_demo/index.html`
+- `browser_ui_demo/app.js`
+- `browser_ui_demo/styles.css`
+
+It imports `../_build/js/debug/build/browser_demo/browser_demo.js` directly in the browser and exercises the real loop:
+
+- add/remove/connect
+- selection export/paste
+- import payload / import text auto
+- render outputs (`tikz-cd`, `fletcher`, `html embed`)
+- dependency closures and connected component query
+
+Task 8 Step 1 extends this demo with a formal editor-shell layout and a unified JS command pipeline (`dispatchCommand`) so UI actions and JSON inspector actions share one command route.
+Task 8 Step 2 adds gesture wiring on top of the same pipeline: canvas click add, node drag move, shift-drag connect, keyboard delete, and undo/redo skeleton.
+Task 8 Step 3 further aligns interaction semantics with q.uiver: box selection, multi-vertex drag, refined curved connect preview with endpoint clipping, edge hit selection, and inline label quick edit.
+Task 8 Step 4 adds editor keyboard/clipboard shortcuts on the same command pipeline (`Ctrl/Cmd+A/C/X/V`) with system clipboard integration and local fallback payload buffer.

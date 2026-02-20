@@ -16,6 +16,18 @@ We gratefully acknowledge the original design, file format, and user experience 
 A first-pass browser integration surface is documented in docs/js-ffi-boundary.md and implemented in engine/quiver_ui_ffi.mbt.
 An end-to-end thin UI-loop scaffold package is available in browser_demo/.
 
+## Browser UI Loop Demo (Task 6 + Task 8 Step 4)
+
+A runnable browser demo is available in `browser_ui_demo/` and uses JS UI + MoonBit runtime/state APIs from the `browser_demo` package build output.
+It now includes an editor-shell layout, a unified JS command dispatch pipeline, gesture wiring (box-select, multi-drag, shift-drag connect, edge hit select, quick label edit), and keyboard editor shortcuts (`Ctrl/Cmd+A/C/X/V`, delete, undo/redo).
+
+```sh
+moon build
+python -m http.server 8080
+```
+
+Open `http://localhost:8080/browser_ui_demo/`.
+
 ## Tokei
 
 ```sh

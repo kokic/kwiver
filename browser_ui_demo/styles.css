@@ -1,0 +1,463 @@
+:root {
+  --bg: #ebe2d7;
+  --bg-accent: #d4e5ee;
+  --panel: #fffaf3;
+  --ink: #1d2a31;
+  --muted: #58656f;
+  --line: #d0c5b6;
+  --line-strong: #a79174;
+  --ok: #0f766e;
+  --error: #b42318;
+  --focus: #11608d;
+  --stage-bg: #f8f4ed;
+  --stage-grid: #d7cfc3;
+  --node-bg: #fff;
+  --node-border: #6d7175;
+  --node-selected: #0f766e;
+  --edge: #3d4d59;
+  --mono: "Cascadia Mono", "Consolas", "Menlo", monospace;
+  --sans: "Segoe UI Variable Text", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.hidden {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: radial-gradient(circle at top left, #fff1dc 0, transparent 44%),
+    radial-gradient(circle at right bottom, #cfe4ed 0, transparent 36%),
+    linear-gradient(125deg, var(--bg), var(--bg-accent));
+  font-family: var(--sans);
+}
+
+.editor {
+  width: min(1500px, 97vw);
+  margin: 14px auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(180deg, #fffdf9, #fff7ea);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 14px 34px rgba(23, 43, 58, 0.1);
+}
+
+.badge {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.74rem;
+  color: #a14f0f;
+  font-weight: 700;
+}
+
+.brand h1 {
+  margin: 4px 0 6px;
+  font-size: clamp(1.25rem, 2.5vw, 1.8rem);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.workspace {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 350px minmax(500px, 1fr) 430px;
+  gap: 12px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(17, 35, 46, 0.08);
+}
+
+.left,
+.right {
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.panel h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.panel h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.panel-group {
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.panel-group:first-of-type {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+input,
+textarea,
+select,
+button {
+  width: 100%;
+  margin-top: 4px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 7px 9px;
+  font: inherit;
+  color: var(--ink);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid color-mix(in srgb, var(--focus), white 58%);
+  border-color: var(--focus);
+}
+
+button {
+  width: auto;
+  cursor: pointer;
+  border-color: color-mix(in srgb, var(--focus), white 48%);
+  background: linear-gradient(180deg, #f7fdff, #e8f2f8);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(23, 80, 113, 0.18);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 72px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.form-row,
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.form-grid > label,
+.form-grid > button {
+  flex: 1 1 94px;
+}
+
+.grow {
+  flex: 1 1 200px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.check input {
+  margin: 0;
+  width: auto;
+}
+
+.center {
+  display: grid;
+  gap: 10px;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+
+.canvas-meta {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.81rem;
+}
+
+.gesture-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.canvas-stage {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  overflow: auto;
+  min-height: 460px;
+  background: linear-gradient(180deg, #fdfaf2, #f4ece0);
+  cursor: crosshair;
+}
+
+.canvas-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--stage-grid), white 42%) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--stage-grid), white 42%) 1px,
+      transparent 1px
+    );
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+.graph-svg,
+.graph-nodes {
+  position: absolute;
+  inset: 0;
+}
+
+.graph-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 58px;
+  padding: 6px 8px;
+  border-radius: 11px;
+  border: 1px solid var(--node-border);
+  background: linear-gradient(180deg, #fff, #f3f4f5);
+  box-shadow: 0 4px 10px rgba(25, 38, 46, 0.14);
+  font-size: 0.82rem;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.graph-node.selected {
+  border-color: var(--node-selected);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-selected), white 72%),
+    0 6px 14px rgba(15, 118, 110, 0.26);
+}
+
+.graph-node.connect-source {
+  border-color: #b45309;
+  box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.28), 0 6px 14px rgba(180, 83, 9, 0.2);
+}
+
+.graph-node.connect-target {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.24), 0 6px 14px rgba(29, 78, 216, 0.18);
+}
+
+.graph-node .id {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-family: var(--mono);
+}
+
+.edge-line,
+.edge-loop {
+  stroke: var(--edge);
+  stroke-width: 1.8;
+  fill: none;
+  pointer-events: none;
+}
+
+.edge-selected {
+  stroke: #0f766e;
+  stroke-width: 2.5;
+}
+
+.edge-hit {
+  stroke: transparent;
+  stroke-width: 16;
+  fill: none;
+  cursor: pointer;
+}
+
+.edge-hit:focus {
+  outline: none;
+}
+
+.edge-hit.edge-selected {
+  stroke: rgba(15, 118, 110, 0.2);
+}
+
+.edge-preview {
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  fill: none;
+  pointer-events: none;
+}
+
+.edge-label {
+  fill: #223746;
+  font-size: 11px;
+  text-anchor: middle;
+  font-family: var(--mono);
+  user-select: none;
+  cursor: text;
+}
+
+.edge-label.edge-selected {
+  fill: #0f766e;
+  font-weight: 700;
+}
+
+.selection-rect {
+  position: absolute;
+  border: 1.5px solid rgba(17, 96, 141, 0.8);
+  background: rgba(17, 96, 141, 0.14);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.label-editor {
+  position: absolute;
+  width: min(280px, 70vw);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--focus), white 52%);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(15, 47, 69, 0.22);
+  padding: 8px;
+  z-index: 20;
+}
+
+.label-editor input {
+  margin-top: 0;
+}
+
+.label-editor-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.render-block {
+  display: grid;
+  gap: 6px;
+}
+
+.render-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.status {
+  margin: 0;
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.summary {
+  margin: 8px 0 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-family: var(--mono);
+}
+
+.output {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f9f6ef;
+  padding: 8px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: #243641;
+  overflow: auto;
+  min-height: 72px;
+}
+
+.output.mini {
+  min-height: 52px;
+  max-height: 140px;
+}
+
+.output.tall {
+  max-height: 190px;
+}
+
+.history {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 180px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+}
+
+.history li {
+  margin-bottom: 6px;
+  color: #304450;
+}
+
+.history li.fail {
+  color: var(--error);
+}
+
+@media (max-width: 1340px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .left,
+  .right {
+    max-height: none;
+  }
+
+  .canvas-stage {
+    min-height: 380px;
+  }
+}
