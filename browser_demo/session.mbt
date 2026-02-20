@@ -17,6 +17,14 @@ fn browser_demo_parse_json_object(input : String) -> Map[String, Json]? {
 }
 
 ///|
+fn browser_demo_parse_json_object_or_empty(input : String) -> Json {
+  match browser_demo_parse_json_object(input) {
+    Some(root) => Json::object(root)
+    None => Json::object({})
+  }
+}
+
+///|
 fn browser_demo_json_string_or(
   root : Map[String, Json],
   key : String,
@@ -581,6 +589,14 @@ pub fn BrowserDemoSession::dispatch_json(
 }
 
 ///|
+pub fn BrowserDemoSession::dispatch_json_safe(
+  self : BrowserDemoSession,
+  action_json : String,
+) -> String {
+  self.dispatch_json(action_json)
+}
+
+///|
 pub fn BrowserDemoSession::dispatch_many_json(
   self : BrowserDemoSession,
   batch_json : String,
@@ -591,6 +607,14 @@ pub fn BrowserDemoSession::dispatch_many_json(
   )
   self.sync_from_dispatch_output(output)
   output
+}
+
+///|
+pub fn BrowserDemoSession::dispatch_many_json_safe(
+  self : BrowserDemoSession,
+  batch_json : String,
+) -> String {
+  self.dispatch_many_json(batch_json)
 }
 
 ///|
@@ -1083,20 +1107,35 @@ pub fn BrowserDemoSession::import_payload(self : BrowserDemoSession, payload : S
 }
 
 ///|
+pub fn BrowserDemoSession::reset(self : BrowserDemoSession) -> Unit {
+  @browser_adapter.ffi_browser_runtime_reset(self.runtime)
+  self.sync_from_runtime()
+}
+
+///|
 pub fn BrowserDemoSession::render_tikz(self : BrowserDemoSession) -> String {
-  let output = self.dispatch_json(browser_demo_action("render_tikz"))
-  match browser_demo_dispatch_result_string(output) {
-    Some(result) => result
-    None => ""
-  }
+  self.render_tikz_result().data
+}
+
+///|
+pub fn BrowserDemoSession::render_tikz_result_with_input(
+  self : BrowserDemoSession,
+  input_json : String,
+) -> BrowserDemoTikzRenderResult {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "render_tikz_json",
+      browser_demo_parse_json_object_or_empty(input_json),
+    ),
+  )
+  browser_demo_tikz_render_result_from_output(output)
 }
 
 ///|
 pub fn BrowserDemoSession::render_tikz_result(
   self : BrowserDemoSession,
 ) -> BrowserDemoTikzRenderResult {
-  let output = self.dispatch_json(browser_demo_action("render_tikz_json"))
-  browser_demo_tikz_render_result_from_output(output)
+  self.render_tikz_result_with_input("{}")
 }
 
 ///|
@@ -1110,9 +1149,37 @@ pub fn BrowserDemoSession::render_tikz_result_json(self : BrowserDemoSession) ->
 }
 
 ///|
-pub fn BrowserDemoSession::render_fletcher(self : BrowserDemoSession) -> String {
+pub fn BrowserDemoSession::render_fletcher_with_input(
+  self : BrowserDemoSession,
+  input_json : String,
+) -> String {
   let output = self.dispatch_json(
-    browser_demo_action_with_input("render_fletcher", Json::object({})),
+    browser_demo_action_with_input(
+      "render_fletcher",
+      browser_demo_parse_json_object_or_empty(input_json),
+    ),
+  )
+  match browser_demo_dispatch_result_string(output) {
+    Some(result) => result
+    None => ""
+  }
+}
+
+///|
+pub fn BrowserDemoSession::render_fletcher(self : BrowserDemoSession) -> String {
+  self.render_fletcher_with_input("{}")
+}
+
+///|
+pub fn BrowserDemoSession::render_html_embed_with_input(
+  self : BrowserDemoSession,
+  input_json : String,
+) -> String {
+  let output = self.dispatch_json(
+    browser_demo_action_with_input(
+      "render_html_embed",
+      browser_demo_parse_json_object_or_empty(input_json),
+    ),
   )
   match browser_demo_dispatch_result_string(output) {
     Some(result) => result
@@ -1122,12 +1189,7 @@ pub fn BrowserDemoSession::render_fletcher(self : BrowserDemoSession) -> String 
 
 ///|
 pub fn BrowserDemoSession::render_html_embed(self : BrowserDemoSession) -> String {
-  let settings = @engine.HtmlEmbedExportSettings::default("https://q.uiver.app")
-    .with_fixed_size(400, 300)
-  @browser_adapter.ffi_browser_runtime_render_html_embed(
-    self.runtime,
-    settings,
-  )
+  self.render_html_embed_with_input("{}")
 }
 
 ///|
@@ -1450,11 +1512,27 @@ pub fn ffi_browser_demo_session_dispatch_json(
 }
 
 ///|
+pub fn ffi_browser_demo_session_dispatch_json_safe(
+  session : BrowserDemoSession,
+  action_json : String,
+) -> String {
+  session.dispatch_json_safe(action_json)
+}
+
+///|
 pub fn ffi_browser_demo_session_dispatch_many_json(
   session : BrowserDemoSession,
   batch_json : String,
 ) -> String {
   session.dispatch_many_json(batch_json)
+}
+
+///|
+pub fn ffi_browser_demo_session_dispatch_many_json_safe(
+  session : BrowserDemoSession,
+  batch_json : String,
+) -> String {
+  session.dispatch_many_json_safe(batch_json)
 }
 
 ///|
@@ -1681,6 +1759,11 @@ pub fn ffi_browser_demo_session_import_payload(
 }
 
 ///|
+pub fn ffi_browser_demo_session_reset(session : BrowserDemoSession) -> Unit {
+  session.reset()
+}
+
+///|
 pub fn ffi_browser_demo_session_all_cells(
   session : BrowserDemoSession,
 ) -> Array[@engine.CellData] {
@@ -1721,13 +1804,37 @@ pub fn ffi_browser_demo_session_render_tikz_result_json(
 }
 
 ///|
+pub fn ffi_browser_demo_session_render_tikz_result_with_input_json(
+  session : BrowserDemoSession,
+  input_json : String,
+) -> String {
+  session.render_tikz_result_with_input(input_json).to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_render_fletcher(session : BrowserDemoSession) -> String {
   session.render_fletcher()
 }
 
 ///|
+pub fn ffi_browser_demo_session_render_fletcher_with_input(
+  session : BrowserDemoSession,
+  input_json : String,
+) -> String {
+  session.render_fletcher_with_input(input_json)
+}
+
+///|
 pub fn ffi_browser_demo_session_render_html_embed(session : BrowserDemoSession) -> String {
   session.render_html_embed()
+}
+
+///|
+pub fn ffi_browser_demo_session_render_html_embed_with_input(
+  session : BrowserDemoSession,
+  input_json : String,
+) -> String {
+  session.render_html_embed_with_input(input_json)
 }
 
 ///|

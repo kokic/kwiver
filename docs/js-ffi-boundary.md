@@ -179,21 +179,29 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `import_html_embed_result`
   - `import_share_text`
   - `import_share_text_result`
+  - `reset`
+  - `dispatch_json_safe`
+  - `dispatch_many_json_safe`
   - `all_cells`
   - `all_cells_json`
   - `all_cell_ids`
   - `render_tikz`
   - `render_tikz_result`
+  - `render_tikz_result_with_input`
   - `render_tikz_json`
   - `render_tikz_result_json`
   - `render_fletcher`
+  - `render_fletcher_with_input`
   - `render_html_embed`
+  - `render_html_embed_with_input`
   - `snapshot_json`
   - `snapshot`
 - JS exports in `browser_demo/moon.pkg`:
   - `ffi_browser_demo_session_new`
   - `ffi_browser_demo_session_dispatch_json`
+  - `ffi_browser_demo_session_dispatch_json_safe`
   - `ffi_browser_demo_session_dispatch_many_json`
+  - `ffi_browser_demo_session_dispatch_many_json_safe`
   - `ffi_browser_demo_session_add_vertex`
   - `ffi_browser_demo_session_add_edge`
   - `ffi_browser_demo_session_set_label`
@@ -221,6 +229,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_paste_selection`
   - `ffi_browser_demo_session_paste_selection_result_json`
   - `ffi_browser_demo_session_import_payload`
+  - `ffi_browser_demo_session_reset`
   - `ffi_browser_demo_session_all_cells`
   - `ffi_browser_demo_session_all_cells_json`
   - `ffi_browser_demo_session_all_cell_ids`
@@ -239,8 +248,11 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_render_tikz`
   - `ffi_browser_demo_session_render_tikz_json`
   - `ffi_browser_demo_session_render_tikz_result_json`
+  - `ffi_browser_demo_session_render_tikz_result_with_input_json`
   - `ffi_browser_demo_session_render_fletcher`
+  - `ffi_browser_demo_session_render_fletcher_with_input`
   - `ffi_browser_demo_session_render_html_embed`
+  - `ffi_browser_demo_session_render_html_embed_with_input`
   - `ffi_browser_demo_session_snapshot_json`
   - `ffi_browser_demo_session_state_json`
   - `ffi_browser_demo_roundtrip_demo_json`

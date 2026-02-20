@@ -429,6 +429,104 @@ test "browser demo typed import and render helpers support text formats" {
 }
 
 ///|
+test "browser demo typed reset and safe dispatch helpers keep cached state aligned" {
+  let session = BrowserDemoSession::new()
+
+  let add_output = session.dispatch_json_safe(
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+  )
+  inspect(add_output.contains("\"ok\":true"), content="true")
+
+  let batch_output = session.dispatch_many_json_safe(
+    "[{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}}]",
+  )
+  inspect(batch_output.contains("\"ok\":true"), content="true")
+  inspect(session.cell_ids(), content="[1, 2]")
+
+  inspect(session.apply_selection([1]), content="[1]")
+  session.reset()
+  inspect(session.cell_ids(), content="[]")
+  inspect(session.selection(), content="[]")
+
+  let fresh = BrowserDemoSession::new()
+  inspect(session.payload() == fresh.payload(), content="true")
+}
+
+///|
+test "browser demo typed configurable render helpers forward dispatch input" {
+  let session = BrowserDemoSession::new()
+  let a = session.add_vertex("A", 0, 0)
+  let b = session.add_vertex("B", 1, 0)
+  ignore(session.add_edge(a, b, label="f"))
+
+  let tikz_result = session.render_tikz_result_with_input(
+    [
+      "{",
+      "\"settings\":{\"centre_diagram\":true},",
+      "\"options\":{",
+      "\"share_base_url\":\"https://q.uiver.app\",",
+      "\"renderer\":\"svg\",",
+      "\"macro_url\":\"https://example.com/macros.tex\",",
+      "\"sep_em\":2.70",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(tikz_result.data.contains("\\begin{tikzcd}[sep=large]"), content="true")
+  inspect(tikz_result.data.contains("% https://q.uiver.app#r=svg&q="), content="true")
+  inspect(
+    tikz_result.data.contains(
+      "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+    ),
+    content="true",
+  )
+
+  let fallback_tikz_result = session.render_tikz_result_with_input("{")
+  inspect(fallback_tikz_result.data.contains("\\begin{tikzcd}"), content="true")
+
+  let fletcher = session.render_fletcher_with_input(
+    [
+      "{",
+      "\"options\":{",
+      "\"share_base_url\":\"https://q.uiver.app\",",
+      "\"renderer\":\"svg\",",
+      "\"macro_url\":\"https://example.com/macros.tex\"",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(fletcher.contains("#diagram({"), content="true")
+  inspect(fletcher.contains("// https://q.uiver.app#r=svg&q="), content="true")
+  inspect(
+    fletcher.contains("&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"),
+    content="true",
+  )
+
+  let html = session.render_html_embed_with_input(
+    [
+      "{",
+      "\"settings\":{",
+      "\"base_url\":\"https://q.uiver.app\",",
+      "\"fixed_size\":true,",
+      "\"width\":320,",
+      "\"height\":240",
+      "},",
+      "\"options\":{",
+      "\"renderer\":\"svg\",",
+      "\"macro_url\":\"https://example.com/macros.tex\"",
+      "}",
+      "}",
+    ].join(""),
+  )
+  inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
+  inspect(html.contains("#r=svg&q="), content="true")
+  inspect(
+    html.contains("macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"),
+    content="true",
+  )
+}
+
+///|
 test "browser demo typed format-specific import and paste helpers" {
   let source = BrowserDemoSession::new()
   let source_id = source.add_vertex("A", 0, 0)
@@ -567,6 +665,54 @@ test "browser demo ffi result json wrappers expose import and paste metadata" {
     demo_batch_json.contains("\"edge_connection_results\":[true]"),
     content="true",
   )
+}
+
+///|
+test "browser demo ffi wrappers expose reset safe-dispatch and configurable render" {
+  let session = ffi_browser_demo_session_new()
+
+  let add_json = ffi_browser_demo_session_dispatch_json_safe(
+    session,
+    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+  )
+  inspect(add_json.contains("\"ok\":true"), content="true")
+
+  let add_many_json = ffi_browser_demo_session_dispatch_many_json_safe(
+    session,
+    "[{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"B\",\"x\":1,\"y\":0}}]",
+  )
+  inspect(add_many_json.contains("\"ok\":true"), content="true")
+
+  ignore(ffi_browser_demo_session_add_edge(session, 1, 2, label="f"))
+
+  let tikz_result_json = ffi_browser_demo_session_render_tikz_result_with_input_json(
+    session,
+    "{\"options\":{\"share_base_url\":\"https://q.uiver.app\",\"renderer\":\"svg\"}}",
+  )
+  inspect(tikz_result_json.contains("\"data\":\""), content="true")
+  inspect(tikz_result_json.contains("% https://q.uiver.app#r=svg&q="), content="true")
+
+  let fletcher = ffi_browser_demo_session_render_fletcher_with_input(
+    session,
+    "{\"options\":{\"share_base_url\":\"https://q.uiver.app\",\"renderer\":\"svg\"}}",
+  )
+  inspect(fletcher.contains("#diagram({"), content="true")
+  inspect(fletcher.contains("// https://q.uiver.app#r=svg&q="), content="true")
+
+  let html = ffi_browser_demo_session_render_html_embed_with_input(
+    session,
+    [
+      "{",
+      "\"settings\":{\"base_url\":\"https://q.uiver.app\",\"fixed_size\":true,\"width\":320,\"height\":240},",
+      "\"options\":{\"renderer\":\"svg\"}",
+      "}",
+    ].join(""),
+  )
+  inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
+  inspect(html.contains("#r=svg&q="), content="true")
+
+  ffi_browser_demo_session_reset(session)
+  inspect(ffi_browser_demo_session_all_cell_ids(session), content="[]")
 }
 
 ///|
