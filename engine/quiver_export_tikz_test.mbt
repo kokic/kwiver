@@ -2910,6 +2910,85 @@ test "tikz-cd import parser does not split rows inside braced labels" {
 }
 
 ///|
+test "tikz-cd import parser ignores arrow-like commands inside braced vertex labels" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "{\\texttt{\\arrow[r, \"fake\"]}} & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2]")
+  match tikz_test_find_edge_by_label(quiver, "fake") {
+    Some(_) => abort("expected no parsed edge from braced label text")
+    None => inspect(true, content="true")
+  }
+}
+
+///|
+test "tikz-cd import parser still parses top-level arrow after braced label text" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "{\\texttt{\\arrow[r]}} \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected top-level edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser ignores commands with arrow-prefixed names" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrowtail[r, \"fake\"] \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(quiver, "fake") {
+    Some(_) => abort("expected no parsed edge from \\arrowtail command")
+    None => inspect(true, content="true")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser treats escaped opening delimiters as plain text" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\{ \\arrow[r, \"f\"] & B \\\\\n",
+    "C \\[ \\arrow[r, \"g\"] & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected edge f")
+  }
+  match tikz_test_find_edge_by_label(quiver, "g") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected edge g")
+  }
+}
+
+///|
 test "tikz-cd import parser ignores latex comments in body" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B % trailing comment\n", "\\\\\n",

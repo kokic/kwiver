@@ -3681,9 +3681,42 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
 }
 
 fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut in_quotes = false
   let mut i = 0
   while i < input.length() {
-    if input.unsafe_get(i) != '\\' {
+    let ch = input.unsafe_get(i)
+    let escaped = tikz_is_escaped_at(input, i)
+    if ch == '"' && !escaped {
+      in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if !in_quotes && !escaped {
+      if ch == '{' {
+        brace_depth = brace_depth + 1
+      } else if ch == '}' && brace_depth > 0 {
+        brace_depth = brace_depth - 1
+      } else if ch == '[' {
+        bracket_depth = bracket_depth + 1
+      } else if ch == ']' && bracket_depth > 0 {
+        bracket_depth = bracket_depth - 1
+      } else if ch == '(' {
+        paren_depth = paren_depth + 1
+      } else if ch == ')' && paren_depth > 0 {
+        paren_depth = paren_depth - 1
+      }
+    }
+
+    if ch != '\\' {
+      i = i + 1
+      continue
+    }
+
+    if in_quotes || brace_depth != 0 || bracket_depth != 0 || paren_depth != 0 {
       i = i + 1
       continue
     }
@@ -3698,6 +3731,14 @@ fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
     }
 
     if command_len == 0 {
+      i = i + 1
+      continue
+    }
+
+    let command_end = i + command_len
+    if command_end < input.length() &&
+      tikz_is_ascii_letter(input.unsafe_get(command_end)) {
+      // Avoid matching command prefixes like "\arrowtail".
       i = i + 1
       continue
     }
