@@ -153,6 +153,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `reconnect_edge`
   - `move_vertex`
   - `patch_edge_options_json`
+  - `apply_mutation_batch`
   - `apply_mutation_batch_json`
   - `remove`
   - `flush`
@@ -182,7 +183,9 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `all_cells_json`
   - `all_cell_ids`
   - `render_tikz`
+  - `render_tikz_result`
   - `render_tikz_json`
+  - `render_tikz_result_json`
   - `render_fletcher`
   - `render_html_embed`
   - `snapshot_json`
@@ -206,6 +209,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_patch_edge_options_json`
   - `ffi_browser_demo_session_remove`
   - `ffi_browser_demo_session_flush`
+  - `ffi_browser_demo_session_apply_mutation_batch_demo_json`
   - `ffi_browser_demo_session_apply_mutation_batch_json`
   - `ffi_browser_demo_session_dependencies_of`
   - `ffi_browser_demo_session_reverse_dependencies_of`
@@ -234,6 +238,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_import_share_text_result_json`
   - `ffi_browser_demo_session_render_tikz`
   - `ffi_browser_demo_session_render_tikz_json`
+  - `ffi_browser_demo_session_render_tikz_result_json`
   - `ffi_browser_demo_session_render_fletcher`
   - `ffi_browser_demo_session_render_html_embed`
   - `ffi_browser_demo_session_snapshot_json`

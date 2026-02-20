@@ -326,6 +326,44 @@ test "browser demo typed mutation batch helper returns per-op results" {
   }
   inspect(saw_source, content="true")
   inspect(saw_edge, content="true")
+
+  let typed_session = BrowserDemoSession::new()
+  let typed_source_id = typed_session.add_vertex("X", 0, 0)
+  let typed_target_id = typed_session.add_vertex("Y", 1, 0)
+  let typed_edge_id = typed_session.add_edge(typed_source_id, typed_target_id, label="h")
+  let typed_batch = @engine.QuiverUiMutationBatch::new(
+    [@engine.QuiverUiSetLabelPatch::new(typed_source_id, "X-typed")],
+    [
+      @engine.QuiverUiSetLabelColourPatch::new(
+        typed_source_id,
+        @engine.Colour::new(45, 75, 55, 1.0),
+      ),
+    ],
+    [@engine.QuiverUiMoveVertexPatch::new(typed_source_id, 6, 8)],
+    [
+      @engine.QuiverUiSetEdgeOptionsPatch::new(
+        typed_edge_id,
+        @engine.EdgeOptions::default()
+          .with_curve(-3)
+          .with_label_alignment_left()
+          .with_label_position(65),
+      ),
+    ],
+    [
+      @engine.QuiverUiReconnectEdgePatch::new(
+        typed_edge_id,
+        typed_target_id,
+        typed_source_id,
+      ),
+    ],
+  )
+  let typed_result = typed_session.apply_mutation_batch(typed_batch)
+  inspect(typed_result.label_results, content="[true]")
+  inspect(typed_result.label_colour_results, content="[true]")
+  inspect(typed_result.vertex_position_results, content="[true]")
+  inspect(typed_result.edge_option_results, content="[true]")
+  inspect(typed_result.edge_connection_results, content="[true]")
+  inspect(typed_result.payload == typed_session.payload(), content="true")
 }
 
 ///|
@@ -354,6 +392,12 @@ test "browser demo typed import and render helpers support text formats" {
 
   let tikz = source.render_tikz()
   inspect(tikz.contains("\\begin{tikzcd}"), content="true")
+  let tikz_result = source.render_tikz_result()
+  inspect(tikz_result.data.contains("\\begin{tikzcd}"), content="true")
+  inspect(tikz_result.metadata.stringify().contains("\"dependencies\":"), content="true")
+  let tikz_result_json = source.render_tikz_result_json()
+  inspect(tikz_result_json.contains("\"data\":\""), content="true")
+  inspect(tikz_result_json.contains("\"metadata\":"), content="true")
   let fletcher = source.render_fletcher()
   inspect(fletcher.contains("#diagram({"), content="true")
   let html = source.render_html_embed()
@@ -512,6 +556,17 @@ test "browser demo ffi result json wrappers expose import and paste metadata" {
   )
   inspect(label_results, content="[true]")
   inspect(edge_connection_results, content="[true]")
+
+  let tikz_result_json = ffi_browser_demo_session_render_tikz_result_json(target)
+  inspect(tikz_result_json.contains("\"data\":\""), content="true")
+  inspect(tikz_result_json.contains("\"metadata\":"), content="true")
+
+  let demo_batch_json = ffi_browser_demo_session_apply_mutation_batch_demo_json()
+  inspect(demo_batch_json.contains("\"label_results\":[true]"), content="true")
+  inspect(
+    demo_batch_json.contains("\"edge_connection_results\":[true]"),
+    content="true",
+  )
 }
 
 ///|

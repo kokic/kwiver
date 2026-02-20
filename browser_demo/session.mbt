@@ -219,6 +219,12 @@ pub struct BrowserDemoMutationBatchResult {
 }
 
 ///|
+pub struct BrowserDemoTikzRenderResult {
+  data : String
+  metadata : Json
+}
+
+///|
 fn browser_demo_optional_string_json(value : String?) -> Json {
   match value {
     Some(raw) => Json::string(raw)
@@ -309,6 +315,14 @@ fn browser_demo_mutation_batch_result_json(
 }
 
 ///|
+fn browser_demo_tikz_render_result_json(result : BrowserDemoTikzRenderResult) -> Json {
+  Json::object({
+    "data": Json::string(result.data),
+    "metadata": result.metadata,
+  })
+}
+
+///|
 pub fn BrowserDemoImportResult::to_json_string(self : BrowserDemoImportResult) -> String {
   browser_demo_import_result_json(self).stringify()
 }
@@ -325,6 +339,13 @@ pub fn BrowserDemoMutationBatchResult::to_json_string(
   self : BrowserDemoMutationBatchResult,
 ) -> String {
   browser_demo_mutation_batch_result_json(self).stringify()
+}
+
+///|
+pub fn BrowserDemoTikzRenderResult::to_json_string(
+  self : BrowserDemoTikzRenderResult,
+) -> String {
+  browser_demo_tikz_render_result_json(self).stringify()
 }
 
 ///|
@@ -370,6 +391,20 @@ fn browser_demo_import_result_from_output(
 }
 
 ///|
+fn browser_demo_mutation_batch_result_from_engine(
+  result : @engine.QuiverUiMutationBatchResult,
+) -> BrowserDemoMutationBatchResult {
+  {
+    payload: result.payload,
+    label_results: result.label_results,
+    label_colour_results: result.label_colour_results,
+    vertex_position_results: result.vertex_position_results,
+    edge_option_results: result.edge_option_results,
+    edge_connection_results: result.edge_connection_results,
+  }
+}
+
+///|
 fn browser_demo_mutation_batch_result_from_output(
   output_json : String,
   fallback_payload : String,
@@ -406,6 +441,25 @@ fn browser_demo_mutation_batch_result_from_output(
       vertex_position_results: [],
       edge_option_results: [],
       edge_connection_results: [],
+    }
+  }
+}
+
+///|
+fn browser_demo_tikz_render_result_from_output(
+  output_json : String,
+) -> BrowserDemoTikzRenderResult {
+  match browser_demo_dispatch_result_object(output_json) {
+    Some(result) => {
+      data: browser_demo_json_string_or(result, "data", ""),
+      metadata: match result.get("metadata") {
+        Some(value) => value
+        None => Json::object({})
+      },
+    }
+    None => {
+      data: "",
+      metadata: Json::object({}),
     }
   }
 }
@@ -940,6 +994,16 @@ pub fn BrowserDemoSession::apply_mutation_batch_json(
 }
 
 ///|
+pub fn BrowserDemoSession::apply_mutation_batch(
+  self : BrowserDemoSession,
+  batch : @engine.QuiverUiMutationBatch,
+) -> BrowserDemoMutationBatchResult {
+  let result = self.runtime.apply_mutation_batch(batch)
+  self.sync_from_runtime()
+  browser_demo_mutation_batch_result_from_engine(result)
+}
+
+///|
 pub fn BrowserDemoSession::apply_selection(
   self : BrowserDemoSession,
   selected_ids : Array[Int],
@@ -1028,12 +1092,21 @@ pub fn BrowserDemoSession::render_tikz(self : BrowserDemoSession) -> String {
 }
 
 ///|
-pub fn BrowserDemoSession::render_tikz_json(self : BrowserDemoSession) -> String {
+pub fn BrowserDemoSession::render_tikz_result(
+  self : BrowserDemoSession,
+) -> BrowserDemoTikzRenderResult {
   let output = self.dispatch_json(browser_demo_action("render_tikz_json"))
-  match browser_demo_dispatch_result_object(output) {
-    Some(result) => browser_demo_json_string_or(result, "data", "")
-    None => ""
-  }
+  browser_demo_tikz_render_result_from_output(output)
+}
+
+///|
+pub fn BrowserDemoSession::render_tikz_json(self : BrowserDemoSession) -> String {
+  self.render_tikz_result().data
+}
+
+///|
+pub fn BrowserDemoSession::render_tikz_result_json(self : BrowserDemoSession) -> String {
+  self.render_tikz_result().to_json_string()
 }
 
 ///|
@@ -1524,6 +1597,35 @@ pub fn ffi_browser_demo_session_flush(session : BrowserDemoSession, when : Int) 
 }
 
 ///|
+pub fn ffi_browser_demo_session_apply_mutation_batch_demo_json() -> String {
+  let session = BrowserDemoSession::new()
+  let source_id = session.add_vertex("A", 0, 0)
+  let target_id = session.add_vertex("B", 1, 0)
+  let edge_id = session.add_edge(source_id, target_id, label="f")
+  let batch = @engine.QuiverUiMutationBatch::new(
+    [@engine.QuiverUiSetLabelPatch::new(source_id, "A-demo")],
+    [
+      @engine.QuiverUiSetLabelColourPatch::new(
+        source_id,
+        @engine.Colour::new(210, 80, 40, 1.0),
+      ),
+    ],
+    [@engine.QuiverUiMoveVertexPatch::new(source_id, 4, 5)],
+    [
+      @engine.QuiverUiSetEdgeOptionsPatch::new(
+        edge_id,
+        @engine.EdgeOptions::default()
+          .with_label_alignment_right()
+          .with_label_position(70)
+          .with_curve(-2),
+      ),
+    ],
+    [@engine.QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id)],
+  )
+  session.apply_mutation_batch(batch).to_json_string()
+}
+
+///|
 pub fn ffi_browser_demo_session_apply_mutation_batch_json(
   session : BrowserDemoSession,
   batch_json : String,
@@ -1609,6 +1711,13 @@ pub fn ffi_browser_demo_session_render_tikz_json(
   session : BrowserDemoSession,
 ) -> String {
   session.render_tikz_json()
+}
+
+///|
+pub fn ffi_browser_demo_session_render_tikz_result_json(
+  session : BrowserDemoSession,
+) -> String {
+  session.render_tikz_result_json()
 }
 
 ///|
