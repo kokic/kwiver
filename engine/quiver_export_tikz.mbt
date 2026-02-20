@@ -1869,22 +1869,17 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
       let mut rest = tikz_trim_left(after_begin)
       let mut ampersand_replacement : String? = None
       if rest.has_prefix("[") {
-        let mut depth = 0
-        let mut i = 0
-        while i < rest.length() {
-          let ch = rest.unsafe_get(i)
-          if ch == '[' {
-            depth = depth + 1
-          } else if ch == ']' {
-            depth = depth - 1
-            if depth == 0 {
-              let options = rest.unsafe_substring(start=1, end=i)
-              ampersand_replacement = tikz_parse_ampersand_replacement(options)
-              rest = rest.unsafe_substring(start=i + 1, end=rest.length())
-              break
-            }
+        let options_body = rest.unsafe_substring(start=1, end=rest.length())
+        match tikz_find_closing_delimiter(options_body, '[', ']') {
+          Some(close_index) => {
+            let options = options_body.unsafe_substring(start=0, end=close_index)
+            ampersand_replacement = tikz_parse_ampersand_replacement(options)
+            rest = options_body.unsafe_substring(
+              start=close_index + 1,
+              end=options_body.length(),
+            )
           }
-          i = i + 1
+          None => ()
         }
       }
       match rest.find(end_token) {
@@ -1918,7 +1913,7 @@ fn tikz_split_rows(body : String) -> Array[String] {
       continue
     }
 
-    if !in_quote {
+    if !in_quote && !escaped {
       if ch == '{' {
         brace_depth = brace_depth + 1
       } else if ch == '}' {

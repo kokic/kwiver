@@ -2891,6 +2891,54 @@ test "tikz-cd import parser supports starred \\tabularnewline row separators" {
 }
 
 ///|
+test "tikz-cd import parser keeps row splitting when escaped delimiters appear in cell text" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\{ \\arrow[d, \"f\"] \\\\\n",
+    "B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A \\{") {
+    Some(value) => value
+    None => abort("expected vertex A \\{")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser supports escaped closing bracket in ampersand replacement option" {
+  let input = [
+    "\\begin{tikzcd}[ampersand replacement=\\]]\n",
+    "A \\] B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2]")
+  match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected vertex A")
+  }
+  match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected vertex B")
+  }
+}
+
+///|
 test "tikz-cd import parser does not split rows inside braced labels" {
   let input = [
     "\\begin{tikzcd}\n", "{A \\\\ B} & C\n", "\\end{tikzcd}",
