@@ -3064,6 +3064,55 @@ test "tikz-cd import parser ignores latex comments in body" {
 }
 
 ///|
+test "tikz-cd import parser ignores commented begin token before real environment" {
+  let input = [
+    "% \\begin{tikzcd}\n",
+    "% X \\arrow[r, \"fake\"] & Y\n",
+    "% \\end{tikzcd}\n",
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(quiver, "fake") {
+    Some(_) => abort("expected no parsed edge from commented environment")
+    None => inspect(true, content="true")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser ignores commented end token inside body" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B % \\end{tikzcd}\n",
+    "\\\\\n",
+    "C & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
+
+  match tikz_test_find_vertex_id_by_label(quiver, "C") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected vertex C from second row")
+  }
+  match tikz_test_find_vertex_id_by_label(quiver, "D") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected vertex D from second row")
+  }
+}
+
+///|
 test "tikz-cd import parser keeps escaped percent in cell labels" {
   let input = [
     "\\begin{tikzcd}\n", "{A \\% B} & C % trailing comment\n", "\\end{tikzcd}",

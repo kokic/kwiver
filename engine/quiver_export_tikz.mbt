@@ -1817,14 +1817,48 @@ fn tikz_parse_ampersand_replacement(options : String) -> String? {
 }
 
 ///|
+fn tikz_find_token_outside_comments(input : String, token : String) -> Int? {
+  if token == "" {
+    return None
+  }
+
+  let mut in_comment = false
+  let mut i = 0
+  while i < input.length() {
+    let ch = input.unsafe_get(i)
+    if in_comment {
+      if ch == '\n' {
+        in_comment = false
+      }
+      i = i + 1
+      continue
+    }
+
+    if ch == '%' && !tikz_is_escaped_at(input, i) {
+      in_comment = true
+      i = i + 1
+      continue
+    }
+
+    if i + token.length() <= input.length() &&
+      input.unsafe_substring(start=i, end=i + token.length()) == token {
+      return Some(i)
+    }
+
+    i = i + 1
+  }
+  None
+}
+
+///|
 fn tikz_find_environment_tokens(input : String) -> (Int, String, String)? {
   let begin_token = "\\begin{tikzcd}"
   let end_token = "\\end{tikzcd}"
   let begin_star_token = "\\begin{tikzcd*}"
   let end_star_token = "\\end{tikzcd*}"
 
-  let begin_index = input.find(begin_token)
-  let begin_star_index = input.find(begin_star_token)
+  let begin_index = tikz_find_token_outside_comments(input, begin_token)
+  let begin_star_index = tikz_find_token_outside_comments(input, begin_star_token)
   match begin_index {
     Some(index) =>
       match begin_star_index {
@@ -1852,7 +1886,10 @@ fn tikz_looks_like_environment(input : String) -> Bool {
         start=begin_index + begin_token.length(),
         end=input.length(),
       )
-      after_begin.contains(end_token)
+      match tikz_find_token_outside_comments(after_begin, end_token) {
+        Some(_) => true
+        None => false
+      }
     }
     None => false
   }
@@ -1882,7 +1919,7 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
           None => ()
         }
       }
-      match rest.find(end_token) {
+      match tikz_find_token_outside_comments(rest, end_token) {
         Some(end_index) =>
           Some({
             body: rest.unsafe_substring(start=0, end=end_index),
