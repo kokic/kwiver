@@ -2779,6 +2779,60 @@ test "tikz-cd import parser supports \\crcr row separators with spacing options"
 }
 
 ///|
+test "tikz-cd import parser supports starred \\cr row separators" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[d, \"f\"] \\cr* [0.6em]\n", "B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser supports starred \\crcr row separators" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[d, \"f\"] \\crcr* [0.6em]\n", "B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser supports \\tabularnewline row separators" {
   let input = [
     "\\begin{tikzcd}\n",
@@ -2833,6 +2887,25 @@ test "tikz-cd import parser supports starred \\tabularnewline row separators" {
       inspect(edge.target == target_id, content="true")
     }
     None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser does not split rows inside braced labels" {
+  let input = [
+    "\\begin{tikzcd}\n", "{A \\\\ B} & C\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2]")
+
+  match tikz_test_find_vertex_id_by_label(quiver, "A \\\\ B") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected multiline-style label")
+  }
+  match tikz_test_find_vertex_id_by_label(quiver, "C") {
+    Some(_) => inspect(true, content="true")
+    None => abort("expected vertex C")
   }
 }
 

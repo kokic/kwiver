@@ -1905,8 +1905,46 @@ fn tikz_split_rows(body : String) -> Array[String] {
   let rows : Array[String] = []
   let mut segment_start = 0
   let mut i = 0
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut in_quote = false
   while i < body.length() {
-    if body.unsafe_get(i) == '\\' {
+    let ch = body.unsafe_get(i)
+    let escaped = tikz_is_escaped_at(body, i)
+    if ch == '"' && !escaped {
+      in_quote = !in_quote
+      i = i + 1
+      continue
+    }
+
+    if !in_quote {
+      if ch == '{' {
+        brace_depth = brace_depth + 1
+      } else if ch == '}' {
+        if brace_depth > 0 {
+          brace_depth = brace_depth - 1
+        }
+      } else if ch == '[' {
+        bracket_depth = bracket_depth + 1
+      } else if ch == ']' {
+        if bracket_depth > 0 {
+          bracket_depth = bracket_depth - 1
+        }
+      } else if ch == '(' {
+        paren_depth = paren_depth + 1
+      } else if ch == ')' {
+        if paren_depth > 0 {
+          paren_depth = paren_depth - 1
+        }
+      }
+    }
+
+    let at_top_level = !in_quote &&
+      brace_depth == 0 &&
+      bracket_depth == 0 &&
+      paren_depth == 0
+    if at_top_level && ch == '\\' {
       if i + 1 < body.length() && body.unsafe_get(i + 1) == '\\' {
         rows.push(body.unsafe_substring(start=segment_start, end=i))
         i = tikz_consume_row_separator_suffix(body, i + 2)
