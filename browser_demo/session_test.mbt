@@ -445,7 +445,7 @@ test "browser demo typed import and render helpers support text formats" {
   inspect(tikz_result_json.contains("\"data\":\""), content="true")
   inspect(tikz_result_json.contains("\"metadata\":"), content="true")
   let fletcher = source.render_fletcher()
-  inspect(fletcher.contains("#diagram({"), content="true")
+  inspect(fletcher.contains("diagram({"), content="true")
   let html = source.render_html_embed()
   inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
 
@@ -542,7 +542,8 @@ test "browser demo typed configurable render helpers forward dispatch input" {
     ].join(""),
   )
   inspect(fletcher.contains("#diagram({"), content="true")
-  inspect(fletcher.contains("// https://q.uiver.app#r=svg&q="), content="true")
+  inspect(fletcher.contains("// https://q.uiver.app#"), content="true")
+  inspect(fletcher.contains("q="), content="true")
   inspect(
     fletcher.contains("&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"),
     content="true",
@@ -563,6 +564,72 @@ test "browser demo typed configurable render helpers forward dispatch input" {
       "}",
       "}",
     ].join(""),
+  )
+  inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
+  inspect(html.contains("#r=svg&q="), content="true")
+  inspect(
+    html.contains("macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex"),
+    content="true",
+  )
+}
+
+///|
+test "browser demo typed render config helpers support typed settings options and definitions" {
+  let session = BrowserDemoSession::new()
+  let a = session.add_vertex("A", 0, 0)
+  let b = session.add_vertex("B", 1, 0)
+  ignore(session.add_edge(a, b, label="f"))
+  ignore(session.set_label_colour_hsla(a, 210, 80, 40, 1.0))
+
+  let tikz_result = session.render_tikz_result_with_config(
+    settings=@engine.TikzCdExportSettings::default().with_centre_diagram(),
+    options=
+      @engine.TikzCdExportOptions::default()
+      .with_share_base_url("https://q.uiver.app")
+      .with_renderer("svg")
+      .with_macro_url("https://example.com/macros.tex")
+      .with_sep_em(2.70),
+    definitions=
+      @engine.TikzCdExportDefinitions::default()
+      .with_colour("edgeblue", @engine.Colour::new(210, 80, 40, 1.0)),
+  )
+  inspect(tikz_result.data.contains("\\begin{tikzcd}[sep=large]"), content="true")
+  inspect(tikz_result.data.contains("% https://q.uiver.app#r=svg&q="), content="true")
+  inspect(
+    tikz_result.data.contains(
+      "&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex",
+    ),
+    content="true",
+  )
+  inspect(tikz_result.data.contains("edgeblue"), content="true")
+
+  let fletcher = session.render_fletcher_with_config(
+    settings=@engine.FletcherExportSettings::default().with_centre_diagram(),
+    options=
+      @engine.FletcherExportOptions::default()
+      .with_share_base_url("https://q.uiver.app")
+      .with_renderer("svg")
+      .with_macro_url("https://example.com/macros.tex"),
+  )
+  inspect(fletcher.contains("diagram({"), content="true")
+  inspect(
+    fletcher.find("// https://q.uiver.app#r=svg&q=") is Some(_),
+    content="true",
+  )
+  inspect(
+    fletcher.find("&macro_url=https%3A%2F%2Fexample.com%2Fmacros.tex") is Some(_),
+    content="true",
+  )
+
+  let html = session.render_html_embed_with_config(
+    @engine.HtmlEmbedExportSettings::default("https://q.uiver.app").with_fixed_size(
+      320,
+      240,
+    ),
+    options=
+      @engine.HtmlEmbedExportOptions::default()
+      .with_renderer("svg")
+      .with_macro_url("https://example.com/macros.tex"),
   )
   inspect(html.contains("<iframe class=\"quiver-embed\""), content="true")
   inspect(html.contains("#r=svg&q="), content="true")

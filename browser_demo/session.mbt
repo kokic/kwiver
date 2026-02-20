@@ -473,6 +473,25 @@ fn browser_demo_tikz_render_result_from_output(
 }
 
 ///|
+fn browser_demo_tikz_render_result_from_result_json(
+  result_json : String,
+) -> BrowserDemoTikzRenderResult {
+  match browser_demo_parse_json_object(result_json) {
+    Some(root) => {
+      data: browser_demo_json_string_or(root, "data", ""),
+      metadata: match root.get("metadata") {
+        Some(value) => value
+        None => Json::object({})
+      },
+    }
+    None => {
+      data: "",
+      metadata: Json::object({}),
+    }
+  }
+}
+
+///|
 fn browser_demo_selection_import_result_from_output(
   output_json : String,
   fallback_payload : String,
@@ -1142,10 +1161,27 @@ pub fn BrowserDemoSession::render_tikz_result_with_input(
 }
 
 ///|
+pub fn BrowserDemoSession::render_tikz_result_with_config(
+  self : BrowserDemoSession,
+  settings? : @engine.TikzCdExportSettings = @engine.TikzCdExportSettings::default(),
+  options? : @engine.TikzCdExportOptions = @engine.TikzCdExportOptions::default(),
+  definitions? : @engine.TikzCdExportDefinitions = @engine.TikzCdExportDefinitions::default(),
+) -> BrowserDemoTikzRenderResult {
+  browser_demo_tikz_render_result_from_result_json(
+    @browser_adapter.ffi_browser_runtime_render_tikz_json(
+      self.runtime,
+      settings~,
+      options~,
+      definitions~,
+    ),
+  )
+}
+
+///|
 pub fn BrowserDemoSession::render_tikz_result(
   self : BrowserDemoSession,
 ) -> BrowserDemoTikzRenderResult {
-  self.render_tikz_result_with_input("{}")
+  self.render_tikz_result_with_config()
 }
 
 ///|
@@ -1176,8 +1212,21 @@ pub fn BrowserDemoSession::render_fletcher_with_input(
 }
 
 ///|
+pub fn BrowserDemoSession::render_fletcher_with_config(
+  self : BrowserDemoSession,
+  settings? : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
+  options? : @engine.FletcherExportOptions = @engine.FletcherExportOptions::default(),
+) -> String {
+  @browser_adapter.ffi_browser_runtime_render_fletcher(
+    self.runtime,
+    settings~,
+    options~,
+  )
+}
+
+///|
 pub fn BrowserDemoSession::render_fletcher(self : BrowserDemoSession) -> String {
-  self.render_fletcher_with_input("{}")
+  self.render_fletcher_with_config()
 }
 
 ///|
@@ -1198,8 +1247,23 @@ pub fn BrowserDemoSession::render_html_embed_with_input(
 }
 
 ///|
+pub fn BrowserDemoSession::render_html_embed_with_config(
+  self : BrowserDemoSession,
+  settings : @engine.HtmlEmbedExportSettings,
+  options? : @engine.HtmlEmbedExportOptions = @engine.HtmlEmbedExportOptions::default(),
+) -> String {
+  @browser_adapter.ffi_browser_runtime_render_html_embed(
+    self.runtime,
+    settings,
+    options~,
+  )
+}
+
+///|
 pub fn BrowserDemoSession::render_html_embed(self : BrowserDemoSession) -> String {
-  self.render_html_embed_with_input("{}")
+  self.render_html_embed_with_config(
+    @engine.HtmlEmbedExportSettings::default("https://q.uiver.app"),
+  )
 }
 
 ///|

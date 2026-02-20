@@ -189,12 +189,15 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `all_cell_ids`
   - `render_tikz`
   - `render_tikz_result`
+  - `render_tikz_result_with_config`
   - `render_tikz_result_with_input`
   - `render_tikz_json`
   - `render_tikz_result_json`
   - `render_fletcher`
+  - `render_fletcher_with_config`
   - `render_fletcher_with_input`
   - `render_html_embed`
+  - `render_html_embed_with_config`
   - `render_html_embed_with_input`
   - `snapshot_json`
   - `snapshot`
