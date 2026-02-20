@@ -75,6 +75,52 @@ test "browser demo session dispatch keeps cached state in sync" {
 }
 
 ///|
+test "browser demo session safe dispatch wrappers return error envelopes for malformed input" {
+  let session = BrowserDemoSession::new()
+  ignore(session.add_vertex("A", 0, 0))
+  let before_payload = session.payload()
+
+  let malformed = session.dispatch_json_safe("{")
+  let malformed_root : Map[String, Json] = @json.from_json(@json.parse(malformed))
+  let malformed_ok : Bool = @json.from_json(
+    browser_demo_test_json_get(malformed_root, "ok"),
+  )
+  let malformed_action : String = @json.from_json(
+    browser_demo_test_json_get(malformed_root, "action"),
+  )
+  let malformed_error : String = @json.from_json(
+    browser_demo_test_json_get(malformed_root, "error"),
+  )
+  inspect(malformed_ok, content="false")
+  inspect(malformed_action, content="unknown")
+  inspect(malformed_error != "", content="true")
+  inspect(session.cell_ids(), content="[1]")
+  inspect(session.payload() == before_payload, content="true")
+
+  let malformed_many = session.dispatch_many_json_safe("{")
+  let malformed_many_root : Map[String, Json] = @json.from_json(
+    @json.parse(malformed_many),
+  )
+  let malformed_many_ok : Bool = @json.from_json(
+    browser_demo_test_json_get(malformed_many_root, "ok"),
+  )
+  let malformed_many_processed : Int = @json.from_json(
+    browser_demo_test_json_get(malformed_many_root, "processed"),
+  )
+  let malformed_many_results : Array[Json] = @json.from_json(
+    browser_demo_test_json_get(malformed_many_root, "results"),
+  )
+  let malformed_many_error : String = @json.from_json(
+    browser_demo_test_json_get(malformed_many_root, "error"),
+  )
+  inspect(malformed_many_ok, content="false")
+  inspect(malformed_many_processed, content="0")
+  inspect(malformed_many_results.length(), content="0")
+  inspect(malformed_many_error != "", content="true")
+  inspect(session.cell_ids(), content="[1]")
+}
+
+///|
 test "browser demo typed helper APIs cover add/import/render flow" {
   let session = BrowserDemoSession::new()
   let a = session.add_vertex("A", 0, 0)

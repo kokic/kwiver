@@ -1674,6 +1674,24 @@ fn tikz_take_cr_row_separator(body : String, index : Int) -> Int? {
 }
 
 ///|
+fn tikz_take_tabularnewline_row_separator(body : String, index : Int) -> Int? {
+  let token = "tabularnewline"
+  let start = index + 1
+  let end = start + token.length()
+  if end > body.length() {
+    return None
+  }
+  if body.unsafe_substring(start~, end=end) != token {
+    return None
+  }
+  if end < body.length() && tikz_is_ascii_letter(body.unsafe_get(end)) {
+    // Keep control words like "\tabularnewlinex" intact.
+    return None
+  }
+  Some(end)
+}
+
+///|
 priv struct TikzEnvironmentBody {
   body : String
   ampersand_replacement : String?
@@ -1900,6 +1918,16 @@ fn tikz_split_rows(body : String) -> Array[String] {
         Some(after_cr) => {
           rows.push(body.unsafe_substring(start=segment_start, end=i))
           i = tikz_consume_row_separator_suffix(body, after_cr)
+          segment_start = i
+          continue
+        }
+        None => ()
+      }
+
+      match tikz_take_tabularnewline_row_separator(body, i) {
+        Some(after_tabularnewline) => {
+          rows.push(body.unsafe_substring(start=segment_start, end=i))
+          i = tikz_consume_row_separator_suffix(body, after_tabularnewline)
           segment_start = i
           continue
         }
