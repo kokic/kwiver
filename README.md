@@ -19,15 +19,15 @@ An end-to-end thin UI-loop scaffold package is available in browser_demo/.
 ## Tokei
 
 ```sh
-> tokei -e *_test.mbt # fcb5839 feat: create implicit vertices for coordinate-only tikz arrows
+> tokei -e *_test.mbt
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  Language              Files        Lines         Code     Comments       Blanks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  JSON                      1           11           11            0            0
- Markdown                  2          121            0           95           26
- MoonBit                  16        12202        10461          751          990
+ Markdown                  2          296            0          261           35
+ MoonBit                  17        16353        14122          984         1247
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Total                    19        12334        10472          846         1016
+ Total                    20        16660        14133         1245         1282
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
