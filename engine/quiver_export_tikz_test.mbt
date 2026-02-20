@@ -2724,6 +2724,61 @@ test "tikz-cd import parser supports starred row separators" {
 }
 
 ///|
+test "tikz-cd import parser supports \\cr row separators" {
+  let input = [
+    "\\begin{tikzcd}\n", "A \\arrow[d, \"f\"] \\cr\n", "B\n", "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import parser supports \\crcr row separators with spacing options" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[d, \"f\"] \\crcr [0.6em]\n",
+    "B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == source_id, content="true")
+      inspect(edge.target == target_id, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser ignores latex comments in body" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B % trailing comment\n", "\\\\\n",

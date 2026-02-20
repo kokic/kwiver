@@ -593,7 +593,12 @@ pub fn BrowserDemoSession::dispatch_json_safe(
   self : BrowserDemoSession,
   action_json : String,
 ) -> String {
-  self.dispatch_json(action_json)
+  let output = @browser_adapter.ffi_browser_runtime_dispatch_json_safe(
+    self.runtime,
+    action_json,
+  )
+  self.sync_from_dispatch_output(output)
+  output
 }
 
 ///|
@@ -614,7 +619,12 @@ pub fn BrowserDemoSession::dispatch_many_json_safe(
   self : BrowserDemoSession,
   batch_json : String,
 ) -> String {
-  self.dispatch_many_json(batch_json)
+  let output = @browser_adapter.ffi_browser_runtime_dispatch_many_json_safe(
+    self.runtime,
+    batch_json,
+  )
+  self.sync_from_dispatch_output(output)
+  output
 }
 
 ///|

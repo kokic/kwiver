@@ -2231,7 +2231,7 @@ pub fn ffi_browser_runtime_apply_mutation_batch_json(
 }
 
 ///|
-pub fn ffi_browser_runtime_dispatch_json(
+pub fn ffi_browser_runtime_dispatch_json_safe(
   runtime : BrowserRuntime,
   action_json : String,
 ) -> String {
@@ -2239,11 +2239,27 @@ pub fn ffi_browser_runtime_dispatch_json(
 }
 
 ///|
-pub fn ffi_browser_runtime_dispatch_many_json(
+pub fn ffi_browser_runtime_dispatch_many_json_safe(
   runtime : BrowserRuntime,
   batch_json : String,
 ) -> String {
   runtime.dispatch_many_json_safe(batch_json)
+}
+
+///|
+pub fn ffi_browser_runtime_dispatch_json(
+  runtime : BrowserRuntime,
+  action_json : String,
+) -> String {
+  ffi_browser_runtime_dispatch_json_safe(runtime, action_json)
+}
+
+///|
+pub fn ffi_browser_runtime_dispatch_many_json(
+  runtime : BrowserRuntime,
+  batch_json : String,
+) -> String {
+  ffi_browser_runtime_dispatch_many_json_safe(runtime, batch_json)
 }
 
 ///|

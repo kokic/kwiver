@@ -41,6 +41,8 @@ options(
         "ffi_browser_runtime_remove_json",
         "ffi_browser_runtime_flush_json",
         "ffi_browser_runtime_apply_mutation_batch_json",
+        "ffi_browser_runtime_dispatch_json_safe",
+        "ffi_browser_runtime_dispatch_many_json_safe",
         "ffi_browser_runtime_dispatch_json",
         "ffi_browser_runtime_dispatch_many_json",
         "ffi_browser_runtime_export_payload",

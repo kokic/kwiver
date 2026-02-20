@@ -1615,6 +1615,65 @@ fn tikz_is_whitespace(ch : UInt16) -> Bool {
 }
 
 ///|
+fn tikz_is_ascii_letter(ch : UInt16) -> Bool {
+  (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+}
+
+///|
+fn tikz_consume_row_separator_suffix(body : String, after_separator : Int) -> Int {
+  let mut i = after_separator
+  while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
+    i = i + 1
+  }
+  if i < body.length() && body.unsafe_get(i) == '*' {
+    // Support starred row breaks (e.g. "\\*" and "\\* [0.6em]").
+    i = i + 1
+    while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
+      i = i + 1
+    }
+  }
+  if i < body.length() && body.unsafe_get(i) == '[' {
+    let mut depth = 1
+    i = i + 1
+    while i < body.length() && depth > 0 {
+      let ch = body.unsafe_get(i)
+      if ch == '[' {
+        depth = depth + 1
+      } else if ch == ']' {
+        depth = depth - 1
+      }
+      i = i + 1
+    }
+  }
+  i
+}
+
+///|
+fn tikz_take_cr_row_separator(body : String, index : Int) -> Int? {
+  if index + 2 >= body.length() {
+    return None
+  }
+  if body.unsafe_get(index + 1) != 'c' || body.unsafe_get(index + 2) != 'r' {
+    return None
+  }
+
+  let mut after = index + 3
+  if after + 1 < body.length() &&
+    body.unsafe_get(after) == 'c' &&
+    body.unsafe_get(after + 1) == 'r' {
+    // Support TeX-style "\crcr" row separators.
+    after = after + 2
+  }
+
+  if after < body.length() && tikz_is_ascii_letter(body.unsafe_get(after)) {
+    // Keep control words like "\crossing" intact.
+    return None
+  }
+
+  Some(after)
+}
+
+///|
 priv struct TikzEnvironmentBody {
   body : String
   ampersand_replacement : String?
@@ -1828,35 +1887,24 @@ fn tikz_split_rows(body : String) -> Array[String] {
   let rows : Array[String] = []
   let mut segment_start = 0
   let mut i = 0
-  while i + 1 < body.length() {
-    if body.unsafe_get(i) == '\\' && body.unsafe_get(i + 1) == '\\' {
-      rows.push(body.unsafe_substring(start=segment_start, end=i))
-      i = i + 2
-      while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
-        i = i + 1
+  while i < body.length() {
+    if body.unsafe_get(i) == '\\' {
+      if i + 1 < body.length() && body.unsafe_get(i + 1) == '\\' {
+        rows.push(body.unsafe_substring(start=segment_start, end=i))
+        i = tikz_consume_row_separator_suffix(body, i + 2)
+        segment_start = i
+        continue
       }
-      if i < body.length() && body.unsafe_get(i) == '*' {
-        // Support starred row breaks (e.g. "\\*" and "\\* [0.6em]").
-        i = i + 1
-        while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
-          i = i + 1
+
+      match tikz_take_cr_row_separator(body, i) {
+        Some(after_cr) => {
+          rows.push(body.unsafe_substring(start=segment_start, end=i))
+          i = tikz_consume_row_separator_suffix(body, after_cr)
+          segment_start = i
+          continue
         }
+        None => ()
       }
-      if i < body.length() && body.unsafe_get(i) == '[' {
-        let mut depth = 1
-        i = i + 1
-        while i < body.length() && depth > 0 {
-          let ch = body.unsafe_get(i)
-          if ch == '[' {
-            depth = depth + 1
-          } else if ch == ']' {
-            depth = depth - 1
-          }
-          i = i + 1
-        }
-      }
-      segment_start = i
-      continue
     }
     i = i + 1
   }

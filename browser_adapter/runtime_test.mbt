@@ -1476,6 +1476,7 @@ test "browser runtime ffi dispatch wrappers return error envelopes for malformed
   ignore(ffi_browser_runtime_add_vertex_json(runtime, "{\"label\":\"A\",\"x\":0,\"y\":0}"))
 
   let malformed_dispatch = ffi_browser_runtime_dispatch_json(runtime, "{")
+  let malformed_dispatch_safe = ffi_browser_runtime_dispatch_json_safe(runtime, "{")
   let malformed_root : Map[String, Json] = @json.from_json(
     @json.parse(malformed_dispatch),
   )
@@ -1491,9 +1492,11 @@ test "browser runtime ffi dispatch wrappers return error envelopes for malformed
   inspect(malformed_ok, content="false")
   inspect(malformed_action, content="unknown")
   inspect(malformed_error != "", content="true")
+  inspect(malformed_dispatch_safe == malformed_dispatch, content="true")
   inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1]")
 
   let malformed_batch = ffi_browser_runtime_dispatch_many_json(runtime, "{")
+  let malformed_batch_safe = ffi_browser_runtime_dispatch_many_json_safe(runtime, "{")
   let malformed_batch_root : Map[String, Json] = @json.from_json(
     @json.parse(malformed_batch),
   )
@@ -1513,6 +1516,7 @@ test "browser runtime ffi dispatch wrappers return error envelopes for malformed
   inspect(malformed_batch_processed, content="0")
   inspect(malformed_batch_results.length(), content="0")
   inspect(malformed_batch_error != "", content="true")
+  inspect(malformed_batch_safe == malformed_batch, content="true")
   inspect(ffi_browser_runtime_all_cell_ids(runtime), content="[1]")
 }
 
