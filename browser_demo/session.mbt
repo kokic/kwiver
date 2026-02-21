@@ -115,6 +115,32 @@ fn browser_demo_json_bool_array_or(
 }
 
 ///|
+fn browser_demo_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
+  if lhs.length() != rhs.length() {
+    return false
+  }
+  for index = 0; index < lhs.length(); index = index + 1 {
+    if lhs[index] != rhs[index] {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn browser_demo_state_json(
+  payload : String,
+  selection : Array[Int],
+  cell_ids : Array[Int],
+) -> Json {
+  Json::object({
+    "payload": Json::string(payload),
+    "selection": browser_demo_int_array_json(selection),
+    "cell_ids": browser_demo_int_array_json(cell_ids),
+  })
+}
+
+///|
 fn browser_demo_dispatch_result_object(output_json : String) -> Map[String, Json]? {
   match browser_demo_parse_json_object(output_json) {
     Some(root) =>
@@ -554,6 +580,7 @@ pub struct BrowserDemoSession {
   runtime : @browser_adapter.BrowserRuntime
   mut payload : String
   mut selection : Array[Int]
+  mut command_sequence : Int
 }
 
 ///|
@@ -563,6 +590,7 @@ pub fn BrowserDemoSession::new() -> BrowserDemoSession {
     runtime,
     payload: @browser_adapter.ffi_browser_runtime_export_payload(runtime),
     selection: @browser_adapter.ffi_browser_runtime_selection(runtime),
+    command_sequence: 0,
   }
 }
 
@@ -644,6 +672,87 @@ pub fn BrowserDemoSession::dispatch_many_json_safe(
   )
   self.sync_from_dispatch_output(output)
   output
+}
+
+///|
+pub fn BrowserDemoSession::dispatch_command_json(
+  self : BrowserDemoSession,
+  command_json : String,
+) -> String {
+  let before_payload = self.payload
+  let before_selection = self.selection
+  let before_cell_ids = self.all_cell_ids()
+
+  let mut origin : String? = None
+  let mut command_id : String? = None
+  match browser_demo_parse_json_object(command_json) {
+    Some(command_root) => {
+      origin = browser_demo_json_optional_string(command_root, "origin")
+      command_id = browser_demo_json_optional_string(command_root, "command_id")
+    }
+    None => ()
+  }
+
+  self.command_sequence += 1
+  let sequence = self.command_sequence
+  let dispatch_output = self.dispatch_json_safe(command_json)
+
+  let mut ok = false
+  let mut action = "unknown"
+  let mut result : Json = Json::null()
+  let mut error : String? = Some("dispatch output parse failed")
+  match browser_demo_parse_json_object(dispatch_output) {
+    Some(dispatch_root) => {
+      ok = browser_demo_json_bool_or(dispatch_root, "ok", false)
+      action = browser_demo_json_string_or(dispatch_root, "action", action)
+      match dispatch_root.get("result") {
+        Some(runtime_result) => result = runtime_result
+        None => ()
+      }
+      error = browser_demo_json_optional_string(dispatch_root, "error")
+    }
+    None => ()
+  }
+
+  let after_payload = self.payload
+  let after_selection = self.selection
+  let after_cell_ids = self.all_cell_ids()
+  let changed = before_payload != after_payload ||
+    !browser_demo_int_arrays_equal(before_selection, after_selection) ||
+    !browser_demo_int_arrays_equal(before_cell_ids, after_cell_ids)
+  let undo_checkpoint : String? = if changed {
+    Some(before_payload)
+  } else {
+    None
+  }
+  let redo_checkpoint : String? = if changed {
+    Some(after_payload)
+  } else {
+    None
+  }
+
+  Json::object({
+    "sequence": Json::number(sequence.to_double()),
+    "ok": Json::boolean(ok),
+    "action": Json::string(action),
+    "origin": browser_demo_optional_string_json(origin),
+    "command_id": browser_demo_optional_string_json(command_id),
+    "result": result,
+    "error": browser_demo_optional_string_json(error),
+    "changed": Json::boolean(changed),
+    "undo_checkpoint": browser_demo_optional_string_json(undo_checkpoint),
+    "redo_checkpoint": browser_demo_optional_string_json(redo_checkpoint),
+    "before": browser_demo_state_json(
+      before_payload,
+      before_selection,
+      before_cell_ids,
+    ),
+    "after": browser_demo_state_json(
+      after_payload,
+      after_selection,
+      after_cell_ids,
+    ),
+  }).stringify()
 }
 
 ///|
@@ -1607,6 +1716,14 @@ pub fn ffi_browser_demo_session_dispatch_many_json_safe(
   batch_json : String,
 ) -> String {
   session.dispatch_many_json_safe(batch_json)
+}
+
+///|
+pub fn ffi_browser_demo_session_dispatch_command_json(
+  session : BrowserDemoSession,
+  command_json : String,
+) -> String {
+  session.dispatch_command_json(command_json)
 }
 
 ///|

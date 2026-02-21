@@ -184,6 +184,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `reset`
   - `dispatch_json_safe`
   - `dispatch_many_json_safe`
+  - `dispatch_command_json`
   - `all_cells`
   - `all_cells_json`
   - `all_cell_ids`
@@ -207,6 +208,7 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_dispatch_json_safe`
   - `ffi_browser_demo_session_dispatch_many_json`
   - `ffi_browser_demo_session_dispatch_many_json_safe`
+  - `ffi_browser_demo_session_dispatch_command_json`
   - `ffi_browser_demo_session_add_vertex`
   - `ffi_browser_demo_session_add_edge`
   - `ffi_browser_demo_session_set_label`
@@ -264,6 +266,11 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
 
 This package is intentionally minimal and acts as an end-to-end reference for wiring add/remove/import/export roundtrips via JSON action envelopes.
 `import_text_auto` now recognizes both `\begin{tikzcd}...\end{tikzcd}` and `\begin{tikzcd*}...\end{tikzcd*}` handwritten inputs.
+Task 8 Step 5 adds `dispatch_command_json` / `ffi_browser_demo_session_dispatch_command_json` as a stable command-envelope wrapper for JS shells:
+
+- input: runtime dispatch envelope plus optional `origin` and `command_id`.
+- output: `{ sequence, ok, action, origin, command_id, result, error, changed, undo_checkpoint, redo_checkpoint, before, after }`.
+- `before` / `after` always include `{ payload, selection, cell_ids }`, and checkpoints are only non-null when `changed=true`.
 
 ## Runnable Browser UI Demo (Task 6 deliverable)
 
@@ -285,3 +292,4 @@ Task 8 Step 1 extends this demo with a formal editor-shell layout and a unified 
 Task 8 Step 2 adds gesture wiring on top of the same pipeline: canvas click add, node drag move, shift-drag connect, keyboard delete, and undo/redo skeleton.
 Task 8 Step 3 further aligns interaction semantics with q.uiver: box selection, multi-vertex drag, refined curved connect preview with endpoint clipping, edge hit selection, and inline label quick edit.
 Task 8 Step 4 adds editor keyboard/clipboard shortcuts on the same command pipeline (`Ctrl/Cmd+A/C/X/V`) with system clipboard integration and local fallback payload buffer.
+Task 8 Step 5 adds a stable command-envelope + checkpoint contract in `browser_demo` for production JS shells to route commands and own undo/redo with deterministic payload checkpoints.

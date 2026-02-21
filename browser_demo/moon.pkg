@@ -13,6 +13,7 @@ options(
         "ffi_browser_demo_session_dispatch_json_safe",
         "ffi_browser_demo_session_dispatch_many_json",
         "ffi_browser_demo_session_dispatch_many_json_safe",
+        "ffi_browser_demo_session_dispatch_command_json",
         "ffi_browser_demo_session_add_vertex",
         "ffi_browser_demo_session_add_edge",
         "ffi_browser_demo_session_set_label",
