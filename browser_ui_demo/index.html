@@ -10,10 +10,10 @@
     <main class="editor">
       <header class="topbar">
         <div class="brand">
-          <p class="badge">Task 8 - Step 4</p>
+          <p class="badge">Task 8 - Step 5</p>
           <h1>q.uiver Editor Shell</h1>
           <p class="subtitle">
-            Formal browser shell + unified command pipeline. UI in JS, graph runtime in MoonBit.
+            Formal browser shell + command-envelope pipeline. UI in JS, graph runtime in MoonBit.
           </p>
         </div>
         <div class="top-actions">
@@ -203,9 +203,9 @@
           <p id="summary" class="summary"></p>
 
           <label>
-            Dispatch JSON Command
+            Dispatch JSON Command (UI type or runtime action envelope)
             <textarea id="command-json" rows="5">
-{"type":"graph.add_vertex","input":{"label":"X","x":0,"y":0}}</textarea
+{"action":"add_vertex_json","input":{"label":"X","x":0,"y":0}}</textarea
             >
           </label>
           <div class="form-row">

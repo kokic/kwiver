@@ -1,6 +1,6 @@
 # Browser UI Loop Demo
 
-This page is now the Task 8 Step 4 editor shell prototype, built on top of the Task 6 runtime demo foundation.
+This page is now the Task 8 Step 5 editor shell prototype, built on top of the Task 6 runtime demo foundation.
 
 It wires:
 
@@ -33,7 +33,8 @@ The page demonstrates an end-to-end UI loop for:
 - canvas preview (vertex/edge projection from `snapshot_json`)
 - command pipeline (`dispatchCommand`) with:
 - typed UI command emitters
-- JSON command inspector
+- JSON command inspector (accepts both `{type,...}` UI commands and `{action|type,...}` runtime action envelopes)
+- runtime command-envelope dispatch (`ffi_browser_demo_session_dispatch_command_json`) for checkpoint-aware mutation routing
 - unified command history / last command / last result panes
 - gesture layer wired into the command pipeline:
 - drag box to select vertices

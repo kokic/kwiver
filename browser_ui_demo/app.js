@@ -23,6 +23,7 @@ const MUTATING = new Set([
   "selection.paste",
   "import.payload",
   "import.text_auto",
+  "runtime.dispatch",
 ]);
 
 const app = {
@@ -194,8 +195,8 @@ function status(text, error = false) {
   refs.status.classList.toggle("error", error);
 }
 
-function outcome(ok, result, note, refresh = true) {
-  return { ok, result, note, refresh };
+function outcome(ok, result, note, refresh = true, runtimeEnvelope = null) {
+  return { ok, result, note, refresh, runtimeEnvelope };
 }
 
 function payload() {
@@ -229,6 +230,90 @@ function sync() {
   if (document.activeElement !== refs.selectionInput) {
     refs.selectionInput.value = Array.isArray(app.stateObject.selection) ? app.stateObject.selection.join(",") : "";
   }
+}
+
+function objectResult(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function nextCommandId(origin = "ui") {
+  const prefix = typeof origin === "string" && origin !== "" ? origin : "ui";
+  return `${prefix}-${app.commandSequence + 1}-${app.operationCount + 1}`;
+}
+
+function runRuntimeEnvelope(command, originOverride = null) {
+  if (!app.api || !app.session || typeof app.api.ffi_browser_demo_session_dispatch_command_json !== "function") {
+    return {
+      ok: false,
+      envelope: {
+        ok: false,
+        action: typeof command?.action === "string" ? command.action : "unknown",
+        error: "Runtime command envelope API is unavailable.",
+      },
+    };
+  }
+
+  const payload = command && typeof command === "object" ? { ...command } : {};
+  if (typeof payload.origin !== "string" && typeof originOverride === "string" && originOverride !== "") {
+    payload.origin = originOverride;
+  }
+  if (typeof payload.command_id !== "string" || payload.command_id === "") {
+    payload.command_id = nextCommandId(payload.origin);
+  }
+
+  try {
+    const raw = app.api.ffi_browser_demo_session_dispatch_command_json(
+      app.session,
+      JSON.stringify(payload),
+    );
+    const parsed = pj(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return {
+        ok: false,
+        envelope: {
+          ok: false,
+          action: typeof payload.action === "string" ? payload.action : "unknown",
+          error: "Malformed runtime envelope response.",
+          raw,
+        },
+      };
+    }
+    return { ok: Boolean(parsed.ok), envelope: parsed };
+  } catch (e) {
+    return {
+      ok: false,
+      envelope: {
+        ok: false,
+        action: typeof payload.action === "string" ? payload.action : "unknown",
+        error: String(e),
+      },
+    };
+  }
+}
+
+function runRuntimeAction(action, input, origin = "ui", extra = {}) {
+  const command = { action, ...extra };
+  if (input !== undefined) command.input = input;
+  return runRuntimeEnvelope(command, origin);
+}
+
+function applyRuntimeCheckpoints(type, res) {
+  const envelope = res?.runtimeEnvelope;
+  if (!envelope || typeof envelope !== "object") return false;
+  if (!MUTATING.has(type) || envelope.changed !== true) return false;
+
+  const undo = typeof envelope.undo_checkpoint === "string" ? envelope.undo_checkpoint : null;
+  const redo = typeof envelope.redo_checkpoint === "string" ? envelope.redo_checkpoint : null;
+  if (undo == null && redo == null) return false;
+
+  if (undo !== null && (app.undoStack.length === 0 || app.undoStack[app.undoStack.length - 1] !== undo)) {
+    app.undoStack.push(undo);
+  }
+  if (redo !== null && (app.undoStack.length === 0 || app.undoStack[app.undoStack.length - 1] !== redo)) {
+    app.undoStack.push(redo);
+  }
+  app.redoStack = [];
+  return true;
 }
 
 const HANDLERS = {
@@ -288,28 +373,46 @@ const HANDLERS = {
     return outcome(true, { a, b, e, selection }, "seeded");
   },
 
-  "graph.add_vertex": (input) => {
+  "graph.add_vertex": (input, _command, origin) => {
     const label = typeof input.label === "string" && input.label !== "" ? input.label : "V";
     const x = toInt(input.x, 0);
     const y = toInt(input.y, 0);
-    const id = app.api.ffi_browser_demo_session_add_vertex(app.session, label, x, y);
-    return outcome(true, { id, label, x, y }, `vertex #${id}`);
+    const runtime = runRuntimeAction(
+      "add_vertex_json",
+      { label, x, y },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const id = toInt(runtimeResult.id, -1);
+    return outcome(runtime.ok, { id, label, x, y }, `vertex #${id}`, true, runtime.envelope);
   },
 
-  "graph.add_edge": (input) => {
+  "graph.add_edge": (input, _command, origin) => {
     const source_id = toInt(input.source_id, -1);
     const target_id = toInt(input.target_id, -1);
     const label = typeof input.label === "string" ? input.label : "";
-    const id = app.api.ffi_browser_demo_session_add_edge(app.session, source_id, target_id, label);
-    return outcome(true, { id, source_id, target_id, label }, `edge #${id}`);
+    const runtime = runRuntimeAction(
+      "add_edge_json",
+      { source_id, target_id, label },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const id = toInt(runtimeResult.id, -1);
+    return outcome(runtime.ok, { id, source_id, target_id, label }, `edge #${id}`, true, runtime.envelope);
   },
 
-  "graph.move_vertex": (input) => {
+  "graph.move_vertex": (input, _command, origin) => {
     const vertex_id = toInt(input.vertex_id, -1);
     const x = toInt(input.x, 0);
     const y = toInt(input.y, 0);
-    const ok = app.api.ffi_browser_demo_session_move_vertex(app.session, vertex_id, x, y);
-    return outcome(ok, { ok, vertex_id, x, y }, ok ? "moved" : "move failed");
+    const runtime = runRuntimeAction(
+      "move_vertex_json",
+      { vertex_id, x, y },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const ok = runtime.ok && Boolean(runtimeResult.ok);
+    return outcome(ok, { ok, vertex_id, x, y }, ok ? "moved" : "move failed", true, runtime.envelope);
   },
 
   "graph.move_vertices": (input) => {
@@ -327,26 +430,39 @@ const HANDLERS = {
     return outcome(allOk, { applied, count: applied.length }, allOk ? "moved group" : "group move partial");
   },
 
-  "cell.set_label": (input) => {
+  "cell.set_label": (input, _command, origin) => {
     const cell_id = toInt(input.cell_id, -1);
     const label = typeof input.label === "string" ? input.label : "";
-    const ok = app.api.ffi_browser_demo_session_set_label(app.session, cell_id, label);
-    return outcome(ok, { ok, cell_id, label }, ok ? "label updated" : "set label failed");
+    const runtime = runRuntimeAction(
+      "set_label_json",
+      { cell_id, label },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const ok = runtime.ok && Boolean(runtimeResult.ok);
+    return outcome(ok, { ok, cell_id, label }, ok ? "label updated" : "set label failed", true, runtime.envelope);
   },
 
-  "graph.remove": (input) => {
+  "graph.remove": (input, _command, origin) => {
     const cell_id = toInt(input.cell_id, -1);
     const when = toInt(input.when, 0);
-    const removed_ids = app.api.ffi_browser_demo_session_remove(app.session, cell_id, when);
-    return outcome(true, { cell_id, removed_ids }, `removed #${cell_id}`);
+    const runtime = runRuntimeAction(
+      "remove_json",
+      { cell_id, when },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const removed_ids = Array.isArray(runtimeResult.removed_ids) ? runtimeResult.removed_ids : [];
+    return outcome(runtime.ok, { cell_id, removed_ids }, `removed #${cell_id}`, true, runtime.envelope);
   },
 
-  "selection.set": (input) => {
+  "selection.set": (input, _command, origin) => {
     const selected_ids = Array.isArray(input.selected_ids)
       ? uniq(input.selected_ids).filter((id) => id >= 0)
       : [];
-    const normalized = app.api.ffi_browser_demo_session_set_selection(app.session, selected_ids);
-    return outcome(true, { selected_ids: normalized }, "selection");
+    const runtime = runRuntimeAction("set_selection", selected_ids, origin);
+    const normalized = Array.isArray(runtime.envelope?.result) ? runtime.envelope.result : [];
+    return outcome(runtime.ok, { selected_ids: normalized }, "selection", true, runtime.envelope);
   },
 
   "selection.delete": () => {
@@ -362,105 +478,156 @@ const HANDLERS = {
     return outcome(removed_ids.length > 0, { selected_ids: selected, removed_ids }, removed_ids.length > 0 ? "deleted" : "nothing removed");
   },
 
-  "selection.export": (input) => {
+  "selection.export": (input, _command, origin) => {
     const include_dependencies = input.include_dependencies !== false;
-    const payloadText = app.api.ffi_browser_demo_session_export_selection(app.session, include_dependencies);
+    const runtime = runRuntimeAction(
+      "export_selection",
+      { include_dependencies },
+      origin,
+    );
+    const payloadText = typeof runtime.envelope?.result === "string" ? runtime.envelope.result : "";
     refs.selectionPayload.value = payloadText;
     app.selectionOutput = { include_dependencies, payload_length: payloadText.length };
-    return outcome(true, { payload: payloadText, include_dependencies }, "selection exported", false);
+    return outcome(runtime.ok, { payload: payloadText, include_dependencies }, "selection exported", false, runtime.envelope);
   },
 
-  "selection.paste": (input) => {
+  "selection.paste": (input, _command, origin) => {
     const payloadText = typeof input.payload === "string" ? input.payload : "";
     const origin_x = toInt(input.origin_x, 0);
     const origin_y = toInt(input.origin_y, 0);
-    const raw = app.api.ffi_browser_demo_session_paste_selection_result_json(
-      app.session,
-      payloadText,
-      origin_x,
-      origin_y,
-      undefined,
+    const runtime = runRuntimeAction(
+      "paste_selection_json",
+      { payload: payloadText, origin_x, origin_y },
+      origin,
     );
-    const result = pj(raw) ?? { raw };
+    const result = objectResult(runtime.envelope?.result);
     app.selectionOutput = result;
-    return outcome(true, result, "selection pasted");
+    const ok = runtime.ok && (result.ok !== false);
+    return outcome(ok, result, "selection pasted", true, runtime.envelope);
   },
 
-  "import.payload": (input) => {
+  "import.payload": (input, _command, origin) => {
     const payloadText = typeof input.payload === "string" ? input.payload : "";
-    const ok = app.api.ffi_browser_demo_session_import_payload(app.session, payloadText);
-    return outcome(ok, { ok, payload_length: payloadText.length }, "import payload");
+    const runtime = runRuntimeAction("import_payload", payloadText, origin);
+    const normalizedPayload = typeof runtime.envelope?.result === "string" ? runtime.envelope.result : payloadText;
+    const ok = runtime.ok;
+    return outcome(ok, { ok, payload_length: normalizedPayload.length }, "import payload", true, runtime.envelope);
   },
 
-  "import.text_auto": (input) => {
+  "import.text_auto": (input, _command, origin) => {
     const text = typeof input.text === "string" ? input.text : "";
-    const renderer = typeof input.default_renderer === "string" && input.default_renderer !== ""
+    const default_renderer = typeof input.default_renderer === "string" && input.default_renderer !== ""
       ? input.default_renderer
       : undefined;
-    const raw = app.api.ffi_browser_demo_session_import_text_auto_result_json(app.session, text, renderer);
-    const result = pj(raw) ?? { raw };
+    const runtime = runRuntimeAction(
+      "import_text_auto_json",
+      text,
+      origin,
+      default_renderer ? { default_renderer } : {},
+    );
+    const result = objectResult(runtime.envelope?.result);
     app.importOutput = result;
-    return outcome(Boolean(result.ok), result, "import auto");
+    const ok = runtime.ok && Boolean(result.ok);
+    return outcome(ok, result, "import auto", true, runtime.envelope);
   },
 
-  "query.dependencies_of": (input) => {
+  "query.dependencies_of": (input, _command, origin) => {
     const cell_id = toInt(input.cell_id, -1);
+    const runtime = runRuntimeAction(
+      "dependencies_of_json",
+      { cell_id },
+      origin,
+    );
+    const result = Array.isArray(runtime.envelope?.result) ? runtime.envelope.result : [];
     app.queryOutput = {
       type: "dependencies_of",
       cell_id,
-      result: app.api.ffi_browser_demo_session_dependencies_of(app.session, cell_id),
+      result,
     };
-    return outcome(true, app.queryOutput, "query", false);
+    return outcome(runtime.ok, app.queryOutput, "query", false, runtime.envelope);
   },
 
-  "query.reverse_dependencies_of": (input) => {
+  "query.reverse_dependencies_of": (input, _command, origin) => {
     const cell_id = toInt(input.cell_id, -1);
+    const runtime = runRuntimeAction(
+      "reverse_dependencies_of_json",
+      { cell_id },
+      origin,
+    );
+    const result = Array.isArray(runtime.envelope?.result) ? runtime.envelope.result : [];
     app.queryOutput = {
       type: "reverse_dependencies_of",
       cell_id,
-      result: app.api.ffi_browser_demo_session_reverse_dependencies_of(app.session, cell_id),
+      result,
     };
-    return outcome(true, app.queryOutput, "query", false);
+    return outcome(runtime.ok, app.queryOutput, "query", false, runtime.envelope);
   },
 
-  "query.transitive_dependencies": (input) => {
+  "query.transitive_dependencies": (input, _command, origin) => {
     const roots = Array.isArray(input.roots) ? uniq(input.roots).filter((id) => id >= 0) : [];
     const exclude_roots = Boolean(input.exclude_roots);
+    const runtime = runRuntimeAction(
+      "transitive_dependencies_json",
+      { roots, exclude_roots },
+      origin,
+    );
+    const result = Array.isArray(runtime.envelope?.result) ? runtime.envelope.result : [];
     app.queryOutput = {
       type: "transitive_dependencies",
       roots,
       exclude_roots,
-      result: app.api.ffi_browser_demo_session_transitive_dependencies(app.session, roots, exclude_roots),
+      result,
     };
-    return outcome(true, app.queryOutput, "query", false);
+    return outcome(runtime.ok, app.queryOutput, "query", false, runtime.envelope);
   },
 
-  "query.connected_components": (input) => {
+  "query.connected_components": (input, _command, origin) => {
     const roots = Array.isArray(input.roots) ? uniq(input.roots).filter((id) => id >= 0) : [];
+    const runtime = runRuntimeAction(
+      "connected_components_json",
+      { roots },
+      origin,
+    );
+    const result = Array.isArray(runtime.envelope?.result) ? runtime.envelope.result : [];
     app.queryOutput = {
       type: "connected_components",
       roots,
-      result: app.api.ffi_browser_demo_session_connected_components(app.session, roots),
+      result,
     };
-    return outcome(true, app.queryOutput, "query", false);
+    return outcome(runtime.ok, app.queryOutput, "query", false, runtime.envelope);
   },
 
-  "render.tikz": () => {
+  "render.tikz": (_input, _command, origin) => {
+    const runtime = runRuntimeAction("render_tikz", undefined, origin);
     app.lastRenderKind = "tikz-cd";
-    app.lastRenderOutput = app.api.ffi_browser_demo_session_render_tikz(app.session);
-    return outcome(true, { length: app.lastRenderOutput.length }, "render", false);
+    app.lastRenderOutput = typeof runtime.envelope?.result === "string" ? runtime.envelope.result : "";
+    return outcome(runtime.ok, { length: app.lastRenderOutput.length }, "render", false, runtime.envelope);
   },
 
-  "render.fletcher": () => {
+  "render.fletcher": (_input, _command, origin) => {
+    const runtime = runRuntimeAction("render_fletcher", {}, origin);
     app.lastRenderKind = "fletcher";
-    app.lastRenderOutput = app.api.ffi_browser_demo_session_render_fletcher(app.session);
-    return outcome(true, { length: app.lastRenderOutput.length }, "render", false);
+    app.lastRenderOutput = typeof runtime.envelope?.result === "string" ? runtime.envelope.result : "";
+    return outcome(runtime.ok, { length: app.lastRenderOutput.length }, "render", false, runtime.envelope);
   },
 
-  "render.html_embed": () => {
+  "render.html_embed": (_input, _command, origin) => {
+    const runtime = runRuntimeAction("render_html_embed", {}, origin);
     app.lastRenderKind = "html-embed";
-    app.lastRenderOutput = app.api.ffi_browser_demo_session_render_html_embed(app.session);
-    return outcome(true, { length: app.lastRenderOutput.length }, "render", false);
+    app.lastRenderOutput = typeof runtime.envelope?.result === "string" ? runtime.envelope.result : "";
+    return outcome(runtime.ok, { length: app.lastRenderOutput.length }, "render", false, runtime.envelope);
+  },
+
+  "runtime.dispatch": (input, _command, origin) => {
+    const runtime = runRuntimeEnvelope(input, origin);
+    const action = typeof runtime.envelope?.action === "string" ? runtime.envelope.action : "unknown";
+    return outcome(
+      runtime.ok,
+      runtime.envelope ?? {},
+      runtime.ok ? `runtime ${action}` : `runtime ${action} failed`,
+      true,
+      runtime.envelope,
+    );
   },
 };
 
@@ -521,7 +688,7 @@ function dispatch(command, origin = "ui") {
   const t0 = performance.now();
   let res;
   try {
-    res = handler(command.input ?? {}, command);
+    res = handler(command.input ?? {}, command, origin);
   } catch (e) {
     res = outcome(false, { error: String(e) }, `failed: ${type}`);
   }
@@ -531,7 +698,7 @@ function dispatch(command, origin = "ui") {
     sync();
     if (res.ok) {
       if (type === "session.new") initUndo();
-      else if (MUTATING.has(type)) pushUndo();
+      else if (!applyRuntimeCheckpoints(type, res) && MUTATING.has(type)) pushUndo();
     }
   }
   status(res.ok ? `OK | ${type} (${dt}ms)` : `FAIL | ${type} (${dt}ms)`, !res.ok);
@@ -1224,7 +1391,18 @@ function bind() {
     if (raw === "") return status("Command JSON is empty.", true);
     const parsed = pj(raw);
     if (!parsed || typeof parsed !== "object") return status("Command JSON is invalid.", true);
-    dispatch(parsed, "inspector-json");
+    const type = typeof parsed.type === "string" ? parsed.type : "";
+    const action = typeof parsed.action === "string" ? parsed.action : "";
+    const isKnownUiType = type !== "" && Object.prototype.hasOwnProperty.call(HANDLERS, type);
+    if (isKnownUiType) {
+      dispatch(parsed, "inspector-json");
+      return;
+    }
+    if (action !== "" || type !== "") {
+      dispatch({ type: "runtime.dispatch", input: parsed }, "inspector-json");
+      return;
+    }
+    status("Command JSON needs a known UI `type` or runtime `action`.", true);
   });
 
   refs.btnClearHistory.addEventListener("click", () => {
