@@ -2993,6 +2993,41 @@ test "tikz-cd import parser still parses top-level arrow after braced label text
 }
 
 ///|
+test "tikz-cd import parser ignores arrow-like commands inside inline math labels" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "$\\arrow[r, \"fake\"]$ & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2]")
+  match tikz_test_find_edge_by_label(quiver, "fake") {
+    Some(_) => abort("expected no parsed edge from inline math label text")
+    None => inspect(true, content="true")
+  }
+}
+
+///|
+test "tikz-cd import parser still parses top-level arrow after inline math label text" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "$\\arrow[r]$ \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = Quiver::import_tikz_cd(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected top-level edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser ignores commands with arrow-prefixed names" {
   let input = [
     "\\begin{tikzcd}\n",

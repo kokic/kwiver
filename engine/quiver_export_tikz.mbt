@@ -3717,12 +3717,41 @@ fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
   let mut bracket_depth = 0
   let mut paren_depth = 0
   let mut in_quotes = false
+  let mut math_mode = 0
   let mut i = 0
   while i < input.length() {
     let ch = input.unsafe_get(i)
     let escaped = tikz_is_escaped_at(input, i)
     if ch == '"' && !escaped {
       in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if !in_quotes && ch == '$' && !escaped {
+      if math_mode == 0 {
+        if i + 1 < input.length() && input.unsafe_get(i + 1) == '$' {
+          math_mode = 2
+          i = i + 2
+        } else {
+          math_mode = 1
+          i = i + 1
+        }
+        continue
+      }
+      if math_mode == 1 {
+        math_mode = 0
+        i = i + 1
+        continue
+      }
+      if i + 1 < input.length() && input.unsafe_get(i + 1) == '$' {
+        math_mode = 0
+        i = i + 2
+        continue
+      }
+    }
+
+    if math_mode != 0 {
       i = i + 1
       continue
     }
