@@ -49,3 +49,4 @@ The page demonstrates an end-to-end UI loop for:
 - `Ctrl/Cmd+C` copy selection payload (system clipboard with local fallback)
 - `Ctrl/Cmd+X` cut selection
 - `Ctrl/Cmd+V` paste selection near current focus
+- group vertex drag is routed through runtime mutation-batch action (`apply_mutation_batch_json`) as a single checkpoint-aware command

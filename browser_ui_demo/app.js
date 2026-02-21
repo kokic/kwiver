@@ -30,6 +30,7 @@ const app = {
   api: null,
   session: null,
   commandSequence: 0,
+  runtimeCommandNonce: 0,
   operationCount: 0,
   lastCommand: null,
   lastResult: null,
@@ -238,7 +239,8 @@ function objectResult(value) {
 
 function nextCommandId(origin = "ui") {
   const prefix = typeof origin === "string" && origin !== "" ? origin : "ui";
-  return `${prefix}-${app.commandSequence + 1}-${app.operationCount + 1}`;
+  app.runtimeCommandNonce += 1;
+  return `${prefix}-${app.commandSequence + 1}-${app.operationCount + 1}-${app.runtimeCommandNonce}`;
 }
 
 function runRuntimeEnvelope(command, originOverride = null) {
@@ -415,19 +417,34 @@ const HANDLERS = {
     return outcome(ok, { ok, vertex_id, x, y }, ok ? "moved" : "move failed", true, runtime.envelope);
   },
 
-  "graph.move_vertices": (input) => {
+  "graph.move_vertices": (input, _command, origin) => {
     const rawMoves = Array.isArray(input.moves) ? input.moves : [];
-    const applied = [];
-    let allOk = rawMoves.length > 0;
+    const vertex_positions = [];
     for (const m of rawMoves) {
       const vertex_id = toInt(m?.vertex_id, -1);
       const x = toInt(m?.x, 0);
       const y = toInt(m?.y, 0);
-      const ok = app.api.ffi_browser_demo_session_move_vertex(app.session, vertex_id, x, y);
-      applied.push({ vertex_id, x, y, ok });
-      if (!ok) allOk = false;
+      vertex_positions.push({ vertex_id, x, y });
     }
-    return outcome(allOk, { applied, count: applied.length }, allOk ? "moved group" : "group move partial");
+    if (vertex_positions.length === 0) {
+      return outcome(false, { applied: [], count: 0 }, "group move empty", false);
+    }
+    const runtime = runRuntimeAction(
+      "apply_mutation_batch_json",
+      { vertex_positions },
+      origin,
+    );
+    const runtimeResult = objectResult(runtime.envelope?.result);
+    const rawResults = Array.isArray(runtimeResult.vertex_position_results)
+      ? runtimeResult.vertex_position_results
+      : [];
+    const applied = vertex_positions.map((move, idx) => ({
+      ...move,
+      ok: Boolean(rawResults[idx]),
+    }));
+    const allOk = applied.length > 0 && applied.every((item) => item.ok);
+    const ok = runtime.ok && allOk;
+    return outcome(ok, { applied, count: applied.length }, ok ? "moved group" : "group move partial", true, runtime.envelope);
   },
 
   "cell.set_label": (input, _command, origin) => {
@@ -465,17 +482,55 @@ const HANDLERS = {
     return outcome(runtime.ok, { selected_ids: normalized }, "selection", true, runtime.envelope);
   },
 
-  "selection.delete": () => {
+  "selection.delete": (_input, _command, origin) => {
     const selected = uniq(Array.isArray(app.stateObject.selection) ? app.stateObject.selection : [])
       .filter((id) => id >= 0)
       .sort((a, b) => b - a);
     if (selected.length === 0) return outcome(false, { removed_ids: [] }, "selection empty", false);
     const removed = new Set();
+    const applied = [];
+    let allOk = true;
+    let firstUndo = null;
+    let lastRedo = null;
     for (const id of selected) {
-      app.api.ffi_browser_demo_session_remove(app.session, id, 0).forEach((x) => removed.add(x));
+      const runtime = runRuntimeAction(
+        "remove_json",
+        { cell_id: id, when: 0 },
+        origin,
+      );
+      const runtimeResult = objectResult(runtime.envelope?.result);
+      const removedIds = Array.isArray(runtimeResult.removed_ids) ? runtimeResult.removed_ids : [];
+      removedIds.forEach((x) => removed.add(x));
+      applied.push({ cell_id: id, ok: runtime.ok, removed_ids: removedIds });
+      if (!runtime.ok) allOk = false;
+      if (runtime.envelope?.changed === true) {
+        if (firstUndo == null && typeof runtime.envelope.undo_checkpoint === "string") {
+          firstUndo = runtime.envelope.undo_checkpoint;
+        }
+        if (typeof runtime.envelope.redo_checkpoint === "string") {
+          lastRedo = runtime.envelope.redo_checkpoint;
+        }
+      }
     }
     const removed_ids = [...removed].sort((a, b) => a - b);
-    return outcome(removed_ids.length > 0, { selected_ids: selected, removed_ids }, removed_ids.length > 0 ? "deleted" : "nothing removed");
+    const changed = firstUndo !== null || lastRedo !== null;
+    const runtimeEnvelope = changed
+      ? {
+        ok: allOk,
+        action: "remove_json",
+        changed: true,
+        undo_checkpoint: firstUndo,
+        redo_checkpoint: lastRedo,
+      }
+      : null;
+    const ok = removed_ids.length > 0;
+    return outcome(
+      ok,
+      { selected_ids: selected, removed_ids, applied },
+      ok ? (allOk ? "deleted" : "delete partial") : "nothing removed",
+      true,
+      runtimeEnvelope,
+    );
   },
 
   "selection.export": (input, _command, origin) => {
