@@ -3,6 +3,7 @@ import { Colour, Encodable, Point, Position, mod } from "./ds.mjs";
 import { CONSTANTS } from "./arrow.mjs";
 import { Parser } from "./parser.mjs";
 import { Edge, Vertex } from "./ui.mjs";
+import { kwiver_bridge_export, kwiver_bridge_import_tikz_payload } from "./kwiver_bridge.mjs";
 
 /// A directed n-pseudograph, in which (k + 1)-cells can connect k-cells.
 export class Quiver {
@@ -230,6 +231,27 @@ export class Quiver {
     /// URL, and the dimensions of the diagram);
     /// `definitions` contains key-value pairs for macros and colours.
     export(format, settings, options, definitions) {
+        if (format === "tikz-cd" || format === "fletcher" || format === "html") {
+            const payload = QuiverImportExport.base64.export(
+                this,
+                settings,
+                options,
+                definitions,
+            ).data;
+            const bridged = kwiver_bridge_export(
+                format,
+                payload,
+                settings,
+                options,
+                definitions,
+            );
+            if (bridged !== null) {
+                return bridged;
+            }
+
+            throw new Error(`kwiver MoonBit bridge unavailable for export format \`${format}\``);
+        }
+
         switch (format) {
             case "tikz-cd":
                 return QuiverImportExport.tikz_cd.export(this, settings, options, definitions);
@@ -243,15 +265,21 @@ export class Quiver {
                 throw new Error(`unknown export format \`${format}\``);
         }
     }
-
     /// Return a `{ data, metadata }` object.
     /// Currently, the supported formats are:
     /// - "tikz-cd"
     /// `settings` describes persistent user settings (like whether to centre the diagram);
     import(ui, format, data, settings) {
         switch (format) {
-            case "tikz-cd":
-                return QuiverImportExport.tikz_cd.import(ui, data, settings);
+            case "tikz-cd": {
+                const bridged_payload = kwiver_bridge_import_tikz_payload(data, settings);
+                if (typeof bridged_payload === "string" && bridged_payload !== "") {
+                    QuiverImportExport.base64.import(ui, bridged_payload);
+                    return { diagnostics: [] };
+                }
+
+                throw new Error("kwiver MoonBit bridge unavailable for tikz-cd import");
+            }
             default:
                 throw new Error(`unknown export format \`${format}\``);
         }
