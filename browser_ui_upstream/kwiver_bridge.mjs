@@ -282,7 +282,7 @@ function dispatchCommandEnvelope(command) {
   }
 }
 
-function dispatchCommandResult(action, input, origin = "ui.bridge") {
+function dispatchCommandResult(action, input, origin = "ui.bridge", rootFields = null) {
   if (typeof action !== "string" || action === "") {
     return null;
   }
@@ -290,8 +290,39 @@ function dispatchCommandResult(action, input, origin = "ui.bridge") {
   if (input !== undefined) {
     command.input = input;
   }
+  if (rootFields && typeof rootFields === "object" && !Array.isArray(rootFields)) {
+    for (const [key, value] of Object.entries(rootFields)) {
+      if (
+        key === "action" ||
+        key === "origin" ||
+        key === "input" ||
+        key === "protocol" ||
+        key === "command_id"
+      ) {
+        continue;
+      }
+      command[key] = value;
+    }
+  }
   const envelope = dispatchCommandEnvelope(command);
   if (!envelope || envelope.ok !== true) {
+    return null;
+  }
+  return envelope;
+}
+
+function dispatchMutationResult(action, input, origin = "ui.bridge") {
+  const envelope = dispatchCommandResult(action, input, origin);
+  if (!envelope) {
+    return null;
+  }
+  const result = envelope.result;
+  if (
+    result
+    && typeof result === "object"
+    && Object.prototype.hasOwnProperty.call(result, "ok")
+    && result.ok !== true
+  ) {
     return null;
   }
   return envelope;
@@ -352,7 +383,7 @@ export function kwiver_bridge_export(format, payload, settings, options, definit
   switch (format) {
     case "tikz-cd": {
       const envelope = dispatchCommandResult(
-        "render_tikz_result_json",
+        "render_tikz_json",
         tikzInput(settings, options, definitions),
         "ui.bridge.export.tikz",
       );
@@ -399,11 +430,11 @@ export function kwiver_bridge_import_tikz_payload(input, settings) {
   const renderer = rendererFromSettings(settings, null);
   const envelope = dispatchCommandResult(
     "import_text_auto_json",
+    input,
+    "ui.bridge.import",
     {
-      input,
       default_renderer: renderer,
     },
-    "ui.bridge.import",
   );
   if (!envelope) {
     return null;
@@ -425,4 +456,104 @@ export function kwiver_bridge_all_cells() {
     return null;
   }
   return Array.isArray(envelope.result) ? envelope.result : null;
+}
+export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
+  return dispatchCommandResult("set_selection", selectedIds, origin);
+}
+
+export function kwiver_bridge_export_selection(
+  includeDependencies = true,
+  origin = "ui.bridge.selection",
+) {
+  const envelope = dispatchCommandResult(
+    "export_selection",
+    { include_dependencies: Boolean(includeDependencies) },
+    origin,
+  );
+  if (!envelope) {
+    return null;
+  }
+  return typeof envelope.result === "string" ? envelope.result : null;
+}
+
+export function kwiver_bridge_paste_selection_json(
+  payload,
+  originX,
+  originY,
+  startId = 1,
+  origin = "ui.bridge.paste",
+) {
+  if (typeof payload !== "string" || payload === "") {
+    return null;
+  }
+  return dispatchMutationResult("paste_selection_json", {
+    payload,
+    origin_x: asInt(originX, 0),
+    origin_y: asInt(originY, 0),
+    start_id: asInt(startId, 1),
+  }, origin);
+}
+
+export function kwiver_bridge_move_vertex_json(
+  vertexId,
+  x,
+  y,
+  origin = "ui.bridge.move",
+) {
+  if (!Number.isInteger(vertexId)) {
+    return null;
+  }
+  return dispatchMutationResult("move_vertex_json", {
+    vertex_id: vertexId,
+    x: asInt(x, 0),
+    y: asInt(y, 0),
+  }, origin);
+}
+
+export function kwiver_bridge_set_label_json(
+  cellId,
+  label,
+  origin = "ui.bridge.label",
+) {
+  if (!Number.isInteger(cellId) || typeof label !== "string") {
+    return null;
+  }
+  return dispatchMutationResult("set_label_json", {
+    cell_id: cellId,
+    label,
+  }, origin);
+}
+
+export function kwiver_bridge_reconnect_edge_json(
+  edgeId,
+  sourceId,
+  targetId,
+  origin = "ui.bridge.reconnect",
+) {
+  if (
+    !Number.isInteger(edgeId)
+    || !Number.isInteger(sourceId)
+    || !Number.isInteger(targetId)
+  ) {
+    return null;
+  }
+  return dispatchMutationResult("reconnect_edge_json", {
+    edge_id: edgeId,
+    source_id: sourceId,
+    target_id: targetId,
+  }, origin);
+}
+
+export function kwiver_bridge_remove_json(
+  cellId,
+  when,
+  origin = "ui.bridge.remove",
+) {
+  if (!Number.isInteger(cellId)) {
+    return null;
+  }
+  return dispatchMutationResult("remove_json", {
+    cell_id: cellId,
+    when: asInt(when, 0),
+  }, origin);
 }

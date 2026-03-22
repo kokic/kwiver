@@ -4,6 +4,18 @@ import { cancel, DOM, delay, pointer_event } from "./dom.mjs";
 import { Colour, Dimensions, Enum, Offset, Point, Position, clamp, deg_to_rad, mod, rad_to_deg, url_parameters } from "./ds.mjs";
 import { Parser } from "./parser.mjs";
 import { Quiver, QuiverImportExport } from "./quiver.mjs";
+import {
+    kwiver_bridge_all_cells,
+    kwiver_bridge_dispatch_command,
+    kwiver_bridge_export_selection,
+    kwiver_bridge_move_vertex_json,
+    kwiver_bridge_paste_selection_json,
+    kwiver_bridge_reconnect_edge_json,
+    kwiver_bridge_remove_json,
+    kwiver_bridge_set_label_json,
+    kwiver_bridge_set_selection,
+    kwiver_bridge_sync_payload,
+} from "./kwiver_bridge.mjs";
 
 /// Various parameters.
 Object.assign(CONSTANTS, {
@@ -734,6 +746,380 @@ class UI {
 
         // The user settings, which are stored persistently across sessions in `localStorage`.
         this.settings = new Settings();
+    }
+
+    kwiver_runtime_payload() {
+        return QuiverImportExport.base64.export_selection(
+            this.quiver,
+            new Set(this.quiver.all_cells()),
+        );
+    }
+
+    static kwiver_colour_components(colour) {
+        if (!colour || typeof colour.hsla !== "function") {
+            return null;
+        }
+        const hsla = colour.hsla();
+        if (!Array.isArray(hsla) || hsla.length < 4) {
+            return null;
+        }
+        return {
+            h: Number(hsla[0]),
+            s: Number(hsla[1]),
+            l: Number(hsla[2]),
+            a: Number(hsla[3]),
+        };
+    }
+
+    static kwiver_colour_equals(runtime_colour, js_colour) {
+        const components = UI.kwiver_colour_components(js_colour);
+        if (!runtime_colour || components === null) {
+            return false;
+        }
+        const epsilon = 1e-6;
+        return Number(runtime_colour.h) === components.h
+            && Number(runtime_colour.s) === components.s
+            && Number(runtime_colour.l) === components.l
+            && Math.abs(Number(runtime_colour.a) - components.a) <= epsilon;
+    }
+
+    static kwiver_edge_style_side(side) {
+        return typeof side === "string" ? side : "";
+    }
+
+    static kwiver_edge_styles_equal(runtime_style, js_style) {
+        if (!runtime_style || !js_style) {
+            return false;
+        }
+        return runtime_style.name === js_style.name
+            && runtime_style.tail?.name === js_style.tail?.name
+            && UI.kwiver_edge_style_side(runtime_style.tail?.side)
+                === UI.kwiver_edge_style_side(js_style.tail?.side)
+            && runtime_style.body?.name === js_style.body?.name
+            && UI.kwiver_edge_style_side(runtime_style.body?.side)
+                === UI.kwiver_edge_style_side(js_style.body?.side)
+            && runtime_style.head?.name === js_style.head?.name
+            && UI.kwiver_edge_style_side(runtime_style.head?.side)
+                === UI.kwiver_edge_style_side(js_style.head?.side);
+    }
+
+    static kwiver_runtime_edge_matches(runtime_edge, edge, source_id, target_id) {
+        if (!runtime_edge || runtime_edge.kind !== "edge") {
+            return false;
+        }
+        if (Number(runtime_edge.source_id) !== Number(source_id)
+            || Number(runtime_edge.target_id) !== Number(target_id)) {
+            return false;
+        }
+        if (runtime_edge.label !== edge.label || Number(runtime_edge.level) !== Number(edge.level)) {
+            return false;
+        }
+        if (!UI.kwiver_colour_equals(runtime_edge.label_colour, edge.label_colour)) {
+            return false;
+        }
+        const runtime_options = runtime_edge.options;
+        const edge_options = edge.options;
+        if (!runtime_options || !edge_options) {
+            return false;
+        }
+        return runtime_options.label_alignment === edge_options.label_alignment
+            && Number(runtime_options.label_position) === Number(edge_options.label_position)
+            && Number(runtime_options.offset) === Number(edge_options.offset)
+            && Number(runtime_options.curve) === Number(edge_options.curve)
+            && Number(runtime_options.radius) === Number(edge_options.radius)
+            && Number(runtime_options.angle) === Number(edge_options.angle)
+            && Number(runtime_options.shorten_source) === Number(edge_options.shorten.source)
+            && Number(runtime_options.shorten_target) === Number(edge_options.shorten.target)
+            && Number(runtime_options.level) === Number(edge_options.level)
+            && runtime_options.shape === edge_options.shape
+            && Boolean(runtime_options.edge_alignment_source)
+                === Boolean(edge_options.edge_alignment.source)
+            && Boolean(runtime_options.edge_alignment_target)
+                === Boolean(edge_options.edge_alignment.target)
+            && UI.kwiver_colour_equals(runtime_options.colour, edge_options.colour)
+            && UI.kwiver_edge_styles_equal(runtime_options.style, edge_options.style);
+    }
+
+    kwiver_clear_cell_ids() {
+        for (const cell of this.quiver.all_cells()) {
+            cell.kwiver_id = null;
+        }
+    }
+
+    kwiver_sync_cell_ids(payload = this.kwiver_runtime_payload()) {
+        if (typeof payload !== "string" || payload === "") {
+            this.kwiver_clear_cell_ids();
+            return null;
+        }
+        if (!kwiver_bridge_sync_payload(payload)) {
+            this.kwiver_clear_cell_ids();
+            return null;
+        }
+
+        const runtime_cells = kwiver_bridge_all_cells();
+        if (!Array.isArray(runtime_cells)) {
+            this.kwiver_clear_cell_ids();
+            return null;
+        }
+
+        const runtime_vertices = new Map();
+        const runtime_edges = [];
+        for (const runtime_cell of runtime_cells) {
+            if (!runtime_cell || typeof runtime_cell !== "object") {
+                this.kwiver_clear_cell_ids();
+                return null;
+            }
+            if (runtime_cell.kind === "vertex") {
+                const position_key = [Number(runtime_cell.x), Number(runtime_cell.y)].join(",");
+                if (runtime_vertices.has(position_key)) {
+                    this.kwiver_clear_cell_ids();
+                    return null;
+                }
+                runtime_vertices.set(position_key, runtime_cell);
+                continue;
+            }
+            if (runtime_cell.kind === "edge") {
+                runtime_edges.push(runtime_cell);
+                continue;
+            }
+            this.kwiver_clear_cell_ids();
+            return null;
+        }
+
+        const id_map = new Map();
+        for (const cell of this.quiver.all_cells()) {
+            if (!cell.is_vertex()) {
+                continue;
+            }
+            const position_key = [cell.position.x, cell.position.y].join(",");
+            const runtime_vertex = runtime_vertices.get(position_key);
+            if (!runtime_vertex) {
+                this.kwiver_clear_cell_ids();
+                return null;
+            }
+            if (runtime_vertex.label !== cell.label
+                || !UI.kwiver_colour_equals(runtime_vertex.label_colour, cell.label_colour)) {
+                this.kwiver_clear_cell_ids();
+                return null;
+            }
+            id_map.set(cell, runtime_vertex.id);
+        }
+
+        const consumed_edge_ids = new Set();
+        for (const cell of this.quiver.all_cells()) {
+            if (!cell.is_edge()) {
+                continue;
+            }
+            const source_id = id_map.get(cell.source);
+            const target_id = id_map.get(cell.target);
+            if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
+                this.kwiver_clear_cell_ids();
+                return null;
+            }
+
+            const candidates = runtime_edges.filter((runtime_edge) => {
+                if (consumed_edge_ids.has(runtime_edge.id)) {
+                    return false;
+                }
+                return UI.kwiver_runtime_edge_matches(runtime_edge, cell, source_id, target_id);
+            });
+
+            if (candidates.length !== 1) {
+                this.kwiver_clear_cell_ids();
+                return null;
+            }
+
+            const runtime_edge = candidates[0];
+            consumed_edge_ids.add(runtime_edge.id);
+            id_map.set(cell, runtime_edge.id);
+        }
+
+        this.kwiver_clear_cell_ids();
+        for (const [cell, id] of id_map.entries()) {
+            cell.kwiver_id = id;
+        }
+        return id_map;
+    }
+
+    kwiver_ensure_cell_ids() {
+        return this.kwiver_sync_cell_ids() !== null;
+    }
+
+    kwiver_cell_id(cell) {
+        if (cell && Number.isInteger(cell.kwiver_id)) {
+            return cell.kwiver_id;
+        }
+        if (this.kwiver_sync_cell_ids() === null) {
+            return null;
+        }
+        return cell && Number.isInteger(cell.kwiver_id) ? cell.kwiver_id : null;
+    }
+
+    kwiver_history_move(displacements, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return false;
+        }
+        let dispatched = false;
+        for (const displacement of displacements) {
+            const vertex_id = this.kwiver_cell_id(displacement.vertex);
+            const position = displacement[to];
+            if (!Number.isInteger(vertex_id) || !position) {
+                return false;
+            }
+            const envelope = kwiver_bridge_move_vertex_json(
+                vertex_id,
+                position.x,
+                position.y,
+                "ui.history.move",
+            );
+            if (!envelope) {
+                return false;
+            }
+            dispatched = true;
+        }
+        return dispatched;
+    }
+
+    kwiver_history_set_label(labels, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return false;
+        }
+        let dispatched = false;
+        for (const label of labels) {
+            const cell_id = this.kwiver_cell_id(label.cell);
+            if (!Number.isInteger(cell_id)) {
+                return false;
+            }
+            const envelope = kwiver_bridge_set_label_json(
+                cell_id,
+                label[to],
+                "ui.history.label",
+            );
+            if (!envelope) {
+                return false;
+            }
+            dispatched = true;
+        }
+        return dispatched;
+    }
+
+    kwiver_history_delete(cells, when) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return false;
+        }
+        let dispatched = false;
+        const ordered = Array.from(cells).sort((a, b) => b.level - a.level);
+        for (const cell of ordered) {
+            const cell_id = this.kwiver_cell_id(cell);
+            if (!Number.isInteger(cell_id)) {
+                continue;
+            }
+            const envelope = kwiver_bridge_remove_json(
+                cell_id,
+                when,
+                "ui.history.delete",
+            );
+            if (envelope) {
+                dispatched = true;
+            }
+        }
+        return dispatched;
+    }
+
+    kwiver_history_connect(action, to) {
+        if (!action || !action.edge) {
+            return false;
+        }
+        if (!this.kwiver_ensure_cell_ids()) {
+            return false;
+        }
+
+        const edge_id = this.kwiver_cell_id(action.edge);
+        if (!Number.isInteger(edge_id)) {
+            return false;
+        }
+
+        const source_cell = action.end === "source" ? action[to] : action.edge.source;
+        const target_cell = action.end === "target" ? action[to] : action.edge.target;
+        const source_id = this.kwiver_cell_id(source_cell);
+        const target_id = this.kwiver_cell_id(target_cell);
+        if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
+            return false;
+        }
+
+        return kwiver_bridge_reconnect_edge_json(
+            edge_id,
+            source_id,
+            target_id,
+            "ui.history.connect",
+        ) !== null;
+    }
+
+    copy_selection_with_kwiver() {
+        const selection = this.quiver.transitive_reverse_dependencies(this.selection);
+        const fallback_payload = QuiverImportExport.base64.export_selection(
+            this.quiver,
+            selection,
+        );
+
+        const id_map = this.kwiver_sync_cell_ids();
+        if (id_map === null) {
+            this.clipboard = fallback_payload;
+            return;
+        }
+
+        const selected_ids = [];
+        for (const cell of selection) {
+            const cell_id = id_map.get(cell);
+            if (!Number.isInteger(cell_id)) {
+                this.clipboard = fallback_payload;
+                return;
+            }
+            selected_ids.push(cell_id);
+        }
+
+        const set_selection = kwiver_bridge_set_selection(selected_ids, "ui.clipboard.copy");
+        if (!set_selection || set_selection.ok !== true) {
+            this.clipboard = fallback_payload;
+            return;
+        }
+
+        const exported = kwiver_bridge_export_selection(true, "ui.clipboard.copy");
+        if (typeof exported === "string" && exported !== "") {
+            this.clipboard = exported;
+            return;
+        }
+
+        this.clipboard = fallback_payload;
+    }
+
+    paste_selection_with_kwiver() {
+        let payload_to_import = this.clipboard;
+        const payload = this.kwiver_runtime_payload();
+        if (kwiver_bridge_sync_payload(payload)) {
+            const pasted = kwiver_bridge_paste_selection_json(
+                this.clipboard,
+                this.focus_position.x,
+                this.focus_position.y,
+                1,
+                "ui.clipboard.paste",
+            );
+            if (pasted) {
+                const exported = kwiver_bridge_export_selection(true, "ui.clipboard.paste");
+                if (typeof exported === "string" && exported !== "") {
+                    payload_to_import = exported;
+                }
+            }
+        }
+
+        const cells = new Set(QuiverImportExport.base64.import(
+            this,
+            payload_to_import,
+            this.focus_position,
+            false,
+        ));
+        this.history.add(this, [{ kind: "create", cells }]);
+        this.kwiver_sync_cell_ids();
     }
 
     /// Clear the current diagram. This also clears the history.
@@ -2355,10 +2741,7 @@ class UI {
             { key: "X", modifier: true }
         ], () => {
             if (this.in_mode(UIMode.Default, UIMode.Pan) && !this.input_is_active()) {
-                this.clipboard = QuiverImportExport.base64.export_selection(
-                    this.quiver,
-                    this.quiver.transitive_reverse_dependencies(this.selection),
-                );
+                this.copy_selection_with_kwiver();
             }
         });
 
@@ -2379,13 +2762,7 @@ class UI {
                     return;
                 }
                 try {
-                    const cells = new Set(QuiverImportExport.base64.import(
-                        this,
-                        this.clipboard,
-                        this.focus_position,
-                        false,
-                    ));
-                    this.history.add(this, [{ kind: "create", cells }]);
+                    this.paste_selection_with_kwiver();
                 } catch (_) {
                     const centre_offset = this.cell_centre_at_position(this.focus_position);
                     const offset = this.offset_from_position(this.focus_position);
@@ -3633,6 +4010,7 @@ class History {
             const cells = new Set();
             switch (kind) {
                 case "move":
+                    ui.kwiver_history_move(action.displacements, to);
                     // We perform these loops in sequence as cells may move
                     // directly into positions that have just been unoccupied.
                     for (const displacement of action.displacements) {
@@ -3664,12 +4042,14 @@ class History {
                     update_panel = true;
                     break;
                 case "delete":
+                    ui.kwiver_history_delete(action.cells, this.present);
                     for (const cell of action.cells) {
                         ui.remove_cell(cell, this.present);
                     }
                     update_panel = true;
                     break;
                 case "label":
+                    ui.kwiver_history_set_label(action.labels, to);
                     for (const label of action.labels) {
                         label.cell.label = label[to];
                         ui.panel.render_maths(ui, label.cell);
@@ -3785,6 +4165,7 @@ class History {
                     update_panel = true;
                     break;
                 case "connect":
+                    ui.kwiver_history_connect(action, to);
                     const [source, target] = {
                         source: [action[to], action.edge.target],
                         target: [action.edge.source, action[to]],
@@ -7415,6 +7796,9 @@ class Cell {
         // The colour of the label (hue, saturation, lightness, alpha).
         this.label_colour = label_colour;
 
+        // The ID of this cell in kwiver runtime state (when synced).
+        this.kwiver_id = null;
+
         // An ID used to allow the user to jump to this cell via the keyboard.
         this.code = "";
         const chars = "ASDFJKLGHEIRUCM".split("");
@@ -8286,7 +8670,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 // Decode the diagram.
-                QuiverImportExport.base64.import(ui, query_data.get("q"));
+                let payload = query_data.get("q");
+                if (typeof payload === "string" && payload !== "" && kwiver_bridge_sync_payload(payload)) {
+                    const canonical_payload = kwiver_bridge_dispatch_command({
+                        action: "export_payload",
+                        origin: "ui.bootstrap.query",
+                    });
+                    if (typeof canonical_payload?.result === "string" && canonical_payload.result !== "") {
+                        payload = canonical_payload.result;
+                    }
+                }
+                QuiverImportExport.base64.import(ui, payload);
                 // If there is a `macro_url`, load the macros from it.
                 if (query_data.has("macro_url")) {
                     ui.load_macros_from_url(decodeURIComponent(query_data.get("macro_url")));
