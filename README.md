@@ -23,11 +23,11 @@ It now includes an editor-shell layout, a unified JS command dispatch pipeline, 
 `browser_demo` also now exposes a stable command-envelope checkpoint API (`ffi_browser_demo_session_dispatch_command_json`) for production JS shells to route commands and manage undo/redo checkpoints with deterministic payload snapshots.
 
 ```sh
-moon build
-python -m http.server 8080
+moon build --release
+miniserve ./browser_ui_upstream
 ```
 
-Open `http://localhost:8080/browser_ui_demo/`.
+Open `http://localhost:8080/`.
 
 ## Tokei
 
