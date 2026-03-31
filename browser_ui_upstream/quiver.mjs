@@ -231,36 +231,22 @@ export class Quiver {
     /// URL, and the dimensions of the diagram);
     /// `definitions` contains key-value pairs for macros and colours.
     export(format, settings, options, definitions) {
-        if (format === "tikz-cd" || format === "fletcher" || format === "html") {
-            const payload = QuiverImportExport.base64.export(
-                this,
-                settings,
-                options,
-                definitions,
-            ).data;
-            const bridged = kwiver_bridge_export(
-                format,
-                payload,
-                settings,
-                options,
-                definitions,
-            );
-            if (bridged !== null) {
-                return bridged;
-            }
-
-            throw new Error(`kwiver MoonBit bridge unavailable for export format \`${format}\``);
-        }
-
         switch (format) {
             case "tikz-cd":
-                return QuiverImportExport.tikz_cd.export(this, settings, options, definitions);
             case "fletcher":
-                return QuiverExport.fletcher.export(this, settings, options, definitions);
             case "base64":
-                return QuiverImportExport.base64.export(this, settings, options, definitions);
             case "html":
-                return QuiverExport.html.export(this, settings, options, definitions);
+                const bridged = kwiver_bridge_export(
+                    format,
+                    settings,
+                    options,
+                    definitions,
+                );
+                if (bridged !== null) {
+                    return bridged;
+                }
+
+                throw new Error(`kwiver MoonBit bridge unavailable for export format \`${format}\``);
             default:
                 throw new Error(`unknown export format \`${format}\``);
         }

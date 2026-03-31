@@ -5,18 +5,41 @@ import { Colour, Dimensions, Enum, Offset, Point, Position, clamp, deg_to_rad, m
 import { Parser } from "./parser.mjs";
 import { Quiver, QuiverImportExport } from "./quiver.mjs";
 import {
+    KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
+    kwiver_bridge_unavailable_error,
+} from "./bridge_startup.mjs";
+import {
+    kwiver_bridge_all_cell_ids,
     kwiver_bridge_all_cells,
-    kwiver_bridge_dispatch_command,
+    kwiver_bridge_connected_components,
+    kwiver_bridge_dependencies,
+    kwiver_bridge_import_payload_json,
+    kwiver_bridge_ready,
+    kwiver_bridge_status,
+    kwiver_bridge_export_payload,
+    kwiver_bridge_reset,
     kwiver_bridge_export_selection,
+    kwiver_bridge_add_vertex_json,
+    kwiver_bridge_add_edge_json,
+    kwiver_bridge_flip_edge_json,
+    kwiver_bridge_flip_edge_labels_json,
     kwiver_bridge_move_vertex_json,
+    kwiver_bridge_patch_edge_options_json,
     kwiver_bridge_paste_selection_json,
     kwiver_bridge_reconnect_edge_json,
     kwiver_bridge_remove_json,
+    kwiver_bridge_reverse_edge_json,
+    kwiver_bridge_reverse_dependencies,
+    kwiver_bridge_set_edge_curve_json,
+    kwiver_bridge_set_edge_label_alignment_json,
+    kwiver_bridge_set_edge_label_position_json,
+    kwiver_bridge_set_edge_offset_json,
+    kwiver_bridge_set_label_colour_json,
     kwiver_bridge_set_label_json,
     kwiver_bridge_set_selection,
-    kwiver_bridge_sync_payload,
+    kwiver_bridge_transitive_dependencies,
+    kwiver_bridge_transitive_reverse_dependencies,
 } from "./kwiver_bridge.mjs";
-
 /// Various parameters.
 Object.assign(CONSTANTS, {
     /// The current quiver version.
@@ -158,7 +181,12 @@ UIMode.Connect = class extends UIMode {
             this.arrow = null;
         } else {
             this.reconnect.edge.element.class_list.remove("reconnecting");
-            for (const cell of ui.quiver.transitive_dependencies([this.reconnect.edge])) {
+            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                [this.reconnect.edge],
+                false,
+                "ui.connect.release.dependencies",
+            );
+            for (const cell of dependencies_to_render) {
                 cell.render(ui);
             }
             this.reconnect = null;
@@ -211,7 +239,12 @@ UIMode.Connect = class extends UIMode {
             this.loop = this.reconnect.edge.is_loop();
 
             this.reconnect.edge.render(ui, offset);
-            for (const cell of ui.quiver.transitive_dependencies([this.reconnect.edge], true)) {
+            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                [this.reconnect.edge],
+                true,
+                "ui.connect.update.dependencies",
+            );
+            for (const cell of dependencies_to_render) {
                 cell.render(ui);
             }
         }
@@ -260,7 +293,12 @@ UIMode.Connect = class extends UIMode {
             let exceeded_max_level = false;
 
             const update_levels = () => {
-                for (const cell of ui.quiver.transitive_dependencies([reconnect.edge], true)) {
+                const dependencies = ui.kwiver_require_runtime_transitive_dependency_cells(
+                    [reconnect.edge],
+                    true,
+                    "ui.connect.valid_connection.dependencies",
+                );
+                for (const cell of dependencies) {
                     if (target === cell) {
                         // We shouldn't be able to connect to an edge that's connected to this one.
                         exceeded_max_level = true;
@@ -287,8 +325,15 @@ UIMode.Connect = class extends UIMode {
 
     /// Creates a new edge.
     static create_edge(ui, source, target) {
-        // The edge itself does all the set up, such as adding itself to the page.
-        return new Edge(ui, "", source, target, this.suggested_edge_options(ui, source, target));
+        const suggested_options = this.suggested_edge_options(ui, source, target);
+        return ui.kwiver_create_edge(
+            source,
+            target,
+            "",
+            suggested_options,
+            Colour.black(),
+            "ui.create.edge",
+        );
     }
 
     /// Returns the suggested default options for an edge, e.g. automatically offsetting to reducing
@@ -387,8 +432,14 @@ UIMode.Connect = class extends UIMode {
                 balance += tip;
             };
 
-            const source_dependencies = ui.quiver.dependencies_of(source);
-            const target_dependencies = ui.quiver.dependencies_of(target);
+            const source_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
+                source,
+                "ui.connect.suggested_edge_options.source_dependencies",
+            );
+            const target_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
+                target,
+                "ui.connect.suggested_edge_options.target_dependencies",
+            );
             for (const [edge, relationship] of source_dependencies) {
                 // We consider each edge whose source or target is the source of the new edge.
                 consider(conserve({
@@ -446,7 +497,11 @@ UIMode.Connect = class extends UIMode {
             // We try to place new loops at a new angle, if possible, to reducing overlap with
             // existing loops.
             const angles = new Map();
-            for (const [loop,] of Array.from(ui.quiver.dependencies_of(source))
+            const loop_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
+                source,
+                "ui.connect.suggested_edge_options.loop_dependencies",
+            );
+            for (const [loop,] of Array.from(loop_dependencies)
                 .filter(([edge,]) => edge.is_loop()))
             {
                 const angle = mod(
@@ -502,18 +557,14 @@ UIMode.Connect = class extends UIMode {
         } else {
             // Reconnect an existing edge.
             const { edge, end } = this.reconnect;
-            // We might be reconnecting an edge by its source, in which case, we need to switch
-            // the traditional order of `source` and `target`, because the "source" will actually
-            // be the target and vice versa.
-            // Generally, the fixed end is always `this.source`, even if it isn't actually the
-            // edge's source. This makes the interaction behaviour simpler elsewhere, because
-            // one can always assume that `mode.target` is the possibly-null, moving endpoint
-            // that is the one of interest.
-            const [source, target] = {
-                source: [this.target, this.source],
-                target: [this.source, this.target],
-            }[end];
-            edge.reconnect(ui, source, target);
+
+            const connect_action = {
+                edge,
+                end,
+                from: edge[end],
+                to: this.target,
+            };
+            ui.kwiver_apply_connect_action(connect_action, "to", "ui.connect");
             return edge;
         }
     }
@@ -749,10 +800,11 @@ class UI {
     }
 
     kwiver_runtime_payload() {
-        return QuiverImportExport.base64.export_selection(
-            this.quiver,
-            new Set(this.quiver.all_cells()),
-        );
+        const payload = kwiver_bridge_export_payload("ui.runtime.payload");
+        if (typeof payload !== "string") {
+            throw new Error("[kwiver-only] ui.runtime.payload: export_payload failed");
+        }
+        return payload;
     }
 
     static kwiver_colour_components(colour) {
@@ -771,6 +823,38 @@ class UI {
         };
     }
 
+    static kwiver_colour_to_json(colour) {
+        const components = UI.kwiver_colour_components(colour);
+        if (components === null) {
+            return null;
+        }
+        return {
+            h: Math.round(components.h),
+            s: Math.round(components.s),
+            l: Math.round(components.l),
+            a: Number(components.a),
+        };
+    }
+
+    static kwiver_colour_from_runtime(runtime_colour) {
+        if (!runtime_colour || typeof runtime_colour !== "object") {
+            return null;
+        }
+        const h = Number(runtime_colour.h);
+        const s = Number(runtime_colour.s);
+        const l = Number(runtime_colour.l);
+        const a = Number(runtime_colour.a);
+        if (
+            !Number.isFinite(h)
+            || !Number.isFinite(s)
+            || !Number.isFinite(l)
+            || !Number.isFinite(a)
+        ) {
+            return null;
+        }
+        return new Colour(Math.round(h), Math.round(s), Math.round(l), a);
+    }
+
     static kwiver_colour_equals(runtime_colour, js_colour) {
         const components = UI.kwiver_colour_components(js_colour);
         if (!runtime_colour || components === null) {
@@ -785,6 +869,153 @@ class UI {
 
     static kwiver_edge_style_side(side) {
         return typeof side === "string" ? side : "";
+    }
+
+    static kwiver_style_endpoint_from_runtime(runtime_endpoint, fallback_endpoint = null) {
+        const name = typeof runtime_endpoint?.name === "string"
+            ? runtime_endpoint.name
+            : typeof fallback_endpoint?.name === "string"
+                ? fallback_endpoint.name
+                : "none";
+        const side = typeof runtime_endpoint?.side === "string"
+            ? runtime_endpoint.side
+            : typeof fallback_endpoint?.side === "string"
+                ? fallback_endpoint.side
+                : "";
+        return { name, side };
+    }
+
+    static kwiver_style_from_runtime(runtime_style, fallback_style = null) {
+        if (!runtime_style || typeof runtime_style !== "object") {
+            return null;
+        }
+        const name = typeof runtime_style.name === "string"
+            ? runtime_style.name
+            : typeof fallback_style?.name === "string"
+                ? fallback_style.name
+                : "arrow";
+        return {
+            name,
+            tail: UI.kwiver_style_endpoint_from_runtime(runtime_style.tail, fallback_style?.tail),
+            body: UI.kwiver_style_endpoint_from_runtime(runtime_style.body, fallback_style?.body),
+            head: UI.kwiver_style_endpoint_from_runtime(runtime_style.head, fallback_style?.head),
+        };
+    }
+
+    static kwiver_style_patch_from_js(style) {
+        if (!style || typeof style !== "object") {
+            return null;
+        }
+
+        const endpoint_patch = (endpoint) => {
+            if (!endpoint || typeof endpoint !== "object") {
+                return null;
+            }
+            const patch = {};
+            if (typeof endpoint.name === "string") {
+                patch.name = endpoint.name;
+            }
+            if (typeof endpoint.side === "string") {
+                patch.side = endpoint.side;
+            }
+            return Object.keys(patch).length > 0 ? patch : null;
+        };
+
+        const patch = {};
+        if (typeof style.name === "string") {
+            patch.name = style.name;
+        }
+        const tail = endpoint_patch(style.tail);
+        if (tail !== null) {
+            patch.tail = tail;
+        }
+        const body = endpoint_patch(style.body);
+        if (body !== null) {
+            patch.body = body;
+        }
+        const head = endpoint_patch(style.head);
+        if (head !== null) {
+            patch.head = head;
+        }
+
+        return Object.keys(patch).length > 0 ? patch : null;
+    }
+
+    static kwiver_style_to_json(style) {
+        const normalized = UI.kwiver_style_from_runtime(style, style);
+        if (normalized === null) {
+            return null;
+        }
+        return {
+            name: normalized.name,
+            tail: {
+                name: normalized.tail?.name ?? "none",
+                side: UI.kwiver_edge_style_side(normalized.tail?.side),
+            },
+            body: {
+                name: normalized.body?.name ?? "cell",
+                side: UI.kwiver_edge_style_side(normalized.body?.side),
+            },
+            head: {
+                name: normalized.head?.name ?? "arrowhead",
+                side: UI.kwiver_edge_style_side(normalized.head?.side),
+            },
+        };
+    }
+
+    static kwiver_edge_options_to_json(options) {
+        if (!options || typeof options !== "object") {
+            return null;
+        }
+
+        const label_alignment = typeof options.label_alignment === "string"
+            ? options.label_alignment
+            : "left";
+        const label_position = Number(options.label_position);
+        const offset = Number(options.offset);
+        const curve = Number(options.curve);
+        const radius = Number(options.radius);
+        const angle = Number(options.angle);
+        const shorten_source = Number(options.shorten?.source);
+        const shorten_target = Number(options.shorten?.target);
+        const level = Number(options.level);
+        const shape = options.shape === "arc" ? "arc" : "bezier";
+        const edge_alignment_source = Boolean(options.edge_alignment?.source);
+        const edge_alignment_target = Boolean(options.edge_alignment?.target);
+        const colour = UI.kwiver_colour_to_json(options.colour);
+        const style = UI.kwiver_style_to_json(options.style);
+
+        if (
+            !Number.isInteger(label_position)
+            || !Number.isInteger(offset)
+            || !Number.isInteger(curve)
+            || !Number.isInteger(radius)
+            || !Number.isInteger(angle)
+            || !Number.isInteger(shorten_source)
+            || !Number.isInteger(shorten_target)
+            || !Number.isInteger(level)
+            || colour === null
+            || style === null
+        ) {
+            return null;
+        }
+
+        return {
+            label_alignment,
+            label_position,
+            offset,
+            curve,
+            radius,
+            angle,
+            shorten_source,
+            shorten_target,
+            level,
+            shape,
+            colour,
+            edge_alignment_source,
+            edge_alignment_target,
+            style,
+        };
     }
 
     static kwiver_edge_styles_equal(runtime_style, js_style) {
@@ -846,34 +1077,27 @@ class UI {
         }
     }
 
-    kwiver_sync_cell_ids(payload = this.kwiver_runtime_payload()) {
-        if (typeof payload !== "string" || payload === "") {
+    kwiver_sync_cell_ids() {
+        const kwiver_sync_fail = (detail) => {
             this.kwiver_clear_cell_ids();
-            return null;
-        }
-        if (!kwiver_bridge_sync_payload(payload)) {
-            this.kwiver_clear_cell_ids();
-            return null;
-        }
+            throw new Error("[kwiver-only] sync_cell_ids: " + detail);
+        };
 
         const runtime_cells = kwiver_bridge_all_cells();
         if (!Array.isArray(runtime_cells)) {
-            this.kwiver_clear_cell_ids();
-            return null;
+            kwiver_sync_fail("runtime snapshot unavailable");
         }
 
         const runtime_vertices = new Map();
         const runtime_edges = [];
         for (const runtime_cell of runtime_cells) {
             if (!runtime_cell || typeof runtime_cell !== "object") {
-                this.kwiver_clear_cell_ids();
-                return null;
+                kwiver_sync_fail("invalid runtime cell payload");
             }
             if (runtime_cell.kind === "vertex") {
                 const position_key = [Number(runtime_cell.x), Number(runtime_cell.y)].join(",");
                 if (runtime_vertices.has(position_key)) {
-                    this.kwiver_clear_cell_ids();
-                    return null;
+                    kwiver_sync_fail("duplicate runtime vertex position");
                 }
                 runtime_vertices.set(position_key, runtime_cell);
                 continue;
@@ -882,8 +1106,7 @@ class UI {
                 runtime_edges.push(runtime_cell);
                 continue;
             }
-            this.kwiver_clear_cell_ids();
-            return null;
+            kwiver_sync_fail("unknown runtime cell kind");
         }
 
         const id_map = new Map();
@@ -894,13 +1117,11 @@ class UI {
             const position_key = [cell.position.x, cell.position.y].join(",");
             const runtime_vertex = runtime_vertices.get(position_key);
             if (!runtime_vertex) {
-                this.kwiver_clear_cell_ids();
-                return null;
+                kwiver_sync_fail("missing runtime vertex for JS position");
             }
             if (runtime_vertex.label !== cell.label
                 || !UI.kwiver_colour_equals(runtime_vertex.label_colour, cell.label_colour)) {
-                this.kwiver_clear_cell_ids();
-                return null;
+                kwiver_sync_fail("runtime vertex mismatch");
             }
             id_map.set(cell, runtime_vertex.id);
         }
@@ -913,8 +1134,7 @@ class UI {
             const source_id = id_map.get(cell.source);
             const target_id = id_map.get(cell.target);
             if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
-                this.kwiver_clear_cell_ids();
-                return null;
+                kwiver_sync_fail("missing endpoint ids for JS edge");
             }
 
             const candidates = runtime_edges.filter((runtime_edge) => {
@@ -925,8 +1145,7 @@ class UI {
             });
 
             if (candidates.length !== 1) {
-                this.kwiver_clear_cell_ids();
-                return null;
+                kwiver_sync_fail("runtime edge mapping is ambiguous");
             }
 
             const runtime_edge = candidates[0];
@@ -942,29 +1161,623 @@ class UI {
     }
 
     kwiver_ensure_cell_ids() {
-        return this.kwiver_sync_cell_ids() !== null;
+        this.kwiver_sync_cell_ids();
+        return true;
     }
 
     kwiver_cell_id(cell) {
         if (cell && Number.isInteger(cell.kwiver_id)) {
             return cell.kwiver_id;
         }
-        if (this.kwiver_sync_cell_ids() === null) {
+        this.kwiver_sync_cell_ids();
+        return cell && Number.isInteger(cell.kwiver_id) ? cell.kwiver_id : null;
+    }
+
+    kwiver_runtime_cells_by_id() {
+        const runtime_cells = kwiver_bridge_all_cells();
+        if (!Array.isArray(runtime_cells)) {
             return null;
         }
-        return cell && Number.isInteger(cell.kwiver_id) ? cell.kwiver_id : null;
+
+        const runtime_by_id = new Map();
+        for (const runtime_cell of runtime_cells) {
+            if (!runtime_cell || typeof runtime_cell !== "object") {
+                return null;
+            }
+            const cell_id = Number(runtime_cell.id);
+            if (!Number.isInteger(cell_id) || runtime_by_id.has(cell_id)) {
+                return null;
+            }
+            runtime_by_id.set(cell_id, runtime_cell);
+        }
+        return runtime_by_id;
+    }
+
+    kwiver_js_cells_by_id() {
+        const js_by_id = new Map();
+        for (const cell of this.quiver.all_cells()) {
+            if (Number.isInteger(cell.kwiver_id)) {
+                js_by_id.set(cell.kwiver_id, cell);
+            }
+        }
+        return js_by_id;
+    }
+
+    kwiver_sync_runtime_selection_from_ui(origin = "ui.history.selection") {
+        const selected_ids = [];
+        for (const cell of this.selection) {
+            if (!Number.isInteger(cell.kwiver_id)) {
+                return false;
+            }
+            selected_ids.push(cell.kwiver_id);
+        }
+
+        const envelope = kwiver_bridge_set_selection(selected_ids, origin);
+        return envelope !== null && envelope.ok === true;
+    }
+
+    kwiver_apply_runtime_selection(selected_ids) {
+        if (!Array.isArray(selected_ids)) {
+            return false;
+        }
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const next_selection = [];
+        for (const raw_id of selected_ids) {
+            const cell_id = Number(raw_id);
+            if (!Number.isInteger(cell_id)) {
+                continue;
+            }
+            const cell = js_by_id.get(cell_id);
+            if (cell) {
+                next_selection.push(cell);
+            }
+        }
+
+        this.deselect();
+        if (next_selection.length > 0) {
+            this.select(...next_selection);
+        }
+        return true;
+    }
+
+    kwiver_selected_ids() {
+        this.kwiver_sync_cell_ids();
+        const selected_ids = [];
+        for (const cell of this.selection) {
+            if (!Number.isInteger(cell.kwiver_id)) {
+                return null;
+            }
+            selected_ids.push(cell.kwiver_id);
+        }
+        return selected_ids;
+    }
+
+    kwiver_cell_ids_from_cells(cells) {
+        if (!(cells instanceof Set) && !Array.isArray(cells)) {
+            return null;
+        }
+        this.kwiver_sync_cell_ids();
+        const cell_ids = [];
+        for (const cell of cells) {
+            if (!Number.isInteger(cell?.kwiver_id)) {
+                return null;
+            }
+            cell_ids.push(cell.kwiver_id);
+        }
+        return cell_ids;
+    }
+
+    kwiver_cells_from_runtime_ids(runtime_ids) {
+        if (!Array.isArray(runtime_ids)) {
+            return null;
+        }
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const cells = new Set();
+        for (const raw_id of runtime_ids) {
+            const cell_id = Number(raw_id);
+            if (!Number.isInteger(cell_id)) {
+                return null;
+            }
+            const cell = js_by_id.get(cell_id);
+            if (!cell) {
+                return null;
+            }
+            cells.add(cell);
+        }
+        return cells;
+    }
+
+    kwiver_runtime_all_cell_ids(origin = "ui.runtime.all_cell_ids") {
+        const runtime_ids = kwiver_bridge_all_cell_ids(origin);
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_connected_component_ids(
+        roots,
+        origin = "ui.runtime.connected_components",
+    ) {
+        if (!Array.isArray(roots)) {
+            return null;
+        }
+        const runtime_ids = kwiver_bridge_connected_components(roots, origin);
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_dependency_ids(
+        cell_id,
+        origin = "ui.runtime.dependencies",
+    ) {
+        if (!Number.isInteger(cell_id)) {
+            return null;
+        }
+        const runtime_ids = kwiver_bridge_dependencies(cell_id, origin);
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_dependency_cells(
+        cell,
+        origin = "ui.runtime.dependencies",
+    ) {
+        const cell_id = this.kwiver_cell_id(cell);
+        if (!Number.isInteger(cell_id)) {
+            return null;
+        }
+        const runtime_ids = this.kwiver_runtime_dependency_ids(
+            cell_id,
+            origin,
+        );
+        if (!Array.isArray(runtime_ids)) {
+            return null;
+        }
+        return this.kwiver_cells_from_runtime_ids(runtime_ids);
+    }
+
+    kwiver_runtime_dependencies_with_relationship(
+        cell,
+        origin = "ui.runtime.dependencies",
+    ) {
+        const dependencies = this.kwiver_runtime_dependency_cells(cell, origin);
+        if (!(dependencies instanceof Set)) {
+            return null;
+        }
+        const dependencies_with_relationship = new Map();
+        for (const dependency of dependencies) {
+            if (dependency.source === cell) {
+                dependencies_with_relationship.set(dependency, "source");
+            } else if (dependency.target === cell) {
+                dependencies_with_relationship.set(dependency, "target");
+            } else {
+                return null;
+            }
+        }
+        return dependencies_with_relationship;
+    }
+
+    kwiver_runtime_transitive_dependency_ids(
+        roots,
+        exclude_roots = false,
+        origin = "ui.runtime.transitive_dependencies",
+    ) {
+        if (!Array.isArray(roots)) {
+            return null;
+        }
+        const runtime_ids = kwiver_bridge_transitive_dependencies(
+            roots,
+            exclude_roots,
+            origin,
+        );
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_transitive_reverse_dependency_ids(
+        roots,
+        origin = "ui.runtime.transitive_reverse_dependencies",
+    ) {
+        if (!Array.isArray(roots)) {
+            return null;
+        }
+        const runtime_ids = kwiver_bridge_transitive_reverse_dependencies(
+            roots,
+            origin,
+        );
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_transitive_dependency_cells(
+        roots_cells,
+        exclude_roots = false,
+        origin = "ui.runtime.transitive_dependencies",
+    ) {
+        const root_ids = this.kwiver_cell_ids_from_cells(roots_cells);
+        if (!Array.isArray(root_ids)) {
+            return null;
+        }
+        const runtime_ids = this.kwiver_runtime_transitive_dependency_ids(
+            root_ids,
+            exclude_roots,
+            origin,
+        );
+        if (!Array.isArray(runtime_ids)) {
+            return null;
+        }
+        return this.kwiver_cells_from_runtime_ids(runtime_ids);
+    }
+
+    kwiver_runtime_transitive_reverse_dependency_cells(
+        roots_cells,
+        origin = "ui.runtime.transitive_reverse_dependencies",
+    ) {
+        const root_ids = this.kwiver_cell_ids_from_cells(roots_cells);
+        if (!Array.isArray(root_ids)) {
+            return null;
+        }
+        const runtime_ids = this.kwiver_runtime_transitive_reverse_dependency_ids(
+            root_ids,
+            origin,
+        );
+        if (!Array.isArray(runtime_ids)) {
+            return null;
+        }
+        return this.kwiver_cells_from_runtime_ids(runtime_ids);
+    }
+
+    kwiver_runtime_reverse_dependency_ids(
+        cell_id,
+        origin = "ui.runtime.reverse_dependencies",
+    ) {
+        if (!Number.isInteger(cell_id)) {
+            return null;
+        }
+        const runtime_ids = kwiver_bridge_reverse_dependencies(cell_id, origin);
+        return Array.isArray(runtime_ids) ? runtime_ids : null;
+    }
+
+    kwiver_runtime_reverse_dependency_cells(
+        cell,
+        origin = "ui.runtime.reverse_dependencies",
+    ) {
+        const cell_id = this.kwiver_cell_id(cell);
+        if (!Number.isInteger(cell_id)) {
+            return null;
+        }
+        const runtime_ids = this.kwiver_runtime_reverse_dependency_ids(
+            cell_id,
+            origin,
+        );
+        if (!Array.isArray(runtime_ids)) {
+            return null;
+        }
+        return this.kwiver_cells_from_runtime_ids(runtime_ids);
+    }
+
+    kwiver_require_runtime_dependency_cells(
+        cell,
+        origin = "ui.runtime.dependencies",
+    ) {
+        const dependencies = this.kwiver_runtime_dependency_cells(cell, origin);
+        if (!(dependencies instanceof Set)) {
+            throw new Error("[kwiver-only] " + origin + ": dependencies_of_json failed");
+        }
+        return dependencies;
+    }
+
+    kwiver_require_runtime_dependencies_with_relationship(
+        cell,
+        origin = "ui.runtime.dependencies",
+    ) {
+        const dependencies = this.kwiver_runtime_dependencies_with_relationship(cell, origin);
+        if (!(dependencies instanceof Map)) {
+            throw new Error("[kwiver-only] " + origin + ": dependency relationship mapping failed");
+        }
+        return dependencies;
+    }
+
+    kwiver_require_runtime_transitive_dependency_cells(
+        roots_cells,
+        exclude_roots = false,
+        origin = "ui.runtime.transitive_dependencies",
+    ) {
+        const dependencies = this.kwiver_runtime_transitive_dependency_cells(
+            roots_cells,
+            exclude_roots,
+            origin,
+        );
+        if (!(dependencies instanceof Set)) {
+            throw new Error("[kwiver-only] " + origin + ": transitive_dependencies_json failed");
+        }
+        return dependencies;
+    }
+
+    kwiver_require_runtime_reverse_dependency_cells(
+        cell,
+        origin = "ui.runtime.reverse_dependencies",
+    ) {
+        const dependencies = this.kwiver_runtime_reverse_dependency_cells(cell, origin);
+        if (!(dependencies instanceof Set)) {
+            throw new Error("[kwiver-only] " + origin + ": reverse_dependencies_of_json failed");
+        }
+        return dependencies;
+    }
+
+    kwiver_select_all_runtime(origin = "ui.select.all") {
+        const all_ids = this.kwiver_runtime_all_cell_ids(origin);
+        if (!Array.isArray(all_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": all_cell_ids_json failed");
+        }
+        if (!this.kwiver_apply_runtime_selection(all_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": selection sync failed");
+        }
+    }
+
+    kwiver_select_connected_runtime(origin = "ui.select.connected") {
+        const selected_ids = this.kwiver_selected_ids();
+        if (!Array.isArray(selected_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": selected id mapping failed");
+        }
+        const connected_ids = this.kwiver_runtime_connected_component_ids(
+            selected_ids,
+            origin,
+        );
+        if (!Array.isArray(connected_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": connected_components_json failed");
+        }
+        if (!this.kwiver_apply_runtime_selection(connected_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": selection sync failed");
+        }
+    }
+
+    kwiver_added_id_from_envelope(envelope) {
+        const added_id = Number(envelope?.result?.id);
+        return Number.isInteger(added_id) ? added_id : null;
+    }
+
+    kwiver_add_vertex_runtime(label, position, label_colour = Colour.black(), origin = "ui.create.vertex") {
+        if (
+            typeof label !== "string"
+            || !position
+            || !Number.isInteger(Number(position.x))
+            || !Number.isInteger(Number(position.y))
+        ) {
+            return null;
+        }
+
+        const colour_json = UI.kwiver_colour_to_json(label_colour);
+        if (colour_json === null) {
+            return null;
+        }
+
+        const envelope = kwiver_bridge_add_vertex_json(
+            label,
+            Number(position.x),
+            Number(position.y),
+            colour_json,
+            origin,
+        );
+        if (!envelope) {
+            return null;
+        }
+
+        const id = this.kwiver_added_id_from_envelope(envelope);
+        if (!Number.isInteger(id)) {
+            return null;
+        }
+
+        return { id, envelope };
+    }
+
+    kwiver_add_edge_runtime(
+        source,
+        target,
+        label,
+        options,
+        label_colour = Colour.black(),
+        origin = "ui.create.edge",
+    ) {
+        const source_id = this.kwiver_cell_id(source);
+        const target_id = this.kwiver_cell_id(target);
+        if (
+            !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+            || typeof label !== "string"
+        ) {
+            return null;
+        }
+
+        const options_json = UI.kwiver_edge_options_to_json(options);
+        const colour_json = UI.kwiver_colour_to_json(label_colour);
+        if (options_json === null || colour_json === null) {
+            return null;
+        }
+
+        const envelope = kwiver_bridge_add_edge_json(
+            source_id,
+            target_id,
+            label,
+            options_json,
+            colour_json,
+            origin,
+        );
+        if (!envelope) {
+            return null;
+        }
+
+        const id = this.kwiver_added_id_from_envelope(envelope);
+        if (!Number.isInteger(id)) {
+            return null;
+        }
+
+        return { id, envelope };
+    }
+
+    kwiver_assert_runtime_cell_match(cell, context = "ui.create") {
+        if (!cell || !Number.isInteger(cell.kwiver_id)) {
+            throw new Error("[kwiver-only] " + context + ": cell missing kwiver id");
+        }
+
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
+        }
+
+        const runtime_cell = runtime_by_id.get(cell.kwiver_id);
+        if (!runtime_cell) {
+            throw new Error("[kwiver-only] " + context + ": runtime cell missing");
+        }
+
+        if (cell.is_vertex()) {
+            if (
+                runtime_cell.kind !== "vertex"
+                || Number(runtime_cell.x) !== Number(cell.position.x)
+                || Number(runtime_cell.y) !== Number(cell.position.y)
+                || runtime_cell.label !== cell.label
+                || !UI.kwiver_colour_equals(runtime_cell.label_colour, cell.label_colour)
+            ) {
+                throw new Error("[kwiver-only] " + context + ": runtime vertex mismatch");
+            }
+            return;
+        }
+
+        const source_id = Number(cell.source?.kwiver_id);
+        const target_id = Number(cell.target?.kwiver_id);
+        if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
+            throw new Error("[kwiver-only] " + context + ": edge endpoints missing kwiver ids");
+        }
+
+        if (!UI.kwiver_runtime_edge_matches(runtime_cell, cell, source_id, target_id)) {
+            throw new Error("[kwiver-only] " + context + ": runtime edge mismatch");
+        }
+    }
+
+    kwiver_create_vertex(
+        position,
+        label,
+        label_colour = Colour.black(),
+        origin = "ui.create.vertex",
+    ) {
+        const added = this.kwiver_add_vertex_runtime(label, position, label_colour, origin);
+        if (added === null) {
+            const bridge_status = kwiver_bridge_status();
+            const available = Boolean(bridge_status?.available);
+            const candidate = typeof bridge_status?.loaded_candidate === "string"
+                ? bridge_status.loaded_candidate
+                : "none";
+            const first_error = Array.isArray(bridge_status?.load_errors)
+                && bridge_status.load_errors.length > 0
+                ? String(bridge_status.load_errors[0])
+                : "n/a";
+            const detail = available
+                ? "bridge=ready"
+                : ["bridge=unavailable", "candidate=", candidate, ", error=", first_error].join("");
+            throw new Error(["[kwiver-only] ", origin, ": add_vertex_json failed (", detail, ")"].join(""));
+        }
+
+        const vertex = new Vertex(this, label, position, label_colour);
+        vertex.kwiver_id = added.id;
+        this.kwiver_assert_runtime_cell_match(vertex, origin);
+        return vertex;
+    }
+
+    kwiver_create_edge(
+        source,
+        target,
+        label = "",
+        options = {},
+        label_colour = Colour.black(),
+        origin = "ui.create.edge",
+    ) {
+        const normalized_options = Edge.default_options(Object.assign(
+            { level: Math.max(source.level, target.level) + 1 },
+            options,
+        ));
+
+        const added = this.kwiver_add_edge_runtime(
+            source,
+            target,
+            label,
+            normalized_options,
+            label_colour,
+            origin,
+        );
+        if (added === null) {
+            throw new Error("[kwiver-only] " + origin + ": add_edge_json failed");
+        }
+
+        const edge = new Edge(
+            this,
+            label,
+            source,
+            target,
+            normalized_options,
+            label_colour,
+        );
+        edge.kwiver_id = added.id;
+        this.kwiver_assert_runtime_cell_match(edge, origin);
+        return edge;
+    }
+
+    kwiver_history_create(cells) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.create.selection")) {
+            return null;
+        }
+
+        const ordered = (cells instanceof Set || Array.isArray(cells))
+            ? Array.from(cells).sort((a, b) => a.level - b.level)
+            : [];
+
+        let last_envelope = null;
+        for (const cell of ordered) {
+            let added = null;
+            if (cell.is_vertex()) {
+                added = this.kwiver_add_vertex_runtime(
+                    cell.label,
+                    cell.position,
+                    cell.label_colour,
+                    "ui.history.create",
+                );
+            } else if (cell.is_edge()) {
+                added = this.kwiver_add_edge_runtime(
+                    cell.source,
+                    cell.target,
+                    cell.label,
+                    cell.options,
+                    cell.label_colour,
+                    "ui.history.create",
+                );
+            }
+            if (added === null) {
+                return null;
+            }
+
+            cell.kwiver_id = added.id;
+            this.kwiver_assert_runtime_cell_match(cell, "history.create");
+            last_envelope = added.envelope;
+        }
+
+        return {
+            ordered,
+            selection: Array.isArray(last_envelope?.selection)
+                ? last_envelope.selection
+                : [],
+        };
     }
 
     kwiver_history_move(displacements, to) {
         if (!this.kwiver_ensure_cell_ids()) {
-            return false;
+            return null;
         }
-        let dispatched = false;
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.move.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
         for (const displacement of displacements) {
             const vertex_id = this.kwiver_cell_id(displacement.vertex);
             const position = displacement[to];
             if (!Number.isInteger(vertex_id) || !position) {
-                return false;
+                return null;
             }
             const envelope = kwiver_bridge_move_vertex_json(
                 vertex_id,
@@ -973,22 +1786,26 @@ class UI {
                 "ui.history.move",
             );
             if (!envelope) {
-                return false;
+                return null;
             }
-            dispatched = true;
+            last_envelope = envelope;
         }
-        return dispatched;
+        return last_envelope;
     }
 
     kwiver_history_set_label(labels, to) {
         if (!this.kwiver_ensure_cell_ids()) {
-            return false;
+            return null;
         }
-        let dispatched = false;
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.label.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
         for (const label of labels) {
             const cell_id = this.kwiver_cell_id(label.cell);
             if (!Number.isInteger(cell_id)) {
-                return false;
+                return null;
             }
             const envelope = kwiver_bridge_set_label_json(
                 cell_id,
@@ -996,47 +1813,86 @@ class UI {
                 "ui.history.label",
             );
             if (!envelope) {
-                return false;
+                return null;
             }
-            dispatched = true;
+            last_envelope = envelope;
         }
-        return dispatched;
+        return last_envelope;
+    }
+
+    kwiver_history_set_label_colour(label_colours, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.label_colour.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const label_colour of label_colours) {
+            const cell_id = this.kwiver_cell_id(label_colour.cell);
+            if (!Number.isInteger(cell_id)) {
+                return null;
+            }
+            const colour_json = UI.kwiver_colour_to_json(label_colour[to]);
+            if (colour_json === null) {
+                return null;
+            }
+            const envelope = kwiver_bridge_set_label_colour_json(
+                cell_id,
+                colour_json,
+                "ui.history.label_colour",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
     }
 
     kwiver_history_delete(cells, when) {
         if (!this.kwiver_ensure_cell_ids()) {
-            return false;
+            return null;
         }
-        let dispatched = false;
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.delete.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
         const ordered = Array.from(cells).sort((a, b) => b.level - a.level);
         for (const cell of ordered) {
             const cell_id = this.kwiver_cell_id(cell);
             if (!Number.isInteger(cell_id)) {
-                continue;
+                return null;
             }
             const envelope = kwiver_bridge_remove_json(
                 cell_id,
                 when,
                 "ui.history.delete",
             );
-            if (envelope) {
-                dispatched = true;
+            if (!envelope) {
+                return null;
             }
+            last_envelope = envelope;
         }
-        return dispatched;
+        return last_envelope;
     }
 
     kwiver_history_connect(action, to) {
         if (!action || !action.edge) {
-            return false;
+            return null;
         }
         if (!this.kwiver_ensure_cell_ids()) {
-            return false;
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.connect.selection")) {
+            return null;
         }
 
         const edge_id = this.kwiver_cell_id(action.edge);
         if (!Number.isInteger(edge_id)) {
-            return false;
+            return null;
         }
 
         const source_cell = action.end === "source" ? action[to] : action.edge.source;
@@ -1044,7 +1900,7 @@ class UI {
         const source_id = this.kwiver_cell_id(source_cell);
         const target_id = this.kwiver_cell_id(target_cell);
         if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
-            return false;
+            return null;
         }
 
         return kwiver_bridge_reconnect_edge_json(
@@ -1052,64 +1908,479 @@ class UI {
             source_id,
             target_id,
             "ui.history.connect",
-        ) !== null;
+        );
     }
 
-    copy_selection_with_kwiver() {
-        const selection = this.quiver.transitive_reverse_dependencies(this.selection);
-        const fallback_payload = QuiverImportExport.base64.export_selection(
-            this.quiver,
-            selection,
-        );
-
-        const id_map = this.kwiver_sync_cell_ids();
-        if (id_map === null) {
-            this.clipboard = fallback_payload;
-            return;
+    kwiver_apply_connect_action(action, to = "to", context = "ui.connect") {
+        const connect_envelope = this.kwiver_history_connect(action, to);
+        if (connect_envelope === null) {
+            throw new Error("[kwiver-only] " + context + ": reconnect dispatch failed");
+        }
+        if (!Number.isInteger(action.edge?.kwiver_id)) {
+            throw new Error("[kwiver-only] " + context + ": edge missing kwiver id");
         }
 
-        const selected_ids = [];
-        for (const cell of selection) {
-            const cell_id = id_map.get(cell);
-            if (!Number.isInteger(cell_id)) {
-                this.clipboard = fallback_payload;
-                return;
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
+        }
+        const runtime_edge = runtime_by_id.get(action.edge.kwiver_id);
+        const source_id = Number(runtime_edge?.source_id);
+        const target_id = Number(runtime_edge?.target_id);
+        if (
+            !runtime_edge
+            || runtime_edge.kind !== "edge"
+            || !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+        ) {
+            throw new Error("[kwiver-only] " + context + ": runtime edge snapshot invalid");
+        }
+
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const runtime_source = js_by_id.get(source_id);
+        const runtime_target = js_by_id.get(target_id);
+        if (!runtime_source || !runtime_target) {
+            throw new Error("[kwiver-only] " + context + ": endpoint mapping missing");
+        }
+
+        action.edge.reconnect(this, runtime_source, runtime_target);
+        if (!this.kwiver_apply_runtime_selection(connect_envelope.selection)) {
+            throw new Error("[kwiver-only] " + context + ": selection sync failed");
+        }
+        return connect_envelope;
+    }
+
+    kwiver_history_set_edge_label_alignment(alignments, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.label_alignment.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const alignment of alignments) {
+            const edge_id = this.kwiver_cell_id(alignment.edge);
+            if (!Number.isInteger(edge_id) || typeof alignment[to] !== "string") {
+                return null;
             }
-            selected_ids.push(cell_id);
+            const envelope = kwiver_bridge_set_edge_label_alignment_json(
+                edge_id,
+                alignment[to],
+                "ui.history.label_alignment",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_label_position(label_positions, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.label_position.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const label_position of label_positions) {
+            const edge_id = this.kwiver_cell_id(label_position.edge);
+            const position_value = Number(label_position[to]);
+            if (!Number.isInteger(edge_id) || !Number.isInteger(position_value)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_set_edge_label_position_json(
+                edge_id,
+                position_value,
+                "ui.history.label_position",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_offset(offsets, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.offset.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const offset of offsets) {
+            const edge_id = this.kwiver_cell_id(offset.edge);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_set_edge_offset_json(
+                edge_id,
+                offset[to],
+                "ui.history.offset",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_curve(curves, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.curve.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const curve of curves) {
+            if (curve.edge.is_loop()) {
+                continue;
+            }
+            const edge_id = this.kwiver_cell_id(curve.edge);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_set_edge_curve_json(
+                edge_id,
+                curve[to],
+                "ui.history.curve",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_style(styles, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.style.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const style of styles) {
+            const edge_id = this.kwiver_cell_id(style.edge);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const style_patch = UI.kwiver_style_patch_from_js(style[to]);
+            if (style_patch === null) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                { style: style_patch },
+                "ui.history.style",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_colour(colours, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.colour.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const colour of colours) {
+            const edge_id = this.kwiver_cell_id(colour.edge);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const colour_json = UI.kwiver_colour_to_json(colour[to]);
+            if (colour_json === null) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                { colour: colour_json },
+                "ui.history.colour",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_radius(radiuss, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.radius.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const radius of radiuss) {
+            if (!radius.edge.is_loop()) {
+                continue;
+            }
+            const edge_id = this.kwiver_cell_id(radius.edge);
+            const radius_value = Number(radius[to]);
+            if (!Number.isInteger(edge_id) || !Number.isInteger(radius_value)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                { radius: radius_value },
+                "ui.history.radius",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_angle(angles, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.angle.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const angle of angles) {
+            if (!angle.edge.is_loop()) {
+                continue;
+            }
+            const edge_id = this.kwiver_cell_id(angle.edge);
+            const angle_value = Number(angle[to]);
+            if (!Number.isInteger(edge_id) || !Number.isInteger(angle_value)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                { angle: angle_value },
+                "ui.history.angle",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_length(lengths, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.length.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const length of lengths) {
+            const edge_id = this.kwiver_cell_id(length.edge);
+            const shorten = length[to];
+            if (!Number.isInteger(edge_id) || !Array.isArray(shorten) || shorten.length < 2) {
+                return null;
+            }
+            const source = Number(shorten[0]);
+            const target = Number(shorten[1]);
+            if (!Number.isInteger(source) || !Number.isInteger(target)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                {
+                    shorten_source: source,
+                    shorten_target: 100 - target,
+                },
+                "ui.history.length",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_level(levels, to) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.level.selection")) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const level of levels) {
+            const edge_id = this.kwiver_cell_id(level.edge);
+            const level_value = Number(level[to]);
+            if (!Number.isInteger(edge_id) || !Number.isInteger(level_value)) {
+                return null;
+            }
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                { level: level_value },
+                "ui.history.level",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_set_edge_alignment(cells, end) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui("ui.history.edge_alignment.selection")) {
+            return null;
+        }
+
+        const patch_key = end === "source"
+            ? "edge_alignment_source"
+            : end === "target"
+                ? "edge_alignment_target"
+                : null;
+        if (patch_key === null) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const cell of cells) {
+            const edge_id = this.kwiver_cell_id(cell);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const next_alignment = !Boolean(cell.options?.edge_alignment?.[end]);
+            const patch = { [patch_key]: next_alignment };
+            const envelope = kwiver_bridge_patch_edge_options_json(
+                edge_id,
+                patch,
+                "ui.history.edge_alignment",
+            );
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_edge_action(cells, selection_origin, apply_edge) {
+        if (!this.kwiver_ensure_cell_ids()) {
+            return null;
+        }
+        if (!this.kwiver_sync_runtime_selection_from_ui(selection_origin)) {
+            return null;
+        }
+
+        let last_envelope = null;
+        for (const cell of cells) {
+            if (!cell.is_edge()) {
+                continue;
+            }
+            const edge_id = this.kwiver_cell_id(cell);
+            if (!Number.isInteger(edge_id)) {
+                return null;
+            }
+            const envelope = apply_edge(edge_id);
+            if (!envelope) {
+                return null;
+            }
+            last_envelope = envelope;
+        }
+        return last_envelope;
+    }
+
+    kwiver_history_reverse(cells) {
+        return this.kwiver_history_edge_action(
+            cells,
+            "ui.history.reverse.selection",
+            (edge_id) => kwiver_bridge_reverse_edge_json(edge_id, "ui.history.reverse"),
+        );
+    }
+
+    kwiver_history_flip(cells) {
+        return this.kwiver_history_edge_action(
+            cells,
+            "ui.history.flip.selection",
+            (edge_id) => kwiver_bridge_flip_edge_json(edge_id, "ui.history.flip"),
+        );
+    }
+
+    kwiver_history_flip_labels(cells) {
+        return this.kwiver_history_edge_action(
+            cells,
+            "ui.history.flip_labels.selection",
+            (edge_id) => kwiver_bridge_flip_edge_labels_json(
+                edge_id,
+                "ui.history.flip_labels",
+            ),
+        );
+    }
+    copy_selection_with_kwiver() {
+        const selection = this.kwiver_runtime_transitive_reverse_dependency_cells(
+            this.selection,
+            "ui.clipboard.copy.reverse_closure",
+        );
+        if (!(selection instanceof Set)) {
+            throw new Error("[kwiver-only] ui.clipboard.copy: reverse closure query failed");
+        }
+
+        const selected_ids = this.kwiver_cell_ids_from_cells(selection);
+        if (!Array.isArray(selected_ids)) {
+            throw new Error("[kwiver-only] ui.clipboard.copy: selected id mapping failed");
         }
 
         const set_selection = kwiver_bridge_set_selection(selected_ids, "ui.clipboard.copy");
         if (!set_selection || set_selection.ok !== true) {
-            this.clipboard = fallback_payload;
-            return;
+            throw new Error("[kwiver-only] ui.clipboard.copy: set_selection failed");
         }
 
         const exported = kwiver_bridge_export_selection(true, "ui.clipboard.copy");
-        if (typeof exported === "string" && exported !== "") {
-            this.clipboard = exported;
-            return;
+        if (typeof exported !== "string" || exported === "") {
+            throw new Error("[kwiver-only] ui.clipboard.copy: export_selection failed");
         }
-
-        this.clipboard = fallback_payload;
+        this.clipboard = exported;
     }
 
     paste_selection_with_kwiver() {
-        let payload_to_import = this.clipboard;
-        const payload = this.kwiver_runtime_payload();
-        if (kwiver_bridge_sync_payload(payload)) {
-            const pasted = kwiver_bridge_paste_selection_json(
-                this.clipboard,
-                this.focus_position.x,
-                this.focus_position.y,
-                1,
-                "ui.clipboard.paste",
-            );
-            if (pasted) {
-                const exported = kwiver_bridge_export_selection(true, "ui.clipboard.paste");
-                if (typeof exported === "string" && exported !== "") {
-                    payload_to_import = exported;
-                }
-            }
+        const pasted = kwiver_bridge_paste_selection_json(
+            this.clipboard,
+            this.focus_position.x,
+            this.focus_position.y,
+            1,
+            "ui.clipboard.paste",
+        );
+        if (!pasted) {
+            throw new Error("[kwiver-only] ui.clipboard.paste: dispatch failed");
+        }
+
+        const payload_to_import = kwiver_bridge_export_selection(true, "ui.clipboard.paste");
+        if (typeof payload_to_import !== "string" || payload_to_import === "") {
+            throw new Error("[kwiver-only] ui.clipboard.paste: export_selection failed");
         }
 
         const cells = new Set(QuiverImportExport.base64.import(
@@ -1123,7 +2394,12 @@ class UI {
     }
 
     /// Clear the current diagram. This also clears the history.
-    clear_quiver() {
+    clear_quiver(origin = "ui.clear_quiver") {
+        const reset_envelope = kwiver_bridge_reset(origin);
+        if (!reset_envelope || reset_envelope.ok !== true) {
+            throw new Error("[kwiver-only] ui.clear_quiver: runtime reset failed");
+        }
+
         // Clear the existing quiver.
         for (const cell of this.quiver.all_cells()) {
             cell.element.remove();
@@ -1164,7 +2440,7 @@ class UI {
         this.switch_mode(UIMode.default);
 
         // Clear the quiver and update associated UI elements.
-        this.clear_quiver();
+        this.clear_quiver("ui.reset");
 
         // Update UI elements.
         this.panel.dismiss_port_pane(this);
@@ -1831,11 +3107,14 @@ class UI {
         // A helper function for creating a new vertex, as there are
         // several actions that can trigger the creation of a vertex.
         const create_vertex = (position) => {
-            const label = {
-                "katex": "\\bullet",
-                "typst": "bullet"
-            }[this.settings.get("quiver.renderer")];
-            return new Vertex(this, label, position);
+            const renderer = this.settings.get("quiver.renderer");
+            const label = renderer === "typst" ? "bullet" : "\\bullet";
+            return this.kwiver_create_vertex(
+                position,
+                label,
+                Colour.black(),
+                "ui.create.vertex",
+            );
         };
 
         const create_vertex_at_focus_point = (event) => {
@@ -2077,7 +3356,12 @@ class UI {
                         // If we haven't rerendered the entire canvas due to a resize, then
                         // rerender the dependencies to make sure we move all of the edges connected
                         // to cells that have moved.
-                        for (const cell of this.quiver.transitive_dependencies(moved)) {
+                        const dependencies_to_render = this.kwiver_require_runtime_transitive_dependency_cells(
+                            moved,
+                            false,
+                            "ui.pointer_move.dependencies",
+                        );
+                        for (const cell of dependencies_to_render) {
                             cell.render(this);
                         }
                     }
@@ -2189,14 +3473,19 @@ class UI {
                                             { end, edge },
                                         );
                                         if (valid_connection) {
-                                            actions.push({
+                                            const connect_action = {
                                                 kind: "connect",
                                                 edge,
                                                 end,
                                                 from: edge[end],
                                                 to: cell,
-                                            });
-                                            edge.reconnect(this, source, target);
+                                            };
+                                            actions.push(connect_action);
+                                            this.kwiver_apply_connect_action(
+                                                connect_action,
+                                                "to",
+                                                "ui.command.connect",
+                                            );
                                         }
                                     }
                                     break;
@@ -2748,9 +4037,17 @@ class UI {
         this.shortcuts.add([{ key: "X", modifier: true }], () => {
             if (this.in_mode(UIMode.Default, UIMode.Pan) && !this.input_is_active()) {
                 // This keyboard shortcut will first trigger the copy action.
+                const delete_cells = this.kwiver_runtime_transitive_dependency_cells(
+                    this.selection,
+                    false,
+                    "ui.shortcut.cut.delete_closure",
+                );
+                if (!(delete_cells instanceof Set)) {
+                    throw new Error("[kwiver-only] ui.shortcut.cut: delete closure query failed");
+                }
                 this.history.add(this, [{
                     kind: "delete",
-                    cells: this.quiver.transitive_dependencies(this.selection),
+                    cells: delete_cells,
                 }], true);
                 this.panel.update(this);
             }
@@ -3994,6 +5291,191 @@ class History {
         // Whether to call `ColourPicker.update_diagram_colours` after triggering the events.
         let update_colours = false;
 
+        const kwiver_fail = (context, detail = "") => {
+            const message = detail === "" ? context : context + ": " + detail;
+            throw new Error("[kwiver-only] " + message);
+        };
+
+        const kwiver_runtime_cells = (context) => {
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+            if (runtime_by_id === null) {
+                kwiver_fail(context, "runtime snapshot unavailable");
+            }
+            return runtime_by_id;
+        };
+
+        const kwiver_clone_style = (style) => ({
+            name: typeof style?.name === "string" ? style.name : "arrow",
+            tail: {
+                name: typeof style?.tail?.name === "string" ? style.tail.name : "none",
+                side: typeof style?.tail?.side === "string" ? style.tail.side : "",
+            },
+            body: {
+                name: typeof style?.body?.name === "string" ? style.body.name : "cell",
+                side: typeof style?.body?.side === "string" ? style.body.side : "",
+            },
+            head: {
+                name: typeof style?.head?.name === "string"
+                    ? style.head.name
+                    : "arrowhead",
+                side: typeof style?.head?.side === "string" ? style.head.side : "",
+            },
+        });
+
+        const kwiver_flip_side = (side) => side === "top"
+            ? "bottom"
+            : side === "bottom"
+                ? "top"
+                : side;
+
+        const kwiver_flip_label_alignment = (alignment) => alignment === "left"
+            ? "right"
+            : alignment === "right"
+                ? "left"
+                : alignment;
+
+        const kwiver_expected_edge_transform = (edge, reverse_edge, flip_arrow) => {
+            const source_id = ui.kwiver_cell_id(edge.source);
+            const target_id = ui.kwiver_cell_id(edge.target);
+            if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
+                return null;
+            }
+
+            const is_loop = edge.is_loop();
+            const expected = {
+                source_id: reverse_edge ? target_id : source_id,
+                target_id: reverse_edge ? source_id : target_id,
+                label_alignment: kwiver_flip_label_alignment(edge.options.label_alignment),
+                offset: Number(edge.options.offset),
+                curve: Number(edge.options.curve),
+                radius: Number(edge.options.radius),
+                angle: Number(edge.options.angle),
+                style: kwiver_clone_style(edge.options.style),
+            };
+
+            if (reverse_edge && is_loop) {
+                expected.angle = mod(expected.angle + 360, 360) - 180;
+            }
+
+            if (flip_arrow) {
+                expected.offset = -expected.offset;
+                expected.curve = -expected.curve;
+                if (is_loop) {
+                    expected.radius = -expected.radius;
+                }
+                if (expected.style.name === "arrow") {
+                    if (expected.style.tail.name === "hook") {
+                        expected.style.tail.side = kwiver_flip_side(expected.style.tail.side);
+                    }
+                    if (expected.style.head.name === "harpoon") {
+                        expected.style.head.side = kwiver_flip_side(expected.style.head.side);
+                    }
+                }
+            }
+
+            return expected;
+        };
+
+        const kwiver_apply_edge_transform = (
+            context,
+            action_cells,
+            dispatch_transform,
+            reverse_edge,
+            flip_arrow,
+            rendered_cells,
+        ) => {
+            const source_cells = action_cells instanceof Set || Array.isArray(action_cells)
+                ? Array.from(action_cells)
+                : [];
+            const edge_cells = source_cells.filter((cell) => cell.is_edge());
+            if (edge_cells.length === 0) {
+                return;
+            }
+
+            const envelope = dispatch_transform(action_cells);
+            if (envelope === null) {
+                kwiver_fail(context, "dispatch failed");
+            }
+
+            const runtime_by_id = kwiver_runtime_cells(context);
+            const js_by_id = ui.kwiver_js_cells_by_id();
+
+            for (const edge of edge_cells) {
+                if (!Number.isInteger(edge.kwiver_id)) {
+                    kwiver_fail(context, "edge missing kwiver id");
+                }
+
+                const expected = kwiver_expected_edge_transform(
+                    edge,
+                    reverse_edge,
+                    flip_arrow,
+                );
+                if (expected === null) {
+                    kwiver_fail(context, "expected transform snapshot invalid");
+                }
+
+                const runtime_edge = runtime_by_id.get(edge.kwiver_id);
+                const source_id = Number(runtime_edge?.source_id);
+                const target_id = Number(runtime_edge?.target_id);
+                const runtime_alignment = runtime_edge?.options?.label_alignment;
+                const runtime_offset = Number(runtime_edge?.options?.offset);
+                const runtime_curve = Number(runtime_edge?.options?.curve);
+                const runtime_radius = Number(runtime_edge?.options?.radius);
+                const runtime_angle = Number(runtime_edge?.options?.angle);
+                const runtime_style = UI.kwiver_style_from_runtime(
+                    runtime_edge?.options?.style,
+                    edge.options.style,
+                );
+                if (
+                    !runtime_edge
+                    || runtime_edge.kind !== "edge"
+                    || !Number.isInteger(source_id)
+                    || !Number.isInteger(target_id)
+                    || typeof runtime_alignment !== "string"
+                    || !Number.isInteger(runtime_offset)
+                    || !Number.isInteger(runtime_curve)
+                    || !Number.isInteger(runtime_radius)
+                    || !Number.isInteger(runtime_angle)
+                    || runtime_style === null
+                ) {
+                    kwiver_fail(context, "runtime edge transform snapshot invalid");
+                }
+
+                if (
+                    source_id !== expected.source_id
+                    || target_id !== expected.target_id
+                    || runtime_alignment !== expected.label_alignment
+                    || runtime_offset !== expected.offset
+                    || runtime_curve !== expected.curve
+                    || runtime_radius !== expected.radius
+                    || runtime_angle !== expected.angle
+                    || !UI.kwiver_edge_styles_equal(runtime_style, expected.style)
+                ) {
+                    kwiver_fail(context, "runtime edge transform mismatch");
+                }
+
+                if (reverse_edge) {
+                    const source = js_by_id.get(source_id);
+                    const target = js_by_id.get(target_id);
+                    if (!source || !target) {
+                        kwiver_fail(context, "missing JS endpoint mapping");
+                    }
+                    edge.reconnect(ui, source, target);
+                }
+
+                edge.options.label_alignment = runtime_alignment;
+                edge.options.offset = runtime_offset;
+                edge.options.curve = runtime_curve;
+                edge.options.radius = runtime_radius;
+                edge.options.angle = runtime_angle;
+                edge.options.style = runtime_style;
+                rendered_cells.add(edge);
+            }
+
+            if (!ui.kwiver_apply_runtime_selection(envelope.selection)) {
+                kwiver_fail(context, "selection sync failed");
+            }
+        };
         for (const action of order) {
             let kind = action.kind;
             if (reverse) {
@@ -4009,188 +5491,724 @@ class History {
             // Actions will often require cells to be rendered transitively.
             const cells = new Set();
             switch (kind) {
-                case "move":
-                    ui.kwiver_history_move(action.displacements, to);
-                    // We perform these loops in sequence as cells may move
-                    // directly into positions that have just been unoccupied.
+                case "move": {
+                    if (action.displacements.length === 0) {
+                        break;
+                    }
+
+                    const move_envelope = ui.kwiver_history_move(action.displacements, to);
+                    if (move_envelope === null) {
+                        kwiver_fail("history.move", "dispatch failed");
+                    }
+
+                    const runtime_by_id = kwiver_runtime_cells("history.move");
+                    const runtime_positions = [];
+                    for (const displacement of action.displacements) {
+                        const runtime_vertex = runtime_by_id.get(displacement.vertex.kwiver_id);
+                        const x = Number(runtime_vertex?.x);
+                        const y = Number(runtime_vertex?.y);
+                        if (
+                            !runtime_vertex
+                            || runtime_vertex.kind !== "vertex"
+                            || !Number.isInteger(x)
+                            || !Number.isInteger(y)
+                        ) {
+                            kwiver_fail("history.move", "runtime vertex snapshot invalid");
+                        }
+                        if (x !== displacement[to].x || y !== displacement[to].y) {
+                            kwiver_fail("history.move", "runtime vertex position mismatch");
+                        }
+                        runtime_positions.push(new Position(x, y));
+                    }
+
                     for (const displacement of action.displacements) {
                         ui.positions.delete(`${displacement[from]}`);
                     }
-                    for (const displacement of action.displacements) {
-                        displacement.vertex.set_position(ui, displacement[to]);
+                    for (let i = 0; i < action.displacements.length; ++i) {
+                        const displacement = action.displacements[i];
+                        displacement.vertex.set_position(ui, runtime_positions[i]);
                         ui.positions.set(
                             `${displacement.vertex.position}`,
                             displacement.vertex,
                         );
                         cells.add(displacement.vertex);
                     }
-                    // We may need to resize the columns and rows that the cells moved from, if
-                    // they were what was determining the column/row width/height.
                     if (ui.update_col_row_size(...action.displacements.map(
                         (displacement) => displacement[from])
                     )) {
-                        // If `update_col_row_size` rerendered all the cells, there's no need to
-                        // render them again later.
                         cells.clear();
                     }
+                    if (!ui.kwiver_apply_runtime_selection(move_envelope.selection)) {
+                        kwiver_fail("history.move", "selection sync failed");
+                    }
                     break;
-                case "create":
-                    for (const cell of action.cells) {
-                        ui.quiver.add(cell);
-                        ui.add_cell(cell);
+                }
+                case "create": {
+                    const create_count = action.cells instanceof Set
+                        ? action.cells.size
+                        : Array.isArray(action.cells)
+                            ? action.cells.length
+                            : 0;
+                    if (create_count > 0) {
+                        const create_result = ui.kwiver_history_create(action.cells);
+                        if (create_result === null) {
+                            kwiver_fail("history.create", "dispatch failed");
+                        }
+
+                        for (const cell of create_result.ordered) {
+                            if (!ui.quiver.contains_cell(cell)) {
+                                ui.quiver.add(cell);
+                                ui.add_cell(cell);
+                            }
+                            cells.add(cell);
+                        }
+
+                        if (!ui.kwiver_apply_runtime_selection(create_result.selection)) {
+                            kwiver_fail("history.create", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     break;
-                case "delete":
-                    ui.kwiver_history_delete(action.cells, this.present);
+                }
+                case "delete": {
+                    const delete_count = action.cells instanceof Set
+                        ? action.cells.size
+                        : Array.isArray(action.cells)
+                            ? action.cells.length
+                            : 0;
+                    if (delete_count === 0) {
+                        update_panel = true;
+                        break;
+                    }
+
+                    const delete_envelope = ui.kwiver_history_delete(action.cells, this.present);
+                    if (delete_envelope === null) {
+                        kwiver_fail("history.delete", "dispatch failed");
+                    }
+
+                    const runtime_by_id = kwiver_runtime_cells("history.delete");
                     for (const cell of action.cells) {
-                        ui.remove_cell(cell, this.present);
+                        if (!Number.isInteger(cell.kwiver_id)) {
+                            kwiver_fail("history.delete", "cell missing kwiver id");
+                        }
+                        if (runtime_by_id.has(cell.kwiver_id)) {
+                            kwiver_fail("history.delete", "runtime still contains deleted cell");
+                        }
+                    }
+
+                    const runtime_ids = new Set(runtime_by_id.keys());
+                    const to_remove = [];
+                    for (const cell of ui.quiver.all_cells()) {
+                        if (
+                            Number.isInteger(cell.kwiver_id)
+                            && !runtime_ids.has(cell.kwiver_id)
+                        ) {
+                            to_remove.push(cell);
+                        }
+                    }
+                    to_remove.sort((a, b) => b.level - a.level);
+                    for (const cell of to_remove) {
+                        if (!ui.quiver.deleted.has(cell)) {
+                            ui.remove_cell(cell, this.present);
+                        }
+                    }
+                    if (!ui.kwiver_apply_runtime_selection(delete_envelope.selection)) {
+                        kwiver_fail("history.delete", "selection sync failed");
                     }
                     update_panel = true;
                     break;
-                case "label":
-                    ui.kwiver_history_set_label(action.labels, to);
+                }
+                case "label": {
+                    if (action.labels.length === 0) {
+                        break;
+                    }
+
+                    const label_envelope = ui.kwiver_history_set_label(action.labels, to);
+                    if (label_envelope === null) {
+                        kwiver_fail("history.label", "dispatch failed");
+                    }
+
+                    const runtime_by_id = kwiver_runtime_cells("history.label");
+                    const runtime_labels = [];
                     for (const label of action.labels) {
-                        label.cell.label = label[to];
+                        const runtime_cell = runtime_by_id.get(label.cell.kwiver_id);
+                        if (!runtime_cell || typeof runtime_cell.label !== "string") {
+                            kwiver_fail("history.label", "runtime label snapshot invalid");
+                        }
+                        if (runtime_cell.label !== label[to]) {
+                            kwiver_fail("history.label", "runtime label mismatch");
+                        }
+                        runtime_labels.push(runtime_cell.label);
+                    }
+
+                    for (let i = 0; i < action.labels.length; ++i) {
+                        const label = action.labels[i];
+                        label.cell.label = runtime_labels[i];
                         ui.panel.render_maths(ui, label.cell);
                     }
+                    if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
+                        kwiver_fail("history.label", "selection sync failed");
+                    }
                     break;
-                case "label_colour":
-                    for (const label_colour of action.label_colours) {
-                        label_colour.cell.label_colour = label_colour[to];
-                        label_colour.cell.element.query_selector(".label").set_style({
-                            color: label_colour.cell.label_colour.css(),
-                            fill: label_colour.cell.label_colour.css(),
-                        });
+                }
+                case "label_colour": {
+                    if (action.label_colours.length > 0) {
+                        const label_colour_envelope = ui.kwiver_history_set_label_colour(
+                            action.label_colours,
+                            to,
+                        );
+                        if (label_colour_envelope === null) {
+                            kwiver_fail("history.label_colour", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.label_colour");
+                        const runtime_colours = [];
+                        for (const label_colour of action.label_colours) {
+                            const runtime_cell = runtime_by_id.get(label_colour.cell.kwiver_id);
+                            const runtime_colour_raw = runtime_cell?.label_colour;
+                            const runtime_colour = UI.kwiver_colour_from_runtime(runtime_colour_raw);
+                            if (!runtime_cell || runtime_colour === null) {
+                                kwiver_fail("history.label_colour", "runtime label colour snapshot invalid");
+                            }
+                            if (!UI.kwiver_colour_equals(runtime_colour_raw, label_colour[to])) {
+                                kwiver_fail("history.label_colour", "runtime label colour mismatch");
+                            }
+                            runtime_colours.push(runtime_colour);
+                        }
+
+                        for (let i = 0; i < action.label_colours.length; ++i) {
+                            const label_colour = action.label_colours[i];
+                            label_colour.cell.label_colour = runtime_colours[i];
+                            label_colour.cell.element.query_selector(".label").set_style({
+                                color: label_colour.cell.label_colour.css(),
+                                fill: label_colour.cell.label_colour.css(),
+                            });
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(label_colour_envelope.selection)) {
+                            kwiver_fail("history.label_colour", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     update_colours = true;
                     break;
-                case "label_alignment":
-                    for (const alignment of action.alignments) {
-                        alignment.edge.options.label_alignment = alignment[to];
-                        alignment.edge.render(ui);
-                    }
-                    update_panel = true;
-                    break;
-                case "label_position":
-                    for (const label_position of action.label_positions) {
-                        label_position.edge.options.label_position = label_position[to];
-                        label_position.edge.render(ui);
-                    }
-                    update_panel = true;
-                    break;
-                case "offset":
-                    for (const offset of action.offsets) {
-                        offset.edge.options.offset = offset[to];
-                        cells.add(offset.edge);
-                    }
-                    update_panel = true;
-                    break;
-                case "curve":
-                    for (const curve of action.curves) {
-                        if (curve.edge.is_loop()) {
-                            continue;
+                }
+                case "label_alignment": {
+                    if (action.alignments.length > 0) {
+                        const alignment_envelope = ui.kwiver_history_set_edge_label_alignment(
+                            action.alignments,
+                            to,
+                        );
+                        if (alignment_envelope === null) {
+                            kwiver_fail("history.label_alignment", "dispatch failed");
                         }
-                        curve.edge.options.curve = curve[to];
-                        cells.add(curve.edge);
-                    }
-                    update_panel = true;
-                    break;
-                case "radius":
-                    // We don't have any special casing for nonstandard plurals :)
-                    for (const radius of action.radiuss) {
-                        if (!radius.edge.is_loop()) {
-                            continue;
+
+                        const runtime_by_id = kwiver_runtime_cells("history.label_alignment");
+                        const runtime_alignments = [];
+                        for (const alignment of action.alignments) {
+                            const runtime_edge = runtime_by_id.get(alignment.edge.kwiver_id);
+                            const runtime_alignment = runtime_edge?.options?.label_alignment;
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || typeof runtime_alignment !== "string"
+                            ) {
+                                kwiver_fail("history.label_alignment", "runtime alignment snapshot invalid");
+                            }
+                            if (runtime_alignment !== alignment[to]) {
+                                kwiver_fail("history.label_alignment", "runtime alignment mismatch");
+                            }
+                            runtime_alignments.push(runtime_alignment);
                         }
-                        radius.edge.options.radius = radius[to];
-                        cells.add(radius.edge);
-                    }
-                    update_panel = true;
-                    break;
-                case "angle":
-                    for (const angle of action.angles) {
-                        if (!angle.edge.is_loop()) {
-                            continue;
+
+                        for (let i = 0; i < action.alignments.length; ++i) {
+                            const alignment = action.alignments[i];
+                            alignment.edge.options.label_alignment = runtime_alignments[i];
+                            alignment.edge.render(ui);
                         }
-                        angle.edge.options.angle = angle[to];
-                        cells.add(angle.edge);
-                    }
-                    update_panel = true;
-                    break;
-                case "length":
-                    for (const length of action.lengths) {
-                        const [source, target] = length[to];
-                        length.edge.options.shorten = { source, target: 100 - target };
-                        cells.add(length.edge);
-                    }
-                    update_panel = true;
-                    break;
-                case "reverse":
-                    for (const cell of action.cells) {
-                        if (cell.is_edge()) {
-                            cell.reverse(ui);
+                        if (!ui.kwiver_apply_runtime_selection(alignment_envelope.selection)) {
+                            kwiver_fail("history.label_alignment", "selection sync failed");
                         }
                     }
                     update_panel = true;
                     break;
-                case "flip":
-                    for (const cell of action.cells) {
-                        if (cell.is_edge()) {
-                            cell.flip(ui, true);
+                }
+                case "label_position": {
+                    if (action.label_positions.length > 0) {
+                        const label_position_envelope = ui.kwiver_history_set_edge_label_position(
+                            action.label_positions,
+                            to,
+                        );
+                        if (label_position_envelope === null) {
+                            kwiver_fail("history.label_position", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.label_position");
+                        const runtime_positions = [];
+                        for (const label_position of action.label_positions) {
+                            const runtime_edge = runtime_by_id.get(label_position.edge.kwiver_id);
+                            const runtime_position = Number(runtime_edge?.options?.label_position);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_position)
+                            ) {
+                                kwiver_fail("history.label_position", "runtime label position snapshot invalid");
+                            }
+                            if (runtime_position !== Number(label_position[to])) {
+                                kwiver_fail("history.label_position", "runtime label position mismatch");
+                            }
+                            runtime_positions.push(runtime_position);
+                        }
+
+                        for (let i = 0; i < action.label_positions.length; ++i) {
+                            const label_position = action.label_positions[i];
+                            label_position.edge.options.label_position = runtime_positions[i];
+                            label_position.edge.render(ui);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(label_position_envelope.selection)) {
+                            kwiver_fail("history.label_position", "selection sync failed");
                         }
                     }
                     update_panel = true;
                     break;
-                case "flip labels":
-                    for (const cell of action.cells) {
-                        if (cell.is_edge()) {
-                            cell.flip(ui, false);
+                }
+                case "offset": {
+                    if (action.offsets.length > 0) {
+                        const offset_envelope = ui.kwiver_history_set_edge_offset(action.offsets, to);
+                        if (offset_envelope === null) {
+                            kwiver_fail("history.offset", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.offset");
+                        const runtime_offsets = [];
+                        for (const offset of action.offsets) {
+                            const runtime_edge = runtime_by_id.get(offset.edge.kwiver_id);
+                            const runtime_offset = Number(runtime_edge?.options?.offset);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_offset)
+                            ) {
+                                kwiver_fail("history.offset", "runtime offset snapshot invalid");
+                            }
+                            if (runtime_offset !== Number(offset[to])) {
+                                kwiver_fail("history.offset", "runtime offset mismatch");
+                            }
+                            runtime_offsets.push(runtime_offset);
+                        }
+
+                        for (let i = 0; i < action.offsets.length; ++i) {
+                            const offset = action.offsets[i];
+                            offset.edge.options.offset = runtime_offsets[i];
+                            cells.add(offset.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(offset_envelope.selection)) {
+                            kwiver_fail("history.offset", "selection sync failed");
                         }
                     }
                     update_panel = true;
                     break;
-                case "level":
-                    for (const level of action.levels) {
-                        level.edge.options.level = level[to];
-                        cells.add(level.edge);
+                }
+                case "curve": {
+                    const curve_applicable = action.curves.filter((curve) => !curve.edge.is_loop());
+                    if (curve_applicable.length > 0) {
+                        const curve_envelope = ui.kwiver_history_set_edge_curve(action.curves, to);
+                        if (curve_envelope === null) {
+                            kwiver_fail("history.curve", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.curve");
+                        const runtime_curves = new Map();
+                        for (const curve of curve_applicable) {
+                            const runtime_edge = runtime_by_id.get(curve.edge.kwiver_id);
+                            const runtime_curve = Number(runtime_edge?.options?.curve);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_curve)
+                            ) {
+                                kwiver_fail("history.curve", "runtime curve snapshot invalid");
+                            }
+                            if (runtime_curve !== Number(curve[to])) {
+                                kwiver_fail("history.curve", "runtime curve mismatch");
+                            }
+                            runtime_curves.set(curve.edge, runtime_curve);
+                        }
+
+                        for (const curve of curve_applicable) {
+                            curve.edge.options.curve = runtime_curves.get(curve.edge);
+                            cells.add(curve.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(curve_envelope.selection)) {
+                            kwiver_fail("history.curve", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     break;
-                case "style":
-                    for (const style of action.styles) {
-                        style.edge.options.style = style[to];
-                        style.edge.render(ui);
+                }
+                case "radius": {
+                    const radius_applicable = action.radiuss.filter((radius) => radius.edge.is_loop());
+                    if (radius_applicable.length > 0) {
+                        const radius_envelope = ui.kwiver_history_set_edge_radius(action.radiuss, to);
+                        if (radius_envelope === null) {
+                            kwiver_fail("history.radius", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.radius");
+                        const runtime_radii = new Map();
+                        for (const radius of radius_applicable) {
+                            const runtime_edge = runtime_by_id.get(radius.edge.kwiver_id);
+                            const runtime_radius = Number(runtime_edge?.options?.radius);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_radius)
+                            ) {
+                                kwiver_fail("history.radius", "runtime radius snapshot invalid");
+                            }
+                            if (runtime_radius !== Number(radius[to])) {
+                                kwiver_fail("history.radius", "runtime radius mismatch");
+                            }
+                            runtime_radii.set(radius.edge, runtime_radius);
+                        }
+
+                        for (const radius of radius_applicable) {
+                            radius.edge.options.radius = runtime_radii.get(radius.edge);
+                            cells.add(radius.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(radius_envelope.selection)) {
+                            kwiver_fail("history.radius", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     break;
-                case "connect":
-                    ui.kwiver_history_connect(action, to);
-                    const [source, target] = {
-                        source: [action[to], action.edge.target],
-                        target: [action.edge.source, action[to]],
-                    }[action.end];
-                    action.edge.reconnect(ui, source, target);
+                }
+                case "angle": {
+                    const angle_applicable = action.angles.filter((angle) => angle.edge.is_loop());
+                    if (angle_applicable.length > 0) {
+                        const angle_envelope = ui.kwiver_history_set_edge_angle(action.angles, to);
+                        if (angle_envelope === null) {
+                            kwiver_fail("history.angle", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.angle");
+                        const runtime_angles = new Map();
+                        for (const angle of angle_applicable) {
+                            const runtime_edge = runtime_by_id.get(angle.edge.kwiver_id);
+                            const runtime_angle = Number(runtime_edge?.options?.angle);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_angle)
+                            ) {
+                                kwiver_fail("history.angle", "runtime angle snapshot invalid");
+                            }
+                            if (runtime_angle !== Number(angle[to])) {
+                                kwiver_fail("history.angle", "runtime angle mismatch");
+                            }
+                            runtime_angles.set(angle.edge, runtime_angle);
+                        }
+
+                        for (const angle of angle_applicable) {
+                            angle.edge.options.angle = runtime_angles.get(angle.edge);
+                            cells.add(angle.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(angle_envelope.selection)) {
+                            kwiver_fail("history.angle", "selection sync failed");
+                        }
+                    }
                     update_panel = true;
                     break;
-                case "colour":
-                    for (const colour of action.colours) {
-                        colour.edge.options.colour = colour[to];
-                        cells.add(colour.edge);
+                }
+                case "length": {
+                    if (action.lengths.length > 0) {
+                        const length_envelope = ui.kwiver_history_set_edge_length(action.lengths, to);
+                        if (length_envelope === null) {
+                            kwiver_fail("history.length", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.length");
+                        const runtime_shortens = [];
+                        for (const length of action.lengths) {
+                            const runtime_edge = runtime_by_id.get(length.edge.kwiver_id);
+                            const source = Number(runtime_edge?.options?.shorten_source);
+                            const target = Number(runtime_edge?.options?.shorten_target);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(source)
+                                || !Number.isInteger(target)
+                            ) {
+                                kwiver_fail("history.length", "runtime shorten snapshot invalid");
+                            }
+
+                            const expected = length[to];
+                            if (!Array.isArray(expected) || expected.length < 2) {
+                                kwiver_fail("history.length", "invalid expected shorten payload");
+                            }
+                            const expected_source = Number(expected[0]);
+                            const expected_target = Number(expected[1]);
+                            if (
+                                !Number.isInteger(expected_source)
+                                || !Number.isInteger(expected_target)
+                            ) {
+                                kwiver_fail("history.length", "invalid expected shorten values");
+                            }
+                            if (source !== expected_source || target !== 100 - expected_target) {
+                                kwiver_fail("history.length", "runtime shorten mismatch");
+                            }
+
+                            runtime_shortens.push({ source, target });
+                        }
+
+                        for (let i = 0; i < action.lengths.length; ++i) {
+                            const length = action.lengths[i];
+                            length.edge.options.shorten = runtime_shortens[i];
+                            cells.add(length.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(length_envelope.selection)) {
+                            kwiver_fail("history.length", "selection sync failed");
+                        }
+                    }
+                    update_panel = true;
+                    break;
+                }
+                case "reverse": {
+                    kwiver_apply_edge_transform(
+                        "history.reverse",
+                        action.cells,
+                        (action_cells) => ui.kwiver_history_reverse(action_cells),
+                        true,
+                        true,
+                        cells,
+                    );
+                    update_panel = true;
+                    break;
+                }
+                case "flip": {
+                    kwiver_apply_edge_transform(
+                        "history.flip",
+                        action.cells,
+                        (action_cells) => ui.kwiver_history_flip(action_cells),
+                        false,
+                        true,
+                        cells,
+                    );
+                    update_panel = true;
+                    break;
+                }
+                case "flip labels": {
+                    kwiver_apply_edge_transform(
+                        "history.flip_labels",
+                        action.cells,
+                        (action_cells) => ui.kwiver_history_flip_labels(action_cells),
+                        false,
+                        false,
+                        cells,
+                    );
+                    update_panel = true;
+                    break;
+                }
+                case "level": {
+                    if (action.levels.length > 0) {
+                        const level_envelope = ui.kwiver_history_set_edge_level(action.levels, to);
+                        if (level_envelope === null) {
+                            kwiver_fail("history.level", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.level");
+                        const runtime_levels = [];
+                        for (const level of action.levels) {
+                            const runtime_edge = runtime_by_id.get(level.edge.kwiver_id);
+                            const runtime_level = Number(runtime_edge?.options?.level);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || !Number.isInteger(runtime_level)
+                            ) {
+                                kwiver_fail("history.level", "runtime level snapshot invalid");
+                            }
+                            if (runtime_level !== Number(level[to])) {
+                                kwiver_fail("history.level", "runtime level mismatch");
+                            }
+                            runtime_levels.push(runtime_level);
+                        }
+
+                        for (let i = 0; i < action.levels.length; ++i) {
+                            const level = action.levels[i];
+                            level.edge.options.level = runtime_levels[i];
+                            cells.add(level.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(level_envelope.selection)) {
+                            kwiver_fail("history.level", "selection sync failed");
+                        }
+                    }
+                    update_panel = true;
+                    break;
+                }
+                case "style": {
+                    if (action.styles.length > 0) {
+                        const style_envelope = ui.kwiver_history_set_edge_style(action.styles, to);
+                        if (style_envelope === null) {
+                            kwiver_fail("history.style", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.style");
+                        const runtime_styles = [];
+                        for (const style of action.styles) {
+                            const runtime_edge = runtime_by_id.get(style.edge.kwiver_id);
+                            const runtime_style = UI.kwiver_style_from_runtime(
+                                runtime_edge?.options?.style,
+                                style.edge.options.style,
+                            );
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || runtime_style === null
+                            ) {
+                                kwiver_fail("history.style", "runtime style snapshot invalid");
+                            }
+
+                            const expected_style = UI.kwiver_style_from_runtime(
+                                style[to],
+                                style.edge.options.style,
+                            );
+                            if (
+                                expected_style === null
+                                || !UI.kwiver_edge_styles_equal(runtime_style, expected_style)
+                            ) {
+                                kwiver_fail("history.style", "runtime style mismatch");
+                            }
+                            runtime_styles.push(runtime_style);
+                        }
+
+                        for (let i = 0; i < action.styles.length; ++i) {
+                            const style = action.styles[i];
+                            style.edge.options.style = runtime_styles[i];
+                            style.edge.render(ui);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(style_envelope.selection)) {
+                            kwiver_fail("history.style", "selection sync failed");
+                        }
+                    }
+                    update_panel = true;
+                    break;
+                }
+                case "connect": {
+                    ui.kwiver_apply_connect_action(action, to, "history.connect");
+                    update_panel = true;
+                    break;
+                }
+                case "colour": {
+                    if (action.colours.length > 0) {
+                        const colour_envelope = ui.kwiver_history_set_edge_colour(action.colours, to);
+                        if (colour_envelope === null) {
+                            kwiver_fail("history.colour", "dispatch failed");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.colour");
+                        const runtime_colours = [];
+                        for (const colour_change of action.colours) {
+                            const runtime_edge = runtime_by_id.get(colour_change.edge.kwiver_id);
+                            const runtime_colour_raw = runtime_edge?.options?.colour;
+                            const runtime_colour = UI.kwiver_colour_from_runtime(runtime_colour_raw);
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || runtime_colour === null
+                            ) {
+                                kwiver_fail("history.colour", "runtime colour snapshot invalid");
+                            }
+                            if (!UI.kwiver_colour_equals(runtime_colour_raw, colour_change[to])) {
+                                kwiver_fail("history.colour", "runtime colour mismatch");
+                            }
+                            runtime_colours.push(runtime_colour);
+                        }
+
+                        for (let i = 0; i < action.colours.length; ++i) {
+                            const colour_change = action.colours[i];
+                            colour_change.edge.options.colour = runtime_colours[i];
+                            cells.add(colour_change.edge);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(colour_envelope.selection)) {
+                            kwiver_fail("history.colour", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     update_colours = true;
                     break;
-                case "edge_alignment":
-                    for (const cell of action.cells) {
-                        cell.options.edge_alignment[action.end] =
-                            !cell.options.edge_alignment[action.end];
-                        cells.add(cell);
+                }
+                case "edge_alignment": {
+                    const edge_alignment_count = action.cells instanceof Set
+                        ? action.cells.size
+                        : Array.isArray(action.cells)
+                            ? action.cells.length
+                            : 0;
+                    if (edge_alignment_count > 0) {
+                        const edge_alignment_envelope = ui.kwiver_history_set_edge_alignment(
+                            action.cells,
+                            action.end,
+                        );
+                        if (edge_alignment_envelope === null) {
+                            kwiver_fail("history.edge_alignment", "dispatch failed");
+                        }
+
+                        const alignment_key = action.end === "source"
+                            ? "edge_alignment_source"
+                            : action.end === "target"
+                                ? "edge_alignment_target"
+                                : null;
+                        if (alignment_key === null) {
+                            kwiver_fail("history.edge_alignment", "invalid alignment end");
+                        }
+
+                        const runtime_by_id = kwiver_runtime_cells("history.edge_alignment");
+                        for (const cell of action.cells) {
+                            const runtime_edge = runtime_by_id.get(cell.kwiver_id);
+                            const runtime_alignment = runtime_edge?.options?.[alignment_key];
+                            if (
+                                !runtime_edge
+                                || runtime_edge.kind !== "edge"
+                                || typeof runtime_alignment !== "boolean"
+                            ) {
+                                kwiver_fail("history.edge_alignment", "runtime alignment snapshot invalid");
+                            }
+
+                            const expected_alignment = !Boolean(cell.options.edge_alignment[action.end]);
+                            if (runtime_alignment !== expected_alignment) {
+                                kwiver_fail("history.edge_alignment", "runtime alignment mismatch");
+                            }
+
+                            cell.options.edge_alignment[action.end] = runtime_alignment;
+                            cells.add(cell);
+                        }
+                        if (!ui.kwiver_apply_runtime_selection(edge_alignment_envelope.selection)) {
+                            kwiver_fail("history.edge_alignment", "selection sync failed");
+                        }
                     }
                     update_panel = true;
                     break;
+                }
             }
-            for (const cell of ui.quiver.transitive_dependencies(cells)) {
+            let render_cells = null;
+            const render_root_count = cells instanceof Set
+                ? cells.size
+                : Array.isArray(cells)
+                    ? cells.length
+                    : 0;
+            if (render_root_count > 0) {
+                render_cells = ui.kwiver_runtime_transitive_dependency_cells(
+                    cells,
+                    false,
+                    "ui.history.render.dependencies",
+                );
+                if (!(render_cells instanceof Set)) {
+                    kwiver_fail("history.render", "dependency render query failed");
+                }
+            } else {
+                render_cells = new Set();
+            }
+            for (const cell of render_cells) {
                 cell.render(ui);
             }
         }
@@ -4556,17 +6574,21 @@ class Panel {
             [],
             false, // `disabled`
             (edges, value) => {
+                const alignments = Array.from(ui.selection)
+                    .filter(cell => cell.is_edge())
+                    .map((edge) => ({
+                        edge,
+                        from: edge.options.label_alignment,
+                        to: value,
+                    }));
+                if (alignments.length === 0) {
+                    return;
+                }
+
                 ui.history.add(ui, [{
                     kind: "label_alignment",
-                    alignments: Array.from(ui.selection)
-                        .filter(cell => cell.is_edge())
-                        .map((edge) => ({
-                            edge,
-                            from: edge.options.label_alignment,
-                            to: value,
-                        })),
-                }]);
-                edges.forEach(edge => edge.options.label_alignment = value);
+                    alignments,
+                }], true);
             },
             (data) => {
                 // The length of the arrow.
@@ -4734,20 +6756,28 @@ class Panel {
                 }
             }
 
-            modify();
+            try {
+                modify();
 
-            ui.history.add(ui, [{
-                kind: "style",
-                styles: Array.from(ui.selection)
-                    .filter((cell) => cell.is_edge())
-                    .map((edge) => ({
-                        edge,
-                        from: styles.get(edge),
-                        to: clone(edge.options.style),
-                    })),
-            }]);
-
-            recording = false;
+                ui.history.add(ui, [{
+                    kind: "style",
+                    styles: Array.from(ui.selection)
+                        .filter((cell) => cell.is_edge())
+                        .map((edge) => ({
+                            edge,
+                            from: styles.get(edge),
+                            to: clone(edge.options.style),
+                        })),
+                }], true);
+            } catch (error) {
+                for (const [edge, previous_style] of styles.entries()) {
+                    edge.options.style = clone(previous_style);
+                    edge.render(ui);
+                }
+                throw error;
+            } finally {
+                recording = false;
+            }
         };
 
         // Trigger an effect that changes an edge style, optionally recording the change in the
@@ -5427,7 +7457,7 @@ class Panel {
                             parse_button.set_attributes({ disabled: "" });
                             const text = textarea.element.textContent;
                             // Remove the existing diagram. This also clears the undo/redo history.
-                            ui.clear_quiver();
+                            ui.clear_quiver("ui.port.import.clear");
                             // The following should never throw an error: any parse errors will be
                             // reported in `diagnostics`.
                             const { diagnostics } = ui.quiver.import(
@@ -5893,9 +7923,44 @@ class Panel {
                 const previous_bullet = `${renderer === "typst" ? "\\" : ""}bullet`;
                 const new_bullet = `${renderer === "typst" ? "" : "\\"}bullet`;
                 if (!ui.quiver.is_empty()) {
+                    const label_updates = [];
                     for (const vertex of ui.quiver.cells[0]) {
                         if (vertex.label === previous_bullet) {
-                            vertex.label = new_bullet;
+                            label_updates.push({
+                                cell: vertex,
+                                from: vertex.label,
+                                to: new_bullet,
+                            });
+                        }
+                    }
+
+                    if (label_updates.length > 0) {
+                        const label_envelope = ui.kwiver_history_set_label(
+                            label_updates,
+                            "to",
+                        );
+                        if (label_envelope === null) {
+                            throw new Error("[kwiver-only] ui.renderer: set_label dispatch failed");
+                        }
+
+                        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+                        if (runtime_by_id === null) {
+                            throw new Error("[kwiver-only] ui.renderer: runtime snapshot unavailable");
+                        }
+
+                        for (const label_update of label_updates) {
+                            const runtime_cell = runtime_by_id.get(label_update.cell.kwiver_id);
+                            if (!runtime_cell || typeof runtime_cell.label !== "string") {
+                                throw new Error("[kwiver-only] ui.renderer: runtime label snapshot invalid");
+                            }
+                            if (runtime_cell.label !== label_update.to) {
+                                throw new Error("[kwiver-only] ui.renderer: runtime label mismatch");
+                            }
+                            label_update.cell.label = runtime_cell.label;
+                        }
+
+                        if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
+                            throw new Error("[kwiver-only] ui.renderer: selection sync failed");
                         }
                     }
                 }
@@ -6214,7 +8279,12 @@ class Panel {
 
                 // 1-cells take account of the dimensions of the cell label to be drawn snugly,
                 // so if the label is resized, the edges need to be redrawn.
-                for (const edge of ui.quiver.transitive_dependencies([cell], true)) {
+                const edges_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                    [cell],
+                    true,
+                    "ui.label.resize.dependencies",
+                );
+                for (const edge of edges_to_render) {
                     edge.render(ui);
                 }
 
@@ -7095,7 +9165,7 @@ class Toolbar {
             "select-all",
             [{ key: "A", modifier: true, context: Shortcuts.SHORTCUT_PRIORITY.Defer }],
             () => {
-                ui.select(...ui.quiver.all_cells());
+                ui.kwiver_select_all_runtime("ui.select.all");
             },
             select,
         );
@@ -7105,7 +9175,7 @@ class Toolbar {
             [{ key: "C", modifier: true, shift: true,
                 context: Shortcuts.SHORTCUT_PRIORITY.Always }],
             () => {
-                ui.select(...ui.quiver.connected_components(ui.selection));
+                ui.kwiver_select_connected_runtime("ui.select.connected");
             },
             select,
         );
@@ -7129,9 +9199,17 @@ class Toolbar {
                 { key: "Delete" },
             ],
             () => {
+                const delete_cells = ui.kwiver_runtime_transitive_dependency_cells(
+                    ui.selection,
+                    false,
+                    "ui.toolbar.delete_closure",
+                );
+                if (!(delete_cells instanceof Set)) {
+                    throw new Error("[kwiver-only] ui.toolbar.delete: delete closure query failed");
+                }
                 ui.history.add(ui, [{
                     kind: "delete",
-                    cells: ui.quiver.transitive_dependencies(ui.selection),
+                    cells: delete_cells,
                 }], true);
                 ui.panel.update(ui);
             },
@@ -7404,22 +9482,56 @@ class Toolbar {
         };
 
         const default_pan = [UIMode.Default, UIMode.Pan];
+        let runtime_all_cell_ids = null;
+        let selected_ids = null;
+        let runtime_connected_ids = null;
+        try {
+            runtime_all_cell_ids = ui.kwiver_runtime_all_cell_ids("ui.toolbar.all_cell_ids");
+            selected_ids = ui.kwiver_selected_ids();
+            if (Array.isArray(selected_ids) && selected_ids.length > 0) {
+                runtime_connected_ids = ui.kwiver_runtime_connected_component_ids(
+                    selected_ids,
+                    "ui.toolbar.connected_components",
+                );
+            } else {
+                runtime_connected_ids = [];
+            }
+        } catch (_e) {
+            runtime_all_cell_ids = null;
+            selected_ids = null;
+            runtime_connected_ids = null;
+        }
+
+        const all_cells_count = Array.isArray(runtime_all_cell_ids)
+            ? runtime_all_cell_ids.length
+            : ui.quiver.all_cells().length;
+        let can_expand_connected = false;
+        if (
+            Array.isArray(selected_ids)
+            && selected_ids.length > 0
+            && Array.isArray(runtime_connected_ids)
+        ) {
+            const connected_set = new Set(runtime_connected_ids);
+            can_expand_connected = selected_ids.length !== runtime_connected_ids.length
+                || selected_ids.some((cell_id) => !connected_set.has(cell_id));
+        } else if (ui.selection.size > 0) {
+            const connected_components = ui.quiver.connected_components(ui.selection);
+            can_expand_connected = ui.selection.size !== connected_components.size
+                || [...ui.selection].some((cell) => !connected_components.has(cell));
+        }
 
         enable_if("undo", ui.in_mode(UIMode.KeyMove, ...default_pan) && ui.history.present !== 0);
         enable_if("redo", ui.in_mode(UIMode.KeyMove, ...default_pan)
             && ui.history.present < ui.history.actions.length);
         enable_if("select-all",
-            ui.in_mode(...default_pan) && ui.selection.size < ui.quiver.all_cells().length);
-        const connected_components = ui.quiver.connected_components(ui.selection);
+            ui.in_mode(...default_pan) && ui.selection.size < all_cells_count);
         enable_if("select-connected",
             ui.in_mode(...default_pan) && ui.selection.size > 0
-            // The user hasn't already selected all connected components.
-            && (ui.selection.size !== connected_components.size
-                || [...ui.selection].some((cell) => !connected_components.has(cell)))
+            && can_expand_connected
         );
         enable_if("deselect-all", ui.in_mode(...default_pan) && ui.selection.size > 0);
         enable_if("delete", ui.in_mode(...default_pan) && ui.selection.size > 0);
-        enable_if("transform", ui.in_mode(...default_pan) && ui.quiver.all_cells().length > 0);
+        enable_if("transform", ui.in_mode(...default_pan) && all_cells_count > 0);
         enable_if("centre-view",
             ui.element.query_selector(".focus-point.focused")
             // Technically the first condition below is subsumed by the latter, but we keep it to
@@ -8446,7 +10558,12 @@ export class Edge extends Cell {
                 this.options.edge_alignment[end] = true;
             }
         }
-        for (const cell of ui.quiver.transitive_dependencies([this])) {
+        const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+            [this],
+            false,
+            "ui.edge.reconnect.dependencies",
+        );
+        for (const cell of dependencies_to_render) {
             cell.render(ui);
         }
         ui.panel.update(ui);
@@ -8481,7 +10598,12 @@ export class Edge extends Cell {
         this.render(ui);
 
         if (flip_arrow && !skip_dependencies) {
-            for (const cell of ui.quiver.transitive_dependencies([this])) {
+            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                [this],
+                false,
+                "ui.edge.flip.dependencies",
+            );
+            for (const cell of dependencies_to_render) {
                 cell.render(ui);
             }
         }
@@ -8490,7 +10612,11 @@ export class Edge extends Cell {
     /// Reverses the edge, swapping the `source` and `target`.
     reverse(ui) {
         // Flip all the dependency relationships.
-        for (const cell of ui.quiver.reverse_dependencies_of(this)) {
+        const reverse_dependencies = ui.kwiver_require_runtime_reverse_dependency_cells(
+            this,
+            "ui.edge.reverse.reverse_dependencies",
+        );
+        for (const cell of reverse_dependencies) {
             const dependencies = ui.quiver.dependencies.get(cell);
             dependencies.set(
                 this,
@@ -8589,11 +10715,18 @@ const load_typst = (ui) => {
 };
 
 // We want until the (minimal) DOM content has loaded, so we have access to `document.body`.
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     // We don't want the browser being too clever and trying to restore the scroll position, as that
     // won't play nicely with the auto-centring.
     if ("scrollRestoration" in window.history) {
         window.history.scrollRestoration = "manual";
+    }
+
+    const bridge_ready = await kwiver_bridge_ready(2000);
+    if (!bridge_ready) {
+        const bridge_status = kwiver_bridge_status();
+        UI.display_error(KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR);
+        throw new Error(kwiver_bridge_unavailable_error(bridge_status));
     }
 
     // The global UI.
@@ -8669,18 +10802,32 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             try {
-                // Decode the diagram.
-                let payload = query_data.get("q");
-                if (typeof payload === "string" && payload !== "" && kwiver_bridge_sync_payload(payload)) {
-                    const canonical_payload = kwiver_bridge_dispatch_command({
-                        action: "export_payload",
-                        origin: "ui.bootstrap.query",
-                    });
-                    if (typeof canonical_payload?.result === "string" && canonical_payload.result !== "") {
-                        payload = canonical_payload.result;
-                    }
+                // Decode the diagram through runtime first, then hydrate JS UI from canonical payload.
+                const requested_payload = query_data.get("q");
+                if (typeof requested_payload !== "string" || requested_payload === "") {
+                    throw new Error("[kwiver-only] ui.bootstrap.query: missing payload");
                 }
-                QuiverImportExport.base64.import(ui, payload);
+
+                const imported_payload = kwiver_bridge_import_payload_json(
+                    requested_payload,
+                    "ui.bootstrap.query",
+                );
+                if (
+                    !imported_payload
+                    || typeof imported_payload.payload !== "string"
+                    || imported_payload.payload === ""
+                ) {
+                    throw new Error("[kwiver-only] ui.bootstrap.query: import_payload failed");
+                }
+
+                QuiverImportExport.base64.import(ui, imported_payload.payload);
+                ui.kwiver_sync_cell_ids();
+                const runtime_selection = Array.isArray(imported_payload.after?.selection)
+                    ? imported_payload.after.selection
+                    : [];
+                if (!ui.kwiver_apply_runtime_selection(runtime_selection)) {
+                    throw new Error("[kwiver-only] ui.bootstrap.query: selection sync failed");
+                }
                 // If there is a `macro_url`, load the macros from it.
                 if (query_data.has("macro_url")) {
                     ui.load_macros_from_url(decodeURIComponent(query_data.get("macro_url")));
@@ -8712,7 +10859,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Immediately load the KaTeX library as an ES6 module (regardless of the current renderer).
-    KaTeX = import("/KaTeX/katex.mjs").then((module) => {
+    KaTeX = import("./KaTeX/katex.mjs").then((module) => {
         // KaTeX is fast enough to be worth waiting for, but not
         // immediately available. In this case, we delay loading
         // the quiver until the library has loaded.
@@ -8730,7 +10877,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load the style sheet needed for KaTeX.
     document.head.appendChild(new DOM.Element("link", {
         rel: "stylesheet",
-        href: "KaTeX/katex.css",
+        href: "./KaTeX/katex.css",
     }).element);
 
     // Prevent clicking on the logo from having any effect other than opening the link.

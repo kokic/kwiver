@@ -24,10 +24,27 @@ It now includes an editor-shell layout, a unified JS command dispatch pipeline, 
 
 ```sh
 moon build --release
-miniserve ./browser_ui_upstream
+miniserve ./
 ```
 
-Open `http://localhost:8080/`.
+Open `http://localhost:8080/browser_ui_upstream`.
+
+Runtime bootstrap expects MoonBit browser demo artifacts to be reachable from the server root:
+
+- release candidate: `_build/js/release/build/browser_demo/browser_demo.js`
+- debug candidate: `_build/js/debug/build/browser_demo/browser_demo.js`
+
+Runbook notes:
+
+- serve from the `kwiver/` repository root (the same directory that contains `_build/` and `browser_ui_upstream/`)
+- if startup shows `Kwiver runtime unavailable`, verify the two candidate paths above exist under the served root
+- if needed, rebuild artifacts first (`moon build` for debug or `moon build --release` for release)
+
+Run browser bridge smoke checks:
+
+```sh
+node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
+```
 
 ## Tokei
 

@@ -201,6 +201,49 @@ fn browser_runtime_dispatch_result_ok(result : Json) -> Bool {
 }
 
 ///|
+fn browser_runtime_dispatch_error_message_from_json(value : Json) -> String? {
+  match value {
+    Json::String(message) => Some(message)
+    Json::Object(root) =>
+      match root.get("message") {
+        Some(Json::String(message)) => Some(message)
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn browser_runtime_import_result_failure_message(result : Json) -> String? {
+  match result {
+    Json::Object(root) =>
+      match root.get("ok") {
+        Some(Json::False) =>
+          match root.get("error") {
+            Some(raw_error) =>
+              match browser_runtime_dispatch_error_message_from_json(raw_error) {
+                Some(message) => Some(message)
+                None => Some("import failed")
+              }
+            None => Some("import failed")
+          }
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn browser_runtime_is_import_action(action : String) -> Bool {
+  action == "import_text_auto_json" ||
+  action == "import_share_url_json" ||
+  action == "import_share_text_json" ||
+  action == "import_tikz_cd_json" ||
+  action == "import_fletcher_json" ||
+  action == "import_html_embed_json"
+}
+
+///|
 fn browser_runtime_dispatch_action_hint(action_json : String) -> String {
   let parsed : Result[Json, Error] = try? @json.parse(action_json)
   match parsed {
@@ -978,6 +1021,84 @@ fn browser_runtime_patch_edge_options_input_from_json(
 }
 
 ///|
+fn browser_runtime_edge_id_input_from_json(input_json : String) -> Int raise {
+  let root : Map[String, Json] = @json.from_json(@json.parse(input_json))
+  @json.from_json(browser_json_required_field(root, "edge_id"))
+}
+
+///|
+fn browser_runtime_flip_side(side : String) -> String {
+  match side {
+    "top" => "bottom"
+    "bottom" => "top"
+    _ => side
+  }
+}
+
+///|
+fn browser_runtime_reverse_loop_angle(angle : Int) -> Int {
+  let mut normalized = (angle + 360) % 360
+  if normalized < 0 {
+    normalized += 360
+  }
+  normalized - 180
+}
+
+///|
+fn browser_runtime_flip_options(
+  options : @engine.EdgeOptions,
+  is_loop : Bool,
+  flip_arrow : Bool,
+) -> @engine.EdgeOptions {
+  let mut out = match options.label_alignment {
+    @engine.LabelAlignment::Left => options.with_label_alignment_right()
+    @engine.LabelAlignment::Centre => options.with_label_alignment_centre()
+    @engine.LabelAlignment::Right => options.with_label_alignment_left()
+    @engine.LabelAlignment::Over => options.with_label_alignment_over()
+  }
+
+  if flip_arrow {
+    out = out.with_offset(-out.offset).with_curve(-out.curve)
+    if is_loop {
+      out = out.with_radius(-out.radius)
+    }
+    if out.style.name == "arrow" {
+      if out.style.tail.name == "hook" {
+        out = out.with_style_tail(
+          "hook",
+          side=browser_runtime_flip_side(out.style.tail.side),
+        )
+      }
+      if out.style.head.name == "harpoon" {
+        out = out.with_style_head(
+          "harpoon",
+          side=browser_runtime_flip_side(out.style.head.side),
+        )
+      }
+    }
+  }
+
+  out
+}
+
+///|
+fn browser_runtime_find_edge(
+  cells : Array[@engine.CellData],
+  edge_id : Int,
+) -> (Int, Int, @engine.EdgeOptions)? {
+  for cell in cells {
+    match cell {
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == edge_id {
+          return Some((edge.source, edge.target, edge.options))
+        }
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
   mut selected_ids : Array[Int]
@@ -1287,6 +1408,87 @@ pub fn BrowserRuntime::set_edge_shorten_json(
 }
 
 ///|
+pub fn BrowserRuntime::flip_edge(
+  self : BrowserRuntime,
+  edge_id : Int,
+  flip_arrow : Bool,
+) -> Bool {
+  match browser_runtime_find_edge(self.all_cells(), edge_id) {
+    Some((source_id, target_id, options)) => {
+      let is_loop = source_id == target_id
+      let next_options = browser_runtime_flip_options(options, is_loop, flip_arrow)
+      self.set_edge_options(edge_id, next_options)
+    }
+    None => false
+  }
+}
+
+///|
+pub fn BrowserRuntime::flip_edge_labels(
+  self : BrowserRuntime,
+  edge_id : Int,
+) -> Bool {
+  self.flip_edge(edge_id, false)
+}
+
+///|
+pub fn BrowserRuntime::reverse_edge(self : BrowserRuntime, edge_id : Int) -> Bool {
+  match browser_runtime_find_edge(self.all_cells(), edge_id) {
+    Some((source_id, target_id, options)) => {
+      let is_loop = source_id == target_id
+      let mut next_options = options
+      if is_loop {
+        next_options = next_options.with_angle(
+          browser_runtime_reverse_loop_angle(next_options.angle),
+        )
+      }
+      next_options = browser_runtime_flip_options(next_options, is_loop, true)
+      if !self.reconnect_edge(edge_id, target_id, source_id) {
+        return false
+      }
+      self.set_edge_options(edge_id, next_options)
+    }
+    None => false
+  }
+}
+
+///|
+pub fn BrowserRuntime::flip_edge_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let edge_id = browser_runtime_edge_id_input_from_json(input_json)
+  Json::object({
+    "ok": Json::boolean(self.flip_edge(edge_id, true)),
+    "payload": Json::string(self.export_payload()),
+  }).stringify()
+}
+
+///|
+pub fn BrowserRuntime::flip_edge_labels_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let edge_id = browser_runtime_edge_id_input_from_json(input_json)
+  Json::object({
+    "ok": Json::boolean(self.flip_edge_labels(edge_id)),
+    "payload": Json::string(self.export_payload()),
+  }).stringify()
+}
+
+///|
+pub fn BrowserRuntime::reverse_edge_json(
+  self : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  let edge_id = browser_runtime_edge_id_input_from_json(input_json)
+  Json::object({
+    "ok": Json::boolean(self.reverse_edge(edge_id)),
+    "payload": Json::string(self.export_payload()),
+  }).stringify()
+}
+
+///|
 pub fn BrowserRuntime::reconnect_edge(
   self : BrowserRuntime,
   edge_id : Int,
@@ -1501,7 +1703,9 @@ pub fn BrowserRuntime::import_share_url(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1525,7 +1729,9 @@ pub fn BrowserRuntime::import_share_text(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1549,7 +1755,9 @@ pub fn BrowserRuntime::import_text_auto(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1573,7 +1781,9 @@ pub fn BrowserRuntime::import_tikz_cd(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1597,7 +1807,9 @@ pub fn BrowserRuntime::import_fletcher(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1621,7 +1833,9 @@ pub fn BrowserRuntime::import_html_embed(
     input,
     default_renderer~,
   )
-  self.selected_ids = []
+  if imported.ok {
+    self.selected_ids = []
+  }
   imported
 }
 
@@ -1698,6 +1912,11 @@ pub fn BrowserRuntime::dispatch_json(
       result = @json.parse(self.set_edge_curve_json(input_json))
     "set_edge_shorten_json" =>
       result = @json.parse(self.set_edge_shorten_json(input_json))
+    "reverse_edge_json" =>
+      result = @json.parse(self.reverse_edge_json(input_json))
+    "flip_edge_json" => result = @json.parse(self.flip_edge_json(input_json))
+    "flip_edge_labels_json" =>
+      result = @json.parse(self.flip_edge_labels_json(input_json))
     "reconnect_edge_json" =>
       result = @json.parse(self.reconnect_edge_json(input_json))
     "remove_json" => result = @json.parse(self.remove_json(input_json))
@@ -1886,6 +2105,16 @@ pub fn BrowserRuntime::dispatch_json(
     _ => {
       ok = false
       error = Some(["unknown runtime dispatch action: ", action].join(""))
+    }
+  }
+
+  if ok && browser_runtime_is_import_action(action) {
+    match browser_runtime_import_result_failure_message(result) {
+      Some(message) => {
+        ok = false
+        error = Some(message)
+      }
+      None => ()
     }
   }
 
@@ -2196,6 +2425,30 @@ pub fn ffi_browser_runtime_set_edge_shorten_json(
   input_json : String,
 ) -> String raise {
   runtime.set_edge_shorten_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_reverse_edge_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.reverse_edge_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_flip_edge_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.flip_edge_json(input_json)
+}
+
+///|
+pub fn ffi_browser_runtime_flip_edge_labels_json(
+  runtime : BrowserRuntime,
+  input_json : String,
+) -> String raise {
+  runtime.flip_edge_labels_json(input_json)
 }
 
 ///|

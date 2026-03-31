@@ -149,7 +149,8 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
       "\"action\":\"add_vertex_json\",",
       "\"input\":{\"label\":\"A\",\"x\":0,\"y\":0},",
       "\"origin\":\"toolbar\",",
-      "\"command_id\":\"cmd-1\"",
+      "\"command_id\":\"cmd-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
       "}",
     ].join(""),
   )
@@ -157,6 +158,9 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
   let add_sequence : Int = @json.from_json(browser_demo_test_json_get(add_root, "sequence"))
   let add_ok : Bool = @json.from_json(browser_demo_test_json_get(add_root, "ok"))
   let add_action : String = @json.from_json(browser_demo_test_json_get(add_root, "action"))
+  let add_protocol : String = @json.from_json(
+    browser_demo_test_json_get(add_root, "protocol"),
+  )
   let add_origin = browser_demo_test_json_optional_string(add_root, "origin")
   let add_command_id = browser_demo_test_json_optional_string(add_root, "command_id")
   let add_changed : Bool = @json.from_json(browser_demo_test_json_get(add_root, "changed"))
@@ -171,6 +175,7 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
   inspect(add_sequence, content="1")
   inspect(add_ok, content="true")
   inspect(add_action, content="add_vertex_json")
+  inspect(add_protocol, content="kwiver.command.v1")
   inspect(add_origin, content="Some(\"toolbar\")")
   inspect(add_command_id, content="Some(\"cmd-1\")")
   inspect(add_changed, content="true")
@@ -196,7 +201,7 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
   inspect(add_after_cell_ids, content="[1]")
 
   let selection_json = session.dispatch_command_json(
-    "{\"action\":\"selection\",\"origin\":\"query\",\"command_id\":\"cmd-2\"}",
+    "{\"action\":\"selection\",\"origin\":\"query\",\"command_id\":\"cmd-2\",\"protocol\":\"kwiver.command.v1\"}",
   )
   let selection_root : Map[String, Json] = @json.from_json(@json.parse(selection_json))
   let selection_sequence : Int = @json.from_json(
@@ -221,7 +226,7 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
   )
 
   let unknown_json = session.dispatch_command_json(
-    "{\"action\":\"unknown_browser_demo_action\",\"origin\":\"query\",\"command_id\":\"cmd-3\"}",
+    "{\"action\":\"unknown_browser_demo_action\",\"origin\":\"query\",\"command_id\":\"cmd-3\",\"protocol\":\"kwiver.command.v1\"}",
   )
   let unknown_root : Map[String, Json] = @json.from_json(@json.parse(unknown_json))
   let unknown_sequence : Int = @json.from_json(
@@ -259,6 +264,301 @@ test "browser demo command envelope keeps stable metadata and checkpoints" {
     browser_demo_test_json_optional_string(malformed_root, "command_id"),
     content="None",
   )
+}
+
+///|
+test "browser demo command envelope rejects missing or mismatched protocol" {
+  let session = BrowserDemoSession::new()
+  let baseline_payload = session.payload()
+
+  let missing_protocol_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_vertex_json\",",
+      "\"input\":{\"label\":\"A\",\"x\":0,\"y\":0},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"proto-missing-1\"",
+      "}",
+    ].join(""),
+  )
+  let missing_root : Map[String, Json] = @json.from_json(@json.parse(missing_protocol_json))
+  let missing_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(missing_root, "sequence"),
+  )
+  let missing_ok : Bool = @json.from_json(browser_demo_test_json_get(missing_root, "ok"))
+  let missing_action : String = @json.from_json(
+    browser_demo_test_json_get(missing_root, "action"),
+  )
+  let missing_changed : Bool = @json.from_json(
+    browser_demo_test_json_get(missing_root, "changed"),
+  )
+  let missing_error = browser_demo_test_json_optional_string(missing_root, "error")
+  let missing_protocol : String = @json.from_json(
+    browser_demo_test_json_get(missing_root, "protocol"),
+  )
+  inspect(missing_sequence, content="1")
+  inspect(missing_ok, content="false")
+  inspect(missing_action, content="add_vertex_json")
+  inspect(missing_changed, content="false")
+  inspect(missing_error is Some(_), content="true")
+  inspect(missing_protocol, content="kwiver.command.v1")
+  inspect(session.payload() == baseline_payload, content="true")
+  inspect(session.cell_ids(), content="[]")
+
+  let mismatch_protocol_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_vertex_json\",",
+      "\"input\":{\"label\":\"B\",\"x\":1,\"y\":0},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"proto-mismatch-1\",",
+      "\"protocol\":\"kwiver.command.v0\"",
+      "}",
+    ].join(""),
+  )
+  let mismatch_root : Map[String, Json] = @json.from_json(@json.parse(mismatch_protocol_json))
+  let mismatch_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(mismatch_root, "sequence"),
+  )
+  let mismatch_ok : Bool = @json.from_json(browser_demo_test_json_get(mismatch_root, "ok"))
+  let mismatch_action : String = @json.from_json(
+    browser_demo_test_json_get(mismatch_root, "action"),
+  )
+  let mismatch_changed : Bool = @json.from_json(
+    browser_demo_test_json_get(mismatch_root, "changed"),
+  )
+  let mismatch_error = browser_demo_test_json_optional_string(mismatch_root, "error")
+  inspect(mismatch_sequence, content="2")
+  inspect(mismatch_ok, content="false")
+  inspect(mismatch_action, content="add_vertex_json")
+  inspect(mismatch_changed, content="false")
+  inspect(mismatch_error is Some(_), content="true")
+  inspect(session.payload() == baseline_payload, content="true")
+  inspect(session.cell_ids(), content="[]")
+
+  let valid_protocol_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_vertex_json\",",
+      "\"input\":{\"label\":\"C\",\"x\":2,\"y\":0},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"proto-ok-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+  let valid_root : Map[String, Json] = @json.from_json(@json.parse(valid_protocol_json))
+  let valid_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(valid_root, "sequence"),
+  )
+  let valid_ok : Bool = @json.from_json(browser_demo_test_json_get(valid_root, "ok"))
+  let valid_changed : Bool = @json.from_json(
+    browser_demo_test_json_get(valid_root, "changed"),
+  )
+  inspect(valid_sequence, content="3")
+  inspect(valid_ok, content="true")
+  inspect(valid_changed, content="true")
+  inspect(session.cell_ids(), content="[1]")
+}
+
+///|
+test "browser demo command envelope import_payload closes loop with checkpoints" {
+  let source = BrowserDemoSession::new()
+  let a = source.add_vertex("A", 0, 0)
+  let b = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(a, b, label="f"))
+  let payload = source.payload()
+
+  let session = BrowserDemoSession::new()
+  let before_payload = session.payload()
+
+  let import_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"import_payload\",",
+      "\"input\":\"", payload, "\",",
+      "\"origin\":\"bootstrap\",",
+      "\"command_id\":\"import-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+
+  let import_root : Map[String, Json] = @json.from_json(@json.parse(import_json))
+  let import_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(import_root, "sequence"),
+  )
+  let import_ok : Bool = @json.from_json(browser_demo_test_json_get(import_root, "ok"))
+  let import_action : String = @json.from_json(
+    browser_demo_test_json_get(import_root, "action"),
+  )
+  let import_changed : Bool = @json.from_json(
+    browser_demo_test_json_get(import_root, "changed"),
+  )
+  let import_result : String = @json.from_json(
+    browser_demo_test_json_get(import_root, "result"),
+  )
+
+  inspect(import_sequence, content="1")
+  inspect(import_ok, content="true")
+  inspect(import_action, content="import_payload")
+  inspect(import_changed, content="true")
+  inspect(import_result == session.payload(), content="true")
+  inspect(session.cell_ids(), content="[1, 2, 3]")
+  inspect(session.selection(), content="[]")
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "origin"),
+    content="Some(\"bootstrap\")",
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "command_id"),
+    content="Some(\"import-1\")",
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "undo_checkpoint"),
+    content=["Some(\"", before_payload, "\")"].join(""),
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "redo_checkpoint"),
+    content=["Some(\"", session.payload(), "\")"].join(""),
+  )
+
+  let before_state : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(import_root, "before"),
+  )
+  let after_state : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(import_root, "after"),
+  )
+  let before_cell_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(before_state, "cell_ids"),
+  )
+  let after_cell_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(after_state, "cell_ids"),
+  )
+  let after_selection : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(after_state, "selection"),
+  )
+  inspect(before_cell_ids, content="[]")
+  inspect(after_cell_ids, content="[1, 2, 3]")
+  inspect(after_selection, content="[]")
+}
+
+///|
+test "browser demo command envelope create actions close loop with runtime snapshot" {
+  let session = BrowserDemoSession::new()
+
+  let add_a_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_vertex_json\",",
+      "\"input\":{\"label\":\"A\",\"x\":0,\"y\":0},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"create-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+  let add_a_root : Map[String, Json] = @json.from_json(@json.parse(add_a_json))
+  let add_a_sequence : Int = @json.from_json(browser_demo_test_json_get(add_a_root, "sequence"))
+  let add_a_ok : Bool = @json.from_json(browser_demo_test_json_get(add_a_root, "ok"))
+  let add_a_action : String = @json.from_json(browser_demo_test_json_get(add_a_root, "action"))
+  let add_a_result : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(add_a_root, "result"),
+  )
+  let add_a_id : Int = @json.from_json(browser_demo_test_json_get(add_a_result, "id"))
+  let add_a_after : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(add_a_root, "after"),
+  )
+  let add_a_after_selection : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(add_a_after, "selection"),
+  )
+  let add_a_after_cell_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(add_a_after, "cell_ids"),
+  )
+  inspect(add_a_sequence, content="1")
+  inspect(add_a_ok, content="true")
+  inspect(add_a_action, content="add_vertex_json")
+  inspect(add_a_id, content="1")
+  inspect(add_a_after_selection, content="[1]")
+  inspect(add_a_after_cell_ids, content="[1]")
+
+  let add_b_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_vertex_json\",",
+      "\"input\":{\"label\":\"B\",\"x\":1,\"y\":0},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"create-2\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+  let add_b_root : Map[String, Json] = @json.from_json(@json.parse(add_b_json))
+  let add_b_sequence : Int = @json.from_json(browser_demo_test_json_get(add_b_root, "sequence"))
+  let add_b_result : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(add_b_root, "result"),
+  )
+  let add_b_id : Int = @json.from_json(browser_demo_test_json_get(add_b_result, "id"))
+  inspect(add_b_sequence, content="2")
+  inspect(add_b_id, content="2")
+
+  let add_edge_json = session.dispatch_command_json(
+    [
+      "{",
+      "\"action\":\"add_edge_json\",",
+      "\"input\":{\"source_id\":1,\"target_id\":2,\"label\":\"f\"},",
+      "\"origin\":\"toolbar\",",
+      "\"command_id\":\"create-3\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+  let add_edge_root : Map[String, Json] = @json.from_json(@json.parse(add_edge_json))
+  let add_edge_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(add_edge_root, "sequence"),
+  )
+  let add_edge_ok : Bool = @json.from_json(browser_demo_test_json_get(add_edge_root, "ok"))
+  let add_edge_action : String = @json.from_json(
+    browser_demo_test_json_get(add_edge_root, "action"),
+  )
+  let add_edge_result : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(add_edge_root, "result"),
+  )
+  let add_edge_id : Int = @json.from_json(
+    browser_demo_test_json_get(add_edge_result, "id"),
+  )
+  let add_edge_after : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(add_edge_root, "after"),
+  )
+  let add_edge_after_selection : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(add_edge_after, "selection"),
+  )
+  let add_edge_after_cell_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(add_edge_after, "cell_ids"),
+  )
+  inspect(add_edge_sequence, content="3")
+  inspect(add_edge_ok, content="true")
+  inspect(add_edge_action, content="add_edge_json")
+  inspect(add_edge_id, content="3")
+  inspect(add_edge_after_selection, content="[3]")
+  inspect(add_edge_after_cell_ids, content="[1, 2, 3]")
+  inspect(session.cell_ids(), content="[1, 2, 3]")
+  inspect(session.selection(), content="[3]")
+
+  let mut saw_edge = false
+  for cell in session.all_cells() {
+    match cell {
+      @engine.CellData::Edge(edge) =>
+        if edge.cell.id == add_edge_id {
+          saw_edge = true
+          inspect(edge.source, content="1")
+          inspect(edge.target, content="2")
+          inspect(edge.cell.label, content="f")
+        }
+      _ => ()
+    }
+  }
+  inspect(saw_edge, content="true")
 }
 
 ///|
@@ -616,6 +916,34 @@ test "browser demo typed import and render helpers support text formats" {
 }
 
 ///|
+test "browser demo import_tikz_cd_result surfaces error and preserves cached state on failure" {
+  let session = BrowserDemoSession::new()
+  let seed = session.add_vertex("Seed", 0, 0)
+  ignore(session.apply_selection([seed]))
+  let before_payload = session.payload()
+
+  let invalid = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[\"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+  let imported = session.import_tikz_cd_result(invalid)
+
+  inspect(imported.ok, content="false")
+  inspect(imported.payload == before_payload, content="true")
+  inspect(imported.error is Some(_), content="true")
+  match imported.error {
+    Some(message) => inspect(message.contains("missing target"), content="true")
+    None => abort("expected import error")
+  }
+  inspect(imported.to_json_string().contains("\"error\":\""), content="true")
+
+  inspect(session.payload() == before_payload, content="true")
+  inspect(session.selection(), content="[1]")
+  inspect(session.cell_ids(), content="[1]")
+}
+
+///|
 test "browser demo typed reset and safe dispatch helpers keep cached state aligned" {
   let session = BrowserDemoSession::new()
 
@@ -970,6 +1298,26 @@ test "browser demo ffi wrappers expose reset safe-dispatch and configurable rend
 }
 
 ///|
+test "browser demo ffi command protocol export matches envelope protocol" {
+  inspect(ffi_browser_demo_command_protocol(), content="kwiver.command.v1")
+
+  let session = ffi_browser_demo_session_new()
+  let envelope_json = ffi_browser_demo_session_dispatch_command_json(
+    session,
+    "{\"action\":\"selection\",\"protocol\":\"kwiver.command.v1\"}",
+  )
+  let envelope_root : Map[String, Json] = @json.from_json(@json.parse(envelope_json))
+  let envelope_ok : Bool = @json.from_json(
+    browser_demo_test_json_get(envelope_root, "ok"),
+  )
+  let envelope_protocol : String = @json.from_json(
+    browser_demo_test_json_get(envelope_root, "protocol"),
+  )
+  inspect(envelope_ok, content="true")
+  inspect(envelope_protocol, content="kwiver.command.v1")
+}
+
+///|
 test "browser demo ffi command envelope wrapper exposes stable checkpoint contract" {
   let session = ffi_browser_demo_session_new()
   let initial_payload = session.payload()
@@ -980,15 +1328,20 @@ test "browser demo ffi command envelope wrapper exposes stable checkpoint contra
       "\"action\":\"add_vertex_json\",",
       "\"input\":{\"label\":\"A\",\"x\":0,\"y\":0},",
       "\"origin\":\"ffi\",",
-      "\"command_id\":\"ffi-1\"",
+      "\"command_id\":\"ffi-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
       "}",
     ].join(""),
   )
   let add_root : Map[String, Json] = @json.from_json(@json.parse(add_json))
   let add_sequence : Int = @json.from_json(browser_demo_test_json_get(add_root, "sequence"))
   let add_ok : Bool = @json.from_json(browser_demo_test_json_get(add_root, "ok"))
+  let add_protocol : String = @json.from_json(
+    browser_demo_test_json_get(add_root, "protocol"),
+  )
   inspect(add_sequence, content="1")
   inspect(add_ok, content="true")
+  inspect(add_protocol, content="kwiver.command.v1")
   inspect(
     browser_demo_test_json_optional_string(add_root, "undo_checkpoint"),
     content=["Some(\"", initial_payload, "\")"].join(""),
@@ -1014,6 +1367,81 @@ test "browser demo ffi command envelope wrapper exposes stable checkpoint contra
   )
   inspect(malformed_sequence, content="2")
   inspect(malformed_ok, content="false")
+}
+
+///|
+test "browser demo ffi command envelope wrapper import_payload closes loop with checkpoints" {
+  let source = BrowserDemoSession::new()
+  let a = source.add_vertex("A", 0, 0)
+  let b = source.add_vertex("B", 1, 0)
+  ignore(source.add_edge(a, b, label="f"))
+  let payload = source.payload()
+
+  let session = ffi_browser_demo_session_new()
+  let before_payload = session.payload()
+
+  let import_json = ffi_browser_demo_session_dispatch_command_json(
+    session,
+    [
+      "{",
+      "\"action\":\"import_payload\",",
+      "\"input\":\"", payload, "\",",
+      "\"origin\":\"ffi-bootstrap\",",
+      "\"command_id\":\"ffi-import-1\",",
+      "\"protocol\":\"kwiver.command.v1\"",
+      "}",
+    ].join(""),
+  )
+  let import_root : Map[String, Json] = @json.from_json(@json.parse(import_json))
+  let import_sequence : Int = @json.from_json(
+    browser_demo_test_json_get(import_root, "sequence"),
+  )
+  let import_ok : Bool = @json.from_json(browser_demo_test_json_get(import_root, "ok"))
+  let import_action : String = @json.from_json(
+    browser_demo_test_json_get(import_root, "action"),
+  )
+  let import_changed : Bool = @json.from_json(
+    browser_demo_test_json_get(import_root, "changed"),
+  )
+  let import_result : String = @json.from_json(
+    browser_demo_test_json_get(import_root, "result"),
+  )
+
+  inspect(import_sequence, content="1")
+  inspect(import_ok, content="true")
+  inspect(import_action, content="import_payload")
+  inspect(import_changed, content="true")
+  inspect(import_result == session.payload(), content="true")
+  inspect(session.cell_ids(), content="[1, 2, 3]")
+  inspect(session.selection(), content="[]")
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "origin"),
+    content="Some(\"ffi-bootstrap\")",
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "command_id"),
+    content="Some(\"ffi-import-1\")",
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "undo_checkpoint"),
+    content=["Some(\"", before_payload, "\")"].join(""),
+  )
+  inspect(
+    browser_demo_test_json_optional_string(import_root, "redo_checkpoint"),
+    content=["Some(\"", session.payload(), "\")"].join(""),
+  )
+
+  let after_state : Map[String, Json] = @json.from_json(
+    browser_demo_test_json_get(import_root, "after"),
+  )
+  let after_cell_ids : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(after_state, "cell_ids"),
+  )
+  let after_selection : Array[Int] = @json.from_json(
+    browser_demo_test_json_get(after_state, "selection"),
+  )
+  inspect(after_cell_ids, content="[1, 2, 3]")
+  inspect(after_selection, content="[]")
 }
 
 ///|

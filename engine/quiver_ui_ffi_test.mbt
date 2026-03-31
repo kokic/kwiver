@@ -496,6 +496,33 @@ test "ui ffi adapter import tikz updates state with metadata defaults" {
 }
 
 ///|
+test "ui ffi adapter import tikz reports typed error and preserves state on failure" {
+  let adapter = ffi_adapter_new()
+  ignore(ffi_adapter_add_vertex(adapter, "Seed", 0, 0))
+  let before_payload = ffi_adapter_export_base64(adapter)
+
+  let invalid = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[\"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = ffi_adapter_import_tikz_cd(adapter, invalid)
+  inspect(imported.ok, content="false")
+  inspect(imported.payload == before_payload, content="true")
+  inspect(imported.error is Some(_), content="true")
+  match imported.error {
+    Some(error) => {
+      inspect(error.kind, content="reference")
+      inspect(error.message.contains("missing target"), content="true")
+    }
+    None => abort("expected import error")
+  }
+  inspect(ffi_adapter_export_base64(adapter) == before_payload, content="true")
+  inspect(ffi_adapter_all_cell_ids(adapter), content="[1]")
+}
+
+///|
 test "ui ffi adapter import share text supports exported wrappers and iframe-only" {
   let source = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(source, "A", 0, 0)

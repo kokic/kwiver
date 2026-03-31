@@ -38,6 +38,24 @@ pub struct TikzCdExportResult {
 }
 
 ///|
+pub struct TikzCdImportError {
+  kind : String
+  message : String
+  line : Int
+  column : Int
+}
+
+///|
+pub struct TikzCdTryImportResult {
+  ok : Bool
+  quiver : Quiver?
+  macro_url : String?
+  renderer : String?
+  embed : Bool
+  error : TikzCdImportError?
+}
+
+///|
 pub fn TikzCdExportSettings::default() -> TikzCdExportSettings {
   {
     centre_diagram: false,
@@ -2492,6 +2510,18 @@ fn tikz_parse_shift_magnitude(value : String) -> Int? {
 }
 
 ///|
+fn tikz_trim_supported_unit(value : String) -> String {
+  let text = value.trim().to_string()
+  let units = ["pt", "ex", "em", "mm", "cm"]
+  for unit in units {
+    if text.has_suffix(unit) && text.length() > unit.length() {
+      return text.unsafe_substring(start=0, end=text.length() - unit.length())
+    }
+  }
+  text
+}
+
+///|
 fn tikz_parse_bend_curve_magnitude(value : String) -> Int? {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
@@ -2581,15 +2611,10 @@ fn tikz_parse_curve_height_option(value : String) -> Int? {
   if !compact.has_prefix("height=") {
     return None
   }
-  let mut height_text = compact.unsafe_substring(start=7, end=compact.length())
-  if height_text.has_suffix("pt") {
-    height_text = height_text.unsafe_substring(
-      start=0,
-      end=height_text.length() - 2,
-    )
-  }
+  let height_text = compact.unsafe_substring(start=7, end=compact.length())
+  let height_value = tikz_trim_supported_unit(height_text)
 
-  match tikz_parse_signed_double(height_text) {
+  match tikz_parse_signed_double(height_value) {
     Some(height_pt) => Some(tikz_round_to_int(height_pt / 6.0))
     None => None
   }
@@ -2937,13 +2962,10 @@ fn tikz_parse_angle_option(value : String) -> Double? {
 
 ///|
 fn tikz_parse_distance_option(value : String) -> Double? {
-  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
-  if text.has_suffix("mm") || text.has_suffix("pt") || text.has_suffix("em") {
-    text = text.unsafe_substring(start=0, end=text.length() - 2)
-  }
-  match tikz_parse_signed_double(text) {
+  match tikz_parse_signed_double(tikz_trim_supported_unit(text)) {
     Some(distance_mm) => if distance_mm > 0.0 { Some(distance_mm) } else { None }
     None => None
   }
@@ -3383,7 +3405,7 @@ fn tikz_apply_arrow_key_value_option(
   }
 
   if key_token == "curve" {
-    match tikz_parse_curve_height_option(value_raw) {
+    match tikz_parse_curve_height_option(value_token) {
       Some(curve) => return options.with_curve(curve)
       None => ()
     }
@@ -3550,16 +3572,15 @@ fn tikz_apply_label_options_to_edge_options(
 
 ///|
 fn tikz_parse_shorten_magnitude(value : String) -> Int? {
-  let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+  let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
-  if text.has_suffix("pt") {
-    text = text.unsafe_substring(start=0, end=text.length() - 2)
-  } else {
+  let magnitude_text = tikz_trim_supported_unit(text)
+  if magnitude_text == text {
     return None
   }
 
-  match tikz_parse_signed_double(text) {
+  match tikz_parse_signed_double(magnitude_text) {
     Some(raw_value) => {
       let rounded = tikz_round_to_int(raw_value)
       if rounded < 0 {
@@ -3905,6 +3926,75 @@ fn tikz_split_arrow_options(raw_options : String) -> Array[String] {
 }
 
 ///|
+fn tikz_has_empty_arrow_option(raw_options : String) -> Bool {
+  if raw_options.trim().to_string() == "" {
+    return false
+  }
+
+  let mut segment_start = 0
+  let mut i = 0
+  let mut brace_depth = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut in_quotes = false
+
+  while i < raw_options.length() {
+    let ch = raw_options.unsafe_get(i)
+    if ch == '\\' {
+      if i + 1 < raw_options.length() {
+        i = i + 2
+      } else {
+        i = i + 1
+      }
+      continue
+    }
+
+    if ch == '"' {
+      in_quotes = !in_quotes
+      i = i + 1
+      continue
+    }
+
+    if !in_quotes {
+      if ch == '{' {
+        brace_depth = brace_depth + 1
+      } else if ch == '}' && brace_depth > 0 {
+        brace_depth = brace_depth - 1
+      } else if ch == '[' {
+        bracket_depth = bracket_depth + 1
+      } else if ch == ']' && bracket_depth > 0 {
+        bracket_depth = bracket_depth - 1
+      } else if ch == '(' {
+        paren_depth = paren_depth + 1
+      } else if ch == ')' && paren_depth > 0 {
+        paren_depth = paren_depth - 1
+      } else if ch == ',' &&
+        brace_depth == 0 &&
+        bracket_depth == 0 &&
+        paren_depth == 0 {
+        let segment = raw_options
+          .unsafe_substring(start=segment_start, end=i)
+          .trim()
+          .to_string()
+        if segment == "" {
+          return true
+        }
+        i = i + 1
+        segment_start = i
+        continue
+      }
+    }
+
+    i = i + 1
+  }
+
+  raw_options
+    .unsafe_substring(start=segment_start, end=raw_options.length())
+    .trim()
+    .to_string() == ""
+}
+
+///|
 fn tikz_find_closing_delimiter(
   input : String,
   open_delimiter : UInt16,
@@ -4171,82 +4261,84 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
               match tikz_option_key_value(option) {
                 Some((key, value)) =>
-                  if key == "from" {
-                    match tikz_parse_grid_reference(value) {
-                      Some((x, y)) => {
-                        from_x = Some(x)
-                        from_y = Some(y)
-                      }
-                      None =>
-                        match tikz_parse_reference_name(value) {
-                          Some(reference_name) => from_ref = Some(reference_name)
-                          None => ()
-                        }
-                    }
-                  } else if key == "to" {
-                    match tikz_parse_grid_reference(value) {
-                      Some((x, y)) => {
-                        to_x = Some(x)
-                        to_y = Some(y)
-                      }
-                      None =>
-                        match tikz_parse_reference_name(value) {
-                          Some(reference_name) => to_ref = Some(reference_name)
-                          None => ()
-                        }
-                    }
-                  } else {
+                  {
                     let key_token = tikz_strip_math_wrapper(
                       tikz_unwrap_braced_text(key),
                     )
                     let value_token = tikz_strip_math_wrapper(
                       tikz_unwrap_braced_text(value),
                     )
-                    if key_token == "name" {
-                      match tikz_parse_reference_name(value) {
-                        Some(reference_name) => name = Some(reference_name)
-                        None => ()
-                      }
-                    }
-                    if key_token == "draw" || key_token == "color" {
-                      match tikz_parse_colour_option(value) {
-                        Some(colour) => {
-                          parsed_options = parsed_options.with_colour(colour)
-                          if key_token == "color" {
-                            parsed_label_colour = colour
-                          }
+                    if key_token == "from" {
+                      match tikz_parse_grid_reference(value) {
+                        Some((x, y)) => {
+                          from_x = Some(x)
+                          from_y = Some(y)
                         }
-                        None => ()
+                        None =>
+                          match tikz_parse_reference_name(value) {
+                            Some(reference_name) => from_ref = Some(reference_name)
+                            None => ()
+                          }
                       }
-                    } else if key_token == "start anchor" {
-                      if value_token == "center" {
-                        source_center_anchor = true
+                    } else if key_token == "to" {
+                      match tikz_parse_grid_reference(value) {
+                        Some((x, y)) => {
+                          to_x = Some(x)
+                          to_y = Some(y)
+                        }
+                        None =>
+                          match tikz_parse_reference_name(value) {
+                            Some(reference_name) => to_ref = Some(reference_name)
+                            None => ()
+                          }
                       }
-                    } else if key_token == "end anchor" {
-                      if value_token == "center" {
-                        target_center_anchor = true
+                    } else {
+                      if key_token == "name" {
+                        match tikz_parse_reference_name(value) {
+                          Some(reference_name) => name = Some(reference_name)
+                          None => ()
+                        }
                       }
-                    } else if key_token == "text" {
-                      match tikz_parse_colour_option(value) {
-                        Some(colour) => parsed_label_colour = colour
-                        None => ()
+                      if key_token == "draw" || key_token == "color" {
+                        match tikz_parse_colour_option(value) {
+                          Some(colour) => {
+                            parsed_options = parsed_options.with_colour(colour)
+                            if key_token == "color" {
+                              parsed_label_colour = colour
+                            }
+                          }
+                          None => ()
+                        }
+                      } else if key_token == "start anchor" {
+                        if value_token == "center" {
+                          source_center_anchor = true
+                        }
+                      } else if key_token == "end anchor" {
+                        if value_token == "center" {
+                          target_center_anchor = true
+                        }
+                      } else if key_token == "text" {
+                        match tikz_parse_colour_option(value) {
+                          Some(colour) => parsed_label_colour = colour
+                          None => ()
+                        }
                       }
+                      parsed_loop_options = tikz_apply_loop_key_value_option(
+                        parsed_loop_options,
+                        key,
+                        value,
+                      )
+                      parsed_options = tikz_apply_arrow_key_value_option(
+                        parsed_options,
+                        key,
+                        value,
+                      )
+                      parsed_label_options = tikz_apply_label_key_value_option(
+                        parsed_label_options,
+                        key,
+                        value,
+                      )
                     }
-                    parsed_loop_options = tikz_apply_loop_key_value_option(
-                      parsed_loop_options,
-                      key,
-                      value,
-                    )
-                    parsed_options = tikz_apply_arrow_key_value_option(
-                      parsed_options,
-                      key,
-                      value,
-                    )
-                    parsed_label_options = tikz_apply_label_key_value_option(
-                      parsed_label_options,
-                      key,
-                      value,
-                    )
                   }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
@@ -4600,6 +4692,530 @@ fn tikz_ensure_implicit_vertex_at(
 }
 
 ///|
+fn tikz_import_error(
+  kind : String,
+  message : String,
+  line? : Int = 0,
+  column? : Int = 0,
+) -> TikzCdImportError {
+  { kind, message, line, column }
+}
+
+///|
+fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
+  for option in tikz_split_arrow_options(options) {
+    let trimmed = option.trim().to_string()
+    if trimmed == "" {
+      return Some(
+        tikz_import_error(
+          "syntax",
+          "empty tikzcd diagram option",
+        ),
+      )
+    }
+
+    match tikz_option_key_value(option) {
+      Some((key, value)) => {
+        let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+          .trim()
+          .to_string()
+        let key_compact = key_token
+          .replace_all(old=" ", new="")
+          .replace_all(old="\t", new="")
+        let value_token = tikz_unwrap_braced_text(value).trim().to_string()
+
+        if key_compact == "ampersandreplacement" {
+          if value_token == "" {
+            return Some(
+              tikz_import_error(
+                "option",
+                "ampersand replacement must not be empty",
+              ),
+            )
+          }
+          continue
+        }
+
+        if key_token == "sep" ||
+          key_token == "row sep" ||
+          key_token == "column sep" {
+          if value_token == "" {
+            return Some(
+              tikz_import_error(
+                "option",
+                [key_token, " must not be empty"].join(""),
+              ),
+            )
+          }
+          continue
+        }
+
+        return Some(
+          tikz_import_error(
+            "option",
+            ["unknown tikzcd diagram option: ", key_token].join(""),
+          ),
+        )
+      }
+      None => {
+        if trimmed == "cramped" {
+          continue
+        }
+
+        return Some(
+          tikz_import_error(
+            "option",
+            ["unknown tikzcd diagram option: ", trimmed].join(""),
+          ),
+        )
+      }
+    }
+  }
+  None
+}
+
+///|
+fn tikz_validate_label_suffix_option(option : String) -> String? {
+  let suffixes = tikz_label_suffix_options(option)
+  for suffix in suffixes {
+    let suffix_trimmed = suffix.trim().to_string()
+    if suffix_trimmed == "" {
+      return Some("empty label suffix option")
+    }
+
+    match tikz_option_key_value(suffix_trimmed) {
+      Some((key, value)) => {
+        let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+          .trim()
+          .to_string()
+        let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+          .trim()
+          .to_string()
+        if key_token == "name" {
+          if tikz_parse_reference_name(value) is None {
+            return Some("invalid name value in label suffix")
+          }
+          continue
+        }
+
+        if key_token == "pos" {
+          if tikz_parse_label_pos_percent(value) is None {
+            return Some("invalid pos value in label suffix")
+          }
+          continue
+        }
+
+        if key_token == "text" {
+          if value_token == "" {
+            return Some("invalid text colour in label suffix")
+          }
+          continue
+        }
+
+        if key_token == "anchor" ||
+          key_token == "inner sep" ||
+          key_token == "rotate" {
+          continue
+        }
+
+        if tikz_is_label_modifier(key_token) {
+          continue
+        }
+
+        continue
+      }
+      None => {
+        if suffix_trimmed == "'" || tikz_is_label_modifier(suffix_trimmed) {
+          continue
+        }
+        continue
+      }
+    }
+  }
+  None
+}
+
+///|
+fn tikz_validate_arrow_key_value_option(
+  key : String,
+  value : String,
+) -> String? {
+  let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
+    .trim()
+    .to_string()
+  let key_compact = key_token
+    .replace_all(old=" ", new="")
+    .replace_all(old="\t", new="")
+  let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+    .trim()
+    .to_string()
+
+  if key_token == "from" || key_token == "to" {
+    if value_token.contains(" ") || value_token.contains("\t") {
+      return Some(
+        ["invalid ", key_token, " endpoint reference"].join(""),
+      )
+    }
+    if tikz_parse_grid_reference(value) is None &&
+      tikz_parse_reference_name(value) is None {
+      return Some(
+        ["invalid ", key_token, " endpoint reference"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "name" {
+    if tikz_parse_reference_name(value) is None {
+      return Some("invalid name option")
+    }
+    return None
+  }
+
+  if key_token == "draw" {
+    if value_token == "none" {
+      return None
+    }
+    if value_token == "" {
+      return Some("invalid draw colour option")
+    }
+    return None
+  }
+
+  if key_token == "color" || key_token == "text" {
+    if value_token == "" {
+      return Some(
+        ["invalid ", key_token, " colour option"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "start anchor" || key_token == "end anchor" {
+    if value_token != "center" {
+      return Some(
+        ["invalid ", key_token, " value"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "scaling nfold" {
+    return None
+  }
+
+  if key_token == "shift right" || key_token == "shift left" {
+    if tikz_parse_shift_magnitude(value) is None {
+      return Some(
+        ["invalid ", key_token, " value"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "curve" {
+    if tikz_parse_curve_height_option(value) is None {
+      return Some("invalid curve value")
+    }
+    return None
+  }
+
+  if key_token == "bend left" || key_token == "bend right" {
+    if tikz_parse_bend_curve_magnitude(value) is None {
+      return Some(
+        ["invalid ", key_token, " value"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "between" {
+    if tikz_parse_between_option(value) is None {
+      return Some("invalid between value")
+    }
+    return None
+  }
+
+  if key_compact == "shorten<" || key_compact == "shorten>" {
+    if tikz_parse_shorten_magnitude(value) is None {
+      return Some("invalid shorten value")
+    }
+    return None
+  }
+
+  if key_token == "in" || key_token == "out" {
+    if tikz_parse_angle_option(value) is None {
+      return Some(
+        ["invalid ", key_token, " loop angle"].join(""),
+      )
+    }
+    return None
+  }
+
+  if key_token == "distance" {
+    if tikz_parse_distance_option(value) is None {
+      return Some("invalid loop distance")
+    }
+    return None
+  }
+
+  if key_token == "pos" {
+    if tikz_parse_label_pos_percent(value) is None {
+      return Some("invalid pos value")
+    }
+    return None
+  }
+
+  if tikz_is_label_modifier(key_token) {
+    return None
+  }
+
+  Some(["unknown arrow option: ", key_token].join(""))
+}
+
+///|
+fn tikz_validate_arrow_option(option : String) -> String? {
+  let trimmed = option.trim().to_string()
+  if trimmed == "" {
+    return Some("empty arrow option")
+  }
+
+  if tikz_parse_decoration_option(trimmed) is Some(_) {
+    return None
+  }
+  if tikz_parse_arrow_body_decoration_option(trimmed) is Some(_) {
+    return None
+  }
+  if tikz_extract_arrow_label_option(trimmed) is Some(_) {
+    return tikz_validate_label_suffix_option(trimmed)
+  }
+
+  match tikz_option_key_value(trimmed) {
+    Some((key, value)) => tikz_validate_arrow_key_value_option(key, value)
+    None => {
+      let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(trimmed))
+        .trim()
+        .to_string()
+      if token == "phantom" ||
+        tikz_is_direction_token(token) ||
+        tikz_is_arrow_flag_token(token) ||
+        tikz_is_label_modifier(token) {
+        return None
+      }
+
+      if tikz_extract_arrow_label_option(trimmed) is Some(_) {
+        return tikz_validate_label_suffix_option(trimmed)
+      }
+      if trimmed.has_prefix("\"") {
+        return None
+      }
+
+      Some(["unknown arrow option: ", token].join(""))
+    }
+  }
+}
+
+///|
+fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
+  let mut rest = cell
+  while true {
+    match tikz_next_arrow_match(rest) {
+      Some(matched) => {
+        let after_arrow = rest.unsafe_substring(
+          start=matched.options_start,
+          end=rest.length(),
+        )
+        match tikz_find_closing_delimiter(
+          after_arrow,
+          matched.open_delimiter,
+          matched.close_delimiter,
+        ) {
+          Some(end) => {
+            let raw_options = after_arrow.unsafe_substring(start=0, end~)
+            if tikz_has_empty_arrow_option(raw_options) {
+              return Some(
+                tikz_import_error(
+                  "syntax",
+                  "empty arrow option",
+                ),
+              )
+            }
+            let options = tikz_split_arrow_options(raw_options)
+            let mut has_to = false
+            let mut has_direction = false
+            let mut is_loop = false
+
+            for option in options {
+              let trimmed = option.trim().to_string()
+              if trimmed == "" {
+                return Some(
+                  tikz_import_error(
+                    "syntax",
+                    "empty arrow option",
+                  ),
+                )
+              }
+              match tikz_validate_arrow_option(trimmed) {
+                Some(message) =>
+                  return Some(
+                    tikz_import_error("option", message),
+                  )
+                None => ()
+              }
+
+              match tikz_option_key_value(trimmed) {
+                Some((key, _)) => {
+                  let key_token = tikz_strip_math_wrapper(
+                    tikz_unwrap_braced_text(key),
+                  )
+                    .trim()
+                    .to_string()
+                  if key_token == "to" {
+                    has_to = true
+                  }
+                  if key_token == "name" {
+                    // Named arrows are still required to provide a target.
+                    ()
+                  }
+                }
+                None => {
+                  let token = tikz_strip_math_wrapper(
+                    tikz_unwrap_braced_text(trimmed),
+                  )
+                    .trim()
+                    .to_string()
+                  if tikz_is_direction_token(token) {
+                    has_direction = true
+                  }
+                  if token == "loop" ||
+                    token == "loop left" ||
+                    token == "loop right" {
+                    is_loop = true
+                  }
+                }
+              }
+            }
+
+            if !has_to && !has_direction && !is_loop {
+              return Some(
+                tikz_import_error(
+                  "reference",
+                  "arrow is missing target (to=... or direction)",
+                ),
+              )
+            }
+
+            rest = after_arrow.unsafe_substring(
+              start=end + 1,
+              end=after_arrow.length(),
+            )
+          }
+          None =>
+            return Some(
+              tikz_import_error(
+                "syntax",
+                "unterminated arrow options",
+              ),
+            )
+        }
+      }
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
+  let (begin_index, begin_token, end_token) = match tikz_find_environment_tokens(
+    input,
+  ) {
+    Some(found) => found
+    None =>
+      return Some(
+        tikz_import_error(
+          "syntax",
+          "missing tikzcd environment start token",
+        ),
+      )
+  }
+
+  let after_begin = input.unsafe_substring(
+    start=begin_index + begin_token.length(),
+    end=input.length(),
+  )
+  let mut rest = tikz_trim_left(after_begin)
+  let mut ampersand_replacement : String? = None
+
+  if rest.has_prefix("[") {
+    let options_body = rest.unsafe_substring(start=1, end=rest.length())
+    match tikz_find_closing_delimiter(options_body, '[', ']') {
+      Some(close_index) => {
+        let options = options_body.unsafe_substring(start=0, end=close_index)
+        match tikz_validate_diagram_options(options) {
+          Some(error) => return Some(error)
+          None => ()
+        }
+        ampersand_replacement = tikz_parse_ampersand_replacement(options)
+        rest = options_body.unsafe_substring(
+          start=close_index + 1,
+          end=options_body.length(),
+        )
+      }
+      None =>
+        return Some(
+          tikz_import_error(
+            "syntax",
+            "unterminated tikzcd diagram options",
+          ),
+        )
+    }
+  }
+
+  let end_index = match tikz_find_token_outside_comments(rest, end_token) {
+    Some(index) => index
+    None =>
+      return Some(
+        tikz_import_error(
+          "syntax",
+          "missing tikzcd environment end token",
+        ),
+      )
+  }
+
+  let body = rest.unsafe_substring(start=0, end=end_index)
+  let tail = rest.unsafe_substring(
+    start=end_index + end_token.length(),
+    end=rest.length(),
+  )
+  let tail_trimmed = tail.trim().to_string()
+  if tail_trimmed != "" && tail_trimmed != "\\]" {
+    return Some(
+      tikz_import_error(
+        "syntax",
+        "unexpected content after \\end{tikzcd}",
+      ),
+    )
+  }
+
+  let body_without_comments = tikz_strip_line_comments(body)
+  for row_raw in tikz_split_rows(body_without_comments) {
+    let row = row_raw.trim().to_string()
+    if row == "" {
+      continue
+    }
+    for cell_raw in tikz_split_cells(row, ampersand_replacement) {
+      let cell = cell_raw.trim().to_string()
+      match tikz_validate_cell_arrow_options(cell) {
+        Some(error) => return Some(error)
+        None => ()
+      }
+    }
+  }
+  None
+}
+
+///|
 fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
@@ -4892,19 +5508,60 @@ fn tikz_has_share_reference_hint(input : String) -> Bool {
 }
 
 ///|
-pub fn Quiver::import_tikz_cd_result(
+fn tikz_try_import_success(
+  quiver : Quiver,
+  macro_url : String?,
+  renderer : String?,
+  embed : Bool,
+) -> TikzCdTryImportResult {
+  { ok: true, quiver: Some(quiver), macro_url, renderer, embed, error: None }
+}
+
+///|
+fn tikz_try_import_failure(
+  kind : String,
+  message : String,
+) -> TikzCdTryImportResult {
+  {
+    ok: false,
+    quiver: None,
+    macro_url: None,
+    renderer: None,
+    embed: false,
+    error: Some(tikz_import_error(kind, message)),
+  }
+}
+
+///|
+pub fn Quiver::try_import_tikz_cd_result(
   input : String,
   default_renderer? : String = "canvas",
-) -> Base64ShareImportResult raise {
+) -> TikzCdTryImportResult {
   let looks_like_tikz = tikz_looks_like_environment(input)
   if looks_like_tikz {
+    match tikz_validate_environment_and_options(input) {
+      Some(validation_error) =>
+        return {
+          ok: false,
+          quiver: None,
+          macro_url: None,
+          renderer: None,
+          embed: false,
+          error: Some(validation_error),
+        }
+      None => ()
+    }
+
     if !tikz_has_share_reference_hint(input) {
-      return {
-        quiver: Quiver::import_tikz_cd_minimal(input),
-        macro_url: None,
-        renderer: None,
-        embed: false,
-      }
+      let quiver = Quiver::import_tikz_cd_minimal(
+        input,
+      )
+      return tikz_try_import_success(
+        quiver,
+        None,
+        None,
+        false,
+      )
     }
 
     // Prefer wrapper import when a share reference is detected, but keep
@@ -4914,23 +5571,43 @@ pub fn Quiver::import_tikz_cd_result(
       default_renderer~,
     )
     match imported {
-      Ok(result) => result
+      Ok(result) =>
+        tikz_try_import_success(
+          result.quiver,
+          result.macro_url,
+          result.renderer,
+          result.embed,
+        )
       Err(_) => {
-        quiver: Quiver::import_tikz_cd_minimal(input),
-        macro_url: None,
-        renderer: None,
-        embed: false,
+        let quiver = Quiver::import_tikz_cd_minimal(
+          input,
+        )
+        tikz_try_import_success(
+          quiver,
+          None,
+          None,
+          false,
+        )
       }
     }
   } else {
-    Quiver::import_base64_share_text(input, default_renderer~)
+    let imported : Result[Base64ShareImportResult, Error] = try? Quiver::import_base64_share_text(
+      input,
+      default_renderer~,
+    )
+    match imported {
+      Ok(result) =>
+        tikz_try_import_success(
+          result.quiver,
+          result.macro_url,
+          result.renderer,
+          result.embed,
+        )
+      Err(error) =>
+        tikz_try_import_failure(
+          "share",
+          error.to_string(),
+        )
+    }
   }
-}
-
-///|
-pub fn Quiver::import_tikz_cd(
-  input : String,
-  default_renderer? : String = "canvas",
-) -> Quiver raise {
-  Quiver::import_tikz_cd_result(input, default_renderer~).quiver
 }

@@ -25,6 +25,11 @@ fn browser_demo_parse_json_object_or_empty(input : String) -> Json {
 }
 
 ///|
+fn browser_demo_command_protocol() -> String {
+  "kwiver.command.v1"
+}
+
+///|
 fn browser_demo_json_string_or(
   root : Map[String, Json],
   key : String,
@@ -226,6 +231,7 @@ pub struct BrowserDemoImportResult {
   macro_url : String?
   renderer : String?
   embed : Bool
+  error : String?
 }
 
 ///|
@@ -300,6 +306,7 @@ fn browser_demo_import_result_json(result : BrowserDemoImportResult) -> Json {
     "macro_url": browser_demo_optional_string_json(result.macro_url),
     "renderer": browser_demo_optional_string_json(result.renderer),
     "embed": Json::boolean(result.embed),
+    "error": browser_demo_optional_string_json(result.error),
   })
 }
 
@@ -390,6 +397,7 @@ fn browser_demo_import_result_from_output(
   match browser_demo_parse_json_object(output_json) {
     Some(root) => {
       let ok = browser_demo_json_bool_or(root, "ok", false)
+      let top_level_error = browser_demo_json_optional_string(root, "error")
       match browser_demo_dispatch_result_object(output_json) {
         Some(result) => {
           let payload = browser_demo_json_string_or(
@@ -397,20 +405,53 @@ fn browser_demo_import_result_from_output(
             "payload",
             browser_demo_json_string_or(root, "payload", fallback_payload),
           )
+          let result_error = match result.get("error") {
+            Some(Json::Object(error_root)) =>
+              match error_root.get("message") {
+                Some(Json::String(message)) => Some(message)
+                _ => None
+              }
+            Some(Json::String(message)) => Some(message)
+            _ => None
+          }
+          let error = if ok {
+            None
+          } else {
+            match top_level_error {
+              Some(message) => Some(message)
+              None =>
+                match result_error {
+                  Some(message) => Some(message)
+                  None => Some("import failed")
+                }
+            }
+          }
           {
             ok,
             payload,
             macro_url: browser_demo_json_optional_string(result, "macro_url"),
             renderer: browser_demo_json_optional_string(result, "renderer"),
             embed: browser_demo_json_bool_or(result, "embed", false),
+            error,
           }
         }
         None => {
-          ok,
-          payload: browser_demo_json_string_or(root, "payload", fallback_payload),
-          macro_url: None,
-          renderer: None,
-          embed: false,
+          let error = if ok {
+            None
+          } else {
+            match top_level_error {
+              Some(message) => Some(message)
+              None => Some("import failed")
+            }
+          }
+          {
+            ok,
+            payload: browser_demo_json_string_or(root, "payload", fallback_payload),
+            macro_url: None,
+            renderer: None,
+            embed: false,
+            error,
+          }
         }
       }
     }
@@ -420,6 +461,7 @@ fn browser_demo_import_result_from_output(
       macro_url: None,
       renderer: None,
       embed: false,
+      error: Some("dispatch output parse failed"),
     }
   }
 }
@@ -578,8 +620,6 @@ fn browser_demo_selection_import_result_from_output(
 ///|
 pub struct BrowserDemoSession {
   runtime : @browser_adapter.BrowserRuntime
-  mut payload : String
-  mut selection : Array[Int]
   mut command_sequence : Int
 }
 
@@ -588,37 +628,7 @@ pub fn BrowserDemoSession::new() -> BrowserDemoSession {
   let runtime = @browser_adapter.ffi_browser_runtime_new()
   {
     runtime,
-    payload: @browser_adapter.ffi_browser_runtime_export_payload(runtime),
-    selection: @browser_adapter.ffi_browser_runtime_selection(runtime),
     command_sequence: 0,
-  }
-}
-
-///|
-fn BrowserDemoSession::sync_from_runtime(self : BrowserDemoSession) -> Unit {
-  self.payload = @browser_adapter.ffi_browser_runtime_export_payload(self.runtime)
-  self.selection = @browser_adapter.ffi_browser_runtime_selection(self.runtime)
-}
-
-///|
-fn BrowserDemoSession::sync_from_dispatch_output(
-  self : BrowserDemoSession,
-  output_json : String,
-) -> Unit {
-  match browser_demo_parse_json_object(output_json) {
-    Some(root) => {
-      self.payload = browser_demo_json_string_or(
-        root,
-        "payload",
-        @browser_adapter.ffi_browser_runtime_export_payload(self.runtime),
-      )
-      self.selection = browser_demo_json_int_array_or(
-        root,
-        "selection",
-        @browser_adapter.ffi_browser_runtime_selection(self.runtime),
-      )
-    }
-    None => self.sync_from_runtime()
   }
 }
 
@@ -627,12 +637,10 @@ pub fn BrowserDemoSession::dispatch_json(
   self : BrowserDemoSession,
   action_json : String,
 ) -> String {
-  let output = @browser_adapter.ffi_browser_runtime_dispatch_json(
+  @browser_adapter.ffi_browser_runtime_dispatch_json(
     self.runtime,
     action_json,
   )
-  self.sync_from_dispatch_output(output)
-  output
 }
 
 ///|
@@ -640,12 +648,10 @@ pub fn BrowserDemoSession::dispatch_json_safe(
   self : BrowserDemoSession,
   action_json : String,
 ) -> String {
-  let output = @browser_adapter.ffi_browser_runtime_dispatch_json_safe(
+  @browser_adapter.ffi_browser_runtime_dispatch_json_safe(
     self.runtime,
     action_json,
   )
-  self.sync_from_dispatch_output(output)
-  output
 }
 
 ///|
@@ -653,12 +659,10 @@ pub fn BrowserDemoSession::dispatch_many_json(
   self : BrowserDemoSession,
   batch_json : String,
 ) -> String {
-  let output = @browser_adapter.ffi_browser_runtime_dispatch_many_json(
+  @browser_adapter.ffi_browser_runtime_dispatch_many_json(
     self.runtime,
     batch_json,
   )
-  self.sync_from_dispatch_output(output)
-  output
 }
 
 ///|
@@ -666,12 +670,10 @@ pub fn BrowserDemoSession::dispatch_many_json_safe(
   self : BrowserDemoSession,
   batch_json : String,
 ) -> String {
-  let output = @browser_adapter.ffi_browser_runtime_dispatch_many_json_safe(
+  @browser_adapter.ffi_browser_runtime_dispatch_many_json_safe(
     self.runtime,
     batch_json,
   )
-  self.sync_from_dispatch_output(output)
-  output
 }
 
 ///|
@@ -679,26 +681,69 @@ pub fn BrowserDemoSession::dispatch_command_json(
   self : BrowserDemoSession,
   command_json : String,
 ) -> String {
-  let before_payload = self.payload
-  let before_selection = self.selection
+  let before_payload = self.payload()
+  let before_selection = self.selection()
   let before_cell_ids = self.all_cell_ids()
 
+  let protocol = browser_demo_command_protocol()
   let mut origin : String? = None
   let mut command_id : String? = None
+  let mut requested_action = "unknown"
+  let mut protocol_error : String? = None
   match browser_demo_parse_json_object(command_json) {
     Some(command_root) => {
       origin = browser_demo_json_optional_string(command_root, "origin")
       command_id = browser_demo_json_optional_string(command_root, "command_id")
+      requested_action = browser_demo_json_string_or(
+        command_root,
+        "action",
+        requested_action,
+      )
+      match browser_demo_json_optional_string(command_root, "protocol") {
+        Some(requested_protocol) =>
+          if requested_protocol != protocol {
+            protocol_error = Some(
+              [
+                "command protocol mismatch: expected ",
+                protocol,
+                ", got ",
+                requested_protocol,
+              ].join(""),
+            )
+          }
+        None =>
+          protocol_error = Some(
+            [
+              "missing command protocol: expected ",
+              protocol,
+            ].join(""),
+          )
+      }
     }
-    None => ()
+    None =>
+      protocol_error = Some(
+        [
+          "malformed command envelope: expected protocol ",
+          protocol,
+        ].join(""),
+      )
   }
 
   self.command_sequence += 1
   let sequence = self.command_sequence
-  let dispatch_output = self.dispatch_json_safe(command_json)
+  let dispatch_output = match protocol_error {
+    Some(message) =>
+      Json::object({
+        "ok": Json::boolean(false),
+        "action": Json::string(requested_action),
+        "result": Json::null(),
+        "error": Json::string(message),
+      }).stringify()
+    None => self.dispatch_json_safe(command_json)
+  }
 
   let mut ok = false
-  let mut action = "unknown"
+  let mut action = requested_action
   let mut result : Json = Json::null()
   let mut error : String? = Some("dispatch output parse failed")
   match browser_demo_parse_json_object(dispatch_output) {
@@ -714,8 +759,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
     None => ()
   }
 
-  let after_payload = self.payload
-  let after_selection = self.selection
+  let after_payload = self.payload()
+  let after_selection = self.selection()
   let after_cell_ids = self.all_cell_ids()
   let changed = before_payload != after_payload ||
     !browser_demo_int_arrays_equal(before_selection, after_selection) ||
@@ -735,6 +780,7 @@ pub fn BrowserDemoSession::dispatch_command_json(
     "sequence": Json::number(sequence.to_double()),
     "ok": Json::boolean(ok),
     "action": Json::string(action),
+    "protocol": Json::string(protocol),
     "origin": browser_demo_optional_string_json(origin),
     "command_id": browser_demo_optional_string_json(command_id),
     "result": result,
@@ -1140,7 +1186,7 @@ pub fn BrowserDemoSession::apply_mutation_batch_json(
     Ok(Json::Object(value)) => Json::object(value)
     _ =>
       return {
-        payload: self.payload,
+        payload: self.payload(),
         label_results: [],
         label_colour_results: [],
         vertex_position_results: [],
@@ -1152,7 +1198,7 @@ pub fn BrowserDemoSession::apply_mutation_batch_json(
   let output = self.dispatch_json(
     browser_demo_action_with_input("apply_mutation_batch_json", input),
   )
-  browser_demo_mutation_batch_result_from_output(output, self.payload)
+  browser_demo_mutation_batch_result_from_output(output, self.payload())
 }
 
 ///|
@@ -1161,7 +1207,6 @@ pub fn BrowserDemoSession::apply_mutation_batch(
   batch : @engine.QuiverUiMutationBatch,
 ) -> BrowserDemoMutationBatchResult {
   let result = self.runtime.apply_mutation_batch(batch)
-  self.sync_from_runtime()
   browser_demo_mutation_batch_result_from_engine(result)
 }
 
@@ -1178,7 +1223,7 @@ pub fn BrowserDemoSession::apply_selection(
   ignore(self.dispatch_json(
     browser_demo_action_with_input("set_selection", Json::array(payload)),
   ))
-  self.selection
+  self.selection()
 }
 
 ///|
@@ -1230,7 +1275,7 @@ pub fn BrowserDemoSession::paste_selection_result(
       }),
     ),
   )
-  browser_demo_selection_import_result_from_output(output, self.payload)
+  browser_demo_selection_import_result_from_output(output, self.payload())
 }
 
 ///|
@@ -1247,7 +1292,6 @@ pub fn BrowserDemoSession::import_payload(self : BrowserDemoSession, payload : S
 ///|
 pub fn BrowserDemoSession::reset(self : BrowserDemoSession) -> Unit {
   @browser_adapter.ffi_browser_runtime_reset(self.runtime)
-  self.sync_from_runtime()
 }
 
 ///|
@@ -1389,7 +1433,7 @@ fn BrowserDemoSession::import_action_result(
       "default_renderer": Json::string(default_renderer),
     }).stringify(),
   )
-  browser_demo_import_result_from_output(output, self.payload)
+  browser_demo_import_result_from_output(output, self.payload())
 }
 
 ///|
@@ -1617,12 +1661,12 @@ pub fn BrowserDemoSession::snapshot(self : BrowserDemoSession) -> @engine.Quiver
 
 ///|
 pub fn BrowserDemoSession::payload(self : BrowserDemoSession) -> String {
-  self.payload
+  @browser_adapter.ffi_browser_runtime_export_payload(self.runtime)
 }
 
 ///|
 pub fn BrowserDemoSession::selection(self : BrowserDemoSession) -> Array[Int] {
-  self.selection
+  @browser_adapter.ffi_browser_runtime_selection(self.runtime)
 }
 
 ///|
@@ -1651,9 +1695,11 @@ pub fn BrowserDemoSession::cell_ids(self : BrowserDemoSession) -> Array[Int] {
 
 ///|
 pub fn BrowserDemoSession::state_json(self : BrowserDemoSession) -> String {
+  let payload = self.payload()
+  let selection = self.selection()
   Json::object({
-    "payload": Json::string(self.payload),
-    "selection": browser_demo_int_array_json(self.selection),
+    "payload": Json::string(payload),
+    "selection": browser_demo_int_array_json(selection),
     "cell_ids": browser_demo_int_array_json(self.all_cell_ids()),
   }).stringify()
 }
@@ -1679,6 +1725,11 @@ pub fn browser_demo_roundtrip_demo_json() -> String {
     "cell_ids": browser_demo_int_array_json(restored.cell_ids()),
     "selection": browser_demo_int_array_json(restored.selection()),
   }).stringify()
+}
+
+///|
+pub fn ffi_browser_demo_command_protocol() -> String {
+  browser_demo_command_protocol()
 }
 
 ///|

@@ -1,8 +1,54 @@
-const MODULE_CANDIDATES = [
+const MODULE_CANDIDATE_PATHS = [
   "../_build/js/release/build/browser_demo/browser_demo.js",
-  // keep release
-  // "../_build/js/debug/build/browser_demo/browser_demo.js",
+  "../_build/js/debug/build/browser_demo/browser_demo.js",
+  "./_build/js/release/build/browser_demo/browser_demo.js",
+  "./_build/js/debug/build/browser_demo/browser_demo.js",
 ];
+
+function addModuleCandidate(target, candidate) {
+  if (typeof candidate === "string" && candidate !== "") {
+    target.add(candidate);
+  }
+}
+
+function moduleCandidates() {
+  const candidates = new Set();
+
+  for (const relative of MODULE_CANDIDATE_PATHS) {
+    try {
+      addModuleCandidate(candidates, new URL(relative, import.meta.url).href);
+    } catch (_e) {
+      // Ignore invalid relative candidate.
+    }
+  }
+
+  if (typeof window !== "undefined" && window.location) {
+    const location = window.location;
+    const origin = typeof location.origin === "string" ? location.origin : "";
+    const pathname = typeof location.pathname === "string" ? location.pathname : "";
+
+    if (origin !== "" && origin !== "null") {
+      const rootSuffixes = [
+        "/_build/js/release/build/browser_demo/browser_demo.js",
+        "/_build/js/debug/build/browser_demo/browser_demo.js",
+      ];
+      for (const suffix of rootSuffixes) {
+        addModuleCandidate(candidates, origin + suffix);
+      }
+
+      const marker = "/browser_ui_upstream/";
+      const markerIndex = pathname.indexOf(marker);
+      if (markerIndex >= 0) {
+        const prefix = pathname.slice(0, markerIndex);
+        for (const suffix of rootSuffixes) {
+          addModuleCandidate(candidates, origin + prefix + suffix);
+        }
+      }
+    }
+  }
+
+  return Array.from(candidates);
+}
 
 const DEFAULT_COMMAND_PROTOCOL = "kwiver.command.v1";
 
@@ -11,9 +57,16 @@ const BRIDGE = {
   session: null,
   loading: null,
   commandProtocol: DEFAULT_COMMAND_PROTOCOL,
+  loadedCandidate: null,
+  loadErrors: [],
+};
+
+const BRIDGE_TEST = {
+  disableAutoload: false,
 };
 
 let commandNonce = 0;
+let bridgeLoadGeneration = 0;
 
 function nextCommandId(origin = "ui.bridge") {
   commandNonce += 1;
@@ -22,13 +75,13 @@ function nextCommandId(origin = "ui.bridge") {
 
 function commandProtocolFromApi(api) {
   if (!api || typeof api.ffi_browser_demo_command_protocol !== "function") {
-    return DEFAULT_COMMAND_PROTOCOL;
+    return null;
   }
   try {
     const protocol = api.ffi_browser_demo_command_protocol();
-    return typeof protocol === "string" && protocol !== "" ? protocol : DEFAULT_COMMAND_PROTOCOL;
+    return typeof protocol === "string" && protocol !== "" ? protocol : null;
   } catch (_e) {
-    return DEFAULT_COMMAND_PROTOCOL;
+    return null;
   }
 }
 
@@ -52,36 +105,75 @@ function normalizeCommand(command) {
 }
 
 async function loadBridgeApi() {
-  for (const candidate of MODULE_CANDIDATES) {
+  const candidates = moduleCandidates();
+  const loadErrors = [];
+
+  for (const candidate of candidates) {
     try {
       const mod = await import(candidate);
-      if (mod && typeof mod.ffi_browser_demo_session_new === "function") {
-        return mod;
+      const hasSession = mod && typeof mod.ffi_browser_demo_session_new === "function";
+      const hasProtocol = mod && typeof mod.ffi_browser_demo_command_protocol === "function";
+      if (hasSession && hasProtocol) {
+        return { api: mod, candidate, loadErrors };
       }
-    } catch (_e) {
-      // Try the next candidate.
+
+      const missing = [];
+      if (!hasSession) {
+        missing.push("ffi_browser_demo_session_new");
+      }
+      if (!hasProtocol) {
+        missing.push("ffi_browser_demo_command_protocol");
+      }
+      loadErrors.push(candidate + " (missing " + missing.join(", ") + ")");
+    } catch (e) {
+      loadErrors.push(candidate + ": " + String(e));
     }
   }
-  return null;
+
+  return { api: null, candidate: null, loadErrors };
 }
 
 function ensureBridgeLoading() {
+  if (BRIDGE_TEST.disableAutoload) {
+    bridgeLoadGeneration += 1;
+    BRIDGE.loading = null;
+    return;
+  }
   if (BRIDGE.api !== null || BRIDGE.loading !== null) {
     return;
   }
+  const generation = bridgeLoadGeneration;
   BRIDGE.loading = loadBridgeApi()
-    .then((api) => {
+    .then((loaded) => {
+      if (generation !== bridgeLoadGeneration) {
+        return;
+      }
+      const api = loaded && loaded.api ? loaded.api : null;
+      BRIDGE.loadedCandidate = loaded && typeof loaded.candidate === "string"
+        ? loaded.candidate
+        : null;
+      BRIDGE.loadErrors = loaded && Array.isArray(loaded.loadErrors)
+        ? loaded.loadErrors
+        : [];
       if (api && typeof api.ffi_browser_demo_session_new === "function") {
-        BRIDGE.api = api;
-        BRIDGE.session = api.ffi_browser_demo_session_new();
-        BRIDGE.commandProtocol = commandProtocolFromApi(api);
+        const protocol = commandProtocolFromApi(api);
+        if (typeof protocol === "string" && protocol !== "") {
+          BRIDGE.api = api;
+          BRIDGE.session = api.ffi_browser_demo_session_new();
+          BRIDGE.commandProtocol = protocol;
+        } else {
+          const candidate = BRIDGE.loadedCandidate ?? "unknown";
+          BRIDGE.loadErrors.push(candidate + " (invalid ffi_browser_demo_command_protocol)");
+        }
       }
     })
     .catch(() => {
-      // Keep fallback path active when bridge module cannot be loaded.
+      // Bridge remains unavailable when loading fails.
     })
     .finally(() => {
-      BRIDGE.loading = null;
+      if (generation === bridgeLoadGeneration) {
+        BRIDGE.loading = null;
+      }
     });
 }
 
@@ -92,6 +184,73 @@ function bridgeAvailable() {
 
 // Preload MoonBit bridge in the background without blocking module initialisation.
 ensureBridgeLoading();
+
+function bridgeReadyPromise(timeoutMs = 2000) {
+  ensureBridgeLoading();
+  if (BRIDGE.loading === null) {
+    return Promise.resolve();
+  }
+  const timeout = Number.isFinite(Number(timeoutMs)) ? Math.max(0, Number(timeoutMs)) : 2000;
+  return Promise.race([
+    BRIDGE.loading.catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, timeout)),
+  ]);
+}
+
+export async function kwiver_bridge_ready(timeoutMs = 2000) {
+  await bridgeReadyPromise(timeoutMs);
+  return bridgeAvailable();
+}
+
+export function kwiver_bridge_status() {
+  return {
+    available: BRIDGE.api !== null && BRIDGE.session !== null,
+    command_protocol: bridgeCommandProtocol(),
+    loaded_candidate: BRIDGE.loadedCandidate,
+    load_errors: Array.isArray(BRIDGE.loadErrors) ? [...BRIDGE.loadErrors] : [],
+  };
+}
+
+export function kwiver_bridge_test_reset() {
+  bridgeLoadGeneration += 1;
+  BRIDGE.api = null;
+  BRIDGE.session = null;
+  BRIDGE.loading = null;
+  BRIDGE.commandProtocol = DEFAULT_COMMAND_PROTOCOL;
+  BRIDGE.loadedCandidate = null;
+  BRIDGE.loadErrors = [];
+  commandNonce = 0;
+}
+
+export function kwiver_bridge_test_set_autoload(enabled) {
+  BRIDGE_TEST.disableAutoload = !Boolean(enabled);
+  if (BRIDGE_TEST.disableAutoload) {
+    bridgeLoadGeneration += 1;
+    BRIDGE.loading = null;
+  }
+}
+
+export function kwiver_bridge_test_install_mock_api(api) {
+  kwiver_bridge_test_reset();
+  if (!api || typeof api !== "object") {
+    return false;
+  }
+  if (
+    typeof api.ffi_browser_demo_session_new !== "function"
+    || typeof api.ffi_browser_demo_command_protocol !== "function"
+    || typeof api.ffi_browser_demo_session_dispatch_command_json !== "function"
+  ) {
+    return false;
+  }
+  const protocol = commandProtocolFromApi(api);
+  if (typeof protocol !== "string" || protocol === "") {
+    return false;
+  }
+  BRIDGE.api = api;
+  BRIDGE.session = api.ffi_browser_demo_session_new();
+  BRIDGE.commandProtocol = protocol;
+  return true;
+}
 
 function settingValue(settings, key, fallback) {
   if (settings && typeof settings.get === "function") {
@@ -167,6 +326,32 @@ function rendererFromSettings(settings, options) {
   }
   const fromSettings = settingValue(settings, "quiver.renderer", "katex");
   return typeof fromSettings === "string" && fromSettings !== "" ? fromSettings : "katex";
+}
+
+function base64UrlPrefix() {
+  if (
+    typeof window === "undefined"
+    || !window.location
+    || typeof window.location.href !== "string"
+  ) {
+    return "";
+  }
+  return window.location.href.replace(/\?.*$/, "").replace(/#.*$/, "");
+}
+
+function base64ShareUrl(payload, settings, options) {
+  const prefix = base64UrlPrefix();
+  if (typeof payload !== "string" || payload === "") {
+    return prefix;
+  }
+
+  const renderer = rendererFromSettings(settings, options);
+  const defaultRenderer = "katex";
+  const rendererPrefix = renderer === defaultRenderer ? "" : `r=${renderer}&`;
+  const macroData = options && typeof options.macro_url === "string" && options.macro_url !== ""
+    ? `&macro_url=${encodeURIComponent(options.macro_url)}`
+    : "";
+  return `${prefix}#${rendererPrefix}q=${payload}${macroData}`;
 }
 
 function tikzInput(settings, options, definitions) {
@@ -328,13 +513,6 @@ function dispatchMutationResult(action, input, origin = "ui.bridge") {
   return envelope;
 }
 
-function syncPayload(payload) {
-  if (typeof payload !== "string" || payload === "") {
-    return false;
-  }
-  return dispatchCommandResult("import_payload", payload, "ui.bridge.sync") !== null;
-}
-
 function normalizeTikzMetadata(rawMetadata) {
   const metadata = {
     tikz_incompatibilities: new Set(),
@@ -375,11 +553,7 @@ function normalizeTikzMetadata(rawMetadata) {
   return metadata;
 }
 
-export function kwiver_bridge_export(format, payload, settings, options, definitions) {
-  if (!syncPayload(payload)) {
-    return null;
-  }
-
+export function kwiver_bridge_export(format, settings, options, definitions) {
   switch (format) {
     case "tikz-cd": {
       const envelope = dispatchCommandResult(
@@ -417,9 +591,37 @@ export function kwiver_bridge_export(format, payload, settings, options, definit
         metadata: {},
       };
     }
+    case "base64": {
+      const payload = kwiver_bridge_export_payload("ui.bridge.export.base64");
+      if (typeof payload !== "string") {
+        return null;
+      }
+      return {
+        data: base64ShareUrl(payload, settings, options),
+        metadata: {},
+      };
+    }
     default:
       return null;
   }
+}
+
+export function kwiver_bridge_export_payload(origin = "ui.bridge.export.payload") {
+  const envelope = dispatchCommandResult("export_payload", undefined, origin);
+  if (!envelope) {
+    return null;
+  }
+  if (typeof envelope.result === "string") {
+    return envelope.result;
+  }
+  if (envelope.after && typeof envelope.after.payload === "string") {
+    return envelope.after.payload;
+  }
+  return null;
+}
+
+export function kwiver_bridge_reset(origin = "ui.bridge.reset") {
+  return dispatchCommandResult("reset", undefined, origin);
 }
 
 export function kwiver_bridge_import_tikz_payload(input, settings) {
@@ -442,12 +644,28 @@ export function kwiver_bridge_import_tikz_payload(input, settings) {
   return commandResultPayload(envelope.result, envelope.after);
 }
 
-export function kwiver_bridge_sync_payload(payload) {
-  return syncPayload(payload);
-}
+export function kwiver_bridge_import_payload_json(
+  payload,
+  origin = "ui.bridge.import_payload",
+) {
+  if (typeof payload !== "string" || payload === "") {
+    return null;
+  }
 
-export function kwiver_bridge_dispatch_command(command) {
-  return dispatchCommandEnvelope(command);
+  const envelope = dispatchMutationResult("import_payload", payload, origin);
+  if (!envelope) {
+    return null;
+  }
+
+  const bridgedPayload = commandResultPayload(envelope.result, envelope.after);
+  if (typeof bridgedPayload !== "string" || bridgedPayload === "") {
+    return null;
+  }
+
+  return {
+    payload: bridgedPayload,
+    after: envelope.after && typeof envelope.after === "object" ? envelope.after : null,
+  };
 }
 
 export function kwiver_bridge_all_cells() {
@@ -456,6 +674,186 @@ export function kwiver_bridge_all_cells() {
     return null;
   }
   return Array.isArray(envelope.result) ? envelope.result : null;
+}
+
+export function kwiver_bridge_all_cell_ids(origin = "ui.bridge.all_cell_ids") {
+  const envelope = dispatchCommandResult("all_cell_ids_json", undefined, origin);
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+  const out = [];
+  for (const rawId of envelope.result) {
+    const cellId = Number(rawId);
+    if (!Number.isInteger(cellId)) {
+      return null;
+    }
+    out.push(cellId);
+  }
+  return out;
+}
+
+export function kwiver_bridge_dependencies(
+  cellId,
+  origin = "ui.bridge.dependencies",
+) {
+  if (!Number.isInteger(cellId)) {
+    return null;
+  }
+  const envelope = dispatchCommandResult(
+    "dependencies_of_json",
+    { cell_id: cellId },
+    origin,
+  );
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+  const out = [];
+  for (const rawId of envelope.result) {
+    const dependencyId = Number(rawId);
+    if (!Number.isInteger(dependencyId)) {
+      return null;
+    }
+    out.push(dependencyId);
+  }
+  return out;
+}
+
+export function kwiver_bridge_connected_components(
+  roots,
+  origin = "ui.bridge.connected_components",
+) {
+  if (!Array.isArray(roots)) {
+    return null;
+  }
+  const normalizedRoots = [];
+  for (const rawRoot of roots) {
+    const rootId = Number(rawRoot);
+    if (!Number.isInteger(rootId)) {
+      return null;
+    }
+    normalizedRoots.push(rootId);
+  }
+
+  const envelope = dispatchCommandResult(
+    "connected_components_json",
+    { roots: normalizedRoots },
+    origin,
+  );
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+
+  const out = [];
+  for (const rawId of envelope.result) {
+    const cellId = Number(rawId);
+    if (!Number.isInteger(cellId)) {
+      return null;
+    }
+    out.push(cellId);
+  }
+  return out;
+}
+
+export function kwiver_bridge_transitive_dependencies(
+  roots,
+  excludeRoots = false,
+  origin = "ui.bridge.transitive_dependencies",
+) {
+  if (!Array.isArray(roots)) {
+    return null;
+  }
+  const normalizedRoots = [];
+  for (const rawRoot of roots) {
+    const rootId = Number(rawRoot);
+    if (!Number.isInteger(rootId)) {
+      return null;
+    }
+    normalizedRoots.push(rootId);
+  }
+
+  const envelope = dispatchCommandResult(
+    "transitive_dependencies_json",
+    {
+      roots: normalizedRoots,
+      exclude_roots: Boolean(excludeRoots),
+    },
+    origin,
+  );
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+
+  const out = [];
+  for (const rawId of envelope.result) {
+    const cellId = Number(rawId);
+    if (!Number.isInteger(cellId)) {
+      return null;
+    }
+    out.push(cellId);
+  }
+  return out;
+}
+
+export function kwiver_bridge_transitive_reverse_dependencies(
+  roots,
+  origin = "ui.bridge.transitive_reverse_dependencies",
+) {
+  if (!Array.isArray(roots)) {
+    return null;
+  }
+  const normalizedRoots = [];
+  for (const rawRoot of roots) {
+    const rootId = Number(rawRoot);
+    if (!Number.isInteger(rootId)) {
+      return null;
+    }
+    normalizedRoots.push(rootId);
+  }
+
+  const envelope = dispatchCommandResult(
+    "transitive_reverse_dependencies_json",
+    { roots: normalizedRoots },
+    origin,
+  );
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+
+  const out = [];
+  for (const rawId of envelope.result) {
+    const cellId = Number(rawId);
+    if (!Number.isInteger(cellId)) {
+      return null;
+    }
+    out.push(cellId);
+  }
+  return out;
+}
+
+export function kwiver_bridge_reverse_dependencies(
+  cellId,
+  origin = "ui.bridge.reverse_dependencies",
+) {
+  if (!Number.isInteger(cellId)) {
+    return null;
+  }
+  const envelope = dispatchCommandResult(
+    "reverse_dependencies_of_json",
+    { cell_id: cellId },
+    origin,
+  );
+  if (!envelope || !Array.isArray(envelope.result)) {
+    return null;
+  }
+  const out = [];
+  for (const rawId of envelope.result) {
+    const dependencyId = Number(rawId);
+    if (!Number.isInteger(dependencyId)) {
+      return null;
+    }
+    out.push(dependencyId);
+  }
+  return out;
 }
 export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
   return dispatchCommandResult("set_selection", selectedIds, origin);
@@ -494,6 +892,68 @@ export function kwiver_bridge_paste_selection_json(
   }, origin);
 }
 
+export function kwiver_bridge_add_vertex_json(
+  label,
+  x,
+  y,
+  labelColour = null,
+  origin = "ui.bridge.create.vertex",
+) {
+  if (typeof label !== "string") {
+    return null;
+  }
+  const input = {
+    label,
+    x: asInt(x, 0),
+    y: asInt(y, 0),
+  };
+  if (
+    labelColour
+    && typeof labelColour === "object"
+    && !Array.isArray(labelColour)
+  ) {
+    input.label_colour = labelColour;
+  }
+  return dispatchMutationResult("add_vertex_json", input, origin);
+}
+
+export function kwiver_bridge_add_edge_json(
+  sourceId,
+  targetId,
+  label = "",
+  options = null,
+  labelColour = null,
+  origin = "ui.bridge.create.edge",
+) {
+  if (
+    !Number.isInteger(sourceId)
+    || !Number.isInteger(targetId)
+    || typeof label !== "string"
+  ) {
+    return null;
+  }
+  const input = {
+    source_id: sourceId,
+    target_id: targetId,
+    label,
+  };
+  if (
+    options
+    && typeof options === "object"
+    && !Array.isArray(options)
+  ) {
+    input.options = options;
+  }
+  if (
+    labelColour
+    && typeof labelColour === "object"
+    && !Array.isArray(labelColour)
+  ) {
+    input.label_colour = labelColour;
+  }
+  return dispatchMutationResult("add_edge_json", input, origin);
+}
+
 export function kwiver_bridge_move_vertex_json(
   vertexId,
   x,
@@ -521,6 +981,25 @@ export function kwiver_bridge_set_label_json(
   return dispatchMutationResult("set_label_json", {
     cell_id: cellId,
     label,
+  }, origin);
+}
+
+export function kwiver_bridge_set_label_colour_json(
+  cellId,
+  labelColour,
+  origin = "ui.bridge.label_colour",
+) {
+  if (
+    !Number.isInteger(cellId)
+    || !labelColour
+    || typeof labelColour !== "object"
+    || Array.isArray(labelColour)
+  ) {
+    return null;
+  }
+  return dispatchMutationResult("set_label_colour_json", {
+    cell_id: cellId,
+    label_colour: labelColour,
   }, origin);
 }
 
@@ -555,5 +1034,117 @@ export function kwiver_bridge_remove_json(
   return dispatchMutationResult("remove_json", {
     cell_id: cellId,
     when: asInt(when, 0),
+  }, origin);
+}
+
+
+export function kwiver_bridge_set_edge_offset_json(
+  edgeId,
+  offset,
+  origin = "ui.bridge.edge.offset",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("set_edge_offset_json", {
+    edge_id: edgeId,
+    offset: asInt(offset, 0),
+  }, origin);
+}
+
+export function kwiver_bridge_set_edge_curve_json(
+  edgeId,
+  curve,
+  origin = "ui.bridge.edge.curve",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("set_edge_curve_json", {
+    edge_id: edgeId,
+    curve: asInt(curve, 0),
+  }, origin);
+}
+
+export function kwiver_bridge_set_edge_label_alignment_json(
+  edgeId,
+  labelAlignment,
+  origin = "ui.bridge.edge.label_alignment",
+) {
+  if (!Number.isInteger(edgeId) || typeof labelAlignment !== "string") {
+    return null;
+  }
+  return dispatchMutationResult("set_edge_label_alignment_json", {
+    edge_id: edgeId,
+    label_alignment: labelAlignment,
+  }, origin);
+}
+
+export function kwiver_bridge_set_edge_label_position_json(
+  edgeId,
+  labelPosition,
+  origin = "ui.bridge.edge.label_position",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("set_edge_label_position_json", {
+    edge_id: edgeId,
+    label_position: asInt(labelPosition, 0),
+  }, origin);
+}
+
+export function kwiver_bridge_reverse_edge_json(
+  edgeId,
+  origin = "ui.bridge.edge.reverse",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("reverse_edge_json", {
+    edge_id: edgeId,
+  }, origin);
+}
+
+export function kwiver_bridge_flip_edge_json(
+  edgeId,
+  origin = "ui.bridge.edge.flip",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("flip_edge_json", {
+    edge_id: edgeId,
+  }, origin);
+}
+
+export function kwiver_bridge_flip_edge_labels_json(
+  edgeId,
+  origin = "ui.bridge.edge.flip_labels",
+) {
+  if (!Number.isInteger(edgeId)) {
+    return null;
+  }
+  return dispatchMutationResult("flip_edge_labels_json", {
+    edge_id: edgeId,
+  }, origin);
+}
+
+export function kwiver_bridge_patch_edge_options_json(
+  edgeId,
+  patch,
+  origin = "ui.bridge.edge.patch",
+) {
+  if (
+    !Number.isInteger(edgeId)
+    || !patch
+    || typeof patch !== "object"
+    || Array.isArray(patch)
+  ) {
+    return null;
+  }
+  return dispatchMutationResult("patch_edge_options_json", {
+    edge_id: edgeId,
+    patch,
   }, origin);
 }

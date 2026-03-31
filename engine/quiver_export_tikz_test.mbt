@@ -87,6 +87,97 @@ fn tikz_test_find_edge_by_vertex_labels(
 }
 
 ///|
+fn tikz_test_count_edges(quiver : Quiver) -> Int {
+  let mut count = 0
+  for cell in quiver.all_cells() {
+    match cell {
+      CellData::Edge(_) => count = count + 1
+      _ => ()
+    }
+  }
+  count
+}
+
+///|
+priv struct TikzTestImportSuccess {
+  quiver : Quiver
+  macro_url : String?
+  renderer : String?
+  embed : Bool
+}
+
+///|
+fn tikz_test_import_success(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> TikzTestImportSuccess {
+  let imported = Quiver::try_import_tikz_cd_result(input, default_renderer~)
+  if !imported.ok {
+    match imported.error {
+      Some(error) => abort(error.message)
+      None => abort("expected tikz import success")
+    }
+  }
+  let quiver = match imported.quiver {
+    Some(value) => value
+    None => abort("expected imported quiver")
+  }
+  {
+    quiver,
+    macro_url: imported.macro_url,
+    renderer: imported.renderer,
+    embed: imported.embed,
+  }
+}
+
+///|
+fn tikz_test_import_quiver(
+  input : String,
+  default_renderer? : String = "canvas",
+) -> Quiver {
+  tikz_test_import_success(input, default_renderer~).quiver
+}
+
+///|
+fn tikz_test_assert_import_failure(
+  input : String,
+  context? : String = "",
+) -> Unit {
+  let message_prefix = if context == "" {
+    ""
+  } else {
+    ["[", context, "] "].join("")
+  }
+  let imported = Quiver::try_import_tikz_cd_result(input)
+  if imported.ok {
+    abort([message_prefix, "expected import failure"].join(""))
+  }
+  if imported.quiver is Some(_) {
+    abort([message_prefix, "expected no imported quiver on failure"].join(""))
+  }
+  if imported.macro_url is Some(_) {
+    abort([message_prefix, "expected no macro_url on failure"].join(""))
+  }
+  if imported.renderer is Some(_) {
+    abort([message_prefix, "expected no renderer on failure"].join(""))
+  }
+  if imported.embed {
+    abort([message_prefix, "expected embed=false on failure"].join(""))
+  }
+  match imported.error {
+    Some(error) => {
+      if error.kind == "" {
+        abort([message_prefix, "expected non-empty error kind"].join(""))
+      }
+      if error.message == "" {
+        abort([message_prefix, "expected non-empty error message"].join(""))
+      }
+    }
+    None => abort([message_prefix, "expected import error"].join(""))
+  }
+}
+
+///|
 test "tikz-cd export basic vertex grid and arrow" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -906,7 +997,7 @@ test "tikz-cd import wrapper roundtrips from exported text and preserves metadat
     .with_macro_url("https://example.com/macros.tex")
   let out = quiver.export_tikz_cd(options~)
 
-  let imported = Quiver::import_tikz_cd_result(out)
+  let imported = tikz_test_import_success(out)
   inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
   match imported.renderer {
     Some(value) => inspect(value, content="svg")
@@ -917,7 +1008,7 @@ test "tikz-cd import wrapper roundtrips from exported text and preserves metadat
     None => abort("expected macro_url")
   }
 
-  let imported_quiver = Quiver::import_tikz_cd(out)
+  let imported_quiver = tikz_test_import_quiver(out)
   inspect(imported_quiver.all_cell_ids(), content="[1, 2, 3]")
 }
 
@@ -927,7 +1018,7 @@ test "tikz-cd import minimal parser supports handwritten matrix and right arrow"
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let imported = Quiver::import_tikz_cd_result(input)
+  let imported = tikz_test_import_success(input)
   inspect(imported.macro_url is None, content="true")
   inspect(imported.renderer is None, content="true")
   inspect(imported.embed, content="false")
@@ -958,7 +1049,7 @@ test "tikz-cd import minimal parser supports starred tikzcd environment" {
     "\\begin{tikzcd*}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd*}",
   ].join("")
 
-  let imported = Quiver::import_tikz_cd_result(input)
+  let imported = tikz_test_import_success(input)
   inspect(imported.macro_url is None, content="true")
   inspect(imported.renderer is None, content="true")
   inspect(imported.embed, content="false")
@@ -984,12 +1075,391 @@ test "tikz-cd import minimal parser supports starred tikzcd environment" {
 }
 
 ///|
+test "tikz-cd import minimal parser supports display-math wrapped environment" {
+  let input = [
+    "\\[\n",
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}\n",
+    "\\]",
+  ].join("")
+
+  let imported = tikz_test_import_success(input)
+  inspect(imported.macro_url is None, content="true")
+  inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd try import rejects unknown diagram options" {
+  let input = [
+    "\\begin{tikzcd}[foo=bar]\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = Quiver::try_import_tikz_cd_result(input)
+  inspect(imported.ok, content="false")
+  inspect(imported.quiver is None, content="true")
+  match imported.error {
+    Some(error) => {
+      inspect(error.kind, content="option")
+      inspect(error.message.contains("unknown tikzcd diagram option"), content="true")
+    }
+    None => abort("expected import error")
+  }
+}
+
+///|
+test "tikz-cd try import rejects arrows without target" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[\"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = Quiver::try_import_tikz_cd_result(input)
+  inspect(imported.ok, content="false")
+  inspect(imported.quiver is None, content="true")
+  match imported.error {
+    Some(error) => {
+      inspect(error.kind, content="reference")
+      inspect(error.message.contains("missing target"), content="true")
+    }
+    None => abort("expected import error")
+  }
+}
+
+///|
+test "tikz-cd parser corpus valid snippets from parser.tex import successfully" {
+  let snippets = [
+    [
+      "\\begin{tikzcd}\n",
+      "\\A & \\B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\[\n",
+      "\\begin{tikzcd}[ampersand replacement=\\&,cramped,column sep=large,row sep=2.25em]\n",
+      "A \\& B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}\n",
+      "\\]",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "A & B \\\\\n",
+      "C & D\n",
+      "\\arrow[from=1-1, to=1-2, maps to, Rightarrow]\n",
+      "\\arrow[from=2-1, to=2-2, Rightarrow, maps to]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "\\bullet & \\bullet\n",
+      "\\arrow[between={0.3}{0.7}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "\\bullet & \\bullet\n",
+      "\\arrow[\"\\shortmid\"{marking, pos=0.75}, between={0.5}{1}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  ]
+
+  for input in snippets {
+    let imported = tikz_test_import_success(input)
+    inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
+  }
+}
+
+///|
+test "tikz-cd parser corpus invalid snippets from parser.tex return structured errors" {
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd} :)",
+    ].join(""),
+    context="parser.tex invalid: trailing content after end",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: no target from-only",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A \\ar[] & B\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: no target empty ar options",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=, to=]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: empty from/to refs",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1 to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: missing comma in options",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1, , to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: double comma in options",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}[ampersand replacement=]\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: empty ampersand replacement",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}[sep=]\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: empty sep option",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[\"f\"{name=}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: empty name suffix option",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[color=, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: empty colour option",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}[unknown]\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: unknown diagram option",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
+      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
+      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: non-numeric curve height",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: incorrect start token",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd",
+    ].join(""),
+    context="parser.tex invalid: incorrect end token",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1,\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: unterminated arrow options",
+  )
+  tikz_test_assert_import_failure(
+    "\\begin{tikzcd} X",
+    context="parser.tex invalid: unexpected end of diagram",
+  )
+}
+
+///|
+test "tikz-cd parser corpus compatibility snippets from parser.tex stay permissive" {
+  let unresolved_named_refs = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=A, to=B]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(unresolved_named_refs), content="0")
+
+  let same_source_target = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[from=1-1, to=1-1]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(same_source_target), content="0")
+
+  let unknown_token_as_label = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[unknown, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(unknown_token_as_label), content="1")
+  match tikz_test_find_edge_by_label(unknown_token_as_label, "unknown") {
+    Some(_) => ()
+    None => abort("expected unknown token to be parsed as a label")
+  }
+
+  let unknown_label_option_braced = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[\"f\"{unknown}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(unknown_label_option_braced), content="1")
+  match tikz_test_find_edge_by_label(unknown_label_option_braced, "f") {
+    Some(_) => ()
+    None => abort("expected label f when unknown label option appears in braces")
+  }
+
+  let unknown_label_option_bare = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[\"f\" unknown, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(unknown_label_option_bare), content="1")
+  match tikz_test_find_edge_by_label(unknown_label_option_bare, "f") {
+    Some(_) => ()
+    None => abort("expected label f when unknown label option appears bare")
+  }
+
+  let invalid_arrow_colour_falls_back = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  inspect(tikz_test_count_edges(invalid_arrow_colour_falls_back), content="1")
+  match tikz_test_find_edge_by_vertex_labels(
+    invalid_arrow_colour_falls_back,
+    "A",
+    "B",
+  ) {
+    Some(edge) => inspect(edge.options.colour.is_not_black(), content="false")
+    None => abort("expected edge between A and B for invalid colour fallback")
+  }
+
+  let invalid_textcolor_literal = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "\\textcolor{A} & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  let mut has_invalid_textcolor_literal = false
+  for cell in invalid_textcolor_literal.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) =>
+        if vertex.cell.label.contains("\\textcolor{A}") {
+          has_invalid_textcolor_literal = true
+        }
+      _ => ()
+    }
+  }
+  inspect(has_invalid_textcolor_literal, content="true")
+
+  let colour_without_node_literal = tikz_test_import_quiver(
+    [
+      "\\begin{tikzcd}\n",
+      "\\textcolor{rgb,255:red,214;green,92;blue,92} & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  )
+  let mut has_colour_without_node_literal = false
+  for cell in colour_without_node_literal.all_cells() {
+    match cell {
+      CellData::Vertex(vertex) =>
+        if vertex.cell.label.contains(
+          "\\textcolor{rgb,255:red,214;green,92;blue,92}",
+        ) {
+          has_colour_without_node_literal = true
+        }
+      _ => ()
+    }
+  }
+  inspect(has_colour_without_node_literal, content="true")
+}
+
+///|
 test "tikz-cd import parser creates implicit vertices for coordinate arrows" {
   let input = [
     "\\begin{tikzcd}\n", "\\arrow[from=1-1, to=1-2, \"f\"]\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let mut empty_vertex_count = 0
@@ -1019,7 +1489,7 @@ test "tikz-cd import parser skips implicit empty matrix cells" {
     "\\begin{tikzcd}\n", "A \\arrow[rr, \"f\"] && B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1045,7 +1515,7 @@ test "tikz-cd import parser keeps explicit empty-label vertex cells" {
     "\\begin{tikzcd}\n", "A & {} & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   match tikz_test_find_vertex_id_by_label(quiver, "") {
@@ -1061,7 +1531,7 @@ test "tikz-cd import prefers minimal parser for non-share comment headers" {
     "\\end{tikzcd}",
   ].join("")
 
-  let imported = Quiver::import_tikz_cd_result(input)
+  let imported = tikz_test_import_success(input)
   inspect(imported.macro_url, content="None")
   inspect(imported.renderer, content="None")
   inspect(imported.embed, content="false")
@@ -1093,7 +1563,7 @@ test "tikz-cd import falls back to minimal parser for malformed share comment" {
     "\\end{tikzcd}",
   ].join("")
 
-  let imported = Quiver::import_tikz_cd_result(input)
+  let imported = tikz_test_import_success(input)
   inspect(imported.macro_url, content="None")
   inspect(imported.renderer, content="None")
   inspect(imported.embed, content="false")
@@ -1124,7 +1594,7 @@ test "tikz-cd import minimal parser supports diagonal direction shorthand" {
     "\\begin{tikzcd}\n", "A \\arrow[dr, \"g\"] & B \\\\\n", "C & D\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1150,7 +1620,7 @@ test "tikz-cd import parser supports ar alias, braced vertex labels, and bare ar
     "",
   )
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1177,7 +1647,7 @@ test "tikz-cd import parser supports from/to matrix references" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1198,6 +1668,27 @@ test "tikz-cd import parser supports from/to matrix references" {
 }
 
 ///|
+test "tikz-cd import parser supports braced from/to keys" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A & B\n",
+    "\\arrow[{from}=1-1, {to}=1-2, \"f\"]\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = tikz_test_import_quiver(input)
+  inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd import parser supports named edge references in from/to" {
   let input = [
     "\\begin{tikzcd}\n",
@@ -1207,7 +1698,7 @@ test "tikz-cd import parser supports named edge references in from/to" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1249,7 +1740,7 @@ test "tikz-cd import parser maps phantom named anchors to referenced edges" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
 
   let mut edge_count = 0
@@ -1288,7 +1779,7 @@ test "tikz-cd import parser resolves forward named edge references" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
 
   let target_id = match tikz_test_find_vertex_id_by_label(quiver, "B") {
@@ -1319,7 +1810,7 @@ test "tikz-cd import parser resolves forward phantom named anchors" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4]")
 
   let mut edge_count = 0
@@ -1358,7 +1849,7 @@ test "tikz-cd import parser maps explicit start/end center anchors to edge align
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   match tikz_test_find_edge_by_label(quiver, "f") {
@@ -1378,7 +1869,7 @@ test "tikz-cd import parser ignores phantom helper arrows" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let mut edge_count = 0
@@ -1415,7 +1906,7 @@ test "tikz-cd import parser keeps non-helper phantom arrows as edges" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "p") {
     Some(edge) => {
       inspect(edge.options.style.tail.name, content="none")
@@ -1434,7 +1925,7 @@ test "tikz-cd import parser supports ampersand replacement and brace arrow optio
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1462,7 +1953,7 @@ test "tikz-cd import parser supports custom ampersand replacement token" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1491,7 +1982,7 @@ test "tikz-cd import parser supports caret and underscore label suffix syntax" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5, 6]")
 
   let a_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -1539,7 +2030,7 @@ test "tikz-cd import parser supports vertical bar centred label suffix syntax" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5, 6]")
 
   match tikz_test_find_edge_by_label(quiver, "h") {
@@ -1562,7 +2053,7 @@ test "tikz-cd import parser maps basic arrow style flags" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(edge) => {
       inspect(edge.options.style.body.name, content="dashed")
@@ -1581,7 +2072,7 @@ test "tikz-cd import parser maps no tail flag and keeps option order" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "t") {
     Some(edge) => {
       inspect(edge.options.style.tail.name, content="none")
@@ -1600,7 +2091,7 @@ test "tikz-cd import parser maps advanced arrow style and level options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "g") {
     Some(edge) => {
       inspect(edge.options.style.head.name, content="epi")
@@ -1631,7 +2122,7 @@ test "tikz-cd import parser clamps scaling nfold level like js parser" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "lo") {
     Some(edge) => {
       inspect(edge.cell.level, content="2")
@@ -1673,7 +2164,7 @@ test "tikz-cd import parser maps preset reverse arrow tokens" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_vertex_labels(quiver, "B", "A") {
     Some(edge) => {
@@ -1727,7 +2218,7 @@ test "tikz-cd import parser maps preset aliases and line tokens" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_label(quiver, "map") {
     Some(edge) => {
@@ -1806,7 +2297,7 @@ test "tikz-cd import parser maps additional preset arrow aliases" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_label(quiver, "lr") {
     Some(edge) => {
@@ -1904,7 +2395,7 @@ test "tikz-cd import parser maps harpoon side option" {
     "\\begin{tikzcd}\n", "A \\arrow[r, \"p\", harpoon'] & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "p") {
     Some(edge) => {
       inspect(edge.options.style.head.name, content="harpoon")
@@ -1929,7 +2420,7 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
     "\\end{tikzcd}",
   ].join("")
 
-  let swap_quiver = Quiver::import_tikz_cd(swap_input)
+  let swap_quiver = tikz_test_import_quiver(swap_input)
   match tikz_test_find_edge_by_label(swap_quiver, "s") {
     Some(edge) => {
       inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
@@ -1938,7 +2429,7 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
     None => abort("expected edge s")
   }
 
-  let description_quiver = Quiver::import_tikz_cd(description_input)
+  let description_quiver = tikz_test_import_quiver(description_input)
   match tikz_test_find_edge_by_label(description_quiver, "d") {
     Some(edge) => {
       inspect(
@@ -1950,7 +2441,7 @@ test "tikz-cd import parser maps label-local swap description marking and pos" {
     None => abort("expected edge d")
   }
 
-  let over_quiver = Quiver::import_tikz_cd(over_input)
+  let over_quiver = tikz_test_import_quiver(over_input)
   match tikz_test_find_edge_by_label(over_quiver, "o") {
     Some(edge) => {
       inspect(edge.options.label_alignment is LabelAlignment::Over, content="true")
@@ -1972,7 +2463,7 @@ test "tikz-cd import parser supports unbraced quoted-label suffix options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_label(quiver, "d") {
     Some(edge) => {
@@ -2027,7 +2518,7 @@ test "tikz-cd import parser toggles swap for repeated suffix and option flags" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_label(quiver, "a") {
     Some(edge) =>
@@ -2068,7 +2559,7 @@ test "tikz-cd import parser maps label position aliases" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "a") {
     Some(edge) => inspect(edge.options.label_position, content="20")
     None => abort("expected edge a")
@@ -2109,7 +2600,7 @@ test "tikz-cd import parser maps shorten less/greater options and preserves orde
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "s") {
     Some(edge) => {
       inspect(edge.options.shorten.source, content="8")
@@ -2142,7 +2633,7 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "m") {
     Some(edge) => {
       inspect(edge.options.offset, content="2")
@@ -2159,6 +2650,30 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
 }
 
 ///|
+test "tikz-cd import parser supports non-pt units for shorten curve and loop distance" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"u\", shorten <=0.6ex, shorten >=1.4em, curve={height=12em}] & B \\\\\n",
+    "C \\arrow[loop, \"v\", distance=15ex] & D\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = tikz_test_import_quiver(input)
+  match tikz_test_find_edge_by_label(quiver, "u") {
+    Some(edge) => {
+      inspect(edge.options.shorten.source, content="1")
+      inspect(edge.options.shorten.target, content="1")
+      inspect(edge.options.curve, content="2")
+    }
+    None => abort("expected edge u")
+  }
+  match tikz_test_find_edge_by_label(quiver, "v") {
+    Some(edge) => inspect(edge.options.radius, content="5")
+    None => abort("expected edge v")
+  }
+}
+
+///|
 test "tikz-cd import parser maps decimal shift magnitudes with units" {
   let input = [
     "\\begin{tikzcd}\n",
@@ -2167,7 +2682,7 @@ test "tikz-cd import parser maps decimal shift magnitudes with units" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "p") {
     Some(edge) => inspect(edge.options.offset, content="1")
     None => abort("expected edge p")
@@ -2188,7 +2703,7 @@ test "tikz-cd import parser applies zero shift magnitudes in option order" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "u") {
     Some(edge) => inspect(edge.options.offset, content="0")
     None => abort("expected edge u")
@@ -2213,7 +2728,7 @@ test "tikz-cd import parser maps bend left and bend right options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(edge) => inspect(edge.options.curve, content="1")
     None => abort("expected edge f")
@@ -2240,7 +2755,7 @@ test "tikz-cd import parser maps loop flag and loop geometry options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_vertex_labels(quiver, "A", "A") {
     Some(edge) => {
@@ -2302,7 +2817,7 @@ test "tikz-cd import parser keeps only valid loop edge source-target pairs" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   let mut edge_count = 0
   for cell in quiver.all_cells() {
     match cell {
@@ -2329,7 +2844,7 @@ test "tikz-cd import parser maps vertex textcolor labels" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_vertex_by_label(quiver, "A") {
     Some(vertex) => {
       inspect(vertex.cell.label_colour.h, content="0")
@@ -2368,7 +2883,7 @@ test "tikz-cd import parser maps vertex textcolor labels wrapped in braces" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_vertex_by_label(quiver, "A") {
     Some(vertex) => {
       inspect(vertex.cell.label_colour.h, content="0")
@@ -2394,7 +2909,7 @@ test "tikz-cd import parser maps vertex textcolor labels without braced text" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_vertex_by_label(quiver, "A") {
     Some(vertex) => {
       inspect(vertex.cell.label_colour.h, content="0")
@@ -2423,7 +2938,7 @@ test "tikz-cd import parser maps draw text and shared colour options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(edge) => {
       inspect(edge.options.colour.h, content="0")
@@ -2468,7 +2983,7 @@ test "tikz-cd import parser maps non-arrow decoration options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_vertex_labels(quiver, "A", "B") {
     Some(edge) => {
@@ -2517,7 +3032,7 @@ test "tikz-cd import parser maps arrow body decoration options" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_vertex_labels(quiver, "A", "B") {
     Some(edge) => {
@@ -2571,7 +3086,7 @@ test "tikz-cd import parser keeps commas inside quoted labels" {
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f,g\"] & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2597,7 +3112,7 @@ test "tikz-cd import parser keeps escaped quotes inside quoted labels" {
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\\\"g\"] & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2623,7 +3138,7 @@ test "tikz-cd import parser keeps closing bracket inside quoted labels" {
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f]g\"] & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2649,7 +3164,7 @@ test "tikz-cd import parser keeps closing brace inside brace-delimited quoted la
     "\\begin{tikzcd}\n", "A \\arrow{r, \"f}g\"} & B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2676,7 +3191,7 @@ test "tikz-cd import parser supports arrow spacing and row option separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2703,7 +3218,7 @@ test "tikz-cd import parser supports starred row separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2729,7 +3244,7 @@ test "tikz-cd import parser supports \\cr row separators" {
     "\\begin{tikzcd}\n", "A \\arrow[d, \"f\"] \\cr\n", "B\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2758,7 +3273,7 @@ test "tikz-cd import parser supports \\crcr row separators with spacing options"
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2785,7 +3300,7 @@ test "tikz-cd import parser supports starred \\cr row separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2812,7 +3327,7 @@ test "tikz-cd import parser supports starred \\crcr row separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2841,7 +3356,7 @@ test "tikz-cd import parser supports \\tabularnewline row separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2870,7 +3385,7 @@ test "tikz-cd import parser supports starred \\tabularnewline row separators" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -2899,7 +3414,7 @@ test "tikz-cd import parser keeps row splitting when escaped delimiters appear i
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A \\{") {
     Some(value) => value
@@ -2926,7 +3441,7 @@ test "tikz-cd import parser supports escaped closing bracket in ampersand replac
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
   match tikz_test_find_vertex_id_by_label(quiver, "A") {
     Some(_) => inspect(true, content="true")
@@ -2944,7 +3459,7 @@ test "tikz-cd import parser does not split rows inside braced labels" {
     "\\begin{tikzcd}\n", "{A \\\\ B} & C\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
 
   match tikz_test_find_vertex_id_by_label(quiver, "A \\\\ B") {
@@ -2965,7 +3480,7 @@ test "tikz-cd import parser ignores arrow-like commands inside braced vertex lab
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
   match tikz_test_find_edge_by_label(quiver, "fake") {
     Some(_) => abort("expected no parsed edge from braced label text")
@@ -2981,7 +3496,7 @@ test "tikz-cd import parser still parses top-level arrow after braced label text
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(edge) => {
@@ -3000,7 +3515,7 @@ test "tikz-cd import parser ignores arrow-like commands inside inline math label
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
   match tikz_test_find_edge_by_label(quiver, "fake") {
     Some(_) => abort("expected no parsed edge from inline math label text")
@@ -3016,7 +3531,7 @@ test "tikz-cd import parser still parses top-level arrow after inline math label
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(edge) => {
@@ -3035,7 +3550,7 @@ test "tikz-cd import parser ignores commands with arrow-prefixed names" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
   match tikz_test_find_edge_by_label(quiver, "fake") {
     Some(_) => abort("expected no parsed edge from \\arrowtail command")
@@ -3059,7 +3574,7 @@ test "tikz-cd import parser treats escaped opening delimiters as plain text" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
 
   match tikz_test_find_edge_by_label(quiver, "f") {
     Some(_) => inspect(true, content="true")
@@ -3078,7 +3593,7 @@ test "tikz-cd import parser ignores latex comments in body" {
     "% row comment\n", "C & D\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
 
   let source_id = match tikz_test_find_vertex_id_by_label(quiver, "A") {
@@ -3109,7 +3624,7 @@ test "tikz-cd import parser ignores commented begin token before real environmen
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3]")
   match tikz_test_find_edge_by_label(quiver, "fake") {
     Some(_) => abort("expected no parsed edge from commented environment")
@@ -3134,7 +3649,7 @@ test "tikz-cd import parser ignores commented end token inside body" {
     "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
 
   match tikz_test_find_vertex_id_by_label(quiver, "C") {
@@ -3153,7 +3668,7 @@ test "tikz-cd import parser keeps escaped percent in cell labels" {
     "\\begin{tikzcd}\n", "{A \\% B} & C % trailing comment\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
   match tikz_test_find_vertex_id_by_label(quiver, "A \\% B") {
     Some(_) => inspect(true, content="true")
@@ -3171,7 +3686,7 @@ test "tikz-cd import parser does not split escaped ampersands in cell text" {
     "\\begin{tikzcd}\n", "{A \\& B} & C\n", "\\end{tikzcd}",
   ].join("")
 
-  let quiver = Quiver::import_tikz_cd(input)
+  let quiver = tikz_test_import_quiver(input)
   inspect(quiver.all_cell_ids(), content="[1, 2]")
 
   match tikz_test_find_vertex_id_by_label(quiver, "A \\& B") {

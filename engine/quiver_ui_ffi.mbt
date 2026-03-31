@@ -5,10 +5,20 @@ pub struct QuiverUiAdapter {
 
 ///|
 pub struct QuiverUiImportResult {
+  ok : Bool
   payload : String
   macro_url : String?
   renderer : String?
   embed : Bool
+  error : QuiverUiImportError?
+}
+
+///|
+pub struct QuiverUiImportError {
+  kind : String
+  message : String
+  line : Int
+  column : Int
 }
 
 ///|
@@ -240,7 +250,41 @@ fn quiver_ui_import_result(
   renderer : String?,
   embed : Bool,
 ) -> QuiverUiImportResult {
-  { payload: quiver.export_base64_v0(), macro_url, renderer, embed }
+  {
+    ok: true,
+    payload: quiver.export_base64_v0(),
+    macro_url,
+    renderer,
+    embed,
+    error: None,
+  }
+}
+
+///|
+fn quiver_ui_import_error_from_tikz(
+  error : TikzCdImportError,
+) -> QuiverUiImportError {
+  {
+    kind: error.kind,
+    message: error.message,
+    line: error.line,
+    column: error.column,
+  }
+}
+
+///|
+fn quiver_ui_import_result_with_error(
+  quiver : Quiver,
+  error : QuiverUiImportError,
+) -> QuiverUiImportResult {
+  {
+    ok: false,
+    payload: quiver.export_base64_v0(),
+    macro_url: None,
+    renderer: None,
+    embed: false,
+    error: Some(error),
+  }
 }
 
 ///|
@@ -508,6 +552,23 @@ fn quiver_ui_option_string_json(value : String?) -> Json {
 }
 
 ///|
+fn quiver_ui_option_import_error_json(
+  value : QuiverUiImportError?,
+) -> Json {
+  match value {
+    Some(error) => {
+      let out : Map[String, Json] = Map::new()
+      out.set("kind", Json::string(error.kind))
+      out.set("message", Json::string(error.message))
+      out.set("line", Json::number(error.line.to_double()))
+      out.set("column", Json::number(error.column.to_double()))
+      Json::object(out)
+    }
+    None => Json::null()
+  }
+}
+
+///|
 fn quiver_ui_id_remap_json(data : QuiverUiIdRemap) -> Json {
   let out : Map[String, Json] = Map::new()
   out.set("old_id", Json::number(data.old_id.to_double()))
@@ -518,10 +579,12 @@ fn quiver_ui_id_remap_json(data : QuiverUiIdRemap) -> Json {
 ///|
 fn quiver_ui_import_result_json(result : QuiverUiImportResult) -> Json {
   let out : Map[String, Json] = Map::new()
+  out.set("ok", Json::boolean(result.ok))
   out.set("payload", Json::string(result.payload))
   out.set("macro_url", quiver_ui_option_string_json(result.macro_url))
   out.set("renderer", quiver_ui_option_string_json(result.renderer))
   out.set("embed", Json::boolean(result.embed))
+  out.set("error", quiver_ui_option_import_error_json(result.error))
   Json::object(out)
 }
 
@@ -1189,7 +1252,7 @@ pub fn QuiverUiAdapter::import_text_auto(
   }
 
   let payload = self.import_base64_state(input)
-  { payload, macro_url: None, renderer: None, embed: false }
+  { ok: true, payload, macro_url: None, renderer: None, embed: false, error: None }
 }
 
 ///|
@@ -1197,9 +1260,36 @@ pub fn QuiverUiAdapter::import_tikz_cd(
   self : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
-) -> QuiverUiImportResult raise {
-  let imported = Quiver::import_tikz_cd_result(input, default_renderer~)
-  self.quiver = imported.quiver
+) -> QuiverUiImportResult {
+  let imported = Quiver::try_import_tikz_cd_result(input, default_renderer~)
+  if !imported.ok {
+    let error = match imported.error {
+      Some(value) => quiver_ui_import_error_from_tikz(value)
+      None => {
+        kind: "tikz",
+        message: "tikz-cd import failed",
+        line: 0,
+        column: 0,
+      }
+    }
+    return quiver_ui_import_result_with_error(self.quiver, error)
+  }
+
+  let quiver = match imported.quiver {
+    Some(value) => value
+    None =>
+      return quiver_ui_import_result_with_error(
+        self.quiver,
+        {
+          kind: "tikz",
+          message: "tikz-cd import produced no quiver",
+          line: 0,
+          column: 0,
+        },
+      )
+  }
+
+  self.quiver = quiver
   quiver_ui_import_result(
     self.quiver,
     imported.macro_url,

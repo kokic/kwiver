@@ -85,7 +85,8 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 ## Metadata Contracts
 
-- `QuiverUiImportResult` returns `{ payload, macro_url, renderer, embed }`.
+- `QuiverUiImportResult` returns `{ ok, payload, macro_url, renderer, embed, error }`.
+- `QuiverUiImportResult.error` is `null` on success, or `{ kind, message, line, column }` on typed import failure (currently used by strict tikz-cd import).
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
 - `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `add/remove/flush` JSON wrappers return payload-carrying JSON results for JS state sync (`add*`: `{id,payload}`, `remove`: `{removed_ids,payload}`, `flush`: `{payload}`).
@@ -122,6 +123,7 @@ It supports mutation/import/export actions plus graph-query actions (`dependenci
 - `render_html_embed` (`input.settings` + `input.options`, fixed/dynamic size inferred from `fixed_size` or width/height presence)
 - `render_tikz` (string output)
 - `export_selection` with `include_dependencies` accepted in either top-level envelope or `input`
+- For `import_*_json` actions, if nested import result has `ok=false`, dispatch promotes it to top-level `{ ok:false, error:<message> }` while preserving current payload/selection.
 The FFI wrapper is safe for JS callers: malformed envelope JSON and decode failures are converted into `{ ok: false, ... }` error payloads instead of raising.
 
 `ffi_browser_runtime_dispatch_many_json_safe` accepts either:
@@ -266,11 +268,64 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
 
 This package is intentionally minimal and acts as an end-to-end reference for wiring add/remove/import/export roundtrips via JSON action envelopes.
 `import_text_auto` now recognizes both `\begin{tikzcd}...\end{tikzcd}` and `\begin{tikzcd*}...\end{tikzcd*}` handwritten inputs.
+`BrowserDemoImportResult` JSON now includes `{ ok, payload, macro_url, renderer, embed, error }`, where `error` is a top-level runtime error string when import dispatch fails.
 Task 8 Step 5 adds `dispatch_command_json` / `ffi_browser_demo_session_dispatch_command_json` as a stable command-envelope wrapper for JS shells:
 
 - input: runtime dispatch envelope plus optional `origin` and `command_id`.
 - output: `{ sequence, ok, action, origin, command_id, result, error, changed, undo_checkpoint, redo_checkpoint, before, after }`.
 - `before` / `after` always include `{ payload, selection, cell_ids }`, and checkpoints are only non-null when `changed=true`.
+
+## Browser UI Action->Command Mapping (runtime-first)
+
+`browser_ui_upstream/ui.mjs` must route interaction entrypoints through `browser_ui_upstream/kwiver_bridge.mjs`.
+The bridge is the only JS owner of command-envelope dispatch.
+
+- create vertex: `kwiver_bridge_add_vertex_json` -> `add_vertex_json`
+- create edge: `kwiver_bridge_add_edge_json` -> `add_edge_json`
+- move vertex: `kwiver_bridge_move_vertex_json` -> `move_vertex_json`
+- set label: `kwiver_bridge_set_label_json` -> `set_label_json`
+- set label colour: `kwiver_bridge_set_label_colour_json` -> `set_label_colour_json`
+- reconnect edge: `kwiver_bridge_reconnect_edge_json` -> `reconnect_edge_json`
+- remove: `kwiver_bridge_remove_json` -> `remove_json`
+- edge option updates: `kwiver_bridge_set_edge_offset_json` / `kwiver_bridge_set_edge_curve_json` / `kwiver_bridge_set_edge_label_alignment_json` / `kwiver_bridge_set_edge_label_position_json` / `kwiver_bridge_patch_edge_options_json`
+- edge transforms: `kwiver_bridge_reverse_edge_json` / `kwiver_bridge_flip_edge_json` / `kwiver_bridge_flip_edge_labels_json`
+- selection sync and clipboard payload: `kwiver_bridge_set_selection` / `kwiver_bridge_export_selection` / `kwiver_bridge_paste_selection_json`
+- payload import: `kwiver_bridge_import_payload_json` -> `import_payload`
+- render/export text: `kwiver_bridge_export("tikz-cd"|"fletcher"|"html")` -> `render_tikz_json` / `render_fletcher` / `render_html_embed`
+- base64 share export: `kwiver_bridge_export("base64")` -> `export_payload`
+- graph snapshot/query sync: `kwiver_bridge_all_cells` / `kwiver_bridge_all_cell_ids` / `kwiver_bridge_connected_components` / `kwiver_bridge_dependencies` / `kwiver_bridge_transitive_dependencies` / `kwiver_bridge_transitive_reverse_dependencies` / `kwiver_bridge_reverse_dependencies` -> `all_cells_json` / `all_cell_ids_json` / `connected_components_json` / `dependencies_of_json` / `transitive_dependencies_json` / `transitive_reverse_dependencies_json` / `reverse_dependencies_of_json`
+- lifecycle reset: `kwiver_bridge_reset` -> `reset`
+
+Runtime-first invariants:
+
+- UI code must not call `ffi_browser_demo_session_dispatch_command_json` directly.
+- every outbound envelope includes `{ protocol, command_id, origin }`.
+- every accepted response must include matching `protocol`; missing/mismatch is rejected.
+- dependency query paths used by interactions are runtime-only and fail-fast (`dependencies_of_json` / `transitive_dependencies_json` / `reverse_dependencies_of_json`); no local graph-query fallback.
+- bridge unavailability is fail-fast at startup, with candidate/load-error details in dev error text.
+- JS model updates are derived from runtime payload/snapshot results, not treated as independent source of truth.
+
+## Browser Bridge Smoke Checks (JS side)
+
+`browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs` provides a lightweight JS smoke runner for bridge invariants:
+
+- bridge unavailable path when autoload is disabled
+- command response rejection when `protocol` is missing or mismatched
+- outbound command envelope always carries `protocol` and `command_id`
+- startup fail-fast error formatting includes `candidate` and first load error
+- startup fail-fast formatting fallback uses `candidate=none` and `error=n/a`
+- query wrappers dispatch runtime graph actions (`all_cell_ids_json` / `connected_components_json` / `dependencies_of_json` / `transitive_dependencies_json` / `transitive_reverse_dependencies_json` / `reverse_dependencies_of_json`)
+- runtime-first interaction wrappers dispatch command envelopes (`selection/create/move/remove/edge/paste`)
+- render wrappers dispatch runtime render actions (`render_tikz_json` / `render_fletcher` / `render_html_embed`)
+- base64 share export pulls canonical payload from runtime `export_payload`
+- reset action dispatches runtime `reset`
+- reconnect, set-label, and patch-edge-options interactions dispatch runtime mutation commands
+
+Run:
+
+```sh
+node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
+```
 
 ## Runnable Browser UI Demo (Task 6 deliverable)
 

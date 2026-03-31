@@ -188,6 +188,50 @@ test "browser runtime import text auto supports handwritten tikz and raw payload
 }
 
 ///|
+test "browser runtime dispatch import tikz failure surfaces top-level error and preserves state" {
+  let runtime = BrowserRuntime::new()
+  ignore(runtime.add_vertex("Seed", 0, 0))
+  runtime.set_selection([1])
+  let before_payload = runtime.export_payload()
+
+  let invalid_tikz = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[\"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+  let output = runtime.dispatch_json(
+    Json::object({
+      "action": Json::string("import_tikz_cd_json"),
+      "input": Json::string(invalid_tikz),
+    }).stringify(),
+  )
+
+  let root : Map[String, Json] = @json.from_json(@json.parse(output))
+  let ok : Bool = @json.from_json(runtime_test_json_get(root, "ok"))
+  let error : String = @json.from_json(runtime_test_json_get(root, "error"))
+  let payload : String = @json.from_json(runtime_test_json_get(root, "payload"))
+  let selection : Array[Int] = @json.from_json(runtime_test_json_get(root, "selection"))
+  inspect(ok, content="false")
+  inspect(error.contains("missing target"), content="true")
+  inspect(payload == before_payload, content="true")
+  inspect(selection, content="[1]")
+
+  let result : Map[String, Json] = @json.from_json(runtime_test_json_get(root, "result"))
+  let result_ok : Bool = @json.from_json(runtime_test_json_get(result, "ok"))
+  inspect(result_ok, content="false")
+  let import_error : Map[String, Json] = @json.from_json(
+    runtime_test_json_get(result, "error"),
+  )
+  let import_error_message : String = @json.from_json(
+    runtime_test_json_get(import_error, "message"),
+  )
+  inspect(import_error_message == error, content="true")
+
+  inspect(runtime.export_payload() == before_payload, content="true")
+  inspect(runtime.selection(), content="[1]")
+}
+
+///|
 test "browser runtime json import and paste wrappers support js consumers" {
   let source = BrowserRuntime::new()
   let left_id = source.add_vertex("L", 2, 3)
@@ -1196,6 +1240,21 @@ test "browser runtime ffi wrappers expose js entrypoint surface" {
     "{\"edge_id\":3,\"shorten_source\":6,\"shorten_target\":4}",
   )
   inspect(set_edge_shorten_json.contains("\"ok\":true"), content="true")
+  let reverse_edge_json = ffi_browser_runtime_reverse_edge_json(
+    runtime,
+    "{\"edge_id\":3}",
+  )
+  inspect(reverse_edge_json.contains("\"ok\":true"), content="true")
+  let flip_edge_json = ffi_browser_runtime_flip_edge_json(
+    runtime,
+    "{\"edge_id\":3}",
+  )
+  inspect(flip_edge_json.contains("\"ok\":true"), content="true")
+  let flip_edge_labels_json = ffi_browser_runtime_flip_edge_labels_json(
+    runtime,
+    "{\"edge_id\":3}",
+  )
+  inspect(flip_edge_labels_json.contains("\"ok\":true"), content="true")
   let reconnect_edge_json = ffi_browser_runtime_reconnect_edge_json(
     runtime,
     "{\"edge_id\":3,\"source_id\":2,\"target_id\":1}",
@@ -1334,6 +1393,37 @@ test "browser runtime ffi dispatch wrapper exposes single-entrypoint ui surface"
   let patch_ok : Bool = @json.from_json(runtime_test_json_get(patch_root, "ok"))
   inspect(patch_ok, content="true")
 
+  let flip_labels_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"flip_edge_labels_json\",\"input\":{\"edge_id\":3}}",
+  )
+  let flip_labels_root : Map[String, Json] = @json.from_json(
+    @json.parse(flip_labels_dispatch),
+  )
+  let flip_labels_ok : Bool = @json.from_json(
+    runtime_test_json_get(flip_labels_root, "ok"),
+  )
+  inspect(flip_labels_ok, content="true")
+
+  let flip_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"flip_edge_json\",\"input\":{\"edge_id\":3}}",
+  )
+  let flip_root : Map[String, Json] = @json.from_json(@json.parse(flip_dispatch))
+  let flip_ok : Bool = @json.from_json(runtime_test_json_get(flip_root, "ok"))
+  inspect(flip_ok, content="true")
+
+  let reverse_dispatch = ffi_browser_runtime_dispatch_json(
+    runtime,
+    "{\"action\":\"reverse_edge_json\",\"input\":{\"edge_id\":3}}",
+  )
+  let reverse_root : Map[String, Json] = @json.from_json(
+    @json.parse(reverse_dispatch),
+  )
+  let reverse_ok : Bool = @json.from_json(
+    runtime_test_json_get(reverse_root, "ok"),
+  )
+  inspect(reverse_ok, content="true")
   let snapshot_dispatch = ffi_browser_runtime_dispatch_json(
     runtime,
     "{\"action\":\"snapshot_json\"}",
