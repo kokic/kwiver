@@ -589,6 +589,106 @@ function testPatchEdgeOptionsDispatchesRuntimeMutation() {
   assert.deepEqual(capturedCommand?.input?.patch, patch);
 }
 
+function testQueryWrappersRejectMalformedResults() {
+  const recorded = [];
+  const installed = kwiver_bridge_test_install_mock_api(
+    mockApiFromResponder((command) => {
+      recorded.push(command);
+      switch (command.action) {
+        case "all_cell_ids_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [1, "x"],
+          };
+        case "connected_components_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [2, {}],
+          };
+        case "dependencies_of_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: { ids: [3] },
+          };
+        case "transitive_dependencies_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [4, "bad"],
+          };
+        case "transitive_reverse_dependencies_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [5, {}],
+          };
+        case "reverse_dependencies_of_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [6, {}],
+          };
+        default:
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: [],
+          };
+      }
+    }),
+  );
+  assert.equal(installed, true);
+
+  const allCellIds = kwiver_bridge_all_cell_ids("ui.test.bad.all_cell_ids");
+  assert.equal(allCellIds, null);
+  assertRecordedCommand(recorded, 0, "all_cell_ids_json", "ui.test.bad.all_cell_ids");
+
+  const connected = kwiver_bridge_connected_components([1], "ui.test.bad.connected_components");
+  assert.equal(connected, null);
+  assertRecordedCommand(recorded, 1, "connected_components_json", "ui.test.bad.connected_components");
+
+  const dependencies = kwiver_bridge_dependencies(9, "ui.test.bad.dependencies");
+  assert.equal(dependencies, null);
+  assertRecordedCommand(recorded, 2, "dependencies_of_json", "ui.test.bad.dependencies");
+
+  const transitive = kwiver_bridge_transitive_dependencies(
+    [1],
+    false,
+    "ui.test.bad.transitive_dependencies",
+  );
+  assert.equal(transitive, null);
+  assertRecordedCommand(
+    recorded,
+    3,
+    "transitive_dependencies_json",
+    "ui.test.bad.transitive_dependencies",
+  );
+
+  const transitiveReverse = kwiver_bridge_transitive_reverse_dependencies(
+    [1],
+    "ui.test.bad.transitive_reverse_dependencies",
+  );
+  assert.equal(transitiveReverse, null);
+  assertRecordedCommand(
+    recorded,
+    4,
+    "transitive_reverse_dependencies_json",
+    "ui.test.bad.transitive_reverse_dependencies",
+  );
+
+  const reverse = kwiver_bridge_reverse_dependencies(9, "ui.test.bad.reverse_dependencies");
+  assert.equal(reverse, null);
+  assertRecordedCommand(
+    recorded,
+    5,
+    "reverse_dependencies_of_json",
+    "ui.test.bad.reverse_dependencies",
+  );
+}
+
 const TEST_CASES = [
   [
     "bridge smoke: unavailable when autoload is disabled and no mock is installed",
@@ -617,6 +717,10 @@ const TEST_CASES = [
   [
     "bridge smoke: runtime-first interaction wrappers dispatch command envelopes",
     testInteractionWrappersDispatchRuntimeCommands,
+  ],
+  [
+    "bridge smoke: query wrappers reject malformed runtime results",
+    testQueryWrappersRejectMalformedResults,
   ],
   [
     "bridge smoke: runtime render wrappers dispatch format actions",

@@ -86,19 +86,6 @@ fn tikz_test_find_edge_by_vertex_labels(
   None
 }
 
-///|
-fn tikz_test_count_edges(quiver : Quiver) -> Int {
-  let mut count = 0
-  for cell in quiver.all_cells() {
-    match cell {
-      CellData::Edge(_) => count = count + 1
-      _ => ()
-    }
-  }
-  count
-}
-
-///|
 priv struct TikzTestImportSuccess {
   quiver : Quiver
   macro_url : String?
@@ -1100,6 +1087,56 @@ test "tikz-cd import minimal parser supports display-math wrapped environment" {
 }
 
 ///|
+test "tikz-cd import minimal parser supports parenthesis-math wrapped environment" {
+  let input = [
+    "\\(\n",
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}\n",
+    "\\)",
+  ].join("")
+
+  let imported = tikz_test_import_success(input)
+  inspect(imported.macro_url is None, content="true")
+  inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd import minimal parser supports double-dollar wrapped environment" {
+  let input = [
+    "$$\n",
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}\n",
+    "$$",
+  ].join("")
+
+  let imported = tikz_test_import_success(input)
+  inspect(imported.macro_url is None, content="true")
+  inspect(imported.renderer is None, content="true")
+  inspect(imported.embed, content="false")
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
 test "tikz-cd try import rejects unknown diagram options" {
   let input = [
     "\\begin{tikzcd}[foo=bar]\n",
@@ -1116,6 +1153,44 @@ test "tikz-cd try import rejects unknown diagram options" {
       inspect(error.message.contains("unknown tikzcd diagram option"), content="true")
     }
     None => abort("expected import error")
+  }
+}
+
+///|
+test "tikz-cd try import accepts common style diagram key-value options" {
+  let input = [
+    "\\begin{tikzcd}[cells={nodes={inner sep=1pt}}, every arrow/.append style={font=\\small}, every label/.style={font=\\scriptsize}, every matrix/.style={ampersand replacement=\\&}]\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = tikz_test_import_success(input)
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
+  }
+}
+
+///|
+test "tikz-cd try import accepts sep slash diagram option variants" {
+  let input = [
+    "\\begin{tikzcd}[sep/normal, column sep/large, row sep/small]\n",
+    "A \\arrow[r, \"f\"] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let imported = tikz_test_import_success(input)
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3]")
+  match tikz_test_find_edge_by_label(imported.quiver, "f") {
+    Some(edge) => {
+      inspect(edge.source == 1, content="true")
+      inspect(edge.target == 2, content="true")
+    }
+    None => abort("expected edge f")
   }
 }
 
@@ -1329,128 +1404,79 @@ test "tikz-cd parser corpus invalid snippets from parser.tex return structured e
 }
 
 ///|
-test "tikz-cd parser corpus compatibility snippets from parser.tex stay permissive" {
-  let unresolved_named_refs = tikz_test_import_quiver(
+test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast" {
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[from=A, to=B]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: unresolved named refs",
   )
-  inspect(tikz_test_count_edges(unresolved_named_refs), content="0")
-
-  let same_source_target = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[from=1-1, to=1-1]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: same source and target without loop",
   )
-  inspect(tikz_test_count_edges(same_source_target), content="0")
-
-  let unknown_token_as_label = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[unknown, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: unknown option token",
   )
-  inspect(tikz_test_count_edges(unknown_token_as_label), content="1")
-  match tikz_test_find_edge_by_label(unknown_token_as_label, "unknown") {
-    Some(_) => ()
-    None => abort("expected unknown token to be parsed as a label")
-  }
-
-  let unknown_label_option_braced = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[\"f\"{unknown}, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: unknown braced label suffix option",
   )
-  inspect(tikz_test_count_edges(unknown_label_option_braced), content="1")
-  match tikz_test_find_edge_by_label(unknown_label_option_braced, "f") {
-    Some(_) => ()
-    None => abort("expected label f when unknown label option appears in braces")
-  }
-
-  let unknown_label_option_bare = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[\"f\" unknown, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: unknown bare label suffix option",
   )
-  inspect(tikz_test_count_edges(unknown_label_option_bare), content="1")
-  match tikz_test_find_edge_by_label(unknown_label_option_bare, "f") {
-    Some(_) => ()
-    None => abort("expected label f when unknown label option appears bare")
-  }
-
-  let invalid_arrow_colour_falls_back = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
       "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: invalid arrow colour",
   )
-  inspect(tikz_test_count_edges(invalid_arrow_colour_falls_back), content="1")
-  match tikz_test_find_edge_by_vertex_labels(
-    invalid_arrow_colour_falls_back,
-    "A",
-    "B",
-  ) {
-    Some(edge) => inspect(edge.options.colour.is_not_black(), content="false")
-    None => abort("expected edge between A and B for invalid colour fallback")
-  }
-
-  let invalid_textcolor_literal = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "\\textcolor{A} & B\n",
       "\\arrow[from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: invalid textcolor literal",
   )
-  let mut has_invalid_textcolor_literal = false
-  for cell in invalid_textcolor_literal.all_cells() {
-    match cell {
-      CellData::Vertex(vertex) =>
-        if vertex.cell.label.contains("\\textcolor{A}") {
-          has_invalid_textcolor_literal = true
-        }
-      _ => ()
-    }
-  }
-  inspect(has_invalid_textcolor_literal, content="true")
-
-  let colour_without_node_literal = tikz_test_import_quiver(
+  tikz_test_assert_import_failure(
     [
       "\\begin{tikzcd}\n",
       "\\textcolor{rgb,255:red,214;green,92;blue,92} & B\n",
       "\\arrow[from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    context="parser.tex compatibility strict: textcolor without label node",
   )
-  let mut has_colour_without_node_literal = false
-  for cell in colour_without_node_literal.all_cells() {
-    match cell {
-      CellData::Vertex(vertex) =>
-        if vertex.cell.label.contains(
-          "\\textcolor{rgb,255:red,214;green,92;blue,92}",
-        ) {
-          has_colour_without_node_literal = true
-        }
-      _ => ()
-    }
-  }
-  inspect(has_colour_without_node_literal, content="true")
 }
 
 ///|
@@ -2390,6 +2416,101 @@ test "tikz-cd import parser maps additional preset arrow aliases" {
 }
 
 ///|
+test "tikz-cd import parser maps symbolic arrow preset tokens" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"a\", ->] & B \\\\\n",
+    "C \\arrow[r, \"b\", <-] & D \\\\\n",
+    "E \\arrow[r, \"c\", <->] & F \\\\\n",
+    "G \\arrow[r, \"d\", |->] & H \\\\\n",
+    "I \\arrow[r, \"e\", <-|] & J \\\\\n",
+    "K \\arrow[r, \"f\", ->>] & L \\\\\n",
+    "M \\arrow[r, \"g\", <<-] & N \\\\\n",
+    "O \\arrow[r, \"h\", >->] & P \\\\\n",
+    "Q \\arrow[r, \"i\", <-<] & R\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = tikz_test_import_quiver(input)
+
+  match tikz_test_find_edge_by_label(quiver, "a") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected -> edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "D", "C") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="b")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed <- edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "c") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="arrowhead")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected <-> edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "d") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="maps to")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected |-> edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "J", "I") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="e")
+      inspect(edge.options.style.tail.name, content="maps to")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed <-| edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "f") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="epi")
+    }
+    None => abort("expected ->> edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "N", "M") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="g")
+      inspect(edge.options.style.tail.name, content="none")
+      inspect(edge.options.style.head.name, content="epi")
+    }
+    None => abort("expected reversed <<- edge")
+  }
+
+  match tikz_test_find_edge_by_label(quiver, "h") {
+    Some(edge) => {
+      inspect(edge.options.style.tail.name, content="mono")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected >-> edge")
+  }
+
+  match tikz_test_find_edge_by_vertex_labels(quiver, "R", "Q") {
+    Some(edge) => {
+      inspect(edge.cell.label, content="i")
+      inspect(edge.options.style.tail.name, content="mono")
+      inspect(edge.options.style.head.name, content="arrowhead")
+    }
+    None => abort("expected reversed <-< edge")
+  }
+}
+
+///|
 test "tikz-cd import parser maps harpoon side option" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"p\", harpoon'] & B\n", "\\end{tikzcd}",
@@ -2808,31 +2929,23 @@ test "tikz-cd import parser maps loop flag and loop geometry options" {
 }
 
 ///|
-test "tikz-cd import parser keeps only valid loop edge source-target pairs" {
-  let input = [
-    "\\begin{tikzcd}\n",
-    "A \\arrow[r, loop, \"bad\"] & B \\\\\n",
-    "C \\arrow[loop, \"ok\"] & D \\\\\n",
-    "E \\arrow[from=3-1, to=3-1, \"self\"] & F\n",
-    "\\end{tikzcd}",
-  ].join("")
-
-  let quiver = tikz_test_import_quiver(input)
-  let mut edge_count = 0
-  for cell in quiver.all_cells() {
-    match cell {
-      CellData::Edge(_) => edge_count = edge_count + 1
-      _ => ()
-    }
-  }
-
-  inspect(edge_count, content="1")
-  inspect(tikz_test_find_edge_by_label(quiver, "bad") is None, content="true")
-  inspect(tikz_test_find_edge_by_label(quiver, "self") is None, content="true")
-  match tikz_test_find_edge_by_label(quiver, "ok") {
-    Some(edge) => inspect(edge.source == edge.target, content="true")
-    None => abort("expected loop edge ok")
-  }
+test "tikz-cd import parser rejects invalid loop and self-target combinations" {
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A \\arrow[r, loop, \"bad\"] & B\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="invalid loop source-target pair",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "E \\arrow[from=1-1, to=1-1, \"self\"] & F\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="non-loop self-target arrow",
+  )
 }
 
 ///|

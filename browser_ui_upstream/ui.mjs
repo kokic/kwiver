@@ -871,34 +871,43 @@ class UI {
         return typeof side === "string" ? side : "";
     }
 
-    static kwiver_style_endpoint_from_runtime(runtime_endpoint, fallback_endpoint = null) {
-        const name = typeof runtime_endpoint?.name === "string"
+    static kwiver_style_endpoint_from_runtime(runtime_endpoint) {
+        if (!runtime_endpoint || typeof runtime_endpoint !== "object") {
+            return null;
+        }
+        const name = typeof runtime_endpoint.name === "string"
             ? runtime_endpoint.name
-            : typeof fallback_endpoint?.name === "string"
-                ? fallback_endpoint.name
-                : "none";
-        const side = typeof runtime_endpoint?.side === "string"
+            : null;
+        if (name === null) {
+            return null;
+        }
+        const side = typeof runtime_endpoint.side === "string"
             ? runtime_endpoint.side
-            : typeof fallback_endpoint?.side === "string"
-                ? fallback_endpoint.side
-                : "";
+            : "";
         return { name, side };
     }
 
-    static kwiver_style_from_runtime(runtime_style, fallback_style = null) {
+    static kwiver_style_from_runtime(runtime_style) {
         if (!runtime_style || typeof runtime_style !== "object") {
             return null;
         }
         const name = typeof runtime_style.name === "string"
             ? runtime_style.name
-            : typeof fallback_style?.name === "string"
-                ? fallback_style.name
-                : "arrow";
+            : null;
+        if (name === null) {
+            return null;
+        }
+        const tail = UI.kwiver_style_endpoint_from_runtime(runtime_style.tail);
+        const body = UI.kwiver_style_endpoint_from_runtime(runtime_style.body);
+        const head = UI.kwiver_style_endpoint_from_runtime(runtime_style.head);
+        if (tail === null || body === null || head === null) {
+            return null;
+        }
         return {
             name,
-            tail: UI.kwiver_style_endpoint_from_runtime(runtime_style.tail, fallback_style?.tail),
-            body: UI.kwiver_style_endpoint_from_runtime(runtime_style.body, fallback_style?.body),
-            head: UI.kwiver_style_endpoint_from_runtime(runtime_style.head, fallback_style?.head),
+            tail,
+            body,
+            head,
         };
     }
 
@@ -942,7 +951,7 @@ class UI {
     }
 
     static kwiver_style_to_json(style) {
-        const normalized = UI.kwiver_style_from_runtime(style, style);
+        const normalized = UI.kwiver_style_from_runtime(style);
         if (normalized === null) {
             return null;
         }
@@ -1450,6 +1459,36 @@ class UI {
         return this.kwiver_cells_from_runtime_ids(runtime_ids);
     }
 
+    kwiver_require_runtime_all_cell_ids(origin = "ui.runtime.all_cell_ids") {
+        const all_ids = this.kwiver_runtime_all_cell_ids(origin);
+        if (!Array.isArray(all_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": all_cell_ids_json failed");
+        }
+        return all_ids;
+    }
+
+    kwiver_require_runtime_connected_component_ids(
+        roots,
+        origin = "ui.runtime.connected_components",
+    ) {
+        const connected_ids = this.kwiver_runtime_connected_component_ids(
+            roots,
+            origin,
+        );
+        if (!Array.isArray(connected_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": connected_components_json failed");
+        }
+        return connected_ids;
+    }
+
+    kwiver_require_selected_ids(origin = "ui.selection") {
+        const selected_ids = this.kwiver_selected_ids();
+        if (!Array.isArray(selected_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": selected id mapping failed");
+        }
+        return selected_ids;
+    }
+
     kwiver_require_runtime_dependency_cells(
         cell,
         origin = "ui.runtime.dependencies",
@@ -1500,27 +1539,18 @@ class UI {
     }
 
     kwiver_select_all_runtime(origin = "ui.select.all") {
-        const all_ids = this.kwiver_runtime_all_cell_ids(origin);
-        if (!Array.isArray(all_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": all_cell_ids_json failed");
-        }
+        const all_ids = this.kwiver_require_runtime_all_cell_ids(origin);
         if (!this.kwiver_apply_runtime_selection(all_ids)) {
             throw new Error("[kwiver-only] " + origin + ": selection sync failed");
         }
     }
 
     kwiver_select_connected_runtime(origin = "ui.select.connected") {
-        const selected_ids = this.kwiver_selected_ids();
-        if (!Array.isArray(selected_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": selected id mapping failed");
-        }
-        const connected_ids = this.kwiver_runtime_connected_component_ids(
+        const selected_ids = this.kwiver_require_selected_ids(origin);
+        const connected_ids = this.kwiver_require_runtime_connected_component_ids(
             selected_ids,
             origin,
         );
-        if (!Array.isArray(connected_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": connected_components_json failed");
-        }
         if (!this.kwiver_apply_runtime_selection(connected_ids)) {
             throw new Error("[kwiver-only] " + origin + ": selection sync failed");
         }
@@ -2341,13 +2371,10 @@ class UI {
         );
     }
     copy_selection_with_kwiver() {
-        const selection = this.kwiver_runtime_transitive_reverse_dependency_cells(
+        const selection = this.kwiver_require_runtime_transitive_reverse_dependency_cells(
             this.selection,
             "ui.clipboard.copy.reverse_closure",
         );
-        if (!(selection instanceof Set)) {
-            throw new Error("[kwiver-only] ui.clipboard.copy: reverse closure query failed");
-        }
 
         const selected_ids = this.kwiver_cell_ids_from_cells(selection);
         if (!Array.isArray(selected_ids)) {
@@ -4037,14 +4064,11 @@ class UI {
         this.shortcuts.add([{ key: "X", modifier: true }], () => {
             if (this.in_mode(UIMode.Default, UIMode.Pan) && !this.input_is_active()) {
                 // This keyboard shortcut will first trigger the copy action.
-                const delete_cells = this.kwiver_runtime_transitive_dependency_cells(
+                const delete_cells = this.kwiver_require_runtime_transitive_dependency_cells(
                     this.selection,
                     false,
                     "ui.shortcut.cut.delete_closure",
                 );
-                if (!(delete_cells instanceof Set)) {
-                    throw new Error("[kwiver-only] ui.shortcut.cut: delete closure query failed");
-                }
                 this.history.add(this, [{
                     kind: "delete",
                     cells: delete_cells,
@@ -5424,7 +5448,6 @@ class History {
                 const runtime_angle = Number(runtime_edge?.options?.angle);
                 const runtime_style = UI.kwiver_style_from_runtime(
                     runtime_edge?.options?.style,
-                    edge.options.style,
                 );
                 if (
                     !runtime_edge
@@ -6059,7 +6082,6 @@ class History {
                             const runtime_edge = runtime_by_id.get(style.edge.kwiver_id);
                             const runtime_style = UI.kwiver_style_from_runtime(
                                 runtime_edge?.options?.style,
-                                style.edge.options.style,
                             );
                             if (
                                 !runtime_edge
@@ -6071,7 +6093,6 @@ class History {
 
                             const expected_style = UI.kwiver_style_from_runtime(
                                 style[to],
-                                style.edge.options.style,
                             );
                             if (
                                 expected_style === null
@@ -6197,14 +6218,11 @@ class History {
                     ? cells.length
                     : 0;
             if (render_root_count > 0) {
-                render_cells = ui.kwiver_runtime_transitive_dependency_cells(
+                render_cells = ui.kwiver_require_runtime_transitive_dependency_cells(
                     cells,
                     false,
                     "ui.history.render.dependencies",
                 );
-                if (!(render_cells instanceof Set)) {
-                    kwiver_fail("history.render", "dependency render query failed");
-                }
             } else {
                 render_cells = new Set();
             }
@@ -9199,14 +9217,11 @@ class Toolbar {
                 { key: "Delete" },
             ],
             () => {
-                const delete_cells = ui.kwiver_runtime_transitive_dependency_cells(
+                const delete_cells = ui.kwiver_require_runtime_transitive_dependency_cells(
                     ui.selection,
                     false,
                     "ui.toolbar.delete_closure",
                 );
-                if (!(delete_cells instanceof Set)) {
-                    throw new Error("[kwiver-only] ui.toolbar.delete: delete closure query failed");
-                }
                 ui.history.add(ui, [{
                     kind: "delete",
                     cells: delete_cells,
@@ -9482,42 +9497,24 @@ class Toolbar {
         };
 
         const default_pan = [UIMode.Default, UIMode.Pan];
-        let runtime_all_cell_ids = null;
-        let selected_ids = null;
-        let runtime_connected_ids = null;
-        try {
-            runtime_all_cell_ids = ui.kwiver_runtime_all_cell_ids("ui.toolbar.all_cell_ids");
-            selected_ids = ui.kwiver_selected_ids();
-            if (Array.isArray(selected_ids) && selected_ids.length > 0) {
-                runtime_connected_ids = ui.kwiver_runtime_connected_component_ids(
-                    selected_ids,
-                    "ui.toolbar.connected_components",
-                );
-            } else {
-                runtime_connected_ids = [];
-            }
-        } catch (_e) {
-            runtime_all_cell_ids = null;
-            selected_ids = null;
-            runtime_connected_ids = null;
-        }
+        const runtime_all_cell_ids = ui.kwiver_require_runtime_all_cell_ids(
+            "ui.toolbar.all_cell_ids",
+        );
+        const selected_ids = ui.kwiver_require_selected_ids("ui.toolbar");
 
-        const all_cells_count = Array.isArray(runtime_all_cell_ids)
-            ? runtime_all_cell_ids.length
-            : ui.quiver.all_cells().length;
+        const runtime_connected_ids = selected_ids.length > 0
+            ? ui.kwiver_require_runtime_connected_component_ids(
+                selected_ids,
+                "ui.toolbar.connected_components",
+            )
+            : [];
+
+        const all_cells_count = runtime_all_cell_ids.length;
         let can_expand_connected = false;
-        if (
-            Array.isArray(selected_ids)
-            && selected_ids.length > 0
-            && Array.isArray(runtime_connected_ids)
-        ) {
+        if (selected_ids.length > 0) {
             const connected_set = new Set(runtime_connected_ids);
             can_expand_connected = selected_ids.length !== runtime_connected_ids.length
                 || selected_ids.some((cell_id) => !connected_set.has(cell_id));
-        } else if (ui.selection.size > 0) {
-            const connected_components = ui.quiver.connected_components(ui.selection);
-            can_expand_connected = ui.selection.size !== connected_components.size
-                || [...ui.selection].some((cell) => !connected_components.has(cell));
         }
 
         enable_if("undo", ui.in_mode(UIMode.KeyMove, ...default_pan) && ui.history.present !== 0);
@@ -9547,6 +9544,8 @@ class Toolbar {
             = `${Math.round(2 ** ui.scale * 100)}%`;
     }
 }
+
+export { Toolbar };
 
 /// The colour wheel and colour picker.
 class ColourPicker {

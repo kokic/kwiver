@@ -2320,6 +2320,15 @@ fn tikz_is_label_modifier(option : String) -> Bool {
 ///|
 fn tikz_is_arrow_flag_token(option : String) -> Bool {
   match option {
+    "->" => true
+    "<-" => true
+    "<->" => true
+    "|->" => true
+    "<-|" => true
+    "->>" => true
+    "<<-" => true
+    ">->" => true
+    "<-<" => true
     "Rightarrow" => true
     "Leftarrow" => true
     "Leftrightarrow" => true
@@ -2382,6 +2391,14 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
 fn tikz_arrow_flag_reverse(option : String) -> Bool? {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   match token {
+    "->" => Some(false)
+    "<-" => Some(true)
+    "|->" => Some(false)
+    "<-|" => Some(true)
+    "->>" => Some(false)
+    "<<-" => Some(true)
+    ">->" => Some(false)
+    "<-<" => Some(true)
     "Rightarrow" => Some(false)
     "Leftarrow" => Some(true)
     "mapsto" => Some(false)
@@ -3159,6 +3176,60 @@ fn tikz_apply_arrow_flag_option(
 ) -> EdgeOptions {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   match token {
+    "->" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "<-" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("arrowhead")
+    "<->" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("arrowhead")
+      .with_style_head("arrowhead")
+    "|->" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "<-|" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("maps to")
+      .with_style_head("arrowhead")
+    "->>" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("epi")
+    "<<-" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("none")
+      .with_style_head("epi")
+    ">->" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("mono")
+      .with_style_head("arrowhead")
+    "<-<" =>
+      options
+      .with_style_name("arrow")
+      .with_style_body("cell")
+      .with_style_tail("mono")
+      .with_style_head("arrowhead")
     "Rightarrow" =>
       options
       .with_level(2)
@@ -3510,13 +3581,12 @@ fn tikz_apply_label_key_value_option(
 ///|
 fn tikz_label_suffix_options(option : String) -> Array[String] {
   let suffix_options : Array[String] = []
-  match option.find("\"") {
+  match tikz_find_unescaped_quote(option, 0) {
     Some(start) => {
-      let rest = option.unsafe_substring(start=start + 1, end=option.length())
-      match rest.find("\"") {
+      match tikz_find_unescaped_quote(option, start + 1) {
         Some(end) => {
-          let mut suffix = rest
-            .unsafe_substring(start=end + 1, end=rest.length())
+          let mut suffix = option
+            .unsafe_substring(start=end + 1, end=option.length())
             .trim()
             .to_string()
 
@@ -3603,6 +3673,23 @@ fn tikz_extract_arrow_label_option(option : String) -> String? {
   }
 
   if option.contains("=") {
+    return None
+  }
+
+  let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
+  if token == "" ||
+    tikz_is_direction_token(token) ||
+    tikz_is_label_modifier(token) ||
+    tikz_is_arrow_flag_token(token) {
+    None
+  } else {
+    Some(token)
+  }
+}
+
+///|
+fn tikz_extract_bare_arrow_label_option(option : String) -> String? {
+  if tikz_extract_first_quoted(option) is Some(_) || option.contains("=") {
     return None
   }
 
@@ -4118,7 +4205,7 @@ fn tikz_take_leading_braced_group(input : String) -> (String, String)? {
 }
 
 ///|
-fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabel? {
+fn tikz_unwrap_trivial_braced_label(label_raw : String) -> String {
   let mut trimmed = label_raw.trim().to_string()
   while true {
     match tikz_take_leading_braced_group(trimmed) {
@@ -4132,6 +4219,17 @@ fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabe
       None => break
     }
   }
+  trimmed
+}
+
+///|
+fn tikz_looks_like_textcolor_vertex_label(label_raw : String) -> Bool {
+  tikz_unwrap_trivial_braced_label(label_raw).has_prefix("\\textcolor")
+}
+
+///|
+fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabel? {
+  let trimmed = tikz_unwrap_trivial_braced_label(label_raw)
   if !trimmed.has_prefix("\\textcolor") {
     return None
   }
@@ -4702,6 +4800,38 @@ fn tikz_import_error(
 }
 
 ///|
+fn tikz_is_supported_style_diagram_option_key(key_token : String) -> Bool {
+  let key = key_token.trim().to_string()
+  if key == "cells" {
+    return true
+  }
+  if key.has_prefix("every arrow") ||
+    key.has_prefix("every label") ||
+    key.has_prefix("every cell") ||
+    key.has_prefix("every matrix") ||
+    key.has_prefix("every diagram") {
+    return true
+  }
+  false
+}
+
+///|
+fn tikz_is_supported_style_diagram_option_token(token : String) -> Bool {
+  let trimmed = token.trim().to_string()
+  let sep_prefixes = ["sep/", "row sep/", "column sep/"]
+  for prefix in sep_prefixes {
+    if trimmed.has_prefix(prefix) {
+      let suffix = trimmed
+        .unsafe_substring(start=prefix.length(), end=trimmed.length())
+        .trim()
+        .to_string()
+      return suffix != ""
+    }
+  }
+  false
+}
+
+///|
 fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
   for option in tikz_split_arrow_options(options) {
     let trimmed = option.trim().to_string()
@@ -4750,6 +4880,18 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
           continue
         }
 
+        if tikz_is_supported_style_diagram_option_key(key_token) {
+          if value_token == "" {
+            return Some(
+              tikz_import_error(
+                "option",
+                [key_token, " must not be empty"].join(""),
+              ),
+            )
+          }
+          continue
+        }
+
         return Some(
           tikz_import_error(
             "option",
@@ -4758,7 +4900,8 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
         )
       }
       None => {
-        if trimmed == "cramped" {
+        if trimmed == "cramped" ||
+          tikz_is_supported_style_diagram_option_token(trimmed) {
           continue
         }
 
@@ -4806,7 +4949,9 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
         }
 
         if key_token == "text" {
-          if value_token == "" {
+          if value_token == "" ||
+            (tikz_parse_colour_option(value) is None &&
+              !tikz_is_background_colour_expression(value)) {
             return Some("invalid text colour in label suffix")
           }
           continue
@@ -4822,13 +4967,15 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
           continue
         }
 
-        continue
+        return Some(["unknown label suffix option: ", key_token].join(""))
       }
       None => {
         if suffix_trimmed == "'" || tikz_is_label_modifier(suffix_trimmed) {
           continue
         }
-        continue
+        return Some(
+          ["unknown label suffix option: ", suffix_trimmed].join(""),
+        )
       }
     }
   }
@@ -4876,17 +5023,26 @@ fn tikz_validate_arrow_key_value_option(
     if value_token == "none" {
       return None
     }
-    if value_token == "" {
+    if value_token == "" || tikz_parse_colour_option(value) is None {
       return Some("invalid draw colour option")
     }
     return None
   }
 
-  if key_token == "color" || key_token == "text" {
-    if value_token == "" {
+  if key_token == "color" {
+    if value_token == "" || tikz_parse_colour_option(value) is None {
       return Some(
         ["invalid ", key_token, " colour option"].join(""),
       )
+    }
+    return None
+  }
+
+  if key_token == "text" {
+    if value_token == "" ||
+      (tikz_parse_colour_option(value) is None &&
+        !tikz_is_background_colour_expression(value)) {
+      return Some("invalid text colour option")
     }
     return None
   }
@@ -4986,7 +5142,7 @@ fn tikz_validate_arrow_option(option : String) -> String? {
   if tikz_parse_arrow_body_decoration_option(trimmed) is Some(_) {
     return None
   }
-  if tikz_extract_arrow_label_option(trimmed) is Some(_) {
+  if tikz_extract_first_quoted(trimmed) is Some(_) {
     return tikz_validate_label_suffix_option(trimmed)
   }
 
@@ -5000,13 +5156,6 @@ fn tikz_validate_arrow_option(option : String) -> String? {
         tikz_is_direction_token(token) ||
         tikz_is_arrow_flag_token(token) ||
         tikz_is_label_modifier(token) {
-        return None
-      }
-
-      if tikz_extract_arrow_label_option(trimmed) is Some(_) {
-        return tikz_validate_label_suffix_option(trimmed)
-      }
-      if trimmed.has_prefix("\"") {
         return None
       }
 
@@ -5041,7 +5190,9 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
               )
             }
             let options = tikz_split_arrow_options(raw_options)
+            let bare_labels : Array[String] = []
             let mut has_to = false
+            let mut has_from = false
             let mut has_direction = false
             let mut is_loop = false
 
@@ -5055,12 +5206,24 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                   ),
                 )
               }
-              match tikz_validate_arrow_option(trimmed) {
-                Some(message) =>
-                  return Some(
-                    tikz_import_error("option", message),
-                  )
-                None => ()
+              if tikz_extract_first_quoted(trimmed) is Some(_) {
+                match tikz_validate_arrow_option(trimmed) {
+                  Some(message) =>
+                    return Some(
+                      tikz_import_error("option", message),
+                    )
+                  None => ()
+                }
+              } else if tikz_extract_bare_arrow_label_option(trimmed) is Some(token) {
+                bare_labels.push(token)
+              } else {
+                match tikz_validate_arrow_option(trimmed) {
+                  Some(message) =>
+                    return Some(
+                      tikz_import_error("option", message),
+                    )
+                  None => ()
+                }
               }
 
               match tikz_option_key_value(trimmed) {
@@ -5072,6 +5235,9 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                     .to_string()
                   if key_token == "to" {
                     has_to = true
+                  }
+                  if key_token == "from" {
+                    has_from = true
                   }
                   if key_token == "name" {
                     // Named arrows are still required to provide a target.
@@ -5094,6 +5260,23 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                   }
                 }
               }
+            }
+
+            if bare_labels.length() > 1 {
+              return Some(
+                tikz_import_error(
+                  "option",
+                  ["unknown arrow option: ", bare_labels[1]].join(""),
+                ),
+              )
+            }
+            if bare_labels.length() == 1 && (has_from || has_to) {
+              return Some(
+                tikz_import_error(
+                  "option",
+                  ["unknown arrow option: ", bare_labels[0]].join(""),
+                ),
+              )
             }
 
             if !has_to && !has_direction && !is_loop {
@@ -5122,6 +5305,26 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
       None => break
     }
   }
+  None
+}
+
+///|
+fn tikz_validate_cell_vertex_label(cell : String) -> TikzCdImportError? {
+  let label_raw = tikz_cell_label_raw(cell)
+  if label_raw == "" {
+    return None
+  }
+
+  if tikz_looks_like_textcolor_vertex_label(label_raw) &&
+    tikz_parse_textcolor_vertex_label(label_raw) is None {
+    return Some(
+      tikz_import_error(
+        "option",
+        "invalid textcolor vertex label",
+      ),
+    )
+  }
+
   None
 }
 
@@ -5189,7 +5392,10 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
     end=rest.length(),
   )
   let tail_trimmed = tail.trim().to_string()
-  if tail_trimmed != "" && tail_trimmed != "\\]" {
+  if tail_trimmed != "" &&
+    tail_trimmed != "\\]" &&
+    tail_trimmed != "\\)" &&
+    tail_trimmed != "$$" {
     return Some(
       tikz_import_error(
         "syntax",
@@ -5206,6 +5412,10 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
     }
     for cell_raw in tikz_split_cells(row, ampersand_replacement) {
       let cell = cell_raw.trim().to_string()
+      match tikz_validate_cell_vertex_label(cell) {
+        Some(error) => return Some(error)
+        None => ()
+      }
       match tikz_validate_cell_arrow_options(cell) {
         Some(error) => return Some(error)
         None => ()
@@ -5216,10 +5426,18 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
 }
 
 ///|
-fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
+fn Quiver::import_tikz_cd_minimal(
+  input : String,
+) -> Result[Quiver, TikzCdImportError] {
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
-    None => abort("missing tikzcd environment")
+    None =>
+      return Err(
+        tikz_import_error(
+          "syntax",
+          "missing tikzcd environment",
+        ),
+      )
   }
 
   let body_without_comments = tikz_strip_line_comments(environment.body)
@@ -5411,10 +5629,20 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
 
       if pending.is_loop {
         if resolved_source_id != resolved_target_id {
-          continue
+          return Err(
+            tikz_import_error(
+              "reference",
+              "loop arrow source and target must match",
+            ),
+          )
         }
       } else if resolved_source_id == resolved_target_id {
-        continue
+        return Err(
+          tikz_import_error(
+            "reference",
+            "arrow source and target are identical without loop",
+          ),
+        )
       }
 
       if pending.is_phantom {
@@ -5492,7 +5720,37 @@ fn Quiver::import_tikz_cd_minimal(input : String) -> Quiver {
     pending_round = next_round
   }
 
-  quiver
+  if pending_round.length() > 0 {
+    let unresolved = pending_round[0]
+    match unresolved.source_ref {
+      Some(reference_name) =>
+        return Err(
+          tikz_import_error(
+            "reference",
+            ["unresolved arrow endpoint reference: ", reference_name].join(""),
+          ),
+        )
+      None => ()
+    }
+    match unresolved.target_ref {
+      Some(reference_name) =>
+        return Err(
+          tikz_import_error(
+            "reference",
+            ["unresolved arrow endpoint reference: ", reference_name].join(""),
+          ),
+        )
+      None => ()
+    }
+    return Err(
+      tikz_import_error(
+        "reference",
+        "unresolved arrow endpoint reference",
+      ),
+    )
+  }
+
+  Ok(quiver)
 }
 
 ///|
@@ -5553,15 +5811,24 @@ pub fn Quiver::try_import_tikz_cd_result(
     }
 
     if !tikz_has_share_reference_hint(input) {
-      let quiver = Quiver::import_tikz_cd_minimal(
-        input,
-      )
-      return tikz_try_import_success(
-        quiver,
-        None,
-        None,
-        false,
-      )
+      match Quiver::import_tikz_cd_minimal(input) {
+        Ok(quiver) =>
+          return tikz_try_import_success(
+            quiver,
+            None,
+            None,
+            false,
+          )
+        Err(import_error) =>
+          return {
+            ok: false,
+            quiver: None,
+            macro_url: None,
+            renderer: None,
+            embed: false,
+            error: Some(import_error),
+          }
+      }
     }
 
     // Prefer wrapper import when a share reference is detected, but keep
@@ -5579,15 +5846,25 @@ pub fn Quiver::try_import_tikz_cd_result(
           result.embed,
         )
       Err(_) => {
-        let quiver = Quiver::import_tikz_cd_minimal(
-          input,
-        )
-        tikz_try_import_success(
-          quiver,
-          None,
-          None,
-          false,
-        )
+        match Quiver::import_tikz_cd_minimal(input) {
+          Ok(quiver) =>
+            tikz_try_import_success(
+              quiver,
+              None,
+              None,
+              false,
+            )
+          Err(import_error) => {
+            {
+              ok: false,
+              quiver: None,
+              macro_url: None,
+              renderer: None,
+              embed: false,
+              error: Some(import_error),
+            }
+          }
+        }
       }
     }
   } else {

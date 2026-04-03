@@ -87,6 +87,7 @@ This module freezes a first-pass browser integration surface around `Quiver`.
 
 - `QuiverUiImportResult` returns `{ ok, payload, macro_url, renderer, embed, error }`.
 - `QuiverUiImportResult.error` is `null` on success, or `{ kind, message, line, column }` on typed import failure (currently used by strict tikz-cd import).
+- tikz-cd import is fail-fast: unknown arrow/label options, invalid colour expressions, unresolved endpoint references, and invalid loop/source-target combinations return `ok=false` instead of permissive fallback.
 - `QuiverUiSelectionImportResult` returns `{ payload, imported_ids, id_remap }`.
 - `*_json` import/paste wrappers serialize the same result contracts to plain JSON (`null` for absent optional fields).
 - `add/remove/flush` JSON wrappers return payload-carrying JSON results for JS state sync (`add*`: `{id,payload}`, `remove`: `{removed_ids,payload}`, `flush`: `{payload}`).
