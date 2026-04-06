@@ -1,6 +1,6 @@
-# JS FFI Boundary (Task 4)
+# JS FFI Boundary
 
-This module freezes a first-pass browser integration surface around `Quiver`.
+This document tracks the current browser/runtime integration surface around `Quiver`.
 
 - Adapter implementation: `engine/quiver_ui_ffi.mbt`
 - JS exported entrypoints: `engine/moon.pkg` -> `options.link.js.exports`
@@ -137,7 +137,7 @@ For malformed batch JSON, the wrapper returns `{ ok: false, processed: 0, result
 
 This keeps browser code on plain JSON contracts while reusing `BrowserRuntime` state-management semantics.
 
-## Browser Demo Package (Task 6 runtime layer)
+## Browser Demo Package (Runtime Layer)
 
 A thin integration package now exists at `browser_demo/` to exercise a UI-loop style flow on top of `ffi_browser_runtime_dispatch_json` and `ffi_browser_runtime_dispatch_many_json`.
 
@@ -227,7 +227,6 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_patch_edge_options_json`
   - `ffi_browser_demo_session_remove`
   - `ffi_browser_demo_session_flush`
-  - `ffi_browser_demo_session_apply_mutation_batch_demo_json`
   - `ffi_browser_demo_session_apply_mutation_batch_json`
   - `ffi_browser_demo_session_dependencies_of`
   - `ffi_browser_demo_session_reverse_dependencies_of`
@@ -265,12 +264,11 @@ A thin integration package now exists at `browser_demo/` to exercise a UI-loop s
   - `ffi_browser_demo_session_render_html_embed_with_input`
   - `ffi_browser_demo_session_snapshot_json`
   - `ffi_browser_demo_session_state_json`
-  - `ffi_browser_demo_roundtrip_demo_json`
 
-This package is intentionally minimal and acts as an end-to-end reference for wiring add/remove/import/export roundtrips via JSON action envelopes.
+This package provides the runtime session layer for browser bridge dispatch and acts as the end-to-end reference for JSON action-envelope roundtrips.
 `import_text_auto` now recognizes both `\begin{tikzcd}...\end{tikzcd}` and `\begin{tikzcd*}...\end{tikzcd*}` handwritten inputs.
 `BrowserDemoImportResult` JSON now includes `{ ok, payload, macro_url, renderer, embed, error }`, where `error` is a top-level runtime error string when import dispatch fails.
-Task 8 Step 5 adds `dispatch_command_json` / `ffi_browser_demo_session_dispatch_command_json` as a stable command-envelope wrapper for JS shells:
+`dispatch_command_json` / `ffi_browser_demo_session_dispatch_command_json` provide the stable command-envelope wrapper used by JS shells:
 
 - input: runtime dispatch envelope plus optional `origin` and `command_id`.
 - output: `{ sequence, ok, action, origin, command_id, result, error, changed, undo_checkpoint, redo_checkpoint, before, after }`.
@@ -328,24 +326,13 @@ Run:
 node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
 ```
 
-## Runnable Browser UI Demo (Task 6 deliverable)
+## Browser UI Upstream (Product Shell)
 
-A runnable static UI demo is provided in `browser_ui_demo/`:
+The product UI surface is `browser_ui_upstream/`.
 
-- `browser_ui_demo/index.html`
-- `browser_ui_demo/app.js`
-- `browser_ui_demo/styles.css`
+- entrypoint: `browser_ui_upstream/index.html`
+- runtime bridge: `browser_ui_upstream/kwiver_bridge.mjs`
+- interaction surface: `browser_ui_upstream/ui.mjs`
+- import/export routing: `browser_ui_upstream/quiver.mjs`
 
-It imports `../_build/js/debug/build/browser_demo/browser_demo.js` directly in the browser and exercises the real loop:
-
-- add/remove/connect
-- selection export/paste
-- import payload / import text auto
-- render outputs (`tikz-cd`, `fletcher`, `html embed`)
-- dependency closures and connected component query
-
-Task 8 Step 1 extends this demo with a formal editor-shell layout and a unified JS command pipeline (`dispatchCommand`) so UI actions and JSON inspector actions share one command route.
-Task 8 Step 2 adds gesture wiring on top of the same pipeline: canvas click add, node drag move, shift-drag connect, keyboard delete, and undo/redo skeleton.
-Task 8 Step 3 further aligns interaction semantics with q.uiver: box selection, multi-vertex drag, refined curved connect preview with endpoint clipping, edge hit selection, and inline label quick edit.
-Task 8 Step 4 adds editor keyboard/clipboard shortcuts on the same command pipeline (`Ctrl/Cmd+A/C/X/V`) with system clipboard integration and local fallback payload buffer.
-Task 8 Step 5 adds a stable command-envelope + checkpoint contract in `browser_demo` for production JS shells to route commands and own undo/redo with deterministic payload checkpoints.
+It imports `../_build/js/debug/build/browser_demo/browser_demo.js` (or release build) and routes interactions through the runtime-first command envelope.

@@ -1241,12 +1241,6 @@ test "browser demo ffi result json wrappers expose import and paste metadata" {
   inspect(tikz_result_json.contains("\"data\":\""), content="true")
   inspect(tikz_result_json.contains("\"metadata\":"), content="true")
 
-  let demo_batch_json = ffi_browser_demo_session_apply_mutation_batch_demo_json()
-  inspect(demo_batch_json.contains("\"label_results\":[true]"), content="true")
-  inspect(
-    demo_batch_json.contains("\"edge_connection_results\":[true]"),
-    content="true",
-  )
 }
 
 ///|
@@ -1444,27 +1438,3 @@ test "browser demo ffi command envelope wrapper import_payload closes loop with 
   inspect(after_selection, content="[]")
 }
 
-///|
-test "browser demo roundtrip scenario reimports payload through dispatch envelope" {
-  let root : Map[String, Json] = @json.from_json(
-    @json.parse(browser_demo_roundtrip_demo_json()),
-  )
-  let ok : Bool = @json.from_json(browser_demo_test_json_get(root, "ok"))
-  inspect(ok, content="true")
-
-  let payload : String = @json.from_json(browser_demo_test_json_get(root, "payload"))
-  let restored : String = @json.from_json(
-    browser_demo_test_json_get(root, "restored_payload"),
-  )
-  inspect(payload == restored, content="true")
-
-  let cell_ids : Array[Int] = @json.from_json(
-    browser_demo_test_json_get(root, "cell_ids"),
-  )
-  inspect(cell_ids, content="[1, 2, 3]")
-
-  let selection : Array[Int] = @json.from_json(
-    browser_demo_test_json_get(root, "selection"),
-  )
-  inspect(selection, content="[]")
-}

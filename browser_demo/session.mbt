@@ -1704,30 +1704,6 @@ pub fn BrowserDemoSession::state_json(self : BrowserDemoSession) -> String {
   }).stringify()
 }
 
-///|
-pub fn browser_demo_roundtrip_demo_json() -> String {
-  let session = BrowserDemoSession::new()
-  ignore(session.add_vertex("A", 0, 0))
-  ignore(session.add_vertex("B", 1, 0))
-  ignore(session.add_edge(1, 2, label="f"))
-  ignore(session.apply_selection([3]))
-
-  let payload = session.payload()
-  let restored = BrowserDemoSession::new()
-  ignore(restored.import_payload(payload))
-  ignore(restored.dispatch_json(browser_demo_action("selection")))
-
-  let restored_payload = restored.payload()
-  Json::object({
-    "ok": Json::boolean(payload == restored_payload),
-    "payload": Json::string(payload),
-    "restored_payload": Json::string(restored_payload),
-    "cell_ids": browser_demo_int_array_json(restored.cell_ids()),
-    "selection": browser_demo_int_array_json(restored.selection()),
-  }).stringify()
-}
-
-///|
 pub fn ffi_browser_demo_command_protocol() -> String {
   browser_demo_command_protocol()
 }
@@ -1916,36 +1892,6 @@ pub fn ffi_browser_demo_session_flush(session : BrowserDemoSession, when : Int) 
   session.flush(when)
 }
 
-///|
-pub fn ffi_browser_demo_session_apply_mutation_batch_demo_json() -> String {
-  let session = BrowserDemoSession::new()
-  let source_id = session.add_vertex("A", 0, 0)
-  let target_id = session.add_vertex("B", 1, 0)
-  let edge_id = session.add_edge(source_id, target_id, label="f")
-  let batch = @engine.QuiverUiMutationBatch::new(
-    [@engine.QuiverUiSetLabelPatch::new(source_id, "A-demo")],
-    [
-      @engine.QuiverUiSetLabelColourPatch::new(
-        source_id,
-        @engine.Colour::new(210, 80, 40, 1.0),
-      ),
-    ],
-    [@engine.QuiverUiMoveVertexPatch::new(source_id, 4, 5)],
-    [
-      @engine.QuiverUiSetEdgeOptionsPatch::new(
-        edge_id,
-        @engine.EdgeOptions::default()
-          .with_label_alignment_right()
-          .with_label_position(70)
-          .with_curve(-2),
-      ),
-    ],
-    [@engine.QuiverUiReconnectEdgePatch::new(edge_id, target_id, source_id)],
-  )
-  session.apply_mutation_batch(batch).to_json_string()
-}
-
-///|
 pub fn ffi_browser_demo_session_apply_mutation_batch_json(
   session : BrowserDemoSession,
   batch_json : String,
@@ -2238,7 +2184,3 @@ pub fn ffi_browser_demo_session_state_json(session : BrowserDemoSession) -> Stri
   session.state_json()
 }
 
-///|
-pub fn ffi_browser_demo_roundtrip_demo_json() -> String {
-  browser_demo_roundtrip_demo_json()
-}
