@@ -15,6 +15,7 @@ This directory is a direct copy of upstream `quiver/src` UI files, with a thin k
 Run JS-side bridge smoke tests:
 
 ```sh
+moon build --release
 node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
 node browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs
 node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs

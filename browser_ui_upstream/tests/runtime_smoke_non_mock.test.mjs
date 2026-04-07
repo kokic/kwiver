@@ -162,6 +162,36 @@ function testTikzImportPath(bridge) {
   assert.equal(exported.data.includes("\\begin{tikzcd}"), true);
 }
 
+function testTikzImportFailFastPath(bridge) {
+  const {
+    kwiver_bridge_all_cell_ids,
+    kwiver_bridge_import_tikz_payload,
+    kwiver_bridge_reset,
+  } = bridge;
+
+  const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.tikz_fail_fast");
+  assert.equal(resetEnvelope?.ok, true);
+
+  const idsBefore = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz_fail_fast.before");
+  assert.deepEqual(idsBefore, []);
+
+  const invalidTikz = [
+    "\\begin{tikzcd}\n",
+    "A & B\n",
+    "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
+    "\\end{tikzcd}",
+  ].join("");
+
+  const importedPayload = kwiver_bridge_import_tikz_payload(
+    invalidTikz,
+    defaultSettings(),
+  );
+  assert.equal(importedPayload, null);
+
+  const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz_fail_fast.after");
+  assert.deepEqual(idsAfter, []);
+}
+
 function testQueryAndSelectionPaths(bridge) {
   const {
     kwiver_bridge_add_edge_json,
@@ -249,6 +279,7 @@ async function run() {
     ["runtime non-mock: bridge loads runtime artifact", () => testRuntimeLoadsWithoutMock(bridge)],
     ["runtime non-mock: mutation/export/import payload roundtrip", () => testMutationExportImportRoundtrip(bridge)],
     ["runtime non-mock: tikz import command path", () => testTikzImportPath(bridge)],
+    ["runtime non-mock: tikz import fail-fast path", () => testTikzImportFailFastPath(bridge)],
     ["runtime non-mock: query and selection command paths", () => testQueryAndSelectionPaths(bridge)],
   ];
 

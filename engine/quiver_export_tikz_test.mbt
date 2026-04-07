@@ -1451,6 +1451,15 @@ test "tikz-cd parser corpus invalid snippets from parser.tex return structured e
     [
       "\\begin{tikzcd}\n",
       "A & B\n",
+      "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: non-numeric scaling nfold",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
       "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
@@ -1545,12 +1554,6 @@ test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast
 ///|
 test "tikz-cd parser corpus compatibility snippets currently accepted from parser.tex" {
   let snippets = [
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
     [
       "\\begin{tikzcd}\n",
       "\\bullet & \\bullet & \\bullet\n",
@@ -2225,13 +2228,12 @@ test "tikz-cd import parser maps advanced arrow style and level options" {
 }
 
 ///|
-test "tikz-cd import parser clamps scaling nfold level like js parser" {
+test "tikz-cd import parser clamps valid scaling nfold levels like js parser" {
   let input = [
     "\\begin{tikzcd}\n",
     "A \\arrow[r, \"lo\", scaling nfold=1] & B \\\\\n",
     "C \\arrow[r, \"ok\", scaling nfold=3] & D \\\\\n",
-    "E \\arrow[r, \"hi\", scaling nfold=9] & F \\\\\n",
-    "G \\arrow[r, \"bad\", scaling nfold=unknown] & H\n",
+    "E \\arrow[r, \"hi\", scaling nfold=9] & F\n",
     "\\end{tikzcd}",
   ].join("")
 
@@ -2257,13 +2259,19 @@ test "tikz-cd import parser clamps scaling nfold level like js parser" {
     }
     None => abort("expected edge hi")
   }
-  match tikz_test_find_edge_by_label(quiver, "bad") {
-    Some(edge) => {
-      inspect(edge.cell.level, content="1")
-      inspect(edge.options.level, content="1")
-    }
-    None => abort("expected edge bad")
-  }
+}
+
+///|
+test "tikz-cd import parser rejects non-numeric scaling nfold level" {
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="scaling nfold unknown should fail fast",
+  )
 }
 
 ///|

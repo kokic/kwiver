@@ -8,6 +8,7 @@ options(
   link: {
     "js": {
       "exports": [
+        "ffi_browser_demo_command_protocol",
         "ffi_browser_demo_session_new",
         "ffi_browser_demo_session_dispatch_json",
         "ffi_browser_demo_session_dispatch_json_safe",

@@ -20,6 +20,7 @@ The parser is intentionally strict and fail-fast by default: malformed inputs re
 - Unknown diagram options, arrow options, or label suffix options.
 - Unresolved endpoint references (for example `from=A, to=B` without resolvable named references).
 - Invalid colour literals (for example channel range overflow or malformed `rgb,...` tokens).
+- Invalid `scaling nfold` values (for example non-numeric tokens such as `unknown`).
 - Invalid `\textcolor` vertex labels (including malformed literals or missing label node payload).
 - Non-loop arrows whose source and target resolve to the same cell.
 - Loop arrows whose resolved source and target differ.
@@ -27,7 +28,6 @@ The parser is intentionally strict and fail-fast by default: malformed inputs re
 
 ## Currently Accepted for Compatibility (Under Review)
 
-- `scaling nfold=unknown` is currently accepted and normalized by parser logic.
 - A named-reference snippet that was historically listed as invalid in `parser.tex` currently imports successfully.
 
 These behaviors are covered by regression tests so changes are explicit.

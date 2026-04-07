@@ -5057,6 +5057,9 @@ fn tikz_validate_arrow_key_value_option(
   }
 
   if key_token == "scaling nfold" {
+    if tikz_parse_level_option_value(value_token) is None {
+      return Some("invalid scaling nfold value")
+    }
     return None
   }
 
