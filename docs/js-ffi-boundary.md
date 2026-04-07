@@ -325,6 +325,8 @@ Runtime-first invariants:
 - bridge autoload resolves a real built `browser_demo.js` artifact
 - mutation/export/import roundtrip works through the runtime command entrypoint
 - handwritten `tikz-cd` import path works through runtime dispatch
+- graph query wrappers (`dependencies_of_json` / `connected_components_json` / `transitive_dependencies_json`) return runtime-backed arrays
+- selection export/paste paths roundtrip through runtime command dispatch with deterministic ID remap start (`start_id`)
 
 Run:
 
