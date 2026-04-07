@@ -1251,6 +1251,34 @@ test "tikz-cd parser corpus valid snippets from parser.tex import successfully" 
       "\\arrow[\"\\shortmid\"{marking, pos=0.75}, between={0.5}{1}, from=1-1, to=1-2]\n",
       "\\end{tikzcd}",
     ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "\\bullet & \\bullet \\\\\n",
+      "\\bullet & {\\text{Long label}} \\\\\n",
+      "\\bullet & \\bullet\n",
+      "\\arrow[\"\"{name=0, anchor=center, inner sep=0}, from=1-1, to=1-2]\n",
+      "\\arrow[\"\"{name=1, anchor=center, inner sep=0}, from=2-1, to=2-2]\n",
+      "\\arrow[\"\"{name=1p, anchor=center, inner sep=0}, phantom, from=2-1, to=2-2, start anchor=center, end anchor=center]\n",
+      "\\arrow[shorten <=4pt, shorten >=4pt, Rightarrow, from=0, to=1p]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "A \\arrow[loop]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[\"f\"'', swap, from=1-1, swap, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[\"f\" near start, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
   ]
 
   for input in snippets {
@@ -1401,6 +1429,41 @@ test "tikz-cd parser corpus invalid snippets from parser.tex return structured e
     "\\begin{tikzcd} X",
     context="parser.tex invalid: unexpected end of diagram",
   )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "\\bullet && \\bullet\n",
+      "\\arrow[\"f\" unknown, from=1-1, to=1-3]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: unknown bare label suffix option",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "\\textcolor{rgb,256:red,0;green,0;blue,0}{A} & B\n",
+      "\\arrow[from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: out-of-range textcolor literal",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: out-of-range arrow colour",
+  )
+  tikz_test_assert_import_failure(
+    [
+      "\\begin{tikzcd}\n",
+      "A \\arrow[r, loop] & B\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    context="parser.tex invalid: loop with different source and target",
+  )
 }
 
 ///|
@@ -1477,6 +1540,30 @@ test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast
     ].join(""),
     context="parser.tex compatibility strict: textcolor without label node",
   )
+}
+
+///|
+test "tikz-cd parser corpus compatibility snippets currently accepted from parser.tex" {
+  let snippets = [
+    [
+      "\\begin{tikzcd}\n",
+      "A & B\n",
+      "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+    [
+      "\\begin{tikzcd}\n",
+      "\\bullet & \\bullet & \\bullet\n",
+      "\\arrow[\"\"{name=0}, from=1-1, to=1-3]\n",
+      "\\arrow[from=0, to=1-2]\n",
+      "\\end{tikzcd}",
+    ].join(""),
+  ]
+
+  for input in snippets {
+    let imported = tikz_test_import_success(input)
+    inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
+  }
 }
 
 ///|

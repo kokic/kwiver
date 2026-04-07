@@ -17,6 +17,7 @@ Run JS-side bridge smoke tests:
 ```sh
 node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
 node browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs
+node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
 ```
 
-The smoke suite verifies protocol enforcement, startup fail-fast formatting, and runtime-first action routing for interaction/export entrypoints.
+The smoke suite verifies protocol enforcement, startup fail-fast formatting, runtime-first action routing for interaction/export entrypoints, and non-mock runtime command dispatch against built browser_demo artifacts.

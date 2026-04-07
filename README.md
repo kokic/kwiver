@@ -15,6 +15,7 @@ We gratefully acknowledge the original design, file format, and user experience 
 
 The browser/runtime integration surface is documented in `docs/js-ffi-boundary.md` and implemented in `engine/quiver_ui_ffi.mbt`.
 `browser_demo/` provides the runtime session layer consumed by the browser bridge.
+The current handwritten `tikz-cd` import compatibility matrix is documented in `docs/tikz-cd-parser-support.md`.
 
 ## Browser UI (`browser_ui_upstream`)
 
@@ -44,7 +45,10 @@ Run browser bridge smoke checks:
 ```sh
 node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
 node browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs
+node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
 ```
+
+Manual release checks for `browser_ui_upstream` are documented in `docs/browser-ui-manual-checklist.md`.
 
 Run core MoonBit regressions:
 

@@ -320,11 +320,20 @@ Runtime-first invariants:
 - reset action dispatches runtime `reset`
 - reconnect, set-label, and patch-edge-options interactions dispatch runtime mutation commands
 
+`browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs` adds a lightweight runtime-backed smoke path (no mock API):
+
+- bridge autoload resolves a real built `browser_demo.js` artifact
+- mutation/export/import roundtrip works through the runtime command entrypoint
+- handwritten `tikz-cd` import path works through runtime dispatch
+
 Run:
 
 ```sh
 node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
+node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
 ```
+
+Manual browser acceptance checks are tracked in `docs/browser-ui-manual-checklist.md`.
 
 ## Browser UI Upstream (Product Shell)
 
