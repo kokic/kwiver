@@ -1,6 +1,6 @@
 # Browser UI Manual Checklist
 
-Updated: 2026-04-07
+Updated: 2026-04-11
 
 This project intentionally avoids heavy headless-browser E2E frameworks at the current stage.
 Use the lightweight checklist below as a release gate for `browser_ui_upstream`.
@@ -16,17 +16,19 @@ Use the lightweight checklist below as a release gate for `browser_ui_upstream`.
 
 ## Automated Lightweight Checks
 
-Run JS smoke checks:
+Run smoke-only regression:
 
 ```sh
-node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
-node browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs
-node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
+node scripts/local_regression.mjs --smoke-only
 ```
 
 Expected:
 
-- all commands pass (`kwiver bridge smoke passed`, `toolbar update fail-fast smoke passed`, `runtime non-mock smoke passed`)
+- command exits successfully and includes:
+  - `kwiver bridge smoke passed`
+  - `toolbar update fail-fast smoke passed`
+  - `runtime non-mock smoke passed`
+  - `runtime parser corpus non-mock passed`
 - no uncaught runtime exceptions in terminal output
 
 ## Manual Product Checks

@@ -40,21 +40,19 @@ Runbook notes:
 - if startup shows `Kwiver runtime unavailable`, verify the two candidate paths above exist under the served root
 - if needed, rebuild artifacts first (`moon build` for debug or `moon build --release` for release)
 
-Run browser bridge smoke checks:
+Run local regressions:
 
 ```sh
-node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
-node browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs
-node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
+node scripts/local_regression.mjs
+```
+
+Run smoke-only checks (skip `moon test -v`):
+
+```sh
+node scripts/local_regression.mjs --smoke-only
 ```
 
 Manual release checks for `browser_ui_upstream` are documented in `docs/browser-ui-manual-checklist.md`.
-
-Run core MoonBit regressions:
-
-```sh
-moon test -v
-```
 
 ## Tokei
 

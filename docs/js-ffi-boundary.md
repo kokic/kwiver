@@ -329,11 +329,15 @@ Runtime-first invariants:
 - graph query wrappers (`dependencies_of_json` / `connected_components_json` / `transitive_dependencies_json`) return runtime-backed arrays
 - selection export/paste paths roundtrip through runtime command dispatch with deterministic ID remap start (`start_id`)
 
+`browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs` validates selected `parser.tex` fixtures through runtime import entrypoints:
+
+- supported fixtures import successfully and produce non-empty payload/state
+- fail-fast fixtures return `null` and preserve empty runtime state
+
 Run:
 
 ```sh
-node browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs
-node browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs
+node scripts/local_regression.mjs --smoke-only
 ```
 
 Manual browser acceptance checks are tracked in `docs/browser-ui-manual-checklist.md`.
