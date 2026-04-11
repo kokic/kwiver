@@ -46,6 +46,8 @@ Run local regressions:
 node scripts/local_regression.mjs
 ```
 
+The runner auto-syncs parser corpus generated data before executing tests.
+
 Run smoke-only checks (skip `moon test -v`):
 
 ```sh

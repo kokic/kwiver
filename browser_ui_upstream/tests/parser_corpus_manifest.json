@@ -1,0 +1,341 @@
+{
+  "updated": "2026-04-11",
+  "cases": [
+    {
+      "id": "valid-simple-control-sequence-labels",
+      "section": "valid",
+      "title": "Simple control-sequence labels.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "valid-display-math-wrapper-ampersand",
+      "section": "valid",
+      "title": "Display-math wrapper with ampersand replacement.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "valid-rightarrow-maps-to-ordering",
+      "section": "valid",
+      "title": "Rightarrow maps-to ordering.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "valid-between",
+      "section": "valid",
+      "title": "`between'",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-shortened-marked-arrow",
+      "section": "valid",
+      "title": "Shortened marked arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-zero-length-edge-reference-chain",
+      "section": "invalid",
+      "title": "A zero-length edge.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-phantom-edges-example",
+      "section": "valid",
+      "title": "Example of phantom edges.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-loop-without-target",
+      "section": "valid",
+      "title": "A loop without a target.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-swapping-label-alignment",
+      "section": "valid",
+      "title": "Swapping label alignment.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-near-start-label-option",
+      "section": "valid",
+      "title": "Near-start label option.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "runtime-only-dashed-token",
+      "section": "valid",
+      "title": "`dashed`, not `dash`.",
+      "engine_group": "skip",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "runtime-only-loop-radii-angles-direction",
+      "section": "valid",
+      "title": "Loops of different radii, angles, and direction.",
+      "engine_group": "skip",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "runtime-only-invalid-level-1-imports",
+      "section": "invalid",
+      "title": "Invalid level 1.",
+      "engine_group": "skip",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "invalid-extra-content-after-end",
+      "section": "invalid",
+      "title": "Extra content after end.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: trailing content after end",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-no-target-from-only",
+      "section": "invalid",
+      "title": "No target 1.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: no target from-only",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-no-target-empty-ar-options",
+      "section": "invalid",
+      "title": "No target 2.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: no target empty ar options",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-empty-from-to-refs",
+      "section": "invalid",
+      "title": "Missing source/target.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: empty from/to refs",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-missing-comma",
+      "section": "invalid",
+      "title": "Missing comma.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: missing comma in options",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-double-comma",
+      "section": "invalid",
+      "title": "Double comma.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: double comma in options",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-empty-ampersand-replacement",
+      "section": "invalid",
+      "title": "No ampersand replacement.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: empty ampersand replacement",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-empty-sep-option",
+      "section": "invalid",
+      "title": "No separation.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: empty sep option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-empty-name-suffix-option",
+      "section": "invalid",
+      "title": "No name.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: empty name suffix option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-empty-colour-option",
+      "section": "invalid",
+      "title": "Missing colour.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: empty colour option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-unknown-diagram-option",
+      "section": "invalid",
+      "title": "Unknown diagram option.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: unknown diagram option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-non-numeric-curve-height",
+      "section": "invalid",
+      "title": "Multiple errors.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: non-numeric curve height",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-incorrect-start-token",
+      "section": "invalid",
+      "title": "Incorrect start.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: incorrect start token",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-incorrect-end-token",
+      "section": "invalid",
+      "title": "Incorrect end.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: incorrect end token",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-unterminated-arrow-options",
+      "section": "invalid",
+      "title": "Unexpected end of arrow options.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: unterminated arrow options",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-unexpected-end-of-diagram",
+      "section": "invalid",
+      "title": "Unexpected end of diagram.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: unexpected end of diagram",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-unknown-bare-label-suffix-option",
+      "section": "invalid",
+      "title": "Unknown label option 2.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: unknown bare label suffix option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-out-of-range-textcolor-literal",
+      "section": "invalid",
+      "title": "Invalid node colour 2.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: out-of-range textcolor literal",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-non-numeric-scaling-nfold",
+      "section": "invalid",
+      "title": "Invalid level 2.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: non-numeric scaling nfold",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-out-of-range-arrow-colour",
+      "section": "invalid",
+      "title": "Invalid arrow colour.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: out-of-range arrow colour",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "invalid-loop-source-target-mismatch",
+      "section": "invalid",
+      "title": "A loop whose source and target are not the same.",
+      "engine_group": "invalid_fail_fast",
+      "engine_context": "parser.tex invalid: loop with different source and target",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-unresolved-named-refs",
+      "section": "invalid",
+      "title": "Invalid source/target.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: unresolved named refs",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-same-source-target-without-loop",
+      "section": "invalid",
+      "title": "Same source and target.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: same source and target without loop",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-unknown-option-token",
+      "section": "invalid",
+      "title": "Unknown arrow option.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: unknown option token",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-unknown-braced-label-suffix-option",
+      "section": "invalid",
+      "title": "Unknown label option 1.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: unknown braced label suffix option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-unknown-bare-label-suffix-option",
+      "section": "invalid",
+      "title": "Unknown label option 2.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: unknown bare label suffix option",
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "compat-invalid-arrow-colour",
+      "section": "invalid",
+      "title": "Invalid arrow colour.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: invalid arrow colour",
+      "runtime_expectation": "skip"
+    },
+    {
+      "id": "compat-invalid-textcolor-literal",
+      "section": "invalid",
+      "title": "Invalid node colour 1.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: invalid textcolor literal",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "compat-textcolor-without-label-node",
+      "section": "invalid",
+      "title": "Colour without node.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser.tex compatibility strict: textcolor without label node",
+      "runtime_expectation": "fail_fast"
+    }
+  ]
+}

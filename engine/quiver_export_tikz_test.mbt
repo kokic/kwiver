@@ -165,6 +165,29 @@ fn tikz_test_assert_import_failure(
 }
 
 ///|
+fn tikz_parser_corpus_cases_by_engine_group(
+  engine_group : String,
+) -> Array[TikzParserCorpusManifestCase] {
+  let out : Array[TikzParserCorpusManifestCase] = []
+  for parser_case in tikz_parser_corpus_manifest_cases() {
+    if parser_case.engine_group == engine_group {
+      out.push(parser_case)
+    }
+  }
+  out
+}
+
+///|
+fn tikz_parser_corpus_engine_context(
+  parser_case : TikzParserCorpusManifestCase,
+) -> String {
+  match parser_case.engine_context {
+    Some(context) => context
+    None => ["parser corpus case: ", parser_case.id].join("")
+  }
+}
+
+///|
 test "tikz-cd export basic vertex grid and arrow" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
@@ -1216,346 +1239,39 @@ test "tikz-cd try import rejects arrows without target" {
 
 ///|
 test "tikz-cd parser corpus valid snippets from parser.tex import successfully" {
-  let snippets = [
-    [
-      "\\begin{tikzcd}\n",
-      "\\A & \\B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\[\n",
-      "\\begin{tikzcd}[ampersand replacement=\\&,cramped,column sep=large,row sep=2.25em]\n",
-      "A \\& B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}\n",
-      "\\]",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "A & B \\\\\n",
-      "C & D\n",
-      "\\arrow[from=1-1, to=1-2, maps to, Rightarrow]\n",
-      "\\arrow[from=2-1, to=2-2, Rightarrow, maps to]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "\\bullet & \\bullet\n",
-      "\\arrow[between={0.3}{0.7}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "\\bullet & \\bullet\n",
-      "\\arrow[\"\\shortmid\"{marking, pos=0.75}, between={0.5}{1}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "\\bullet & \\bullet & \\bullet\n",
-      "\\arrow[\"\"{name=0}, from=1-1, to=1-3]\n",
-      "\\arrow[from=0, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "\\bullet & \\bullet \\\\\n",
-      "\\bullet & {\\text{Long label}} \\\\\n",
-      "\\bullet & \\bullet\n",
-      "\\arrow[\"\"{name=0, anchor=center, inner sep=0}, from=1-1, to=1-2]\n",
-      "\\arrow[\"\"{name=1, anchor=center, inner sep=0}, from=2-1, to=2-2]\n",
-      "\\arrow[\"\"{name=1p, anchor=center, inner sep=0}, phantom, from=2-1, to=2-2, start anchor=center, end anchor=center]\n",
-      "\\arrow[shorten <=4pt, shorten >=4pt, Rightarrow, from=0, to=1p]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "A \\arrow[loop]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[\"f\"'', swap, from=1-1, swap, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[\"f\" near start, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-  ]
+  let cases = tikz_parser_corpus_cases_by_engine_group("valid")
+  inspect(cases.length() >= 1, content="true")
 
-  for input in snippets {
-    let imported = tikz_test_import_success(input)
+  for parser_case in cases {
+    let imported = tikz_test_import_success(parser_case.snippet)
     inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
   }
 }
 
 ///|
 test "tikz-cd parser corpus invalid snippets from parser.tex return structured errors" {
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd} :)",
-    ].join(""),
-    context="parser.tex invalid: trailing content after end",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: no target from-only",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A \\ar[] & B\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: no target empty ar options",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=, to=]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: empty from/to refs",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1 to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: missing comma in options",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1, , to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: double comma in options",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}[ampersand replacement=]\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: empty ampersand replacement",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}[sep=]\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: empty sep option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[\"f\"{name=}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: empty name suffix option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[color=, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: empty colour option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}[unknown]\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: unknown diagram option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
-      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
-      "\\arrow[curve={height=X}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: non-numeric curve height",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: incorrect start token",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd",
-    ].join(""),
-    context="parser.tex invalid: incorrect end token",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1,\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: unterminated arrow options",
-  )
-  tikz_test_assert_import_failure(
-    "\\begin{tikzcd} X",
-    context="parser.tex invalid: unexpected end of diagram",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "\\bullet && \\bullet\n",
-      "\\arrow[\"f\" unknown, from=1-1, to=1-3]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: unknown bare label suffix option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "\\textcolor{rgb,256:red,0;green,0;blue,0}{A} & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: out-of-range textcolor literal",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[Rightarrow, scaling nfold=unknown, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: non-numeric scaling nfold",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: out-of-range arrow colour",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A \\arrow[r, loop] & B\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex invalid: loop with different source and target",
-  )
+  let cases = tikz_parser_corpus_cases_by_engine_group("invalid_fail_fast")
+  inspect(cases.length() >= 1, content="true")
+
+  for parser_case in cases {
+    tikz_test_assert_import_failure(
+      parser_case.snippet,
+      context=tikz_parser_corpus_engine_context(parser_case),
+    )
+  }
 }
 
 ///|
 test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast" {
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=A, to=B]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: unresolved named refs",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[from=1-1, to=1-1]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: same source and target without loop",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[unknown, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: unknown option token",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[\"f\"{unknown}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: unknown braced label suffix option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[\"f\" unknown, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: unknown bare label suffix option",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "A & B\n",
-      "\\arrow[color={rgb,256:red,0;green,0;blue,0}, from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: invalid arrow colour",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "\\textcolor{A} & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: invalid textcolor literal",
-  )
-  tikz_test_assert_import_failure(
-    [
-      "\\begin{tikzcd}\n",
-      "\\textcolor{rgb,255:red,214;green,92;blue,92} & B\n",
-      "\\arrow[from=1-1, to=1-2]\n",
-      "\\end{tikzcd}",
-    ].join(""),
-    context="parser.tex compatibility strict: textcolor without label node",
-  )
+  let cases = tikz_parser_corpus_cases_by_engine_group("compat_fail_fast")
+  inspect(cases.length() >= 1, content="true")
+
+  for parser_case in cases {
+    tikz_test_assert_import_failure(
+      parser_case.snippet,
+      context=tikz_parser_corpus_engine_context(parser_case),
+    )
+  }
 }
 
 ///|

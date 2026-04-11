@@ -5,6 +5,7 @@
 	\arrow[from=1-1, to=1-2]
 \end{tikzcd}
 
+% Simple control-sequence labels.
 \begin{tikzcd}
 	\A & \B
 	\arrow[from=1-1, to=1-2]
@@ -29,6 +30,7 @@
 	A \arrow[r] & B
 \end{tikzcd}
 
+% Display-math wrapper with ampersand replacement.
 \[\begin{tikzcd}[ampersand replacement=\&,cramped,column sep=large,row sep=2.25em]
 	A \& B
 	\arrow[from=1-1, to=1-2]
@@ -44,6 +46,7 @@
 	\arrow["f"{text={rgb,255:red,92;green,214;blue,92}}, draw={rgb,255:red,214;green,214;blue,92}, from=1-1, to=1-2]
 \end{tikzcd}
 
+% Rightarrow maps-to ordering.
 \begin{tikzcd}
 	A & B \\
 	C & D \\
@@ -93,6 +96,7 @@
 	\arrow[from=1-1, to=1-2, dashed]
 \end{tikzcd}
 
+% Near-start label option.
 \begin{tikzcd}
 	A & B
 	\arrow["f" near start, from=1-1, to=1-2]

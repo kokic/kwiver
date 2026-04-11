@@ -5,6 +5,15 @@ Updated: 2026-04-11
 This document tracks the current behavior of the handwritten `tikz-cd` importer in `engine/quiver_export_tikz.mbt`.
 The parser is intentionally strict and fail-fast by default: malformed inputs return typed import errors instead of permissive fallback.
 
+## Corpus Source of Truth
+
+- Manifest: `browser_ui_upstream/tests/parser_corpus_manifest.json`
+- Fixture text source: `browser_ui_upstream/tests/parser.tex`
+- Generated MoonBit corpus data: `engine/tikz_parser_corpus_manifest_data.mbt`
+- Sync command: `node scripts/sync_parser_corpus_manifest.mjs`
+
+Both runtime JS corpus checks and engine corpus checks are driven from the same manifest+fixture pair.
+
 ## Supported
 
 - Environment wrappers: `\begin{tikzcd}...\end{tikzcd}`, `tikzcd*`, and common display-math wrappers.

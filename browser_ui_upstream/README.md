@@ -24,4 +24,6 @@ Run smoke-only mode (skip `moon test -v`):
 node scripts/local_regression.mjs --smoke-only
 ```
 
+Parser corpus fixture expectations are declared in `tests/parser_corpus_manifest.json` and shared with engine tests via the sync script.
+
 The smoke suite verifies protocol enforcement, startup fail-fast formatting, runtime-first action routing for interaction/export entrypoints, non-mock runtime command dispatch against built browser_demo artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.

@@ -5,6 +5,7 @@ const smokeOnly = args.has("--smoke-only");
 
 const STEPS = smokeOnly
   ? [
+      ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
       ["moon", ["build", "--release"]],
       ["node", ["browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs"]],
       ["node", ["browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs"]],
@@ -12,6 +13,7 @@ const STEPS = smokeOnly
       ["node", ["browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs"]],
     ]
   : [
+      ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
       ["moon", ["build", "--release"]],
       ["moon", ["test", "-v"]],
       ["node", ["browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs"]],
