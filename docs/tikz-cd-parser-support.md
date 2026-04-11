@@ -1,6 +1,6 @@
 # tikz-cd Parser Support Matrix
 
-Updated: 2026-04-10
+Updated: 2026-04-11
 
 This document tracks the current behavior of the handwritten `tikz-cd` importer in `engine/quiver_export_tikz.mbt`.
 The parser is intentionally strict and fail-fast by default: malformed inputs return typed import errors instead of permissive fallback.
@@ -31,7 +31,7 @@ The parser is intentionally strict and fail-fast by default: malformed inputs re
 
 - Continue expanding external corpus coverage using real-world upstream snippets.
 - Split corpus documentation into per-feature examples with expected outcomes (`supported`, `fail-fast`).
-- Add browser-level import fixture tests that consume the same snippet corpus through runtime bridge entrypoints.
+- Continue extending browser-level fixture coverage against parser corpus edge cases.
 
 ## Regression Entry Points
 
@@ -40,3 +40,5 @@ The parser is intentionally strict and fail-fast by default: malformed inputs re
   - `tikz-cd parser corpus invalid snippets from parser.tex return structured errors`
   - `tikz-cd parser corpus compatibility snippets from parser.tex now fail fast`
   - `tikz-cd import parser supports named edge references in from/to`
+- `browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs`:
+  - runtime bridge import/fail-fast assertions for selected `parser.tex` fixtures
