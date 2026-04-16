@@ -94,12 +94,37 @@ Record the exact browser-UI migration state so the next session can continue dir
 - Tail/body/head style buttons now compute `from`/`to` style snapshots directly and commit them through `History.add(...)`.
 - Edge-type buttons (`arrow`, `adjunction`, `corner`, `corner-inverse`) now compute target committed styles directly instead of mutating selected edges first and then sampling those JS objects to build history.
 - The old panel-local `record_edge_style_change(...)` / `effect_edge_style_change(...)` staging path has been removed.
+- Panel style buttons now also anchor their committed `from` baselines to runtime edge snapshots instead of reading `edge.options.style` as local truth.
 
 ### 7. Pointer-drag move commit now replays through runtime
 
 - Pointer move still previews by moving local vertex views during drag.
 - But on pointer release, the committed `move` history event is now invoked through runtime replay instead of being recorded as already-applied local state.
 - This narrows the remaining move-related duplication to drag-time preview only.
+
+### 8. Panel edge-option controls now take committed baselines from runtime
+
+- Command/panel controls for:
+  - `label_alignment`
+  - `label_position`
+  - `offset`
+  - `curve`
+  - `radius`
+  - `angle`
+  - `length`
+  - `level`
+  - endpoint-alignment toggles
+  now derive their current committed baseline from runtime edge snapshots before constructing history actions.
+- This removes another class of "JS view object as committed option owner" behavior from panel-driven editing.
+
+### 9. Label / colour edit baselines now come from runtime
+
+- Label input edits now compare against runtime cell labels and store runtime-backed `from` values before constructing `history.label` actions.
+- Colour picker edits now derive:
+  - label-colour `from` values from runtime cell snapshots
+  - edge-colour `from` values from runtime edge snapshots
+  - label/edge sync checkbox state from runtime colour equality
+- Renderer bullet-label rewrite now also uses runtime label baselines before dispatching label updates.
 
 ## What Is Still Not Done
 
@@ -117,9 +142,8 @@ Record the exact browser-UI migration state so the next session can continue dir
 ### 2. Pre-commit UI code still mutates committed-looking fields locally
 
 - Many interaction paths still write directly to JS view objects before runtime-confirmed history replay, especially:
-  - edge transform helpers such as `Edge.flip(...)` / `Edge.reverse(...)`
-  - command-mode edit actions that derive new values from JS object fields
   - pointer-drag move preview before committed move history is recorded
+  - connect/reconnect preview state and the temporary endpoint/level updates it drives
 - Those writes are now reconciled from runtime after commit, but JS still behaves as a temporary owner of committed semantics during the interaction.
 
 ### 3. Fresh-cell construction still materializes committed state in JS constructors/importers
@@ -148,10 +172,8 @@ Audit and classify remaining direct JS writes to committed fields in `ui.mjs`.
 
 Start with:
 
-- command-mode edit actions
-- `Edge.flip(...)`
-- `Edge.reverse(...)`
 - any remaining preview paths that leak committed-looking writes beyond transient interaction state
+- connect/reconnect preview state that may still look like temporary committed ownership in JS view objects
 
 For each path, decide whether the write is:
 
@@ -160,22 +182,11 @@ For each path, decide whether the write is:
 
 ### Priority 2
 
-Convert one committed edit vertical slice to runtime-first ownership instead of JS-first local mutation.
-
-Best next candidates:
-
-- command-mode connect/transform/edit flows
-- edge transform helpers used outside history replay
-
-The target is:
-
-- dispatch through runtime/history
-- reapply selected cells from runtime snapshots
-- stop treating mutated JS fields as the pre-commit source of truth
+Revisit fresh-cell hydration paths (`create`, `paste`, bootstrap/import) and decide whether they should normalize through runtime snapshot helpers or remain constructor-based until a later projection-only refactor.
 
 ### Priority 3
 
-Revisit fresh-cell hydration paths (`create`, `paste`, bootstrap/import) and decide whether they should normalize through runtime snapshot helpers or remain constructor-based until a later projection-only refactor.
+Audit remaining non-preview JS field reads that are now mostly display/book-keeping (`panel.update`, colour palette aggregation, renderer-adjacent helpers) and distinguish acceptable projection reads from hidden committed ownership.
 
 ## Invariants To Preserve
 
@@ -185,6 +196,13 @@ Revisit fresh-cell hydration paths (`create`, `paste`, bootstrap/import) and dec
 - Runtime -> JS edge option decoding must go through `UI.kwiver_edge_options_from_runtime(...)`.
 - Do not export new MoonBit class-compatibility facades for `ds.mjs` / `curve.mjs` during the single-source graph migration phase just to keep old JS callsites unchanged.
 - Keep using upstream behavior as the compatibility reference. Do not invent new browser-side semantics that upstream does not need.
+
+## Recent Cleanup
+
+- Removed dead local committed-state mutators `Edge.flip(...)` / `Edge.reverse(...)` from `ui.mjs`.
+- Edge transform behavior now exists only in runtime/history replay plus transient render helpers, not as a second direct local mutation API on `Edge`.
+- Panel edge-option/style controls now read committed baselines from runtime snapshots rather than from live `edge.options` fields.
+- Label / colour edit paths now read committed baselines from runtime snapshots rather than from live `cell.label`, `cell.label_colour`, or `edge.options.colour` fields.
 
 ## Useful Entry Points
 

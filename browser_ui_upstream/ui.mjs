@@ -1587,6 +1587,57 @@ class UI {
         return runtime_by_id;
     }
 
+    kwiver_runtime_cell_snapshot(cell, runtime_by_id = null) {
+        const cell_id = this.kwiver_cell_id(cell);
+        if (!Number.isInteger(cell_id)) {
+            return null;
+        }
+        const runtime_cells_by_id = runtime_by_id ?? this.kwiver_runtime_cells_by_id();
+        if (runtime_cells_by_id === null) {
+            return null;
+        }
+        const runtime_cell = runtime_cells_by_id.get(cell_id);
+        return runtime_cell && typeof runtime_cell === "object" ? runtime_cell : null;
+    }
+
+    kwiver_runtime_cell_label(cell, runtime_by_id = null) {
+        const runtime_cell = this.kwiver_runtime_cell_snapshot(cell, runtime_by_id);
+        return typeof runtime_cell?.label === "string" ? runtime_cell.label : null;
+    }
+
+    kwiver_runtime_cell_label_colour(cell, runtime_by_id = null) {
+        const runtime_cell = this.kwiver_runtime_cell_snapshot(cell, runtime_by_id);
+        return runtime_cell === null
+            ? null
+            : UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
+    }
+
+    kwiver_runtime_edge_snapshot(edge, runtime_by_id = null) {
+        const edge_id = this.kwiver_cell_id(edge);
+        if (!Number.isInteger(edge_id)) {
+            return null;
+        }
+        const runtime_cells_by_id = runtime_by_id ?? this.kwiver_runtime_cells_by_id();
+        if (runtime_cells_by_id === null) {
+            return null;
+        }
+        const runtime_edge = runtime_cells_by_id.get(edge_id);
+        return runtime_edge && runtime_edge.kind === "edge" ? runtime_edge : null;
+    }
+
+    kwiver_runtime_edge_options(edge, runtime_by_id = null) {
+        const runtime_edge = this.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+        if (runtime_edge === null) {
+            return null;
+        }
+        return UI.kwiver_edge_options_from_runtime(runtime_edge.options);
+    }
+
+    kwiver_runtime_edge_colour(edge, runtime_by_id = null) {
+        const runtime_options = this.kwiver_runtime_edge_options(edge, runtime_by_id);
+        return runtime_options === null ? null : runtime_options.colour;
+    }
+
     kwiver_js_cells_by_id() {
         const js_by_id = new Map();
         for (const cell of this.view_all_cells()) {
@@ -2663,13 +2714,22 @@ class UI {
             return null;
         }
 
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            return null;
+        }
+
         let last_envelope = null;
         for (const cell of cells) {
             const edge_id = this.kwiver_cell_id(cell);
             if (!Number.isInteger(edge_id)) {
                 return null;
             }
-            const next_alignment = !Boolean(cell.options?.edge_alignment?.[end]);
+            const runtime_options = this.kwiver_runtime_edge_options(cell, runtime_by_id);
+            if (runtime_options === null) {
+                return null;
+            }
+            const next_alignment = !Boolean(runtime_options.edge_alignment[end]);
             const patch = { [patch_key]: next_alignment };
             const envelope = kwiver_bridge_patch_edge_options_json(
                 edge_id,
@@ -6840,10 +6900,26 @@ class Panel {
         // the input field is modified.
         this.label_input.listen("input", () => {
             if (!ui.in_mode(UIMode.Command)) {
-                const selection = Array.from(ui.selection).filter((cell) => {
-                    return cell.label !== this.label_input.element.value;
-                });
-                if (selection.length === 0) {
+                const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+                if (runtime_by_id === null) {
+                    throw new Error("[kwiver-only] ui.panel.label_input: runtime snapshot unavailable");
+                }
+
+                const labels = [];
+                for (const cell of ui.selection) {
+                    const runtime_label = ui.kwiver_runtime_cell_label(cell, runtime_by_id);
+                    if (runtime_label === null) {
+                        throw new Error("[kwiver-only] ui.panel.label_input: runtime label snapshot invalid");
+                    }
+                    if (runtime_label !== this.label_input.element.value) {
+                        labels.push({
+                            cell,
+                            from: runtime_label,
+                            to: this.label_input.element.value,
+                        });
+                    }
+                }
+                if (labels.length === 0) {
                     // It can happen that we receive an event (e.g. `inputType` `historyUndo`)
                     // that has no effect on any label. It is unclear whether this is the
                     // correct behaviour, but we must account for it in any case. In this case,
@@ -6857,11 +6933,7 @@ class Panel {
                     [{
                         kind: "label",
                         value: this.label_input.element.value,
-                        cells: selection.map((cell) => ({
-                            cell,
-                            from: cell.label,
-                            to: this.label_input.element.value,
-                        })),
+                        cells: labels,
                     }],
                 );
             } else {
@@ -6986,6 +7058,22 @@ class Panel {
             }], true);
         });
 
+        const require_runtime_by_id = (context) => {
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+            if (runtime_by_id === null) {
+                throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
+            }
+            return runtime_by_id;
+        };
+
+        const require_runtime_edge_options = (edge, runtime_by_id, context) => {
+            const runtime_options = ui.kwiver_runtime_edge_options(edge, runtime_by_id);
+            if (runtime_options === null) {
+                throw new Error("[kwiver-only] " + context + ": runtime edge options invalid");
+            }
+            return runtime_options;
+        };
+
         // The label alignment options.
         this.create_option_list(
             ui,
@@ -7000,13 +7088,22 @@ class Panel {
             [],
             false, // `disabled`
             (edges, value) => {
-                const alignments = Array.from(ui.selection)
-                    .filter(cell => cell.is_edge())
-                    .map((edge) => ({
+                const runtime_by_id = require_runtime_by_id("ui.panel.label_alignment");
+                const alignments = [];
+                for (const edge of edges) {
+                    const runtime_options = require_runtime_edge_options(
                         edge,
-                        from: edge.options.label_alignment,
-                        to: value,
-                    }));
+                        runtime_by_id,
+                        "ui.panel.label_alignment",
+                    );
+                    if (runtime_options.label_alignment !== value) {
+                        alignments.push({
+                            edge,
+                            from: runtime_options.label_alignment,
+                            to: value,
+                        });
+                    }
+                }
                 if (alignments.length === 0) {
                     return;
                 }
@@ -7043,23 +7140,35 @@ class Panel {
                 const value = slider.values();
                 // Enact the effect of the slider.
                 this.unqueue_selected(ui);
+                const selected_edges = Array.from(ui.selection)
+                    .filter(cell => cell.is_edge());
+                if (selected_edges.length === 0) {
+                    return;
+                }
+                const runtime_by_id = require_runtime_by_id("ui.panel." + property);
                 ui.history.add_or_modify_previous(
                     ui,
                     [property, ui.selection],
                     [{
                         kind: property,
                         value,
-                        cells: Array.from(ui.selection)
-                            .filter(cell => cell.is_edge())
-                            .map((edge) => ({
+                        cells: selected_edges.map((edge) => {
+                            const runtime_options = require_runtime_edge_options(
                                 edge,
-                                from: property !== "length" ? edge.options[property]
+                                runtime_by_id,
+                                "ui.panel." + property,
+                            );
+                            return {
+                                edge,
+                                from: property !== "length"
+                                    ? runtime_options[property]
                                     : [
-                                        edge.options.shorten.source,
-                                        100 - edge.options.shorten.target
+                                        runtime_options.shorten.source,
+                                        100 - runtime_options.shorten.target,
                                     ],
                                 to: value,
-                            })),
+                            };
+                        }),
                     }],
                 );
             });
@@ -7200,10 +7309,16 @@ class Panel {
                 throw new Error("[kwiver-only] " + context + ": style endpoint invalid");
             }
 
+            const runtime_by_id = require_runtime_by_id(context);
             const styles = [];
             for (const edge of edges) {
-                const from = UI.kwiver_clone_style(edge.options.style);
-                const to = UI.kwiver_clone_style(edge.options.style);
+                const runtime_options = require_runtime_edge_options(
+                    edge,
+                    runtime_by_id,
+                    context,
+                );
+                const from = UI.kwiver_clone_style(runtime_options.style);
+                const to = UI.kwiver_clone_style(runtime_options.style);
                 to[component] = normalized_endpoint;
                 if (!UI.kwiver_edge_styles_equal(from, to)) {
                     styles.push({ edge, from, to });
@@ -7368,6 +7483,7 @@ class Panel {
                 throw new Error("[kwiver-only] " + context + ": edge style invalid");
             }
 
+            const runtime_by_id = require_runtime_by_id(context);
             const styles = [];
             const arrow_style = data.name === "arrow"
                 ? selected_arrow_style(context + ".arrow")
@@ -7385,8 +7501,13 @@ class Panel {
                     continue;
                 }
 
-                const from = UI.kwiver_clone_style(edge.options.style);
-                let to = UI.kwiver_clone_style(edge.options.style);
+                const runtime_options = require_runtime_edge_options(
+                    edge,
+                    runtime_by_id,
+                    context,
+                );
+                const from = UI.kwiver_clone_style(runtime_options.style);
+                let to = UI.kwiver_clone_style(runtime_options.style);
                 if (data.name === "arrow") {
                     if (from.name !== "arrow") {
                         to = UI.kwiver_clone_style(arrow_style);
@@ -7553,10 +7674,18 @@ class Panel {
             .add_to(wrapper);
 
         const change_endpoint_alignment = (element, end) => {
+            const runtime_by_id = require_runtime_by_id("ui.panel.edge_alignment");
             const cells = new Set();
             for (const cell of ui.selection) {
-                if (cell.is_edge() && cell[end].is_edge() &&
-                    cell.options.edge_alignment[end] !== element.checked) {
+                if (!cell.is_edge() || !cell[end].is_edge()) {
+                    continue;
+                }
+                const runtime_options = require_runtime_edge_options(
+                    cell,
+                    runtime_by_id,
+                    "ui.panel.edge_alignment",
+                );
+                if (runtime_options.edge_alignment[end] !== element.checked) {
                     cells.add(cell);
                 }
             }
@@ -8712,12 +8841,23 @@ class Panel {
                 const previous_bullet = `${renderer === "typst" ? "\\" : ""}bullet`;
                 const new_bullet = `${renderer === "typst" ? "" : "\\"}bullet`;
                 if (!ui.view_is_empty()) {
+                    const runtime_before_by_id = ui.kwiver_runtime_cells_by_id();
+                    if (runtime_before_by_id === null) {
+                        throw new Error("[kwiver-only] ui.renderer: runtime snapshot unavailable");
+                    }
                     const label_updates = [];
                     for (const vertex of ui.view_vertices()) {
-                        if (vertex.label === previous_bullet) {
+                        const runtime_label = ui.kwiver_runtime_cell_label(
+                            vertex,
+                            runtime_before_by_id,
+                        );
+                        if (runtime_label === null) {
+                            throw new Error("[kwiver-only] ui.renderer: runtime label snapshot invalid");
+                        }
+                        if (runtime_label === previous_bullet) {
                             label_updates.push({
                                 cell: vertex,
-                                from: vertex.label,
+                                from: runtime_label,
                                 to: new_bullet,
                             });
                         }
@@ -8732,13 +8872,13 @@ class Panel {
                             throw new Error("[kwiver-only] ui.renderer: set_label dispatch failed");
                         }
 
-                        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
-                        if (runtime_by_id === null) {
+                        const runtime_after_by_id = ui.kwiver_runtime_cells_by_id();
+                        if (runtime_after_by_id === null) {
                             throw new Error("[kwiver-only] ui.renderer: runtime snapshot unavailable");
                         }
 
                         for (const label_update of label_updates) {
-                            const runtime_cell = runtime_by_id.get(label_update.cell.kwiver_id);
+                            const runtime_cell = runtime_after_by_id.get(label_update.cell.kwiver_id);
                             if (!runtime_cell || typeof runtime_cell.label !== "string") {
                                 throw new Error("[kwiver-only] ui.renderer: runtime label snapshot invalid");
                             }
@@ -10409,10 +10549,34 @@ class ColourPicker {
             .add(new DOM.Element("input", { type: "checkbox", checked: "" })
                 .listen("change", (_, element) => {
                     if (element.checked) {
+                        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+                        if (runtime_by_id === null) {
+                            throw new Error("[kwiver-only] ui.colour_picker.sync: runtime snapshot unavailable");
+                        }
                         // If there are any selected edges whose label colour does not match their
                         // edge colour, make them the same.
                         if (Array.from(ui.selection).some((cell) => {
-                            return cell.is_edge() && !cell.label_colour.eq(cell.options.colour);
+                            if (!cell.is_edge()) {
+                                return false;
+                            }
+                            const runtime_label_colour = ui.kwiver_runtime_cell_label_colour(
+                                cell,
+                                runtime_by_id,
+                            );
+                            const runtime_edge_colour = ui.kwiver_runtime_edge_colour(
+                                cell,
+                                runtime_by_id,
+                            );
+                            if (
+                                runtime_label_colour === null
+                                || runtime_edge_colour === null
+                            ) {
+                                throw new Error("[kwiver-only] ui.colour_picker.sync: runtime colour snapshot invalid");
+                            }
+                            return !UI.kwiver_js_colours_equal(
+                                runtime_label_colour,
+                                runtime_edge_colour,
+                            );
                         })) {
                             // This isn't idempotent, because now the checkbox is checked and so
                             // both labels and edges will be updated.
@@ -10475,13 +10639,37 @@ class ColourPicker {
                 break;
         }
         if (this.element.class_list.contains("hidden")) {
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+            if (runtime_by_id === null) {
+                throw new Error("[kwiver-only] ui.colour_picker.open: runtime snapshot unavailable");
+            }
             // If every edge colour matches the label colour, we check the "Sync label/edge colours"
             // button; otherwise, we uncheck it. We only do this if we're opening the colour picker,
             // rather than switching between the label/edge targets, as it's confusing for the
             // checkbox state to change in that case.
             this.element.query_selector('input[type="checkbox"]').element.checked =
                 Array.from(ui.selection).every((cell) => {
-                    return cell.is_vertex() || cell.label_colour.eq(cell.options.colour);
+                    if (cell.is_vertex()) {
+                        return true;
+                    }
+                    const runtime_label_colour = ui.kwiver_runtime_cell_label_colour(
+                        cell,
+                        runtime_by_id,
+                    );
+                    const runtime_edge_colour = ui.kwiver_runtime_edge_colour(
+                        cell,
+                        runtime_by_id,
+                    );
+                    if (
+                        runtime_label_colour === null
+                        || runtime_edge_colour === null
+                    ) {
+                        throw new Error("[kwiver-only] ui.colour_picker.open: runtime colour snapshot invalid");
+                    }
+                    return UI.kwiver_js_colours_equal(
+                        runtime_label_colour,
+                        runtime_edge_colour,
+                    );
                 });
         }
         this.element.class_list.remove("hidden");
@@ -10500,24 +10688,51 @@ class ColourPicker {
         // Whether to sync setting label and edge colour.
         const sync_targets = this.element.query_selector('input[type="checkbox"]').element.checked;
 
+        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            throw new Error("[kwiver-only] ui.colour_picker: runtime snapshot unavailable");
+        }
+
+        const label_colour_cells = [];
+        for (const cell of ui.selection) {
+            const runtime_label_colour = ui.kwiver_runtime_cell_label_colour(cell, runtime_by_id);
+            if (runtime_label_colour === null) {
+                throw new Error("[kwiver-only] ui.colour_picker: runtime label colour snapshot invalid");
+            }
+            if (!UI.kwiver_js_colours_equal(runtime_label_colour, colour)) {
+                label_colour_cells.push({
+                    cell,
+                    from: runtime_label_colour,
+                    to: colour,
+                });
+            }
+        }
+
         const label_colour_change = {
             kind: "label_colour",
             value: colour,
-            cells: Array.from(ui.selection).map((cell) => ({
-                cell,
-                from: cell.label_colour,
-                to: colour,
-            })),
+            cells: label_colour_cells,
         };
+
+        const colour_cells = [];
+        for (const edge of Array.from(ui.selection).filter(cell => cell.is_edge())) {
+            const runtime_edge_colour = ui.kwiver_runtime_edge_colour(edge, runtime_by_id);
+            if (runtime_edge_colour === null) {
+                throw new Error("[kwiver-only] ui.colour_picker: runtime edge colour snapshot invalid");
+            }
+            if (!UI.kwiver_js_colours_equal(runtime_edge_colour, colour)) {
+                colour_cells.push({
+                    edge,
+                    from: runtime_edge_colour,
+                    to: colour,
+                });
+            }
+        }
+
         const colour_change = {
             kind: "colour",
             value: colour,
-            cells: Array.from(ui.selection).filter(cell => cell.is_edge())
-                .map((edge) => ({
-                    edge,
-                    from: edge.options.colour,
-                    to: colour,
-                })),
+            cells: colour_cells,
         };
 
         let changes;
@@ -10526,6 +10741,9 @@ class ColourPicker {
                 changes = [label_colour_change];
                 if (sync_targets) {
                     changes.push(colour_change);
+                }
+                if (changes.every((change) => change.cells.length === 0)) {
+                    return;
                 }
                 ui.history.add_or_modify_previous(
                     ui,
@@ -10539,6 +10757,9 @@ class ColourPicker {
                 changes = [colour_change];
                 if (sync_targets) {
                     changes.push(label_colour_change);
+                }
+                if (changes.every((change) => change.cells.length === 0)) {
+                    return;
                 }
                 ui.history.add_or_modify_previous(
                     ui,
@@ -11342,62 +11563,6 @@ export class Edge extends Cell {
         ui.panel.update(ui);
     }
 
-    /// Flips the edge, so that what was on the left is now on the right. If `flip_arrow` is true,
-    /// this includes offset and head/tail style. Otherwise it only flips the label alignment.
-    flip(ui, flip_arrow, skip_dependencies = false) {
-        this.options.label_alignment = {
-            left: "right",
-            centre: "centre",
-            over: "over",
-            right: "left",
-        }[this.options.label_alignment];
-        if (flip_arrow) {
-            this.options.offset = -this.options.offset;
-            this.options.curve = -this.options.curve;
-            if (this.is_loop()) {
-                this.options.radius = -this.options.radius;
-            }
-            if (this.options.style.name === "arrow") {
-                const swap_sides = { top: "bottom", bottom: "top" };
-                if (this.options.style.tail.name === "hook") {
-                    this.options.style.tail.side = swap_sides[this.options.style.tail.side];
-                }
-                if (this.options.style.head.name === "harpoon") {
-                    this.options.style.head.side = swap_sides[this.options.style.head.side];
-                }
-            }
-        }
-
-        this.render(ui);
-
-        if (flip_arrow && !skip_dependencies) {
-            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
-                [this],
-                false,
-                "ui.edge.flip.dependencies",
-            );
-            for (const cell of dependencies_to_render) {
-                cell.render(ui);
-            }
-        }
-    }
-
-    /// Reverses the edge, swapping the `source` and `target`.
-    reverse(ui) {
-        // Dependency relationships in the view graph are derived from cell endpoints,
-        // so reversing only needs to swap the endpoints locally.
-        [this.source, this.target] = [this.target, this.source];
-        [this.arrow.source, this.arrow.target] = [this.source.shape, this.target.shape];
-
-        if (this.is_loop()) {
-            this.options.angle = mod(this.options.angle + 360, 360) - 180;
-        }
-        // Reverse the label alignment and edge offset as well as any oriented styles.
-        // Flipping the label will also cause a rerender.
-        // Note that since we do this, the position of the edge will remain the same, which
-        // means we don't need to rerender any of this edge's dependencies.
-        this.flip(ui, true, true);
-    }
 }
 
 // A `Promise` that returns the `katex` global object when it's loaded.
