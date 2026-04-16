@@ -22,6 +22,12 @@ The current handwritten `tikz-cd` import compatibility matrix is documented in `
 The product UI is `browser_ui_upstream/`, backed by MoonBit runtime/state APIs from the `browser_demo` package build output.
 Runtime command dispatch uses the stable command-envelope contract (`ffi_browser_demo_session_dispatch_command_json`) through the JS bridge layer.
 
+Current migration priority:
+
+- remove duplicated graph semantics between JS `ui.quiver` state and MoonBit runtime state
+- keep JS focused on rendering and transient interaction state only
+- treat release-gate polishing and additional parser work as secondary until the browser graph state has a single source of truth
+
 ```sh
 moon build --release
 miniserve ./
@@ -54,7 +60,8 @@ Run smoke-only checks (skip `moon test -v`):
 node scripts/local_regression.mjs --smoke-only
 ```
 
-Manual release checks for `browser_ui_upstream` are documented in `docs/browser-ui-manual-checklist.md`.
+A deferred manual browser checklist for `browser_ui_upstream` is documented in `docs/browser-ui-manual-checklist.md`.
+Run it after the single-source graph migration stabilizes; it is not the current gate.
 
 ## Tokei
 

@@ -1,6 +1,8 @@
 # Upstream UI Bridge
 
-This directory is a direct copy of upstream `quiver/src` UI files, with a thin kwiver bridge layer.
+This directory is a direct copy of upstream `quiver/src` UI files, with a kwiver bridge layer.
+
+Current migration status: the bridge is not finished. Some graph semantics still exist in both upstream-style JS objects and MoonBit runtime state. The highest-priority task is to remove that duplication and leave JS with render/interaction-transient state only.
 
 ## What Is Patched
 
@@ -9,6 +11,8 @@ This directory is a direct copy of upstream `quiver/src` UI files, with a thin k
 - `kwiver_bridge.mjs` is the bridge module that talks to MoonBit build output.
 - command protocol is sourced from runtime via `ffi_browser_demo_command_protocol()`.
 - bridge calls use `ffi_browser_demo_session_dispatch_command_json` as the command entrypoint.
+
+Do not treat the current JS graph ownership as final architecture. New work should reduce JS graph-state responsibility, not expand it.
 
 ## Smoke Check
 
@@ -26,4 +30,5 @@ node scripts/local_regression.mjs --smoke-only
 
 Parser corpus fixture expectations are declared in `tests/parser_corpus_manifest.json` and shared with engine tests via the sync script.
 
-The smoke suite verifies protocol enforcement, startup fail-fast formatting, runtime-first action routing for interaction/export entrypoints, non-mock runtime command dispatch against built browser_demo artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.
+The smoke suite verifies protocol enforcement, startup fail-fast formatting, command routing for interaction/export entrypoints, non-mock runtime command dispatch against built browser_demo artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.
+These checks do not mean the browser graph migration is complete; they only guard the current bridge/runtime boundary while JS graph ownership is still being removed.

@@ -443,6 +443,81 @@ function commandResultPayload(result, after) {
   return null;
 }
 
+function normalizeCommandResultEnvelope(envelope) {
+  if (!envelope || typeof envelope !== "object") {
+    return envelope;
+  }
+
+  const result = envelope.result && typeof envelope.result === "object"
+    ? envelope.result
+    : null;
+  const after = envelope.after && typeof envelope.after === "object"
+    ? envelope.after
+    : null;
+  const normalized = { ...envelope };
+
+  if (!Array.isArray(normalized.selection)) {
+    if (Array.isArray(result?.selection)) {
+      normalized.selection = result.selection;
+    } else if (Array.isArray(after?.selection)) {
+      normalized.selection = after.selection;
+    } else {
+      normalized.selection = [];
+    }
+  }
+
+  if (typeof normalized.payload !== "string" || normalized.payload === "") {
+    const payload = commandResultPayload(result, after);
+    if (typeof payload === "string" && payload !== "") {
+      normalized.payload = payload;
+    }
+  }
+
+  return normalized;
+}
+
+function asIntOr(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isInteger(n) ? n : fallback;
+}
+
+function normalizeImportError(rawError, fallbackMessage = null) {
+  if (rawError && typeof rawError === "object" && !Array.isArray(rawError)) {
+    const kind = typeof rawError.kind === "string" && rawError.kind !== "" ? rawError.kind : "import";
+    const message = typeof rawError.message === "string" && rawError.message !== ""
+      ? rawError.message
+      : fallbackMessage;
+    if (typeof message === "string" && message !== "") {
+      return {
+        kind,
+        message,
+        line: asIntOr(rawError.line, 0),
+        column: asIntOr(rawError.column, 0),
+      };
+    }
+  }
+
+  if (typeof rawError === "string" && rawError !== "") {
+    return {
+      kind: "import",
+      message: rawError,
+      line: 0,
+      column: 0,
+    };
+  }
+
+  if (typeof fallbackMessage === "string" && fallbackMessage !== "") {
+    return {
+      kind: "import",
+      message: fallbackMessage,
+      line: 0,
+      column: 0,
+    };
+  }
+
+  return null;
+}
+
 function dispatchCommandEnvelope(command) {
   if (!bridgeAvailable() || !command || typeof command !== "object") {
     return null;
@@ -461,7 +536,7 @@ function dispatchCommandEnvelope(command) {
     if (typeof parsed.protocol !== "string" || parsed.protocol !== protocol) {
       return null;
     }
-    return parsed;
+    return normalizeCommandResultEnvelope(parsed);
   } catch (_e) {
     return null;
   }
@@ -624,24 +699,49 @@ export function kwiver_bridge_reset(origin = "ui.bridge.reset") {
   return dispatchCommandResult("reset", undefined, origin);
 }
 
-export function kwiver_bridge_import_tikz_payload(input, settings) {
+export function kwiver_bridge_import_tikz_result(input, settings) {
   if (typeof input !== "string") {
     return null;
   }
 
   const renderer = rendererFromSettings(settings, null);
-  const envelope = dispatchCommandResult(
-    "import_text_auto_json",
+  const envelope = dispatchCommandEnvelope({
+    action: "import_text_auto_json",
     input,
-    "ui.bridge.import",
-    {
-      default_renderer: renderer,
-    },
-  );
+    origin: "ui.bridge.import",
+    default_renderer: renderer,
+  });
   if (!envelope) {
     return null;
   }
-  return commandResultPayload(envelope.result, envelope.after);
+
+  const result = envelope.result && typeof envelope.result === "object" ? envelope.result : null;
+  const payload = commandResultPayload(result, envelope.after);
+  const hasResultOk = result !== null && Object.prototype.hasOwnProperty.call(result, "ok");
+  const ok = hasResultOk ? result.ok === true : envelope.ok === true;
+  const fallbackErrorMessage = typeof envelope.error === "string" ? envelope.error : null;
+  const error = ok
+    ? null
+    : normalizeImportError(
+      result !== null && Object.prototype.hasOwnProperty.call(result, "error")
+        ? result.error
+        : null,
+      fallbackErrorMessage,
+    );
+
+  return {
+    ok,
+    payload: typeof payload === "string" && payload !== "" ? payload : null,
+    error,
+  };
+}
+
+export function kwiver_bridge_import_tikz_payload(input, settings) {
+  const result = kwiver_bridge_import_tikz_result(input, settings);
+  if (!result || result.ok !== true) {
+    return null;
+  }
+  return typeof result.payload === "string" && result.payload !== "" ? result.payload : null;
 }
 
 export function kwiver_bridge_import_payload_json(

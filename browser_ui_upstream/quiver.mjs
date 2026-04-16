@@ -3,222 +3,107 @@ import { Colour, Encodable, Point, Position, mod } from "./ds.mjs";
 import { CONSTANTS } from "./arrow.mjs";
 import { Parser } from "./parser.mjs";
 import { Edge, Vertex } from "./ui.mjs";
-import { kwiver_bridge_export, kwiver_bridge_import_tikz_payload } from "./kwiver_bridge.mjs";
+import { kwiver_bridge_all_cells, kwiver_bridge_export, kwiver_bridge_import_tikz_result } from "./kwiver_bridge.mjs";
 
-/// A directed n-pseudograph, in which (k + 1)-cells can connect k-cells.
+function tikzImportKindTitle(kind) {
+    switch (kind) {
+        case "syntax":
+            return "tikz-cd syntax error";
+        case "option":
+            return "unsupported tikz-cd option";
+        case "reference":
+            return "invalid tikz-cd reference";
+        case "base64":
+            return "invalid share/base64 input";
+        case "tikz":
+            return "tikz-cd import error";
+        default:
+            return "tikz-cd import error";
+    }
+}
+
+function tikzImportRangeFromLineColumn(text, line, column) {
+    if (!Number.isInteger(line) || !Number.isInteger(column) || line < 1 || column < 1) {
+        return null;
+    }
+    if (typeof text !== "string") {
+        return null;
+    }
+
+    let currentLine = 1;
+    let index = 0;
+    while (index < text.length && currentLine < line) {
+        if (text[index] === "\n") {
+            currentLine += 1;
+        }
+        index += 1;
+    }
+    if (currentLine !== line) {
+        return null;
+    }
+
+    const lineStart = index;
+    while (index < text.length && text[index] !== "\n") {
+        index += 1;
+    }
+    const lineEnd = index;
+    const zeroBasedColumn = column - 1;
+    const caret = Math.max(lineStart, Math.min(lineStart + zeroBasedColumn, lineEnd));
+    return new Parser.Range(caret, 0);
+}
+
+function graphAllCells(graph) {
+    if (!graph || typeof graph.all_cells !== "function") {
+        throw new Error("graph provider missing all_cells()");
+    }
+    return graph.all_cells();
+}
+
+function graphIsEmpty(graph) {
+    return graphAllCells(graph).length === 0;
+}
+
+function graphVertices(graph) {
+    return graphAllCells(graph).filter((cell) => cell.is_vertex());
+}
+
+function graphEdgesByLevel(graph) {
+    const levels = [];
+    for (const cell of graphAllCells(graph)) {
+        if (!cell.is_edge()) {
+            continue;
+        }
+        while (levels.length <= cell.level) {
+            levels.push([]);
+        }
+        levels[cell.level].push(cell);
+    }
+    return levels;
+}
+
+function graphDependenciesOf(graph, cell) {
+    if (graph && typeof graph.dependencies_of === "function") {
+        return graph.dependencies_of(cell);
+    }
+
+    const dependencies = new Map();
+    for (const candidate of graphAllCells(graph)) {
+        if (!candidate.is_edge()) {
+            continue;
+        }
+        if (candidate.source === cell) {
+            dependencies.set(candidate, "source");
+        }
+        if (candidate.target === cell) {
+            dependencies.set(candidate, "target");
+        }
+    }
+    return dependencies;
+}
+
+/// Bridge-facing import/export shell.
 export class Quiver {
-    constructor() {
-        /// An array of array of cells. `cells[k]` is the array of k-cells.
-        /// `cells[0]` is therefore the array of objects, etc.
-        this.cells = [];
-
-        /// The inter-cell dependencies. That is: the edges that in some way are reliant on this
-        /// cell. Each map entry contains a map of edges to their dependency relationship, e.g.
-        /// "source" or "target".
-        this.dependencies = new Map();
-
-        /// Reverse dependencies (used for removing cells from `dependencies` when removing cells).
-        /// That is: cells that this edge is reliant on.
-        /// Each map entry is simply a set, unlike `dependencies`.
-        this.reverse_dependencies = new Map();
-
-        /// A set of cells that have been deleted. We don't properly delete cells immediately, as
-        /// this makes it more awkward to revert deletion (with undo, for instance). Instead we add
-        /// them to `deleted` to mark them as such and remove them *solely* from `this.cells`.
-        /// Deleted cells are then ignored for all functional purposes involving dependencies.
-        /// Though `deleted` is primarily treated as a set, it is really a map from cells to the
-        /// point in time (e.g. history state) they were deleted at. This is so we can flush them
-        /// later to avoid accumulating memory.
-        this.deleted = new Map();
-    }
-
-    /// Add a new cell to the graph.
-    add(cell) {
-        if (!this.deleted.has(cell)) {
-            this.dependencies.set(cell, new Map());
-            this.reverse_dependencies.set(cell, new Set());
-
-            while (this.cells.length <= cell.level) {
-                this.cells.push(new Set());
-            }
-        } else {
-            this.deleted.delete(cell);
-        }
-        this.cells[cell.level].add(cell);
-    }
-
-    /// Remove a cell from the graph.
-    remove(cell, when) {
-        const removed = new Set();
-        const removal_queue = new Set([cell]);
-        for (const cell of removal_queue) {
-            if (!this.deleted.has(cell)) {
-                this.deleted.set(cell, when);
-                this.cells[cell.level].delete(cell);
-                // The edge case here and below (`|| []`) is for when a cell and its dependencies
-                // are being removed simultaneously, in which case the ordering of removal
-                // here can cause problems without taking this into consideration.
-                for (const [dependency,] of this.dependencies.get(cell) || []) {
-                    removal_queue.add(dependency);
-                }
-                removed.add(cell);
-            }
-        }
-        return removed;
-    }
-
-    /// Actually delete all deleted cells from the dependency data structures.
-    flush(when) {
-        for (const [cell, deleted] of this.deleted) {
-            if (deleted >= when) {
-                this.dependencies.delete(cell);
-                for (const reverse_dependency of this.reverse_dependencies.get(cell) || []) {
-                    // If a cell is being removed as a dependency, then some of its
-                    // reverse dependencies may no longer exist.
-                    if (this.dependencies.has(reverse_dependency)) {
-                        this.dependencies.get(reverse_dependency).delete(cell);
-                    }
-                }
-                this.reverse_dependencies.delete(cell);
-                this.deleted.delete(cell);
-            }
-        }
-    }
-
-    /// Connect two cells. Note that this does *not* check whether the source and
-    /// target are compatible with each other. It does handle reconnecting cells
-    /// that may already be connected to other cells.
-    connect(source, target, edge) {
-        // Clear any existing reverse dependencies. This is necessary if we're
-        // reconnecting an edge that is already connected.
-        const reverse_dependencies = this.reverse_dependencies.get(edge);
-        for (const cell of reverse_dependencies) {
-            this.dependencies.get(cell).delete(edge);
-        }
-        reverse_dependencies.clear();
-
-        this.dependencies.get(source).set(edge, "source");
-        this.dependencies.get(target).set(edge, "target");
-
-        reverse_dependencies.add(source);
-        reverse_dependencies.add(target);
-
-        [edge.source, edge.target] = [source, target];
-
-        // Reset the cell's (and its dependencies') level to ensure correct spacing when changing
-        // the level of the source/target cells.
-        for (const cell of this.transitive_dependencies([edge])) {
-            const level = Math.max(cell.source.level, cell.target.level) + 1;
-            if (this.cells.length < level + 1) {
-                this.cells.push(new Set());
-            }
-            this.cells[cell.level].delete(cell);
-            cell.level = level;
-            this.cells[level].add(cell);
-        }
-    }
-
-    /// Returns a collection of all the cells in the quiver.
-    all_cells() {
-        return Array.from(this.dependencies.keys()).filter((cell) => !this.deleted.has(cell));
-    }
-
-    /// Returns whether a cell exists in the quiver (i.e. hasn't been deleted).
-    contains_cell(cell) {
-        return this.all_cells().includes(cell);
-    }
-
-    /// Rerender the entire quiver. This is expensive, so should only be used when more
-    /// conservative rerenderings are inappropriate (e.g. when the grid has been resized).
-    rerender(ui) {
-        const cells = this.all_cells();
-        // Sort by level, so that the cells on which others depend are rendered first.
-        cells.sort((a, b) => a.level - b.level);
-        for (const cell of cells) {
-            cell.render(ui);
-        }
-    }
-
-    /// Returns the `[[x_min, y_min], [x_max, y_max]]` positions of the vertices in the quiver, or
-    /// `null` if there are no vertices in the quiver.
-    bounding_rect() {
-        if (this.is_empty()) {
-            return null;
-        }
-
-        const vertices = Array.from(this.cells[0]);
-
-        const xs = vertices.map((cell) => cell.position.x);
-        const ys = vertices.map((cell) => cell.position.y);
-
-        return [
-            [Math.min(...xs), Math.min(...ys)],
-            [Math.max(...xs), Math.max(...ys)],
-        ];
-    }
-
-    /// Returns whether the quiver is empty.
-    is_empty() {
-        return this.dependencies.size - this.deleted.size === 0;
-    }
-
-    /// Returns the non-deleted dependencies of a cell.
-    dependencies_of(cell) {
-        return new Map(Array.from(this.dependencies.get(cell)).filter(([dependency,]) => {
-            return !this.deleted.has(dependency);
-        }));
-    }
-
-    /// Returns the non-deleted reverse dependencies of a cell.
-    reverse_dependencies_of(cell) {
-        return new Set(Array.from(this.reverse_dependencies.get(cell)).filter((dependency) => {
-            return !this.deleted.has(dependency);
-        }));
-    }
-
-    /// Returns the transitive closure of the dependencies of a collection of cells
-    // (including those cells themselves, unless `exclude_roots`).
-    transitive_dependencies(cells, exclude_roots = false) {
-        let closure = new Set(cells);
-        // We're relying on the iteration order of the `Set` here.
-        for (const cell of closure) {
-            this.dependencies_of(cell).forEach((_, dependency) => closure.add(dependency));
-        }
-        if (exclude_roots) {
-            for (const cell of cells) {
-                closure.delete(cell);
-            }
-        }
-        closure = Array.from(closure);
-        closure.sort((a, b) => a.level - b.level);
-        return new Set(closure);
-    }
-
-    /// Returns the transitive closure of the reverse dependencies of a collection of cells
-    /// (including those cells themselves).
-    transitive_reverse_dependencies(cells) {
-        let closure = new Set(cells);
-        // We're relying on the iteration order of the `Set` here.
-        for (const cell of closure) {
-            this.reverse_dependencies_of(cell).forEach((dependency) => closure.add(dependency));
-        }
-        closure = Array.from(closure);
-        closure.sort((a, b) => a.level - b.level);
-        return new Set(closure);
-    }
-
-    /// Returns all the cells in the connected components of the given cells.
-    connected_components(cells) {
-        let closure = new Set(cells);
-        // We're relying on the iteration order of the `Set` here.
-        for (const cell of closure) {
-            this.dependencies_of(cell).forEach((_, dependency) => closure.add(dependency));
-            this.reverse_dependencies_of(cell).forEach((dependency) => closure.add(dependency));
-        }
-        closure = Array.from(closure);
-        closure.sort((a, b) => a.level - b.level);
-        return new Set(closure);
-    }
+    constructor() {}
 
     /// Return a `{ data, metadata }` object containing the graph in a specific format.
     /// Currently, the supported formats are:
@@ -258,13 +143,45 @@ export class Quiver {
     import(ui, format, data, settings) {
         switch (format) {
             case "tikz-cd": {
-                const bridged_payload = kwiver_bridge_import_tikz_payload(data, settings);
-                if (typeof bridged_payload === "string" && bridged_payload !== "") {
-                    QuiverImportExport.base64.import(ui, bridged_payload);
+                const bridged = kwiver_bridge_import_tikz_result(data, settings);
+                if (bridged === null) {
+                    throw new Error("kwiver MoonBit bridge unavailable for tikz-cd import");
+                }
+
+                if (bridged.ok === true && typeof bridged.payload === "string" && bridged.payload !== "") {
+                    const imported_cells = QuiverImportExport.base64.import(ui, bridged.payload);
+                    const runtime_cells = kwiver_bridge_all_cells();
+                    ui.kwiver_bind_new_cell_ids_from_runtime_cells(
+                        imported_cells,
+                        runtime_cells,
+                        "quiver.import.tikz-cd.bind_ids",
+                    );
                     return { diagnostics: [] };
                 }
 
-                throw new Error("kwiver MoonBit bridge unavailable for tikz-cd import");
+                const errorKind = bridged.error && typeof bridged.error.kind === "string"
+                    ? bridged.error.kind
+                    : "";
+                const line = bridged.error ? Number(bridged.error.line) : 0;
+                const column = bridged.error ? Number(bridged.error.column) : 0;
+                const hasLine = Number.isInteger(line) && line > 0;
+                const hasColumn = Number.isInteger(column) && column > 0;
+                const range = tikzImportRangeFromLineColumn(data, line, column);
+
+                const detail = bridged.error && typeof bridged.error.message === "string"
+                    ? bridged.error.message
+                    : "tikz-cd import failed";
+                let message = `${tikzImportKindTitle(errorKind)}: ${detail}`;
+                if (hasLine || hasColumn) {
+                    message += ` (line ${hasLine ? line : 0}, column ${hasColumn ? column : 0})`;
+                }
+
+                const diagnostic = new Parser.Error(message, range);
+                diagnostic.kwiver_kind = errorKind !== "" ? errorKind : "tikz";
+                diagnostic.kwiver_source = "bridge_import";
+                diagnostic.kwiver_line = hasLine ? line : null;
+                diagnostic.kwiver_column = hasColumn ? column : null;
+                return { diagnostics: [diagnostic] };
             }
             default:
                 throw new Error(`unknown export format \`${format}\``);
@@ -311,7 +228,7 @@ export class QuiverImportExport extends QuiverExport {
 
         // Update all the affected columns and rows.
         delay(() => ui.update_col_row_size(
-            ...ui.quiver.all_cells()
+            ...ui.view_all_cells()
                 .filter((cell) => cell.is_vertex()).map((vertex) => vertex.position)
         ));
 
@@ -349,7 +266,7 @@ QuiverExport.fletcher = new class extends QuiverExport {
         };
 
         // Early exit for empty quivers.
-        if (quiver.is_empty()) {
+        if (graphIsEmpty(quiver)) {
             return {
                 data: wrap_boilerplate(output),
                 metadata: { fletcher_incompatibilities: new Set() },
@@ -377,7 +294,10 @@ QuiverExport.fletcher = new class extends QuiverExport {
         };
 
         // Output the vertices.
-        for (const vertex of quiver.cells[0]) {
+        const vertices_in_order = graphVertices(quiver);
+        const edges_by_level = graphEdgesByLevel(quiver);
+
+        for (const vertex of vertices_in_order) {
             let label_colour = "";
             if (vertex.label !== "" && vertex.label_colour.is_not_black()) {
                 label_colour = `text(${colour_to_typst_hsl(vertex.label_colour)})`;
@@ -388,14 +308,14 @@ QuiverExport.fletcher = new class extends QuiverExport {
         }
 
         // Output the edges, i.e. 1-cells and above.
-        for (let level = 1; level < quiver.cells.length; ++level) {
+        for (let level = 1; level < edges_by_level.length; ++level) {
             // Double arrows and higher are not yet supported in fletcher.
             if (level > 1) {
                 fletcher_incompatibilities.add("arrows between arrows");
                 break;
             }
 
-            for (const edge of quiver.cells[level]) {
+            for (const edge of edges_by_level[level] || []) {
                 // This will be the list of arguments passed to the `edge()` function after the
                 // source and target coördinates.
                 const args = [format_label(edge.label)];
@@ -642,7 +562,7 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
         };
 
         // Early exit for empty quivers.
-        if (quiver.is_empty()) {
+        if (graphIsEmpty(quiver)) {
             return {
                 data: wrap_boilerplate(output),
                 metadata: { tikz_incompatibilities: new Set(), dependencies: new Map() },
@@ -689,10 +609,13 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
         // Output the vertices.
         // Note that currently vertices may not share the same position,
         // as in that case they will be overwritten.
+        const vertices_in_order = graphVertices(quiver);
+        const edges_by_level = graphEdgesByLevel(quiver);
+
         let offset = new Position(Infinity, Infinity);
         // Construct a grid for the vertices.
         const rows = new Map();
-        for (const vertex of quiver.cells[0]) {
+        for (const vertex of vertices_in_order) {
             if (!rows.has(vertex.position.y)) {
                 rows.set(vertex.position.y, new Map());
             }
@@ -758,14 +681,14 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
         };
 
         // Output the edges, i.e. 1-cells and above.
-        for (let level = 1; level < quiver.cells.length; ++level) {
-            if (quiver.cells[level].size > 0) {
+        for (let level = 1; level < edges_by_level.length; ++level) {
+            if ((edges_by_level[level] || []).length > 0) {
                 output += "\n";
             }
 
             // Sort the edges so that we iterate through based on source (top-to-bottom,
             // left-to-right), and then target.
-            const edges = [...quiver.cells[level]];
+            const edges = [...(edges_by_level[level] || [])];
             const compare_cell_position = (a, b) => {
                 if (a.position.y < b.position.y) {
                     return -1;
@@ -826,7 +749,7 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
                 // that we provide a name even for edges that only have non-edge-aligned edges. This
                 // is not useful for the TikZ output, but is useful if the TikZ code is later parsed
                 // by quiver, as it allows quiver to match phantom edges to the real edges.
-                if (quiver.dependencies_of(edge).size > 0) {
+                if (graphDependenciesOf(quiver, edge).size > 0) {
                     names.set(edge, current_index);
                     // We create a placeholder label that is used as a source/target for other
                     // edges. It's more convenient to create a placeholder label so that we have
@@ -1188,8 +1111,8 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
                 // Check whether any edges depend on this one, but are not edge aligned. In this
                 // case, we have to create a phantom edge that does not depend on the labels of the
                 // source and target.
-                if (quiver.dependencies_of(edge).size > 0) {
-                    for (const [dependency, end] of quiver.dependencies_of(edge)) {
+                if (graphDependenciesOf(quiver, edge).size > 0) {
+                    for (const [dependency, end] of graphDependenciesOf(quiver, edge)) {
                         if (!dependency.options.edge_alignment[end]) {
                             output += `\\arrow[""{name=${
                                 current_index
@@ -1222,7 +1145,7 @@ QuiverImportExport.tikz_cd = new class extends QuiverImportExport {
         const parser = new Parser(ui, data);
         parser.parse_diagram();
 
-        this.end_import(ui, ui.quiver.all_cells());
+        this.end_import(ui, ui.view_all_cells());
 
         return { diagnostics: parser.diagnostics };
     }
@@ -1275,7 +1198,7 @@ QuiverImportExport.base64 = new class extends QuiverImportExport {
         // base.
         const URL_prefix = window.location.href.replace(/\?.*$/, "").replace(/#.*$/, "");
 
-        if (quiver.is_empty()) {
+        if (graphIsEmpty(quiver)) {
             // No need to have an encoding of an empty quiver; we'll just use the URL directly.
             return {
                 data: URL_prefix,
@@ -1292,7 +1215,7 @@ QuiverImportExport.base64 = new class extends QuiverImportExport {
             // We exclude the default renderer from the URL to decrease length as much as possible.
             data: `${URL_prefix}#${renderer === CONSTANTS.DEFAULT_RENDERER ? ""
                     : `r=${renderer}&`}q=${
-                this.export_selection(quiver, new Set(quiver.all_cells()))
+                this.export_selection(quiver, new Set(graphAllCells(quiver)))
             }${macro_data}`,
             metadata: {},
         };
@@ -1309,13 +1232,16 @@ QuiverImportExport.base64 = new class extends QuiverImportExport {
         let offset = new Position(Infinity, Infinity);
         // We want to ensure that the top-left cell is in position (0, 0), so we need
         // to work out where the top-left cell actually is, to compute an offset.
-        for (const vertex of quiver.cells[0]) {
+        const vertices_in_order = graphVertices(quiver);
+        const edges_by_level = graphEdgesByLevel(quiver);
+
+        for (const vertex of vertices_in_order) {
             if (selection.has(vertex)) {
                 offset = offset.min(vertex.position);
                 ++vertices;
             }
         }
-        for (const vertex of quiver.cells[0]) {
+        for (const vertex of vertices_in_order) {
             if (!selection.has(vertex)) {
                 continue;
             }
@@ -1335,8 +1261,8 @@ QuiverImportExport.base64 = new class extends QuiverImportExport {
             cells.push(cell);
         }
 
-        for (let level = 1; level < quiver.cells.length; ++level) {
-            for (const edge of quiver.cells[level]) {
+        for (let level = 1; level < edges_by_level.length; ++level) {
+            for (const edge of edges_by_level[level] || []) {
                 if (!selection.has(edge)) {
                     continue;
                 }
@@ -1533,7 +1459,7 @@ QuiverImportExport.base64 = new class extends QuiverImportExport {
                     if (ui.positions.has(`${position}`)) {
                         // If we cannot place every cell, we would prefer to add no cells, so we
                         // must remove any we have added so far.
-                        indices.forEach((cell) => ui.remove_cell(cell, ui.history.present));
+                        indices.forEach((cell) => ui.remove_cell(cell));
                         unrecoverable = true;
                         throw new Error("position already occupied");
                     }
@@ -1686,7 +1612,7 @@ QuiverExport.html = new class extends QuiverExport {
         return {
             data: `<!-- ${url} -->
 <iframe class="quiver-embed" \
-src="${url}${!quiver.is_empty() ? "&" : "#"}embed" \
+src="${url}${!graphIsEmpty(quiver) ? "&" : "#"}embed" \
 width="${width}" \
 height="${height}" \
 style="border-radius: 8px; border: none;">\

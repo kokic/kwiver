@@ -552,10 +552,11 @@ UIMode.PointerMove = class extends UIMode {
     release(ui) {
         // Make sure we're not trying to release any cells on top of existing ones.
         for (const cell of this.selection) {
-            if (ui.positions.has(`${cell.position}`)) {
+            const occupant = ui.positions.get(`${cell.position}`);
+            if (occupant !== undefined && occupant !== cell) {
                 throw new Error(
                     "new cell position already contains a cell:",
-                    ui.positions.get(`${cell.position}`),
+                    occupant,
                 );
             }
         }
@@ -1329,6 +1330,7 @@ class UI {
         runtime_edge,
         origin = "ui.runtime.apply.edge",
         render = true,
+        render_label = false,
     ) {
         if (!ui || !edge || !runtime_edge || runtime_edge.kind !== "edge") {
             throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
@@ -1367,7 +1369,9 @@ class UI {
         edge.label_colour = label_colour;
         edge.options = options;
 
-        if (render) {
+        if (render_label) {
+            ui.panel.render_maths(ui, edge);
+        } else if (render) {
             edge.render(ui);
         }
 
@@ -1395,6 +1399,7 @@ class UI {
                 runtime_cell,
                 origin,
                 render,
+                render_label,
             );
         }
 
@@ -1622,9 +1627,41 @@ class UI {
             }
         }
 
-        this.deselect();
-        if (next_selection.length > 0) {
-            this.select(...next_selection);
+        const previous_selection = this.selection;
+        const next_selection_set = new Set(next_selection);
+        let selection_changed = previous_selection.size !== next_selection_set.size;
+        if (!selection_changed) {
+            for (const cell of next_selection_set) {
+                if (!previous_selection.has(cell)) {
+                    selection_changed = true;
+                    break;
+                }
+            }
+        }
+        if (!selection_changed) {
+            return true;
+        }
+
+        for (const cell of previous_selection) {
+            if (!next_selection_set.has(cell)) {
+                cell.deselect();
+            }
+        }
+        for (const cell of next_selection_set) {
+            if (!previous_selection.has(cell)) {
+                cell.select();
+            }
+        }
+
+        this.selection = next_selection_set;
+        this.update_focus_tooltip();
+        this.panel.update(this);
+        this.toolbar.update(this);
+        if (this.selection_contains_edge()) {
+            this.panel.element.class_list.remove("hidden");
+        }
+        if (this.selection.size > 0) {
+            this.panel.label_input.parent.class_list.remove("hidden");
         }
         return true;
     }
@@ -6022,9 +6059,7 @@ class History {
                             runtime_cell,
                             false,
                         );
-                        if (label.cell.is_edge()) {
-                            cells.add(label.cell);
-                        }
+                        cells.add(label.cell);
                     }
                     if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
                         kwiver_fail("history.label", "selection sync failed");
@@ -6060,9 +6095,7 @@ class History {
                                 runtime_cell,
                                 false,
                             );
-                            if (label_colour.cell.is_edge()) {
-                                cells.add(label_colour.cell);
-                            }
+                            cells.add(label_colour.cell);
                         }
                         if (!ui.kwiver_apply_runtime_selection(label_colour_envelope.selection)) {
                             kwiver_fail("history.label_colour", "selection sync failed");
@@ -11302,11 +11335,7 @@ export class Edge extends Cell {
                 this.options.edge_alignment[end] = true;
             }
         }
-        const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
-            [this],
-            false,
-            "ui.edge.reconnect.dependencies",
-        );
+        const dependencies_to_render = ui.connect_preview.transitive_dependencies([this]);
         for (const cell of dependencies_to_render) {
             cell.render(ui);
         }

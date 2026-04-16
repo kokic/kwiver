@@ -59,7 +59,12 @@ function assertCaseImports(bridge, parserCase) {
 
   const idsAfter = kwiver_bridge_all_cell_ids(`${originBase}.ids.after`);
   assertIntegerIdList(idsAfter, parserCase.title);
-  assert.equal(idsAfter.length >= 2, true, `${parserCase.title}: expected at least 2 cells`);
+  const minCells = Number.isInteger(parserCase.runtime_min_cells) ? parserCase.runtime_min_cells : 2;
+  assert.equal(
+    idsAfter.length >= minCells,
+    true,
+    `${parserCase.title}: expected at least ${minCells} cells`,
+  );
 }
 
 function assertCaseFailFast(bridge, parserCase) {
@@ -102,6 +107,29 @@ function runCases(cases, fn, context) {
 
 async function run() {
   const manifestCases = loadParserCorpusManifestCases();
+  const externalCases = manifestCases.filter(
+    (parserCase) => parserCase.fixture === "parser_external.tex",
+  );
+  const externalInvalidCases = manifestCases.filter(
+    (parserCase) => parserCase.fixture === "parser_external_invalid.tex",
+  );
+  assert.equal(externalCases.length > 0, true, "expected parser_external cases");
+  assert.equal(externalInvalidCases.length > 0, true, "expected parser_external_invalid cases");
+  for (const parserCase of externalCases) {
+    assert.equal(
+      parserCase.runtime_expectation,
+      "import_success",
+      `expected parser_external import_success for ${parserCase.id}`,
+    );
+  }
+  for (const parserCase of externalInvalidCases) {
+    assert.equal(
+      parserCase.runtime_expectation,
+      "fail_fast",
+      `expected parser_external_invalid fail_fast for ${parserCase.id}`,
+    );
+  }
+
   const successCases = manifestCases.filter(
     (parserCase) => parserCase.runtime_expectation === "import_success",
   );

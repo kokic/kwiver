@@ -1683,6 +1683,24 @@ pub fn QuiverUiAdapter::move_vertex_json(
 }
 
 ///|
+fn quiver_ui_edge_with_options_preserving_cell_level(
+  edge : Edge,
+  options : EdgeOptions,
+) -> Edge {
+  {
+    cell: Cell::new(
+      edge.cell.id,
+      edge.cell.level,
+      edge.cell.label,
+      edge.cell.label_colour,
+    ),
+    source: edge.source,
+    target: edge.target,
+    options,
+  }
+}
+
+///|
 pub fn QuiverUiAdapter::set_edge_options(
   self : QuiverUiAdapter,
   edge_id : Int,
@@ -1694,18 +1712,10 @@ pub fn QuiverUiAdapter::set_edge_options(
 
   match self.quiver.cells.get(edge_id) {
     Some(CellData::Edge(edge)) => {
-      let safe_options = options.with_level(edge.cell.level)
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            safe_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, options),
         ),
       )
       true
@@ -1747,14 +1757,7 @@ pub fn QuiverUiAdapter::set_edge_label_alignment(
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            updated_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, updated_options),
         ),
       )
       true
@@ -1794,14 +1797,7 @@ pub fn QuiverUiAdapter::set_edge_label_position(
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            updated_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, updated_options),
         ),
       )
       true
@@ -1838,14 +1834,7 @@ pub fn QuiverUiAdapter::set_edge_offset(
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            updated_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, updated_options),
         ),
       )
       true
@@ -1880,14 +1869,7 @@ pub fn QuiverUiAdapter::set_edge_curve(
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            updated_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, updated_options),
         ),
       )
       true
@@ -1923,14 +1905,7 @@ pub fn QuiverUiAdapter::set_edge_shorten(
       self.quiver.cells.set(
         edge_id,
         CellData::from_edge(
-          Edge::new(
-            edge.cell.id,
-            edge.cell.label,
-            edge.source,
-            edge.target,
-            updated_options,
-            edge.cell.label_colour,
-          ),
+          quiver_ui_edge_with_options_preserving_cell_level(edge, updated_options),
         ),
       )
       true

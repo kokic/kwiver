@@ -1,12 +1,17 @@
 # Browser UI Manual Checklist
 
-Updated: 2026-04-11
+Updated: 2026-04-14
+
+Status: deferred until the browser graph model has a single source of truth.
 
 This project intentionally avoids heavy headless-browser E2E frameworks at the current stage.
-Use the lightweight checklist below as a release gate for `browser_ui_upstream`.
+Keep this checklist as a post-migration acceptance pass for `browser_ui_upstream`, not as the current implementation priority.
 
 ## Preconditions
 
+- Single-source migration is stable:
+  - JS no longer owns an independent graph topology alongside runtime state.
+  - Connect/history/import/selection behavior reads from one graph source of truth.
 - Build runtime artifacts:
   - `moon build --release`
 - Serve repository root (the same directory containing `_build/` and `browser_ui_upstream/`):
@@ -15,6 +20,8 @@ Use the lightweight checklist below as a release gate for `browser_ui_upstream`.
   - `http://localhost:8080/browser_ui_upstream`
 
 ## Automated Lightweight Checks
+
+These checks are still useful during migration, but they do not replace the single-source migration milestone above.
 
 Run smoke-only regression:
 

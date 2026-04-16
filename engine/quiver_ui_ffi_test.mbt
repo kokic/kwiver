@@ -991,6 +991,32 @@ test "ui ffi adapter mutation APIs return false for invalid ids" {
 }
 
 ///|
+test "ui ffi adapter preserves structural edge level while allowing option level overrides" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+
+  inspect(
+    ffi_adapter_set_edge_options(
+      adapter,
+      edge_id,
+      EdgeOptions::at_level(4).with_curve(2),
+    ),
+    content="true",
+  )
+  inspect(ffi_adapter_set_edge_offset(adapter, edge_id, 3), content="true")
+
+  let snapshot = ffi_adapter_snapshot(adapter)
+  inspect(snapshot.edges.length(), content="1")
+  let edge = snapshot.edges[0]
+  inspect(edge.level, content="1")
+  inspect(edge.options.level, content="4")
+  inspect(edge.options.curve, content="2")
+  inspect(edge.options.offset, content="3")
+}
+
+///|
 test "ui ffi adapter snapshot exposes js-friendly model data" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

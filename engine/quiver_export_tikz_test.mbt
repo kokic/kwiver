@@ -178,6 +178,29 @@ fn tikz_parser_corpus_cases_by_engine_group(
 }
 
 ///|
+fn tikz_parser_corpus_cases_by_fixture(
+  fixture : String,
+) -> Array[TikzParserCorpusManifestCase] {
+  let out : Array[TikzParserCorpusManifestCase] = []
+  for parser_case in tikz_parser_corpus_manifest_cases() {
+    if parser_case.fixture == fixture {
+      out.push(parser_case)
+    }
+  }
+  out
+}
+
+///|
+fn tikz_parser_corpus_runtime_min_cells(
+  parser_case : TikzParserCorpusManifestCase,
+) -> Int {
+  match parser_case.runtime_min_cells {
+    Some(value) => value
+    None => 2
+  }
+}
+
+///|
 fn tikz_parser_corpus_engine_context(
   parser_case : TikzParserCorpusManifestCase,
 ) -> String {
@@ -1267,6 +1290,62 @@ test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast
   inspect(cases.length() >= 1, content="true")
 
   for parser_case in cases {
+    tikz_test_assert_import_failure(
+      parser_case.snippet,
+      context=tikz_parser_corpus_engine_context(parser_case),
+    )
+  }
+}
+
+///|
+test "tikz-cd parser corpus keeps explicit invalid-section supported cases stable" {
+  let invalid_section_supported_ids : Array[String] = []
+  for parser_case in tikz_parser_corpus_manifest_cases() {
+    if parser_case.section == "invalid" && parser_case.engine_group == "valid" {
+      invalid_section_supported_ids.push(parser_case.id)
+      let imported = tikz_test_import_success(parser_case.snippet)
+      inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
+    }
+  }
+
+  inspect(
+    invalid_section_supported_ids,
+    content=
+      "[\"valid-zero-length-edge-reference-chain\", \"compat-invalid-level-1-clamped\", \"compat-invalid-loop\", \"compat-invalid-zero-length-arrow\", \"compat-invalid-no-ampersand\", \"compat-invalid-multiple-node-errors\"]",
+  )
+}
+
+///|
+test "tikz-cd parser corpus keeps parser_external fixture expectations stable" {
+  let external_cases = tikz_parser_corpus_cases_by_fixture("parser_external.tex")
+  inspect(external_cases.length() >= 1, content="true")
+
+  for parser_case in external_cases {
+    inspect(parser_case.runtime_expectation, content="import_success")
+    inspect(parser_case.engine_group, content="valid")
+    let imported = tikz_test_import_success(parser_case.snippet)
+    inspect(
+      imported.quiver.all_cell_ids().length() >=
+      tikz_parser_corpus_runtime_min_cells(parser_case),
+      content="true",
+    )
+  }
+}
+
+///|
+test "tikz-cd parser corpus keeps parser_external_invalid fixture fail-fast expectations stable" {
+  let external_invalid_cases = tikz_parser_corpus_cases_by_fixture(
+    "parser_external_invalid.tex",
+  )
+  inspect(external_invalid_cases.length() >= 1, content="true")
+
+  for parser_case in external_invalid_cases {
+    inspect(parser_case.runtime_expectation, content="fail_fast")
+    inspect(
+      parser_case.engine_group == "compat_fail_fast" ||
+      parser_case.engine_group == "invalid_fail_fast",
+      content="true",
+    )
     tikz_test_assert_import_failure(
       parser_case.snippet,
       context=tikz_parser_corpus_engine_context(parser_case),
@@ -2568,6 +2647,32 @@ test "tikz-cd import parser maps geometry shift curve and between options" {
     Some(edge) => inspect(edge.options.offset, content="-1")
     None => abort("expected edge n")
   }
+}
+
+///|
+test "tikz-cd import parser accepts curve height with optional pos parameter" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"c\", curve={height=-24pt, pos=0.2}] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  let quiver = tikz_test_import_quiver(input)
+  match tikz_test_find_edge_by_label(quiver, "c") {
+    Some(edge) => inspect(edge.options.curve, content="-4")
+    None => abort("expected edge c")
+  }
+}
+
+///|
+test "tikz-cd import parser rejects invalid curve pos parameter" {
+  let input = [
+    "\\begin{tikzcd}\n",
+    "A \\arrow[r, \"c\", curve={height=-24pt, pos=1.2}] & B\n",
+    "\\end{tikzcd}",
+  ].join("")
+
+  tikz_test_assert_import_failure(input, context="curve pos out of range")
 }
 
 ///|

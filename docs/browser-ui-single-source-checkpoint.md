@@ -127,7 +127,20 @@ Record the exact browser-UI migration state so the next session can continue dir
 - `Vertex` / `Edge` constructors and base64 import/bootstrap paths still instantiate JS cells with committed semantic fields already populated.
 - That keeps product behavior correct, but the browser view layer is still not a pure projection from runtime snapshots.
 
+### 4. Browser helper-module replacement is explicitly deferred
+
+- Replacing browser helper modules such as `browser_ui_upstream/ds.mjs` or `browser_ui_upstream/curve.mjs` with MoonBit-backed exports is not part of the current migration slice.
+- If that work is resumed later, the preferred direction is to rewrite JS callsites to consume MoonBit-style data/function APIs directly.
+- Do not spend current migration time exporting JS-class-compatible OOP wrappers from MoonBit just to preserve old helper-module shapes.
+- Current priority remains product bug fixing plus deleting duplicated committed graph semantics from JS runtime paths.
+
 ## Exact Next Tasks
+
+Before any helper-library/API work:
+
+- Keep prioritizing browser bug fixes and single-source graph-semantics migration.
+- Treat `ds.mjs` / `curve.mjs` replacement as deferred follow-up work, not a blocker for the current phase.
+- When that deferred work starts, prefer changing JS callsites to accept MoonBit-style non-OOP APIs instead of adding MoonBit-side class/prototype compatibility shims.
 
 ### Priority 1
 
@@ -170,6 +183,7 @@ Revisit fresh-cell hydration paths (`create`, `paste`, bootstrap/import) and dec
 - Do not add new sync shims or new dual-write ownership just to keep JS state "looking right".
 - `ConnectPreview` must remain pre-commit drag logic only. It must not grow into a second committed graph model.
 - Runtime -> JS edge option decoding must go through `UI.kwiver_edge_options_from_runtime(...)`.
+- Do not export new MoonBit class-compatibility facades for `ds.mjs` / `curve.mjs` during the single-source graph migration phase just to keep old JS callsites unchanged.
 - Keep using upstream behavior as the compatibility reference. Do not invent new browser-side semantics that upstream does not need.
 
 ## Useful Entry Points

@@ -1,0 +1,258 @@
+%%% Valid diagrams %%%
+
+% quiver-doc curve style with negative height.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with position control.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=0.2}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with middle control position.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=0.5}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with leading-dot position control.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=.2}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with reordered curve keys.
+\begin{tikzcd}
+  a \ar["f", rr, curve={pos=0.2, height=-24pt}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with late control position.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=0.8}] && b
+\end{tikzcd}
+
+% quiver-doc between style with curved path.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt}, between={0.3}{0.7}] && b
+\end{tikzcd}
+
+% quiver-doc level-2 reversed tail preset.
+\begin{tikzcd}
+  {} & {}
+  \arrow[Rightarrow, 2tail reversed, from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-doc no-body style.
+\begin{tikzcd}
+  {} & {}
+  \arrow[no body, from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export hook and harpoon side presets.
+\begin{tikzcd}
+  A \arrow[r, "k", hook', harpoon'] & B
+\end{tikzcd}
+
+% quiver-export loop geometry with explicit in/out/distance.
+\begin{tikzcd}
+  B \arrow[loop, in=55, out=125, distance=10mm, "b"]
+\end{tikzcd}
+
+% quiver-export between and shorten options in mixed order.
+\begin{tikzcd}
+  C \arrow[r, "x", between={0.2}{0.7}, shorten <=5pt] & D \\
+  E \arrow[r, "y", shorten <=5pt, between={0.2}{0.7}] & F
+\end{tikzcd}
+
+% quiver-export maps-to style with explicit no-head flag.
+\begin{tikzcd}
+  A \arrow[r, "h"'{pos=0.7}, dashed, maps to, no head] & B
+\end{tikzcd}
+
+% quiver-export marked label with explicit text colour.
+\begin{tikzcd}
+  A \arrow[r, "f", "\shortmid"{marking, text=red}] & B
+\end{tikzcd}
+
+% quiver-export hollow-bullet body markers with background-colour expression.
+\begin{tikzcd}
+  G \arrow[r, "\bullet"{marking, text=\pgfkeysvalueof{/tikz/commutative diagrams/background color}}, "\circ"{marking, text=orange}] & H
+\end{tikzcd}
+
+% quiver-export decoration marker with draw=none and rotated text colour.
+\begin{tikzcd}
+  A \arrow[r, draw=none, "\dashv"{text=red, rotate=-30}] & B
+\end{tikzcd}
+
+% quiver-export label suffix with combined pos and text colour.
+\begin{tikzcd}
+  A \arrow[r, "h"'{pos=.7, text=blue}, draw=red] & B
+\end{tikzcd}
+
+% quiver-export explicit start/end center anchors.
+\begin{tikzcd}
+  A \arrow[r, "f", start anchor=center, end anchor=center] & B
+\end{tikzcd}
+
+% quiver-export phantom helper edge with center anchors and named refs.
+\begin{tikzcd}
+  \bullet & \bullet & \bullet
+  \arrow[""{name=0, anchor=center, inner sep=0}, from=1-1, to=1-2]
+  \arrow[""{name=1, anchor=center, inner sep=0}, from=1-2, to=1-3]
+  \arrow[""{name=1p, anchor=center, inner sep=0}, phantom, from=1-2, to=1-3, start anchor=center, end anchor=center]
+  \arrow[shorten <=4pt, shorten >=4pt, Rightarrow, from=0, to=1p]
+\end{tikzcd}
+
+% quiver-export named refs with braced from/to keys.
+\begin{tikzcd}
+  {} & {} & {}
+  \arrow[""{name=a, anchor=center, inner sep=0}, from=1-1, to=1-2]
+  \arrow[""{name=b, anchor=center, inner sep=0}, from=1-2, to=1-3]
+  \arrow[Rightarrow, {from}=a, {to}=b]
+\end{tikzcd}
+
+% quiver-export shift options with mixed magnitudes and units.
+\begin{tikzcd}
+  A \arrow[r, "u", shift right=.5ex] & B \\
+  C \arrow[r, "v", shift left=2em] & D
+\end{tikzcd}
+
+% quiver-export bend options with integer and decimal degree inputs.
+\begin{tikzcd}
+  A \arrow[r, "p", bend left=60] & B \\
+  C \arrow[r, "q", bend right=22.5deg] & D
+\end{tikzcd}
+
+% quiver-export loop side tokens with explicit geometry.
+\begin{tikzcd}
+  A \arrow[loop left, in=125, out=55, distance=8mm, "l"] \\
+  B \arrow[loop right, in=55, out=125, distance=8mm, "r"]
+\end{tikzcd}
+
+% quiver-export display-math wrapper with cramped and sep options.
+\[\begin{tikzcd}[ampersand replacement=\&,cramped,column sep=large,row sep=2.25em]
+  A \& B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}\]
+
+% quiver-export starred environment with slash-style sep tokens.
+\begin{tikzcd*}[sep/large,row sep/scriptsize,column sep/huge]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd*}
+
+% quiver-export supported every-arrow style diagram option.
+\begin{tikzcd}[every arrow/.append style={draw=none}]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export every-label and every-cell style diagram options.
+\begin{tikzcd}[every label/.append style={font=\scriptsize},every cell/.append style={nodes={inner sep=1pt}}]
+  A \arrow[r, "f"] & B
+\end{tikzcd}
+
+% quiver-export every-matrix and every-diagram style diagram options.
+\begin{tikzcd}[every matrix/.append style={nodes={column sep=1.5em}},every diagram/.append style={line width=0.4pt}]
+  X & Y
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export every-edge style diagram option key.
+\begin{tikzcd}[every edge/.append style={draw=none}]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export every-row style diagram option key.
+\begin{tikzcd}[every row/.append style={nodes={inner sep=0.5pt}}]
+  A & B \\
+  C & D
+\end{tikzcd}
+
+% quiver-export shift side flags without explicit magnitude.
+\begin{tikzcd}
+  A \arrow[r, "u", shift right] & B \\
+  C \arrow[r, "v", shift left] & D
+\end{tikzcd}
+
+% quiver-doc between style combined with shift side options.
+\begin{tikzcd}
+  A \arrow[r, "f", between={0.25}{0.75}, shift right=2pt] & B \\
+  C \arrow[r, "g", between={0.25}{0.75}, shift left=1.5ex] & D
+\end{tikzcd}
+
+% quiver-export start anchor with non-center value.
+\begin{tikzcd}
+  A \arrow[r, start anchor=north] & B
+\end{tikzcd}
+
+% quiver-export end anchor with non-center value.
+\begin{tikzcd}
+  A \arrow[r, end anchor=south] & B
+\end{tikzcd}
+
+% quiver-export between style with mm shift unit.
+\begin{tikzcd}
+  A \arrow[r, between={0.2}{0.7}, shift right=2mm] & B
+\end{tikzcd}
+
+% quiver-doc level-1 reversed tail preset.
+\begin{tikzcd}[ampersand replacement=\&]
+  {} \& {}
+  \arrow[tail reversed, from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-doc level-2 tail preset.
+\begin{tikzcd}[ampersand replacement=\&]
+  {} \& {}
+  \arrow[Rightarrow, 2tail, from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-doc ampersand replacement with no-body style.
+\begin{tikzcd}[ampersand replacement=\&]
+  {} \& {}
+  \arrow[no body, from=1-1, to=1-2]
+\end{tikzcd}
+
+% upstream parser baseline with concatenated control-sequence labels.
+\begin{tikzcd}
+  \A\A & \B\B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% upstream parser baseline with spaced control-sequence labels.
+\begin{tikzcd}
+  \A \A & \B \B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% upstream parser baseline with description label suffix.
+\begin{tikzcd}
+  \bullet && \bullet
+  \arrow["f" description, from=1-1, to=1-3]
+\end{tikzcd}
+
+% upstream parser baseline with inline direction shorthand edge.
+\begin{tikzcd}
+  A \arrow[r] & B
+\end{tikzcd}
+
+% upstream parser baseline with explicit edge colour literal.
+\begin{tikzcd}
+  A & B
+  \arrow[color={rgb,255:red,214;green,92;blue,92}, from=1-1, to=1-2]
+\end{tikzcd}
+
+% upstream parser baseline with textcolor vertices and explicit draw/text colours.
+\begin{tikzcd}
+  \textcolor{rgb,255:red,214;green,92;blue,92}{A} & \textcolor{rgb,255:red,92;green,92;blue,214}{B}
+  \arrow["f"{text={rgb,255:red,92;green,214;blue,92}}, draw={rgb,255:red,214;green,214;blue,92}, from=1-1, to=1-2]
+\end{tikzcd}
+
+% upstream parser baseline with leftarrow ordering variants.
+\begin{tikzcd}
+  A & B \\
+  C & D \\
+  \arrow[leftarrow, from=1-1, to=1-2]
+  \arrow[from=2-1, to=2-2, leftarrow]
+\end{tikzcd}

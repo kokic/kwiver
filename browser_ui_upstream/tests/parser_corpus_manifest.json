@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-11",
+  "updated": "2026-04-14",
   "cases": [
     {
       "id": "valid-simple-control-sequence-labels",
@@ -7,7 +7,7 @@
       "title": "Simple control-sequence labels.",
       "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "skip"
+      "runtime_expectation": "import_success"
     },
     {
       "id": "valid-display-math-wrapper-ampersand",
@@ -15,7 +15,7 @@
       "title": "Display-math wrapper with ampersand replacement.",
       "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "skip"
+      "runtime_expectation": "import_success"
     },
     {
       "id": "valid-rightarrow-maps-to-ordering",
@@ -23,7 +23,15 @@
       "title": "Rightarrow maps-to ordering.",
       "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "skip"
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-comments-around-environment",
+      "section": "valid",
+      "title": "These...",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
     },
     {
       "id": "valid-between",
@@ -47,7 +55,8 @@
       "title": "A zero-length edge.",
       "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "import_success"
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 5
     },
     {
       "id": "valid-phantom-edges-example",
@@ -79,31 +88,739 @@
       "title": "Near-start label option.",
       "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "skip"
+      "runtime_expectation": "import_success"
     },
     {
-      "id": "runtime-only-dashed-token",
+      "id": "valid-coloured-barred-arrow",
+      "section": "valid",
+      "title": "Coloured barred arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-double-barred-arrow",
+      "section": "valid",
+      "title": "Double barred arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-solid-bullet-arrow",
+      "section": "valid",
+      "title": "Solid bullet arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-hollow-bullet-arrow",
+      "section": "valid",
+      "title": "Hollow bullet arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success"
+    },
+    {
+      "id": "valid-dashed-token",
       "section": "valid",
       "title": "`dashed`, not `dash`.",
-      "engine_group": "skip",
+      "engine_group": "valid",
       "engine_context": null,
       "runtime_expectation": "import_success"
     },
     {
-      "id": "runtime-only-loop-radii-angles-direction",
+      "id": "valid-loop-radii-angles-direction",
       "section": "valid",
       "title": "Loops of different radii, angles, and direction.",
-      "engine_group": "skip",
+      "engine_group": "valid",
       "engine_context": null,
       "runtime_expectation": "import_success"
     },
     {
-      "id": "runtime-only-invalid-level-1-imports",
+      "id": "compat-invalid-level-1-clamped",
       "section": "invalid",
       "title": "Invalid level 1.",
-      "engine_group": "skip",
+      "engine_group": "valid",
       "engine_context": null,
-      "runtime_expectation": "import_success"
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "compat-invalid-loop",
+      "section": "invalid",
+      "title": "Loop",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 2
+    },
+    {
+      "id": "compat-invalid-zero-length-arrow",
+      "section": "invalid",
+      "title": "Zero length arrow.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "compat-invalid-no-ampersand",
+      "section": "invalid",
+      "title": "No &.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "compat-invalid-multiple-node-errors",
+      "section": "invalid",
+      "title": "Multiple node errors.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with negative height.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height-pos",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with position control.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height-pos-mid",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with middle control position.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height-pos-leading-dot",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with leading-dot position control.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height-pos-reordered-keys",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with reordered curve keys.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-curve-height-pos-late",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc curve style with late control position.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-between-style",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc between style with curved path.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-2tail-reversed",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc level-2 reversed tail preset.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-no-body",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc no-body style.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-hook-harpoon-side",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export hook and harpoon side presets.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-loop-geometry-distance",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export loop geometry with explicit in/out/distance.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 2
+    },
+    {
+      "id": "external-quiver-export-between-shorten-mixed-order",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export between and shorten options in mixed order.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 6
+    },
+    {
+      "id": "external-quiver-export-maps-to-no-head",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export maps-to style with explicit no-head flag.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-marked-label-text-colour",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export marked label with explicit text colour.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-hollow-bullet-background-expression",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export hollow-bullet body markers with background-colour expression.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-decoration-draw-none-rotate",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export decoration marker with draw=none and rotated text colour.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-label-suffix-pos-text-colour",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export label suffix with combined pos and text colour.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-explicit-center-anchors",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export explicit start/end center anchors.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-phantom-helper-center-anchors",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export phantom helper edge with center anchors and named refs.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 5
+    },
+    {
+      "id": "external-quiver-export-braced-named-ref-keys",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export named refs with braced from/to keys.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 5
+    },
+    {
+      "id": "external-quiver-export-shift-mixed-units",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export shift options with mixed magnitudes and units.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 6
+    },
+    {
+      "id": "external-quiver-export-bend-decimal-degrees",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export bend options with integer and decimal degree inputs.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 6
+    },
+    {
+      "id": "external-quiver-export-loop-side-tokens",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export loop side tokens with explicit geometry.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 4
+    },
+    {
+      "id": "external-quiver-export-display-math-cramped-sep",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export display-math wrapper with cramped and sep options.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-starred-sep-slash-tokens",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export starred environment with slash-style sep tokens.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-every-arrow-style-key",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export supported every-arrow style diagram option.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-every-label-cell-style-keys",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export every-label and every-cell style diagram options.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-every-matrix-diagram-style-keys",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export every-matrix and every-diagram style diagram options.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-every-edge-style-key",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export every-edge style diagram option key.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-every-row-style-key",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export every-row style diagram option key.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 4
+    },
+    {
+      "id": "external-quiver-export-shift-side-flags",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export shift side flags without explicit magnitude.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 4
+    },
+    {
+      "id": "external-quiver-doc-between-shift-combo",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc between style combined with shift side options.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 4
+    },
+    {
+      "id": "external-quiver-export-start-anchor-non-center",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export start anchor with non-center value.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-end-anchor-non-center",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export end anchor with non-center value.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-export-between-shift-mm-unit",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-export between style with mm shift unit.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-tail-reversed",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc level-1 reversed tail preset.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-2tail",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc level-2 tail preset.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-quiver-doc-no-body-ampersand-replacement",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "quiver-doc ampersand replacement with no-body style.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-control-sequence-concatenated",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with concatenated control-sequence labels.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-control-sequence-spaced",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with spaced control-sequence labels.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-description-label-suffix",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with description label suffix.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-inline-direction-shorthand",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with inline direction shorthand edge.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-arrow-colour-literal",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with explicit edge colour literal.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-textcolor-draw-colours",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with textcolor vertices and explicit draw/text colours.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 3
+    },
+    {
+      "id": "external-upstream-parser-leftarrow-ordering",
+      "fixture": "parser_external.tex",
+      "section": "valid",
+      "title": "upstream parser baseline with leftarrow ordering variants.",
+      "engine_group": "valid",
+      "engine_context": null,
+      "runtime_expectation": "import_success",
+      "runtime_min_cells": 6
+    },
+    {
+      "id": "external-invalid-quiver-doc-curve-pos-out-of-range",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc curve style with out-of-range pos.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: curve pos out of range",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-doc-curve-pos-non-numeric",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc curve style with non-numeric pos.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: curve pos non-numeric",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-doc-curve-pos-negative",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc curve style with negative pos.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: curve pos negative",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-doc-curve-without-height",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc curve style without height.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: curve height missing",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-between-out-of-range",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export between style with out-of-range endpoint.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: between endpoint out of range",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-loop-distance-non-numeric",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export loop geometry with non-numeric distance.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: loop distance non-numeric",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-draw-colour-out-of-range",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export draw colour with out-of-range channel.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: draw colour out of range",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-label-text-colour-out-of-range",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export label text colour in suffix with out-of-range channel.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: label text colour out of range",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-label-suffix-pos-non-numeric",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export label suffix with non-numeric pos.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: label suffix pos non-numeric",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-endpoint-whitespace",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export endpoint reference with internal whitespace.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: endpoint whitespace",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-empty-name-option",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export empty arrow name option.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: empty name option",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-shift-non-numeric",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export shift option with non-numeric magnitude.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: shift non-numeric",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-bend-zero-angle",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export bend option with zero angle.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: bend zero angle",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-loop-distance-non-positive",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export loop with non-positive distance.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: loop distance non-positive",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-diagram-sep-empty",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export diagram sep option with empty value.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: diagram sep empty",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-diagram-sep-slash-empty-suffix",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export diagram slash-style sep token without suffix.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: diagram sep slash empty suffix",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-diagram-every-label-empty",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export every-label style diagram option with empty value.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: every-label style empty",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-diagram-row-sep-slash-empty-suffix",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export row-sep slash token without suffix.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: row sep slash empty suffix",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-export-diagram-column-sep-slash-empty-suffix",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-export column-sep slash token without suffix.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: column sep slash empty suffix",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-doc-tail-reversed-unresolved-refs",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc reversed tail with unresolved named refs.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: unresolved refs with tail reversed",
+      "runtime_expectation": "fail_fast"
+    },
+    {
+      "id": "external-invalid-quiver-doc-2tail-same-source-target",
+      "fixture": "parser_external_invalid.tex",
+      "section": "invalid",
+      "title": "quiver-doc 2tail style with same source and target without loop.",
+      "engine_group": "compat_fail_fast",
+      "engine_context": "parser_external_invalid strict: same source and target without loop",
+      "runtime_expectation": "fail_fast"
     },
     {
       "id": "invalid-extra-content-after-end",
@@ -311,7 +1028,7 @@
       "title": "Unknown label option 2.",
       "engine_group": "compat_fail_fast",
       "engine_context": "parser.tex compatibility strict: unknown bare label suffix option",
-      "runtime_expectation": "skip"
+      "runtime_expectation": "fail_fast"
     },
     {
       "id": "compat-invalid-arrow-colour",
@@ -319,7 +1036,7 @@
       "title": "Invalid arrow colour.",
       "engine_group": "compat_fail_fast",
       "engine_context": "parser.tex compatibility strict: invalid arrow colour",
-      "runtime_expectation": "skip"
+      "runtime_expectation": "fail_fast"
     },
     {
       "id": "compat-invalid-textcolor-literal",

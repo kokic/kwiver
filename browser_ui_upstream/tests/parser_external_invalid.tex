@@ -1,0 +1,115 @@
+%%% Valid diagrams %%%
+
+%%% Invalid diagrams %%%
+
+% quiver-doc curve style with out-of-range pos.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=1.2}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with non-numeric pos.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=middle}] && b
+\end{tikzcd}
+
+% quiver-doc curve style with negative pos.
+\begin{tikzcd}
+  a \ar["f", rr, curve={height=-24pt, pos=-0.2}] && b
+\end{tikzcd}
+
+% quiver-doc curve style without height.
+\begin{tikzcd}
+  a \ar["f", rr, curve={pos=0.2}] && b
+\end{tikzcd}
+
+% quiver-export between style with out-of-range endpoint.
+\begin{tikzcd}
+  C \arrow[r, between={1.2}{0.7}] & D
+\end{tikzcd}
+
+% quiver-export loop geometry with non-numeric distance.
+\begin{tikzcd}
+  B \arrow[loop, in=55, out=125, distance=abc, "b"]
+\end{tikzcd}
+
+% quiver-export draw colour with out-of-range channel.
+\begin{tikzcd}
+  A \arrow[r, draw={rgb,256:red,0;green,0;blue,0}] & B
+\end{tikzcd}
+
+% quiver-export label text colour in suffix with out-of-range channel.
+\begin{tikzcd}
+  A \arrow[r, "f"{text={rgb,256:red,0;green,0;blue,0}}] & B
+\end{tikzcd}
+
+% quiver-export label suffix with non-numeric pos.
+\begin{tikzcd}
+  A \arrow[r, "h"'{pos=middle}] & B
+\end{tikzcd}
+
+% quiver-export endpoint reference with internal whitespace.
+\begin{tikzcd}
+  A \arrow[from=1-1, to=1- 2] & B
+\end{tikzcd}
+
+% quiver-export empty arrow name option.
+\begin{tikzcd}
+  A \arrow[r, name=] & B
+\end{tikzcd}
+
+% quiver-export shift option with non-numeric magnitude.
+\begin{tikzcd}
+  A \arrow[r, shift right=abc] & B
+\end{tikzcd}
+
+% quiver-export bend option with zero angle.
+\begin{tikzcd}
+  A \arrow[r, bend left=0deg] & B
+\end{tikzcd}
+
+% quiver-export loop with non-positive distance.
+\begin{tikzcd}
+  A \arrow[loop right, in=55, out=125, distance=0mm]
+\end{tikzcd}
+
+% quiver-export diagram sep option with empty value.
+\begin{tikzcd}[sep=]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export diagram slash-style sep token without suffix.
+\begin{tikzcd}[sep/]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export every-label style diagram option with empty value.
+\begin{tikzcd}[every label/.append style=]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export row-sep slash token without suffix.
+\begin{tikzcd}[row sep/]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-export column-sep slash token without suffix.
+\begin{tikzcd}[column sep/]
+  A & B
+  \arrow[from=1-1, to=1-2]
+\end{tikzcd}
+
+% quiver-doc reversed tail with unresolved named refs.
+\begin{tikzcd}[ampersand replacement=\&]
+  {} \& {}
+  \arrow[tail reversed, from=A, to=B]
+\end{tikzcd}
+
+% quiver-doc 2tail style with same source and target without loop.
+\begin{tikzcd}[ampersand replacement=\&]
+  {} \& {}
+  \arrow[Rightarrow, 2tail, from=1-1, to=1-1]
+\end{tikzcd}

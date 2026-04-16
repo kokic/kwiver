@@ -256,6 +256,10 @@ function assertRecordedCommand(recorded, index, action, origin) {
   assert.notEqual(command?.command_id, "");
 }
 
+function assertSelectionEnvelope(envelope) {
+  assert.equal(Array.isArray(envelope?.selection), true);
+}
+
 function testInteractionWrappersDispatchRuntimeCommands() {
   const recorded = [];
   installRecordingMock(recorded);
@@ -324,6 +328,7 @@ function testInteractionWrappersDispatchRuntimeCommands() {
 
   const setSelectionEnvelope = kwiver_bridge_set_selection([1, 2], "ui.test.selection");
   assert.equal(setSelectionEnvelope?.ok, true);
+  assertSelectionEnvelope(setSelectionEnvelope);
   assertRecordedCommand(recorded, 7, "set_selection", "ui.test.selection");
   assert.deepEqual(recorded[7]?.input, [1, 2]);
 
@@ -333,14 +338,17 @@ function testInteractionWrappersDispatchRuntimeCommands() {
 
   const addVertexEnvelope = kwiver_bridge_add_vertex_json("A", 4, 5, null, "ui.test.create.vertex");
   assert.equal(addVertexEnvelope?.ok, true);
+  assertSelectionEnvelope(addVertexEnvelope);
   assertRecordedCommand(recorded, 9, "add_vertex_json", "ui.test.create.vertex");
 
   const addEdgeEnvelope = kwiver_bridge_add_edge_json(1, 2, "f", null, null, "ui.test.create.edge");
   assert.equal(addEdgeEnvelope?.ok, true);
+  assertSelectionEnvelope(addEdgeEnvelope);
   assertRecordedCommand(recorded, 10, "add_edge_json", "ui.test.create.edge");
 
   const moveEnvelope = kwiver_bridge_move_vertex_json(1, 7, 8, "ui.test.move");
   assert.equal(moveEnvelope?.ok, true);
+  assertSelectionEnvelope(moveEnvelope);
   assertRecordedCommand(recorded, 11, "move_vertex_json", "ui.test.move");
 
   const setLabelColourEnvelope = kwiver_bridge_set_label_colour_json(
@@ -349,18 +357,22 @@ function testInteractionWrappersDispatchRuntimeCommands() {
     "ui.test.label_colour",
   );
   assert.equal(setLabelColourEnvelope?.ok, true);
+  assertSelectionEnvelope(setLabelColourEnvelope);
   assertRecordedCommand(recorded, 12, "set_label_colour_json", "ui.test.label_colour");
 
   const removeEnvelope = kwiver_bridge_remove_json(1, 12, "ui.test.remove");
   assert.equal(removeEnvelope?.ok, true);
+  assertSelectionEnvelope(removeEnvelope);
   assertRecordedCommand(recorded, 13, "remove_json", "ui.test.remove");
 
   const setOffsetEnvelope = kwiver_bridge_set_edge_offset_json(2, 3, "ui.test.edge.offset");
   assert.equal(setOffsetEnvelope?.ok, true);
+  assertSelectionEnvelope(setOffsetEnvelope);
   assertRecordedCommand(recorded, 14, "set_edge_offset_json", "ui.test.edge.offset");
 
   const setCurveEnvelope = kwiver_bridge_set_edge_curve_json(2, -4, "ui.test.edge.curve");
   assert.equal(setCurveEnvelope?.ok, true);
+  assertSelectionEnvelope(setCurveEnvelope);
   assertRecordedCommand(recorded, 15, "set_edge_curve_json", "ui.test.edge.curve");
 
   const setAlignmentEnvelope = kwiver_bridge_set_edge_label_alignment_json(
@@ -369,6 +381,7 @@ function testInteractionWrappersDispatchRuntimeCommands() {
     "ui.test.edge.label_alignment",
   );
   assert.equal(setAlignmentEnvelope?.ok, true);
+  assertSelectionEnvelope(setAlignmentEnvelope);
   assertRecordedCommand(recorded, 16, "set_edge_label_alignment_json", "ui.test.edge.label_alignment");
 
   const setPositionEnvelope = kwiver_bridge_set_edge_label_position_json(
@@ -377,18 +390,22 @@ function testInteractionWrappersDispatchRuntimeCommands() {
     "ui.test.edge.label_position",
   );
   assert.equal(setPositionEnvelope?.ok, true);
+  assertSelectionEnvelope(setPositionEnvelope);
   assertRecordedCommand(recorded, 17, "set_edge_label_position_json", "ui.test.edge.label_position");
 
   const reverseEnvelope = kwiver_bridge_reverse_edge_json(2, "ui.test.edge.reverse");
   assert.equal(reverseEnvelope?.ok, true);
+  assertSelectionEnvelope(reverseEnvelope);
   assertRecordedCommand(recorded, 18, "reverse_edge_json", "ui.test.edge.reverse");
 
   const flipEnvelope = kwiver_bridge_flip_edge_json(2, "ui.test.edge.flip");
   assert.equal(flipEnvelope?.ok, true);
+  assertSelectionEnvelope(flipEnvelope);
   assertRecordedCommand(recorded, 19, "flip_edge_json", "ui.test.edge.flip");
 
   const flipLabelsEnvelope = kwiver_bridge_flip_edge_labels_json(2, "ui.test.edge.flip_labels");
   assert.equal(flipLabelsEnvelope?.ok, true);
+  assertSelectionEnvelope(flipLabelsEnvelope);
   assertRecordedCommand(recorded, 20, "flip_edge_labels_json", "ui.test.edge.flip_labels");
 
   const pasteEnvelope = kwiver_bridge_paste_selection_json(
@@ -399,6 +416,7 @@ function testInteractionWrappersDispatchRuntimeCommands() {
     "ui.test.paste",
   );
   assert.equal(pasteEnvelope?.ok, true);
+  assertSelectionEnvelope(pasteEnvelope);
   assertRecordedCommand(recorded, 21, "paste_selection_json", "ui.test.paste");
 }
 
@@ -715,7 +733,7 @@ const TEST_CASES = [
     testBridgeUnavailableErrorFormattingFallback,
   ],
   [
-    "bridge smoke: runtime-first interaction wrappers dispatch command envelopes",
+    "bridge smoke: bridge-backed interaction wrappers dispatch command envelopes",
     testInteractionWrappersDispatchRuntimeCommands,
   ],
   [

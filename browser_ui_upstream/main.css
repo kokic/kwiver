@@ -1595,8 +1595,128 @@ button.flash {
     list-style-type: disc;
 }
 
+.port.import div.error ul li,
+.port.import div.warning ul li {
+    cursor: pointer;
+}
+
+.port.import div.error ul li.selected,
+.port.import div.warning ul li.selected {
+    list-style-type: disc;
+    border-radius: 2px;
+}
+
+.port.import div.error ul li.selected {
+    background: hsla(0, 0%, 100%, 0.14);
+}
+
+.port.import div.warning ul li.selected {
+    background: hsla(0, 0%, 0%, 0.16);
+}
+
+.port.import div.error ul li:focus-visible,
+.port.import div.warning ul li:focus-visible {
+    outline-offset: 2px;
+}
+
+.port.import div.error ul li:focus-visible {
+    outline: 2px solid hsla(0, 0%, 100%, 0.8);
+}
+
+.port.import div.warning ul li:focus-visible {
+    outline: 2px solid hsla(0, 0%, 0%, 0.6);
+}
+
 .port div.warning a {
     color: var(--ui-black);
+}
+
+.port .diagnostic-kind {
+    display: inline-block;
+    margin-right: 2pt;
+    padding: 0 6px;
+
+    border: 1px solid transparent;
+    border-radius: 999px;
+
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    text-transform: uppercase;
+
+    color: var(--ui-white);
+}
+
+.port .diagnostic-kind.diagnostic-kind-syntax {
+    background: hsl(0, 60%, 42%);
+    border-color: hsl(0, 70%, 55%);
+}
+
+.port .diagnostic-kind.diagnostic-kind-option {
+    background: hsl(32, 85%, 45%);
+    border-color: hsl(32, 95%, 60%);
+}
+
+.port .diagnostic-kind.diagnostic-kind-reference {
+    background: hsl(210, 75%, 45%);
+    border-color: hsl(210, 85%, 60%);
+}
+
+.port .diagnostic-kind.diagnostic-kind-base64 {
+    background: hsl(170, 70%, 35%);
+    border-color: hsl(170, 75%, 50%);
+}
+
+.port .diagnostic-kind.diagnostic-kind-import {
+    background: hsl(0, 0%, 25%);
+    border-color: hsl(0, 0%, 40%);
+}
+
+.port div.error .diagnostic-kind {
+    box-shadow: inset 0 0 0 1px hsla(0, 0%, 100%, 0.12);
+}
+
+.port div.warning .diagnostic-kind {
+    color: var(--ui-black);
+    border-color: hsla(0, 0%, 0%, 0.2);
+}
+
+.port div.warning .diagnostic-kind.diagnostic-kind-syntax {
+    background: hsl(0, 80%, 78%);
+}
+
+.port div.warning .diagnostic-kind.diagnostic-kind-option {
+    background: hsl(35, 100%, 74%);
+}
+
+.port div.warning .diagnostic-kind.diagnostic-kind-reference {
+    background: hsl(210, 95%, 80%);
+}
+
+.port div.warning .diagnostic-kind.diagnostic-kind-base64 {
+    background: hsl(168, 60%, 72%);
+}
+
+.port div.warning .diagnostic-kind.diagnostic-kind-import {
+    background: hsl(0, 0%, 82%);
+}
+
+.port .diagnostic-location {
+    display: inline-block;
+    margin-right: 2pt;
+    padding: 0 5px;
+
+    border: 1px solid hsla(0, 0%, 100%, 0.28);
+    border-radius: 3px;
+
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.port div.warning .diagnostic-location {
+    border-color: hsla(0, 0%, 0%, 0.32);
 }
 
 .port .options {
@@ -1715,15 +1835,27 @@ label input[type="checkbox"]:checked::before {
 
 .port .fragment.error {
     text-decoration: var(--ui-error) wavy underline;
+    cursor: pointer;
 }
 .port .fragment.error:hover, .port .fragment.error.highlight {
     background: var(--ui-error);
 }
 
+.port .fragment.error.selected {
+    background: var(--ui-error);
+}
+
 .port .fragment.warning {
     text-decoration: var(--ui-warning) wavy underline;
+    cursor: pointer;
 }
 .port .fragment.warning:hover, .port .fragment.highlight.warning {
+    background: var(--ui-warning);
+
+    color: var(--ui-black);
+}
+
+.port .fragment.warning.selected {
     background: var(--ui-warning);
 
     color: var(--ui-black);
@@ -1846,4 +1978,3 @@ body:has(select[name="renderer"] > option[value="katex"]:checked) .typst-only {
         color: hsl(0, 0%, 60%);
     }
 }
-
