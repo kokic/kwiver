@@ -1,4 +1,21 @@
 import { Point, mod } from "./ds.mjs";
+import {
+    kwiver_bridge_arc_intersections_with_rounded_rectangle,
+    kwiver_bridge_arc_angle_in_arc,
+    kwiver_bridge_arc_arc_length,
+    kwiver_bridge_arc_height,
+    kwiver_bridge_arc_point,
+    kwiver_bridge_arc_t_after_length,
+    kwiver_bridge_arc_tangent,
+    kwiver_bridge_arc_width,
+    kwiver_bridge_bezier_arc_length,
+    kwiver_bridge_bezier_height,
+    kwiver_bridge_bezier_intersections_with_rounded_rectangle,
+    kwiver_bridge_bezier_point,
+    kwiver_bridge_bezier_t_after_length,
+    kwiver_bridge_bezier_tangent,
+    kwiver_bridge_bezier_width,
+} from "./kwiver_bridge.mjs";
 
 /// A very small value we use to determine fuzzy equality of points. Floating-point arithmetic is
 /// imprecise, so we have to take slight inequalities into account when computing.
@@ -8,6 +25,49 @@ const INV_EPSILON = 1 / EPSILON;
 // Round a number to the nearest `EPSILON` to avoid floating point precision issues.
 function round_to_epsilon(x) {
     return Math.round(x * INV_EPSILON) / INV_EPSILON;
+}
+
+function point_from_bridge(raw) {
+    if (!raw || typeof raw !== "object") {
+        return null;
+    }
+    const x = Number(raw.x);
+    const y = Number(raw.y);
+    return Number.isFinite(x) && Number.isFinite(y) ? new Point(x, y) : null;
+}
+
+function number_from_bridge(raw) {
+    return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+}
+
+function boolean_from_bridge(raw) {
+    return typeof raw === "boolean" ? raw : null;
+}
+
+function curve_points_from_bridge(raw) {
+    if (!Array.isArray(raw)) {
+        return null;
+    }
+    const points = [];
+    for (const item of raw) {
+        if (!item || typeof item !== "object") {
+            return null;
+        }
+        const x = Number(item.x);
+        const y = Number(item.y);
+        const t = Number(item.t);
+        const angle = Number(item.angle);
+        if (
+            !Number.isFinite(x)
+            || !Number.isFinite(y)
+            || !Number.isFinite(t)
+            || !Number.isFinite(angle)
+        ) {
+            return null;
+        }
+        points.push(new CurvePoint(new Point(x, y), t, angle));
+    }
+    return points;
 }
 
 export class Curve {
@@ -78,12 +138,38 @@ export class Bezier extends Curve {
 
     /// Returns the (x, y)-point at t = `t`. This does not take `angle` into account.
     point(t) {
+        const bridged = point_from_bridge(
+            kwiver_bridge_bezier_point(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.origin.lerp(this.control, t).lerp(this.control.lerp(this.end, t), t);
     }
 
     /// Returns the angle of the tangent to the curve at t = `t`. This does not take `angle` into
     /// account.
     tangent(t) {
+        const bridged = number_from_bridge(
+            kwiver_bridge_bezier_tangent(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.control.lerp(this.end, t).sub(this.origin.lerp(this.control, t)).angle();
     }
 
@@ -123,6 +209,19 @@ export class Bezier extends Curve {
     /// These Bézier curves are symmetric, so t = `t` to t = 1 can be calculated by inverting the
     /// arc length from t = 0.
     arc_length(t) {
+        const bridged = number_from_bridge(
+            kwiver_bridge_bezier_arc_length(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         const { length } = this.delineate(t);
         return length;
     }
@@ -135,7 +234,26 @@ export class Bezier extends Curve {
     /// If `clamp` is true, we clamp any `t`s less than 0 or greater than 1. Otherwise, we throw an
     /// error.
     t_after_length(clamp = false) {
-        const { points } = this.delineate(1);
+        let delineation = null;
+        const ensure_delineation = () => {
+            if (delineation === null) {
+                delineation = this.delineate(1);
+            }
+            return delineation;
+        };
+        const total_arc_length = () => {
+            const bridged = number_from_bridge(
+                kwiver_bridge_bezier_arc_length(
+                    this.origin.x,
+                    this.origin.y,
+                    this.w,
+                    this.h,
+                    this.angle,
+                    1,
+                ),
+            );
+            return bridged !== null ? bridged : ensure_delineation().length;
+        };
         return (length) => {
             // Special-case 0, to avoid NaN below.
             if (length === 0) {
@@ -148,6 +266,27 @@ export class Bezier extends Curve {
                     throw new Error("Length was less than 0.");
                 }
             }
+            if (length > total_arc_length()) {
+                if (clamp) {
+                    return 1;
+                } else {
+                    throw new Error("Length was greater than the arc length.");
+                }
+            }
+            const bridged = number_from_bridge(
+                kwiver_bridge_bezier_t_after_length(
+                    this.origin.x,
+                    this.origin.y,
+                    this.w,
+                    this.h,
+                    this.angle,
+                    length,
+                ),
+            );
+            if (bridged !== null) {
+                return bridged;
+            }
+            const { points } = ensure_delineation();
             let distance = 0;
             for (let i = 0; i < points.length - 1; ++ i) {
                 const segment_length = points[i + 1][1].sub(points[i][1]).length();
@@ -158,19 +297,39 @@ export class Bezier extends Curve {
                 }
                 distance += segment_length;
             }
-            if (clamp) {
-                return 1;
-            } else {
-                throw new Error("Length was greater than the arc length.");
-            }
+            return 1;
         };
     }
 
     get height() {
+        const bridged = number_from_bridge(
+            kwiver_bridge_bezier_height(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.h / 2;
     }
 
     get width() {
+        const bridged = number_from_bridge(
+            kwiver_bridge_bezier_width(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.w;
     }
 
@@ -180,6 +339,25 @@ export class Bezier extends Curve {
     /// entirely contains the Bézier curve, and `permit_containment` is true, a single intersection
     /// point (the centre of the rectangle) is returned; otherwise, an error is thrown.
     intersections_with_rounded_rectangle(rect, permit_containment) {
+        const bridged = curve_points_from_bridge(
+            kwiver_bridge_bezier_intersections_with_rounded_rectangle(
+                this.origin.x,
+                this.origin.y,
+                this.w,
+                this.h,
+                this.angle,
+                rect.centre.x,
+                rect.centre.y,
+                rect.size.width,
+                rect.size.height,
+                rect.r,
+                permit_containment,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
+
         // There is one edge case in the following computations, which occurs when the height of the
         // Bézier curve is zero (i.e. the curve is a straight line). We special-case this type of
         // curve, and do not normalise its height.
@@ -454,6 +632,20 @@ export class Arc extends Curve {
 
     /// Returns the (x, y)-point at t = `t`. This does not take angle into account.
     point(t) {
+        const bridged = point_from_bridge(
+            kwiver_bridge_arc_point(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.centre_normalised.add(this.origin)
             .add(new Point(Math.abs(this.radius), 0)
                 .rotate(this.start_angle - this.angle + t * this.sweep_angle * this.clockwise));
@@ -462,12 +654,40 @@ export class Arc extends Curve {
     /// Returns the angle of the tangent to the curve at t = `t`. This does not take angle into
     /// account.
     tangent(t) {
+        const bridged = number_from_bridge(
+            kwiver_bridge_arc_tangent(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.start_angle - this.angle
             + (t * this.sweep_angle + Math.PI / 2) * this.clockwise;
     }
 
     /// Returns the arc length of the arc from t = 0 to t = `t`.
     arc_length(t) {
+        const bridged = number_from_bridge(
+            kwiver_bridge_arc_arc_length(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+                t,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return t * this.sweep_angle * Math.abs(this.radius);
     }
 
@@ -477,7 +697,6 @@ export class Arc extends Curve {
     /// If `clamp` is true, we clamp any `t`s less than 0 or greater than 1. Otherwise, we throw an
     /// error.
     t_after_length(clamp = false) {
-        // We assume that the radius and sweep angle are nonzero.
         return (length) => {
             if (length < 0) {
                 if (clamp) {
@@ -486,12 +705,27 @@ export class Arc extends Curve {
                     throw new Error("Length was less than 0.");
                 }
             }
-            if (length > this.arc_length(1)) {
+            const total = this.arc_length(1);
+            if (length > total) {
                 if (clamp) {
                     return 1;
                 } else {
                     throw new Error("Length was greater than the arc length.");
                 }
+            }
+            const bridged = number_from_bridge(
+                kwiver_bridge_arc_t_after_length(
+                    this.origin.x,
+                    this.origin.y,
+                    this.chord,
+                    this.major,
+                    this.radius,
+                    this.angle,
+                    length,
+                ),
+            );
+            if (bridged !== null) {
+                return bridged;
             }
             return length / (this.sweep_angle * Math.abs(this.radius));
         };
@@ -499,16 +733,56 @@ export class Arc extends Curve {
 
     /// Returns the height of the curve.
     get height() {
+        const bridged = number_from_bridge(
+            kwiver_bridge_arc_height(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return Math.abs(this.major ? this.radius * 2 - this.sagitta : this.sagitta);
     }
 
     /// Retrusn the width of the curve.
     get width() {
+        const bridged = number_from_bridge(
+            kwiver_bridge_arc_width(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         return this.major ? Math.abs(this.radius) * 2 : this.chord;
     }
 
     /// Returns whether or not the given angle is contained within the arc.
     angle_in_arc(angle) {
+        const bridged = boolean_from_bridge(
+            kwiver_bridge_arc_angle_in_arc(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+                angle,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
         const normalise = (angle) => {
             while (angle < -Math.PI) angle += 2 * Math.PI;
             while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -524,6 +798,26 @@ export class Arc extends Curve {
     /// contains the arc, and `permit_containment` is true, a single intersection point (the centre
     /// of the rectangle) is returned; otherwise, an error is thrown.
     intersections_with_rounded_rectangle(rect, permit_containment) {
+        const bridged = curve_points_from_bridge(
+            kwiver_bridge_arc_intersections_with_rounded_rectangle(
+                this.origin.x,
+                this.origin.y,
+                this.chord,
+                this.major,
+                this.radius,
+                this.angle,
+                rect.centre.x,
+                rect.centre.y,
+                rect.size.width,
+                rect.size.height,
+                rect.r,
+                permit_containment,
+            ),
+        );
+        if (bridged !== null) {
+            return bridged;
+        }
+
         // If the arc is essentially a straight line, we pass off intersection checking to the
         // Bézier code, which already special cases straight lines. Since the circles involved can
         // be very large, it does not suffice to use `EPSILON` here, so we use `1.0` instead. In any

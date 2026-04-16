@@ -1,6 +1,7 @@
 import { Arc, Bezier, Curve, CurvePoint, EPSILON, RoundedRectangle } from "./curve.mjs";
 import { DOM } from "./dom.mjs";
 import { Dimensions, Enum, Path, Point, rad_to_deg, clamp } from "./ds.mjs";
+import { kwiver_bridge_arrow_find_endpoints_local } from "./kwiver_bridge.mjs";
 
 /// `Array.prototype.includes` but for multiple needles.
 function includes_any(array, ...values) {
@@ -197,6 +198,7 @@ export class Arrow {
         this.target = target;
         this.style = style;
         this.label = label;
+        this.kwiver_geometry_options = null;
 
         // We need to have unique `id`s for each arrow, to assign masks and clipping paths.
         this.id = Arrow.NEXT_ID++;
@@ -264,6 +266,52 @@ export class Arrow {
     /// nontrivial endpoints.
     find_endpoints() {
         const origin = this.origin();
+        const geometry_options = this.kwiver_geometry_options;
+        const shape_needs_clipping = (shape) => {
+            return !(shape instanceof Shape.Endpoint || shape.size.is_zero());
+        };
+        if (
+            geometry_options
+            && (shape_needs_clipping(this.source) || shape_needs_clipping(this.target))
+        ) {
+            const bridged = kwiver_bridge_arrow_find_endpoints_local(
+                origin.source.x,
+                origin.source.y,
+                origin.target.x,
+                origin.target.y,
+                this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
+                this.source.origin.x,
+                this.source.origin.y,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
+                this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
+                this.target.origin.x,
+                this.target.origin.y,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+                geometry_options.shape === "arc",
+                geometry_options.curve,
+                geometry_options.radius,
+                geometry_options.angle,
+                geometry_options.offset,
+            );
+            if (bridged?.ok === true) {
+                return [
+                    new CurvePoint(
+                        new Point(bridged.start.x, bridged.start.y),
+                        bridged.start.t,
+                        bridged.start.angle,
+                    ),
+                    new CurvePoint(
+                        new Point(bridged.end.x, bridged.end.y),
+                        bridged.end.t,
+                        bridged.end.angle,
+                    ),
+                ];
+            }
+        }
         /// Finds the intersection of the (Bézier or arc) curve with either the source or target.
         /// There should be a unique intersection point, and this will be true in all but
         /// extraordinary circumstances: namely, when the source and target are overlapping. In this

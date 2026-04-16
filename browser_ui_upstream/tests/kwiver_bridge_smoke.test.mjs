@@ -5,6 +5,22 @@ import {
   kwiver_bridge_add_edge_json,
   kwiver_bridge_add_vertex_json,
   kwiver_bridge_all_cells,
+  kwiver_bridge_arrow_find_endpoints_local,
+  kwiver_bridge_arc_intersections_with_rounded_rectangle,
+  kwiver_bridge_arc_angle_in_arc,
+  kwiver_bridge_arc_arc_length,
+  kwiver_bridge_arc_height,
+  kwiver_bridge_arc_point,
+  kwiver_bridge_arc_t_after_length,
+  kwiver_bridge_arc_tangent,
+  kwiver_bridge_arc_width,
+  kwiver_bridge_bezier_arc_length,
+  kwiver_bridge_bezier_height,
+  kwiver_bridge_bezier_intersections_with_rounded_rectangle,
+  kwiver_bridge_bezier_point,
+  kwiver_bridge_bezier_t_after_length,
+  kwiver_bridge_bezier_tangent,
+  kwiver_bridge_bezier_width,
   kwiver_bridge_connected_components,
   kwiver_bridge_dependencies,
   kwiver_bridge_export,
@@ -637,6 +653,132 @@ function testPatchEdgeOptionsDispatchesRuntimeMutation() {
   assert.deepEqual(capturedCommand?.input?.patch, patch);
 }
 
+function testPureGeometryWrappersUseBridgeExports() {
+  const installed = kwiver_bridge_test_install_mock_api({
+    ...mockApiFromResponder(() => ({
+      ok: true,
+      protocol: COMMAND_PROTOCOL,
+      result: {},
+    })),
+    ffi_browser_demo_bezier_point(originX, originY, w, h, _angle, t) {
+      return { x: originX + w * t, y: originY + h * t };
+    },
+    ffi_browser_demo_bezier_tangent() {
+      return 1.25;
+    },
+    ffi_browser_demo_bezier_arc_length(_originX, _originY, w, _h, _angle, t) {
+      return w * t;
+    },
+    ffi_browser_demo_bezier_t_after_length(_originX, _originY, w, _h, _angle, length) {
+      return length / w;
+    },
+    ffi_browser_demo_bezier_height(_originX, _originY, _w, h) {
+      return h / 2;
+    },
+    ffi_browser_demo_bezier_width(_originX, _originY, w) {
+      return w;
+    },
+    ffi_browser_demo_bezier_intersections_with_rounded_rectangle() {
+      return [
+        { x: 1, y: 2, t: 0.25, angle: 0.5 },
+        { x: 3, y: 4, t: 0.75, angle: 1.5 },
+      ];
+    },
+    ffi_browser_demo_arc_point(originX, originY, chord, _major, _radius, _angle, t) {
+      return { x: originX + chord * t, y: originY + t };
+    },
+    ffi_browser_demo_arc_tangent() {
+      return 2.5;
+    },
+    ffi_browser_demo_arc_arc_length(_originX, _originY, chord, _major, _radius, _angle, t) {
+      return chord * t;
+    },
+    ffi_browser_demo_arc_t_after_length(_originX, _originY, chord, _major, _radius, _angle, length) {
+      return length / chord;
+    },
+    ffi_browser_demo_arc_height() {
+      return 8;
+    },
+    ffi_browser_demo_arc_width() {
+      return 13;
+    },
+    ffi_browser_demo_arc_angle_in_arc(_originX, _originY, _chord, _major, _radius, _angle, targetAngle) {
+      return targetAngle < Math.PI;
+    },
+    ffi_browser_demo_arc_intersections_with_rounded_rectangle() {
+      return [
+        { x: 6, y: 7, t: 0.1, angle: 0.2 },
+        { x: 8, y: 9, t: 0.9, angle: 0.4 },
+      ];
+    },
+    ffi_browser_demo_arrow_find_endpoints_local() {
+      return {
+        ok: true,
+        start: { x: 10, y: 11, t: 0.2, angle: 0.3 },
+        end: { x: 20, y: 21, t: 0.8, angle: 0.9 },
+      };
+    },
+  });
+  assert.equal(installed, true);
+
+  assert.deepEqual(
+    kwiver_bridge_bezier_point(1, 2, 4, 6, 0, 0.5),
+    { x: 3, y: 5 },
+  );
+  assert.equal(kwiver_bridge_bezier_tangent(1, 2, 4, 6, 0, 0.5), 1.25);
+  assert.equal(kwiver_bridge_bezier_arc_length(1, 2, 4, 6, 0, 0.5), 2);
+  assert.equal(kwiver_bridge_bezier_t_after_length(1, 2, 4, 6, 0, 1), 0.25);
+  assert.equal(kwiver_bridge_bezier_height(1, 2, 4, 6, 0), 3);
+  assert.equal(kwiver_bridge_bezier_width(1, 2, 4, 6, 0), 4);
+  assert.deepEqual(
+    kwiver_bridge_bezier_intersections_with_rounded_rectangle(
+      1, 2, 4, 6, 0,
+      10, 20, 30, 40, 5,
+      false,
+    ),
+    [
+      { x: 1, y: 2, t: 0.25, angle: 0.5 },
+      { x: 3, y: 4, t: 0.75, angle: 1.5 },
+    ],
+  );
+
+  assert.deepEqual(
+    kwiver_bridge_arc_point(3, 4, 10, false, 8, 0, 0.5),
+    { x: 8, y: 4.5 },
+  );
+  assert.equal(kwiver_bridge_arc_tangent(3, 4, 10, false, 8, 0, 0.5), 2.5);
+  assert.equal(kwiver_bridge_arc_arc_length(3, 4, 10, false, 8, 0, 0.5), 5);
+  assert.equal(kwiver_bridge_arc_t_after_length(3, 4, 10, false, 8, 0, 2), 0.2);
+  assert.equal(kwiver_bridge_arc_height(3, 4, 10, false, 8, 0), 8);
+  assert.equal(kwiver_bridge_arc_width(3, 4, 10, false, 8, 0), 13);
+  assert.equal(kwiver_bridge_arc_angle_in_arc(3, 4, 10, false, 8, 0, 1), true);
+  assert.equal(kwiver_bridge_arc_angle_in_arc(3, 4, 10, false, 8, 0, Math.PI), false);
+  assert.deepEqual(
+    kwiver_bridge_arc_intersections_with_rounded_rectangle(
+      3, 4, 10, false, 8, 0,
+      30, 40, 16, 18, 6,
+      true,
+    ),
+    [
+      { x: 6, y: 7, t: 0.1, angle: 0.2 },
+      { x: 8, y: 9, t: 0.9, angle: 0.4 },
+    ],
+  );
+  assert.deepEqual(
+    kwiver_bridge_arrow_find_endpoints_local(
+      1, 2, 3, 4,
+      false, 5, 6, 20, 10, 4,
+      true, 7, 8, 0, 0, 0,
+      false, 1, 3, 15, -2,
+    ),
+    {
+      ok: true,
+      start: { x: 10, y: 11, t: 0.2, angle: 0.3 },
+      end: { x: 20, y: 21, t: 0.8, angle: 0.9 },
+    },
+  );
+}
+
 function testQueryWrappersRejectMalformedResults() {
   const recorded = [];
   const installed = kwiver_bridge_test_install_mock_api(
@@ -793,6 +935,10 @@ const TEST_CASES = [
   [
     "bridge smoke: patch edge options path dispatches runtime mutation command",
     testPatchEdgeOptionsDispatchesRuntimeMutation,
+  ],
+  [
+    "bridge smoke: pure geometry wrappers use MoonBit bridge exports",
+    testPureGeometryWrappersUseBridgeExports,
   ],
 ];
 

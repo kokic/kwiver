@@ -273,6 +273,120 @@ function asInt(value, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function finiteNumberArray(values) {
+  const normalized = [];
+  for (const value of values) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return null;
+    }
+    normalized.push(number);
+  }
+  return normalized;
+}
+
+function bridgePureFunction(name, args) {
+  ensureBridgeLoading();
+  if (BRIDGE.api === null || typeof name !== "string" || name === "") {
+    return null;
+  }
+  const fn = BRIDGE.api[name];
+  if (typeof fn !== "function") {
+    return null;
+  }
+  try {
+    return fn(...args);
+  } catch (_e) {
+    return null;
+  }
+}
+
+function bridgePurePoint(name, args) {
+  const raw = bridgePureFunction(name, args);
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const x = Number(raw.x);
+  const y = Number(raw.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+  return { x, y };
+}
+
+function bridgePureNumber(name, args) {
+  const raw = bridgePureFunction(name, args);
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+}
+
+function bridgePureBoolean(name, args) {
+  const raw = bridgePureFunction(name, args);
+  return typeof raw === "boolean" ? raw : null;
+}
+
+function bridgeCurvePoint(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const x = Number(raw.x);
+  const y = Number(raw.y);
+  const t = Number(raw.t);
+  const angle = Number(raw.angle);
+  if (
+    !Number.isFinite(x)
+    || !Number.isFinite(y)
+    || !Number.isFinite(t)
+    || !Number.isFinite(angle)
+  ) {
+    return null;
+  }
+  return { x, y, t, angle };
+}
+
+function bridgeCurvePoints(raw) {
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  const points = [];
+  for (const item of raw) {
+    const point = bridgeCurvePoint(item);
+    if (point === null) {
+      return null;
+    }
+    points.push(point);
+  }
+  return points;
+}
+
+function bridgeArrowEndpoints(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const start = bridgeCurvePoint(raw.start);
+  const end = bridgeCurvePoint(raw.end);
+  if (start === null || end === null || typeof raw.ok !== "boolean") {
+    return null;
+  }
+  return { ok: raw.ok, start, end };
+}
+
+function bezierGeometryArgs(originX, originY, w, h, angle, tail = []) {
+  return finiteNumberArray([originX, originY, w, h, angle, ...tail]);
+}
+
+function arcGeometryArgs(originX, originY, chord, major, radius, angle, tail = []) {
+  const prefix = finiteNumberArray([originX, originY, chord]);
+  const suffix = finiteNumberArray([radius, angle, ...tail]);
+  if (prefix === null || suffix === null) {
+    return null;
+  }
+  return [...prefix, Boolean(major), ...suffix];
+}
+
+function roundedRectangleGeometryArgs(centreX, centreY, width, height, radius, tail = []) {
+  return finiteNumberArray([centreX, centreY, width, height, radius, ...tail]);
+}
+
 function iterableEntries(value) {
   if (value instanceof Map) {
     return Array.from(value.entries());
@@ -666,6 +780,214 @@ export function kwiver_bridge_export_payload(origin = "ui.bridge.export.payload"
 
 export function kwiver_bridge_reset(origin = "ui.bridge.reset") {
   return dispatchCommandResult("reset", undefined, origin);
+}
+
+export function kwiver_bridge_bezier_point(originX, originY, w, h, angle, t) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
+  return args === null ? null : bridgePurePoint("ffi_browser_demo_bezier_point", args);
+}
+
+export function kwiver_bridge_bezier_tangent(originX, originY, w, h, angle, t) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_tangent", args);
+}
+
+export function kwiver_bridge_bezier_arc_length(originX, originY, w, h, angle, t) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_arc_length", args);
+}
+
+export function kwiver_bridge_bezier_t_after_length(originX, originY, w, h, angle, length) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle, [length]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_t_after_length", args);
+}
+
+export function kwiver_bridge_bezier_height(originX, originY, w, h, angle) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_height", args);
+}
+
+export function kwiver_bridge_bezier_width(originX, originY, w, h, angle) {
+  const args = bezierGeometryArgs(originX, originY, w, h, angle);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_width", args);
+}
+
+export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
+  originX,
+  originY,
+  w,
+  h,
+  angle,
+  centreX,
+  centreY,
+  width,
+  height,
+  radius,
+  permitContainment,
+) {
+  const curveArgs = bezierGeometryArgs(originX, originY, w, h, angle);
+  const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, radius);
+  if (curveArgs === null || rectArgs === null) {
+    return null;
+  }
+  return bridgeCurvePoints(
+    bridgePureFunction(
+      "ffi_browser_demo_bezier_intersections_with_rounded_rectangle",
+      [...curveArgs, ...rectArgs, Boolean(permitContainment)],
+    ),
+  );
+}
+
+export function kwiver_bridge_arc_point(originX, originY, chord, major, radius, angle, t) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
+  return args === null ? null : bridgePurePoint("ffi_browser_demo_arc_point", args);
+}
+
+export function kwiver_bridge_arc_tangent(originX, originY, chord, major, radius, angle, t) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_tangent", args);
+}
+
+export function kwiver_bridge_arc_arc_length(originX, originY, chord, major, radius, angle, t) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_arc_length", args);
+}
+
+export function kwiver_bridge_arc_t_after_length(
+  originX,
+  originY,
+  chord,
+  major,
+  radius,
+  angle,
+  length,
+) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [length]);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_t_after_length", args);
+}
+
+export function kwiver_bridge_arc_height(originX, originY, chord, major, radius, angle) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_height", args);
+}
+
+export function kwiver_bridge_arc_width(originX, originY, chord, major, radius, angle) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
+  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_width", args);
+}
+
+export function kwiver_bridge_arc_angle_in_arc(
+  originX,
+  originY,
+  chord,
+  major,
+  radius,
+  angle,
+  targetAngle,
+) {
+  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [targetAngle]);
+  return args === null ? null : bridgePureBoolean("ffi_browser_demo_arc_angle_in_arc", args);
+}
+
+export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
+  originX,
+  originY,
+  chord,
+  major,
+  radius,
+  angle,
+  centreX,
+  centreY,
+  width,
+  height,
+  rectRadius,
+  permitContainment,
+) {
+  const curveArgs = arcGeometryArgs(originX, originY, chord, major, radius, angle);
+  const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, rectRadius);
+  if (curveArgs === null || rectArgs === null) {
+    return null;
+  }
+  return bridgeCurvePoints(
+    bridgePureFunction(
+      "ffi_browser_demo_arc_intersections_with_rounded_rectangle",
+      [...curveArgs, ...rectArgs, Boolean(permitContainment)],
+    ),
+  );
+}
+
+export function kwiver_bridge_arrow_find_endpoints_local(
+  renderSourceX,
+  renderSourceY,
+  renderTargetX,
+  renderTargetY,
+  sourceIsEndpoint,
+  sourceOriginX,
+  sourceOriginY,
+  sourceWidth,
+  sourceHeight,
+  sourceRadius,
+  targetIsEndpoint,
+  targetOriginX,
+  targetOriginY,
+  targetWidth,
+  targetHeight,
+  targetRadius,
+  shapeIsArc,
+  curve,
+  radius,
+  angle,
+  offset,
+) {
+  const renderArgs = finiteNumberArray([
+    renderSourceX,
+    renderSourceY,
+    renderTargetX,
+    renderTargetY,
+    sourceOriginX,
+    sourceOriginY,
+    sourceWidth,
+    sourceHeight,
+    sourceRadius,
+    targetOriginX,
+    targetOriginY,
+    targetWidth,
+    targetHeight,
+    targetRadius,
+    curve,
+    radius,
+    angle,
+    offset,
+  ]);
+  if (renderArgs === null) {
+    return null;
+  }
+  const args = [
+    renderArgs[0],
+    renderArgs[1],
+    renderArgs[2],
+    renderArgs[3],
+    Boolean(sourceIsEndpoint),
+    renderArgs[4],
+    renderArgs[5],
+    renderArgs[6],
+    renderArgs[7],
+    renderArgs[8],
+    Boolean(targetIsEndpoint),
+    renderArgs[9],
+    renderArgs[10],
+    renderArgs[11],
+    renderArgs[12],
+    renderArgs[13],
+    Boolean(shapeIsArc),
+    Math.round(renderArgs[14]),
+    Math.round(renderArgs[15]),
+    Math.round(renderArgs[16]),
+    Math.round(renderArgs[17]),
+  ];
+  return bridgeArrowEndpoints(
+    bridgePureFunction("ffi_browser_demo_arrow_find_endpoints_local", args),
+  );
 }
 
 export function kwiver_bridge_import_tikz_result(input, settings) {
