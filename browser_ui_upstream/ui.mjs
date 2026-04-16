@@ -12,7 +12,6 @@ import {
     kwiver_bridge_all_cell_ids,
     kwiver_bridge_all_cells,
     kwiver_bridge_connected_components,
-    kwiver_bridge_dependencies,
     kwiver_bridge_import_payload_json,
     kwiver_bridge_ready,
     kwiver_bridge_status,
@@ -29,7 +28,6 @@ import {
     kwiver_bridge_reconnect_edge_json,
     kwiver_bridge_remove_json,
     kwiver_bridge_reverse_edge_json,
-    kwiver_bridge_reverse_dependencies,
     kwiver_bridge_set_edge_curve_json,
     kwiver_bridge_set_edge_label_alignment_json,
     kwiver_bridge_set_edge_label_position_json,
@@ -181,12 +179,7 @@ UIMode.Connect = class extends UIMode {
             this.arrow = null;
         } else {
             this.reconnect.edge.element.class_list.remove("reconnecting");
-            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
-                [this.reconnect.edge],
-                false,
-                "ui.connect.release.dependencies",
-            );
-            for (const cell of dependencies_to_render) {
+            for (const cell of ui.connect_preview.transitive_dependencies([this.reconnect.edge])) {
                 cell.render(ui);
             }
             this.reconnect = null;
@@ -239,12 +232,7 @@ UIMode.Connect = class extends UIMode {
             this.loop = this.reconnect.edge.is_loop();
 
             this.reconnect.edge.render(ui, offset);
-            const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
-                [this.reconnect.edge],
-                true,
-                "ui.connect.update.dependencies",
-            );
-            for (const cell of dependencies_to_render) {
+            for (const cell of ui.connect_preview.transitive_dependencies([this.reconnect.edge], true)) {
                 cell.render(ui);
             }
         }
@@ -282,44 +270,23 @@ UIMode.Connect = class extends UIMode {
                 return false;
             }
 
-            // We need to check that the dependencies also don't have too great a level after
-            // reconnecting.
-            // We're going to temporarily increase the level of the edge to what it would be,
-            // and check for any edges that then exceed the `MAXIMUM_CELL_LEVEL`. This is
-            // conceptually the simplest version of the check.
-            const edge_level = reconnect.edge.level;
-            reconnect.edge.level = source_target_level + 1;
-
-            let exceeded_max_level = false;
-
-            const update_levels = () => {
-                const dependencies = ui.kwiver_require_runtime_transitive_dependency_cells(
-                    [reconnect.edge],
-                    true,
-                    "ui.connect.valid_connection.dependencies",
-                );
-                for (const cell of dependencies) {
-                    if (target === cell) {
-                        // We shouldn't be able to connect to an edge that's connected to this one.
-                        exceeded_max_level = true;
-                        break;
+            return ui.connect_preview.with_temporary_reconnect(
+                reconnect.edge,
+                source,
+                target,
+                () => {
+                    for (const cell of ui.connect_preview.transitive_dependencies([reconnect.edge], true)) {
+                        if (target === cell) {
+                            // We shouldn't be able to connect to an edge that's connected to this one.
+                            return false;
+                        }
+                        if (cell.level > CONSTANTS.MAXIMUM_CELL_LEVEL) {
+                            return false;
+                        }
                     }
-                    cell.level = Math.max(cell.source.level, cell.target.level) + 1;
-                    if (cell.level > CONSTANTS.MAXIMUM_CELL_LEVEL) {
-                        exceeded_max_level = true;
-                        break;
-                    }
-                }
-            };
-
-            // Check for violations of `MAXIMUM_CELL_LEVEL`.
-            update_levels();
-            // Reset the edge level.
-            reconnect.edge.level = edge_level;
-            // Reset the levels of its dependencies.
-            update_levels();
-
-            return !exceeded_max_level;
+                    return true;
+                },
+            );
         }
     }
 
@@ -432,14 +399,8 @@ UIMode.Connect = class extends UIMode {
                 balance += tip;
             };
 
-            const source_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
-                source,
-                "ui.connect.suggested_edge_options.source_dependencies",
-            );
-            const target_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
-                target,
-                "ui.connect.suggested_edge_options.target_dependencies",
-            );
+            const source_dependencies = ui.connect_preview.dependencies_of(source);
+            const target_dependencies = ui.connect_preview.dependencies_of(target);
             for (const [edge, relationship] of source_dependencies) {
                 // We consider each edge whose source or target is the source of the new edge.
                 consider(conserve({
@@ -497,11 +458,7 @@ UIMode.Connect = class extends UIMode {
             // We try to place new loops at a new angle, if possible, to reducing overlap with
             // existing loops.
             const angles = new Map();
-            const loop_dependencies = ui.kwiver_require_runtime_dependencies_with_relationship(
-                source,
-                "ui.connect.suggested_edge_options.loop_dependencies",
-            );
-            for (const [loop,] of Array.from(loop_dependencies)
+            for (const [loop,] of Array.from(ui.connect_preview.dependencies_of(source))
                 .filter(([edge,]) => edge.is_loop()))
             {
                 const angle = mod(
@@ -557,7 +514,6 @@ UIMode.Connect = class extends UIMode {
         } else {
             // Reconnect an existing edge.
             const { edge, end } = this.reconnect;
-
             const connect_action = {
                 edge,
                 end,
@@ -705,11 +661,179 @@ UIMode.Embedded = class extends UIMode {
     }
 }
 
+class ViewRegistry {
+    constructor() {
+        this.cells = [];
+    }
+
+    ensure_level(level) {
+        while (this.cells.length <= level) {
+            this.cells.push(new Set());
+        }
+        return this.cells[level];
+    }
+
+    add(cell) {
+        this.ensure_level(cell.level).add(cell);
+    }
+
+    contains_cell(cell) {
+        return this.cells[cell?.level]?.has(cell) === true;
+    }
+
+    all_cells() {
+        const cells = [];
+        for (const level of this.cells) {
+            if (!(level instanceof Set)) {
+                continue;
+            }
+            for (const cell of level) {
+                cells.push(cell);
+            }
+        }
+        return cells;
+    }
+
+    remove(cell) {
+        this.cells[cell?.level]?.delete(cell);
+    }
+
+    update_level(cell, level) {
+        this.ensure_level(level);
+        this.cells[cell.level]?.delete(cell);
+        cell.level = level;
+        this.cells[level].add(cell);
+    }
+}
+
+class ConnectPreview {
+    constructor() {
+        this.edges_by_endpoint = new Map();
+    }
+
+    set_endpoints(edge, source, target, registered = true) {
+        if (registered) {
+            this.unregister_cell(edge);
+        }
+        [edge.source, edge.target] = [source, target];
+        if (registered) {
+            this.register_cell(edge);
+        }
+    }
+
+    endpoint_edges(cell) {
+        if (!this.edges_by_endpoint.has(cell)) {
+            this.edges_by_endpoint.set(cell, new Set());
+        }
+        return this.edges_by_endpoint.get(cell);
+    }
+
+    register_cell(cell) {
+        if (!cell?.is_edge?.()) {
+            return;
+        }
+        this.endpoint_edges(cell.source).add(cell);
+        this.endpoint_edges(cell.target).add(cell);
+    }
+
+    unregister_cell(cell) {
+        if (!cell?.is_edge?.()) {
+            return;
+        }
+        for (const endpoint of [cell.source, cell.target]) {
+            const edges = this.edges_by_endpoint.get(endpoint);
+            if (!(edges instanceof Set)) {
+                continue;
+            }
+            edges.delete(cell);
+            if (edges.size === 0) {
+                this.edges_by_endpoint.delete(endpoint);
+            }
+        }
+    }
+
+    dependencies_of(cell) {
+        const dependencies = new Map();
+        for (const candidate of this.edges_by_endpoint.get(cell) || []) {
+            if (candidate.source === cell) {
+                dependencies.set(candidate, "source");
+            }
+            if (candidate.target === cell) {
+                dependencies.set(candidate, "target");
+            }
+        }
+        return dependencies;
+    }
+
+    transitive_dependencies(cells, exclude_roots = false) {
+        let closure = new Set(cells);
+        for (const cell of closure) {
+            this.dependencies_of(cell).forEach((_, dependency) => closure.add(dependency));
+        }
+        if (exclude_roots) {
+            for (const cell of cells) {
+                closure.delete(cell);
+            }
+        }
+        closure = Array.from(closure);
+        closure.sort((a, b) => a.level - b.level);
+        return new Set(closure);
+    }
+
+    update_edge_levels(edge, apply_level = null) {
+        const levels = new Map();
+        for (const cell of this.transitive_dependencies([edge])) {
+            if (!cell.is_edge()) {
+                continue;
+            }
+            const level = Math.max(cell.source.level, cell.target.level) + 1;
+            levels.set(cell, level);
+            if (apply_level !== null) {
+                apply_level(cell, level);
+            }
+        }
+        return levels;
+    }
+
+    apply_levels(levels) {
+        for (const [cell, level] of levels) {
+            cell.level = level;
+        }
+    }
+
+    with_temporary_reconnect(edge, source, target, callback) {
+        const original_source = edge.source;
+        const original_target = edge.target;
+        const original_levels = new Map(
+            Array.from(this.update_edge_levels(edge)).map(([cell, level]) => [cell, cell.level]),
+        );
+
+        this.set_endpoints(edge, source, target);
+        this.apply_levels(this.update_edge_levels(edge));
+
+        try {
+            return callback();
+        } finally {
+            this.set_endpoints(edge, original_source, original_target);
+            this.apply_levels(original_levels);
+        }
+    }
+
+    reconnect(edge, source, target) {
+        this.set_endpoints(edge, source, target);
+    }
+}
+
 /// The object responsible for controlling all aspects of the user interface.
 class UI {
     constructor(element) {
-        // The quiver identified with the UI.
-        this.quiver = new Quiver();
+        // Runtime import/export shell.
+        this.bridge_quiver = new Quiver();
+
+        // Local view registry for active DOM-backed cells.
+        this.view_registry = new ViewRegistry();
+        // Local temporary dependency index for connect/reconnect dragging.
+        this.connect_preview = new ConnectPreview();
 
         // The UI mode (e.g. whether cells are being rearranged, or connected, etc.).
         this.mode = null;
@@ -867,6 +991,19 @@ class UI {
             && Math.abs(Number(runtime_colour.a) - components.a) <= epsilon;
     }
 
+    static kwiver_js_colours_equal(left, right) {
+        const left_components = UI.kwiver_colour_components(left);
+        const right_components = UI.kwiver_colour_components(right);
+        if (left_components === null || right_components === null) {
+            return false;
+        }
+        const epsilon = 1e-6;
+        return left_components.h === right_components.h
+            && left_components.s === right_components.s
+            && left_components.l === right_components.l
+            && Math.abs(left_components.a - right_components.a) <= epsilon;
+    }
+
     static kwiver_edge_style_side(side) {
         return typeof side === "string" ? side : "";
     }
@@ -972,6 +1109,26 @@ class UI {
         };
     }
 
+    static kwiver_clone_style(style) {
+        return {
+            name: typeof style?.name === "string" ? style.name : "arrow",
+            tail: {
+                name: typeof style?.tail?.name === "string" ? style.tail.name : "none",
+                side: typeof style?.tail?.side === "string" ? style.tail.side : "",
+            },
+            body: {
+                name: typeof style?.body?.name === "string" ? style.body.name : "cell",
+                side: typeof style?.body?.side === "string" ? style.body.side : "",
+            },
+            head: {
+                name: typeof style?.head?.name === "string"
+                    ? style.head.name
+                    : "arrowhead",
+                side: typeof style?.head?.side === "string" ? style.head.side : "",
+            },
+        };
+    }
+
     static kwiver_edge_options_to_json(options) {
         if (!options || typeof options !== "object") {
             return null;
@@ -1027,6 +1184,66 @@ class UI {
         };
     }
 
+    static kwiver_edge_options_from_runtime(runtime_options) {
+        if (!runtime_options || typeof runtime_options !== "object") {
+            return null;
+        }
+
+        const label_alignment = typeof runtime_options.label_alignment === "string"
+            ? runtime_options.label_alignment
+            : null;
+        const label_position = Number(runtime_options.label_position);
+        const offset = Number(runtime_options.offset);
+        const curve = Number(runtime_options.curve);
+        const radius = Number(runtime_options.radius);
+        const angle = Number(runtime_options.angle);
+        const shorten_source = Number(runtime_options.shorten_source);
+        const shorten_target = Number(runtime_options.shorten_target);
+        const level = Number(runtime_options.level);
+        const shape = ["arc", "bezier"].includes(runtime_options.shape)
+            ? runtime_options.shape
+            : null;
+        const colour = UI.kwiver_colour_from_runtime(runtime_options.colour);
+        const style = UI.kwiver_style_from_runtime(runtime_options.style);
+        if (
+            label_alignment === null
+            || !Number.isInteger(label_position)
+            || !Number.isInteger(offset)
+            || !Number.isInteger(curve)
+            || !Number.isInteger(radius)
+            || !Number.isInteger(angle)
+            || !Number.isInteger(shorten_source)
+            || !Number.isInteger(shorten_target)
+            || !Number.isInteger(level)
+            || shape === null
+            || colour === null
+            || style === null
+        ) {
+            return null;
+        }
+
+        return {
+            label_alignment,
+            label_position,
+            offset,
+            curve,
+            radius,
+            angle,
+            shorten: {
+                source: shorten_source,
+                target: shorten_target,
+            },
+            level,
+            shape,
+            colour,
+            edge_alignment: {
+                source: Boolean(runtime_options.edge_alignment_source),
+                target: Boolean(runtime_options.edge_alignment_target),
+            },
+            style,
+        };
+    }
+
     static kwiver_edge_styles_equal(runtime_style, js_style) {
         if (!runtime_style || !js_style) {
             return false;
@@ -1057,128 +1274,291 @@ class UI {
         if (!UI.kwiver_colour_equals(runtime_edge.label_colour, edge.label_colour)) {
             return false;
         }
-        const runtime_options = runtime_edge.options;
+        const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_edge.options);
         const edge_options = edge.options;
         if (!runtime_options || !edge_options) {
             return false;
         }
         return runtime_options.label_alignment === edge_options.label_alignment
-            && Number(runtime_options.label_position) === Number(edge_options.label_position)
-            && Number(runtime_options.offset) === Number(edge_options.offset)
-            && Number(runtime_options.curve) === Number(edge_options.curve)
-            && Number(runtime_options.radius) === Number(edge_options.radius)
-            && Number(runtime_options.angle) === Number(edge_options.angle)
-            && Number(runtime_options.shorten_source) === Number(edge_options.shorten.source)
-            && Number(runtime_options.shorten_target) === Number(edge_options.shorten.target)
-            && Number(runtime_options.level) === Number(edge_options.level)
+            && runtime_options.label_position === Number(edge_options.label_position)
+            && runtime_options.offset === Number(edge_options.offset)
+            && runtime_options.curve === Number(edge_options.curve)
+            && runtime_options.radius === Number(edge_options.radius)
+            && runtime_options.angle === Number(edge_options.angle)
+            && runtime_options.shorten.source === Number(edge_options.shorten.source)
+            && runtime_options.shorten.target === Number(edge_options.shorten.target)
+            && runtime_options.level === Number(edge_options.level)
             && runtime_options.shape === edge_options.shape
-            && Boolean(runtime_options.edge_alignment_source)
-                === Boolean(edge_options.edge_alignment.source)
-            && Boolean(runtime_options.edge_alignment_target)
-                === Boolean(edge_options.edge_alignment.target)
-            && UI.kwiver_colour_equals(runtime_options.colour, edge_options.colour)
+            && runtime_options.edge_alignment.source === Boolean(edge_options.edge_alignment.source)
+            && runtime_options.edge_alignment.target === Boolean(edge_options.edge_alignment.target)
+            && UI.kwiver_js_colours_equal(runtime_options.colour, edge_options.colour)
             && UI.kwiver_edge_styles_equal(runtime_options.style, edge_options.style);
     }
 
-    kwiver_clear_cell_ids() {
-        for (const cell of this.quiver.all_cells()) {
-            cell.kwiver_id = null;
+    static kwiver_apply_runtime_cell_level(ui, cell, level, origin = "ui.runtime.apply.level") {
+        if (!ui || !cell || !Number.isInteger(level)) {
+            throw new Error("[kwiver-only] " + origin + ": invalid cell level");
+        }
+
+        if (Number(cell.level) === level) {
+            return;
+        }
+
+        if (ui.view_contains_cell(cell)) {
+            ui.view_update_level(cell, level);
+        } else {
+            cell.level = level;
         }
     }
 
-    kwiver_sync_cell_ids() {
-        const kwiver_sync_fail = (detail) => {
-            this.kwiver_clear_cell_ids();
-            throw new Error("[kwiver-only] sync_cell_ids: " + detail);
-        };
+    static kwiver_apply_runtime_label_colour(cell, origin = "ui.runtime.apply.label_colour") {
+        const label = cell?.element?.query_selector(".label");
+        if (label == null) {
+            throw new Error("[kwiver-only] " + origin + ": label element missing");
+        }
 
-        const runtime_cells = kwiver_bridge_all_cells();
+        label.set_style({
+            color: cell.label_colour.css(),
+            fill: cell.label_colour.css(),
+        });
+    }
+
+    static kwiver_apply_runtime_edge_snapshot(
+        ui,
+        edge,
+        runtime_edge,
+        origin = "ui.runtime.apply.edge",
+        render = true,
+    ) {
+        if (!ui || !edge || !runtime_edge || runtime_edge.kind !== "edge") {
+            throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
+        }
+
+        const level = Number(runtime_edge.level);
+        const label = typeof runtime_edge.label === "string" ? runtime_edge.label : null;
+        const label_colour = UI.kwiver_colour_from_runtime(runtime_edge.label_colour);
+        const source_id = Number(runtime_edge.source_id);
+        const target_id = Number(runtime_edge.target_id);
+        const options = UI.kwiver_edge_options_from_runtime(runtime_edge.options);
+        if (
+            !Number.isInteger(level)
+            || label === null
+            || label_colour === null
+            || !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+            || options === null
+        ) {
+            throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
+        }
+
+        const js_by_id = ui.kwiver_js_cells_by_id();
+        const source = js_by_id.get(source_id);
+        const target = js_by_id.get(target_id);
+        if (!source || !target) {
+            throw new Error("[kwiver-only] " + origin + ": runtime edge endpoints missing");
+        }
+
+        edge.source = source;
+        edge.target = target;
+        edge.arrow.source = source.shape;
+        edge.arrow.target = target.shape;
+        UI.kwiver_apply_runtime_cell_level(ui, edge, level, origin);
+        edge.label = label;
+        edge.label_colour = label_colour;
+        edge.options = options;
+
+        if (render) {
+            edge.render(ui);
+        }
+
+        UI.kwiver_apply_runtime_label_colour(edge, origin);
+        return edge;
+    }
+
+    static kwiver_apply_runtime_cell_snapshot(
+        ui,
+        cell,
+        runtime_cell,
+        origin = "ui.runtime.apply.cell",
+        render = true,
+        sync_position_index = true,
+        render_label = true,
+    ) {
+        if (!ui || !cell || !runtime_cell || typeof runtime_cell !== "object") {
+            throw new Error("[kwiver-only] " + origin + ": runtime cell snapshot invalid");
+        }
+
+        if (cell.is_edge()) {
+            return UI.kwiver_apply_runtime_edge_snapshot(
+                ui,
+                cell,
+                runtime_cell,
+                origin,
+                render,
+            );
+        }
+
+        const level = Number(runtime_cell.level);
+        const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
+        const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
+        const x = Number(runtime_cell.x);
+        const y = Number(runtime_cell.y);
+        if (
+            runtime_cell.kind !== "vertex"
+            || !Number.isInteger(level)
+            || label === null
+            || label_colour === null
+            || !Number.isInteger(x)
+            || !Number.isInteger(y)
+        ) {
+            throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
+        }
+
+        const previous_position = cell.position;
+        const position_changed = previous_position.x !== x || previous_position.y !== y;
+        UI.kwiver_apply_runtime_cell_level(ui, cell, level, origin);
+        if (position_changed) {
+            cell.set_position(ui, new Position(x, y));
+            if (sync_position_index) {
+                if (ui.positions.get(`${previous_position}`) === cell) {
+                    ui.positions.delete(`${previous_position}`);
+                }
+                ui.positions.set(`${cell.position}`, cell);
+            }
+        }
+        cell.label = label;
+        cell.label_colour = label_colour;
+        if (render_label) {
+            ui.panel.render_maths(ui, cell);
+        }
+        UI.kwiver_apply_runtime_label_colour(cell, origin);
+        return cell;
+    }
+
+    kwiver_bind_new_cell_ids_from_runtime_cells(
+        new_cells,
+        runtime_cells,
+        origin = "ui.runtime.bind_new_cell_ids",
+    ) {
         if (!Array.isArray(runtime_cells)) {
-            kwiver_sync_fail("runtime snapshot unavailable");
+            throw new Error("[kwiver-only] " + origin + ": runtime snapshot unavailable");
         }
 
-        const runtime_vertices = new Map();
-        const runtime_edges = [];
+        const js_new_cells = (new_cells instanceof Set || Array.isArray(new_cells))
+            ? Array.from(new_cells)
+            : [];
+        const js_new_cell_set = new Set(js_new_cells);
+        for (const cell of js_new_cells) {
+            if (Number.isInteger(cell?.kwiver_id)) {
+                throw new Error("[kwiver-only] " + origin + ": new cell already bound");
+            }
+        }
+
+        const existing_runtime_ids = new Set();
+        for (const cell of this.view_all_cells()) {
+            if (js_new_cell_set.has(cell)) {
+                continue;
+            }
+            const cell_id = Number(cell?.kwiver_id);
+            if (!Number.isInteger(cell_id)) {
+                throw new Error("[kwiver-only] " + origin + ": existing cell id missing");
+            }
+            if (existing_runtime_ids.has(cell_id)) {
+                throw new Error("[kwiver-only] " + origin + ": duplicate existing cell id");
+            }
+            existing_runtime_ids.add(cell_id);
+        }
+
+        const runtime_ids = new Set();
+        const runtime_new_cells = [];
         for (const runtime_cell of runtime_cells) {
-            if (!runtime_cell || typeof runtime_cell !== "object") {
-                kwiver_sync_fail("invalid runtime cell payload");
+            const runtime_id = Number(runtime_cell?.id);
+            if (!Number.isInteger(runtime_id)) {
+                throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
             }
-            if (runtime_cell.kind === "vertex") {
-                const position_key = [Number(runtime_cell.x), Number(runtime_cell.y)].join(",");
-                if (runtime_vertices.has(position_key)) {
-                    kwiver_sync_fail("duplicate runtime vertex position");
-                }
-                runtime_vertices.set(position_key, runtime_cell);
-                continue;
+            if (runtime_ids.has(runtime_id)) {
+                throw new Error("[kwiver-only] " + origin + ": duplicate runtime id");
             }
-            if (runtime_cell.kind === "edge") {
-                runtime_edges.push(runtime_cell);
-                continue;
+            runtime_ids.add(runtime_id);
+            if (!existing_runtime_ids.has(runtime_id)) {
+                runtime_new_cells.push(runtime_cell);
             }
-            kwiver_sync_fail("unknown runtime cell kind");
+        }
+        for (const existing_id of existing_runtime_ids) {
+            if (!runtime_ids.has(existing_id)) {
+                throw new Error("[kwiver-only] " + origin + ": runtime snapshot missing existing cell");
+            }
+        }
+        if (js_new_cells.length !== runtime_new_cells.length) {
+            throw new Error("[kwiver-only] " + origin + ": new cell count mismatch");
         }
 
-        const id_map = new Map();
-        for (const cell of this.quiver.all_cells()) {
-            if (!cell.is_vertex()) {
-                continue;
-            }
-            const position_key = [cell.position.x, cell.position.y].join(",");
-            const runtime_vertex = runtime_vertices.get(position_key);
-            if (!runtime_vertex) {
-                kwiver_sync_fail("missing runtime vertex for JS position");
-            }
-            if (runtime_vertex.label !== cell.label
-                || !UI.kwiver_colour_equals(runtime_vertex.label_colour, cell.label_colour)) {
-                kwiver_sync_fail("runtime vertex mismatch");
-            }
-            id_map.set(cell, runtime_vertex.id);
+        const js_order = new Map();
+        for (let i = 0; i < js_new_cells.length; ++i) {
+            js_order.set(js_new_cells[i], i);
         }
 
-        const consumed_edge_ids = new Set();
-        for (const cell of this.quiver.all_cells()) {
-            if (!cell.is_edge()) {
-                continue;
+        const js_sorted = [...js_new_cells].sort((a, b) => {
+            const level_delta = Number(a.level) - Number(b.level);
+            if (level_delta !== 0) {
+                return level_delta;
             }
-            const source_id = id_map.get(cell.source);
-            const target_id = id_map.get(cell.target);
-            if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
-                kwiver_sync_fail("missing endpoint ids for JS edge");
+            return Number(js_order.get(a)) - Number(js_order.get(b));
+        });
+
+        const runtime_sorted = [...runtime_new_cells].sort((a, b) => {
+            const level_delta = Number(a?.level) - Number(b?.level);
+            if (level_delta !== 0) {
+                return level_delta;
             }
+            return Number(a?.id) - Number(b?.id);
+        });
 
-            const candidates = runtime_edges.filter((runtime_edge) => {
-                if (consumed_edge_ids.has(runtime_edge.id)) {
-                    return false;
-                }
-                return UI.kwiver_runtime_edge_matches(runtime_edge, cell, source_id, target_id);
-            });
-
-            if (candidates.length !== 1) {
-                kwiver_sync_fail("runtime edge mapping is ambiguous");
+        for (let i = 0; i < js_sorted.length; ++i) {
+            const cell = js_sorted[i];
+            const runtime_cell = runtime_sorted[i];
+            const runtime_id = Number(runtime_cell?.id);
+            if (!Number.isInteger(runtime_id)) {
+                throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
             }
-
-            const runtime_edge = candidates[0];
-            consumed_edge_ids.add(runtime_edge.id);
-            id_map.set(cell, runtime_edge.id);
+            if (cell.is_vertex() && runtime_cell?.kind !== "vertex") {
+                throw new Error("[kwiver-only] " + origin + ": kind mismatch");
+            }
+            if (cell.is_edge() && runtime_cell?.kind !== "edge") {
+                throw new Error("[kwiver-only] " + origin + ": kind mismatch");
+            }
+            cell.kwiver_id = runtime_id;
         }
 
-        this.kwiver_clear_cell_ids();
-        for (const [cell, id] of id_map.entries()) {
-            cell.kwiver_id = id;
+        for (const cell of js_sorted) {
+            this.kwiver_assert_runtime_cell_match(cell, origin);
         }
-        return id_map;
     }
 
     kwiver_ensure_cell_ids() {
-        this.kwiver_sync_cell_ids();
+        const runtime_ids = this.kwiver_runtime_all_cell_ids("ui.ensure_cell_ids");
+        if (!Array.isArray(runtime_ids)) {
+            return false;
+        }
+        const runtime_set = new Set();
+        for (const raw_id of runtime_ids) {
+            const cell_id = Number(raw_id);
+            if (!Number.isInteger(cell_id)) {
+                return false;
+            }
+            runtime_set.add(cell_id);
+        }
+
+        for (const cell of this.view_all_cells()) {
+            const cell_id = Number(cell?.kwiver_id);
+            if (!Number.isInteger(cell_id) || !runtime_set.has(cell_id)) {
+                return false;
+            }
+        }
         return true;
     }
 
     kwiver_cell_id(cell) {
-        if (cell && Number.isInteger(cell.kwiver_id)) {
-            return cell.kwiver_id;
-        }
-        this.kwiver_sync_cell_ids();
         return cell && Number.isInteger(cell.kwiver_id) ? cell.kwiver_id : null;
     }
 
@@ -1204,7 +1584,7 @@ class UI {
 
     kwiver_js_cells_by_id() {
         const js_by_id = new Map();
-        for (const cell of this.quiver.all_cells()) {
+        for (const cell of this.view_all_cells()) {
             if (Number.isInteger(cell.kwiver_id)) {
                 js_by_id.set(cell.kwiver_id, cell);
             }
@@ -1250,7 +1630,6 @@ class UI {
     }
 
     kwiver_selected_ids() {
-        this.kwiver_sync_cell_ids();
         const selected_ids = [];
         for (const cell of this.selection) {
             if (!Number.isInteger(cell.kwiver_id)) {
@@ -1265,7 +1644,6 @@ class UI {
         if (!(cells instanceof Set) && !Array.isArray(cells)) {
             return null;
         }
-        this.kwiver_sync_cell_ids();
         const cell_ids = [];
         for (const cell of cells) {
             if (!Number.isInteger(cell?.kwiver_id)) {
@@ -1310,56 +1688,6 @@ class UI {
         }
         const runtime_ids = kwiver_bridge_connected_components(roots, origin);
         return Array.isArray(runtime_ids) ? runtime_ids : null;
-    }
-
-    kwiver_runtime_dependency_ids(
-        cell_id,
-        origin = "ui.runtime.dependencies",
-    ) {
-        if (!Number.isInteger(cell_id)) {
-            return null;
-        }
-        const runtime_ids = kwiver_bridge_dependencies(cell_id, origin);
-        return Array.isArray(runtime_ids) ? runtime_ids : null;
-    }
-
-    kwiver_runtime_dependency_cells(
-        cell,
-        origin = "ui.runtime.dependencies",
-    ) {
-        const cell_id = this.kwiver_cell_id(cell);
-        if (!Number.isInteger(cell_id)) {
-            return null;
-        }
-        const runtime_ids = this.kwiver_runtime_dependency_ids(
-            cell_id,
-            origin,
-        );
-        if (!Array.isArray(runtime_ids)) {
-            return null;
-        }
-        return this.kwiver_cells_from_runtime_ids(runtime_ids);
-    }
-
-    kwiver_runtime_dependencies_with_relationship(
-        cell,
-        origin = "ui.runtime.dependencies",
-    ) {
-        const dependencies = this.kwiver_runtime_dependency_cells(cell, origin);
-        if (!(dependencies instanceof Set)) {
-            return null;
-        }
-        const dependencies_with_relationship = new Map();
-        for (const dependency of dependencies) {
-            if (dependency.source === cell) {
-                dependencies_with_relationship.set(dependency, "source");
-            } else if (dependency.target === cell) {
-                dependencies_with_relationship.set(dependency, "target");
-            } else {
-                return null;
-            }
-        }
-        return dependencies_with_relationship;
     }
 
     kwiver_runtime_transitive_dependency_ids(
@@ -1430,35 +1758,6 @@ class UI {
         return this.kwiver_cells_from_runtime_ids(runtime_ids);
     }
 
-    kwiver_runtime_reverse_dependency_ids(
-        cell_id,
-        origin = "ui.runtime.reverse_dependencies",
-    ) {
-        if (!Number.isInteger(cell_id)) {
-            return null;
-        }
-        const runtime_ids = kwiver_bridge_reverse_dependencies(cell_id, origin);
-        return Array.isArray(runtime_ids) ? runtime_ids : null;
-    }
-
-    kwiver_runtime_reverse_dependency_cells(
-        cell,
-        origin = "ui.runtime.reverse_dependencies",
-    ) {
-        const cell_id = this.kwiver_cell_id(cell);
-        if (!Number.isInteger(cell_id)) {
-            return null;
-        }
-        const runtime_ids = this.kwiver_runtime_reverse_dependency_ids(
-            cell_id,
-            origin,
-        );
-        if (!Array.isArray(runtime_ids)) {
-            return null;
-        }
-        return this.kwiver_cells_from_runtime_ids(runtime_ids);
-    }
-
     kwiver_require_runtime_all_cell_ids(origin = "ui.runtime.all_cell_ids") {
         const all_ids = this.kwiver_runtime_all_cell_ids(origin);
         if (!Array.isArray(all_ids)) {
@@ -1489,28 +1788,6 @@ class UI {
         return selected_ids;
     }
 
-    kwiver_require_runtime_dependency_cells(
-        cell,
-        origin = "ui.runtime.dependencies",
-    ) {
-        const dependencies = this.kwiver_runtime_dependency_cells(cell, origin);
-        if (!(dependencies instanceof Set)) {
-            throw new Error("[kwiver-only] " + origin + ": dependencies_of_json failed");
-        }
-        return dependencies;
-    }
-
-    kwiver_require_runtime_dependencies_with_relationship(
-        cell,
-        origin = "ui.runtime.dependencies",
-    ) {
-        const dependencies = this.kwiver_runtime_dependencies_with_relationship(cell, origin);
-        if (!(dependencies instanceof Map)) {
-            throw new Error("[kwiver-only] " + origin + ": dependency relationship mapping failed");
-        }
-        return dependencies;
-    }
-
     kwiver_require_runtime_transitive_dependency_cells(
         roots_cells,
         exclude_roots = false,
@@ -1527,15 +1804,64 @@ class UI {
         return dependencies;
     }
 
-    kwiver_require_runtime_reverse_dependency_cells(
-        cell,
-        origin = "ui.runtime.reverse_dependencies",
-    ) {
-        const dependencies = this.kwiver_runtime_reverse_dependency_cells(cell, origin);
-        if (!(dependencies instanceof Set)) {
-            throw new Error("[kwiver-only] " + origin + ": reverse_dependencies_of_json failed");
+    // View-registry helpers expose the active DOM-backed cells.
+    // Preview helpers are only for local hypothetical UI state.
+    // Committed graph mutations still go through the runtime bridge.
+    view_all_cells() {
+        return this.view_registry.all_cells();
+    }
+
+    view_vertices() {
+        return this.view_all_cells().filter((cell) => cell.is_vertex());
+    }
+
+    view_edges() {
+        return this.view_all_cells().filter((cell) => cell.is_edge());
+    }
+
+    view_contains_cell(cell) {
+        return this.view_registry.contains_cell(cell);
+    }
+
+    view_is_empty() {
+        return this.view_all_cells().length === 0;
+    }
+
+    view_bounding_rect() {
+        const vertices = this.view_vertices();
+        if (vertices.length === 0) {
+            return null;
         }
-        return dependencies;
+
+        const xs = vertices.map((cell) => cell.position.x);
+        const ys = vertices.map((cell) => cell.position.y);
+
+        return [
+            [Math.min(...xs), Math.min(...ys)],
+            [Math.max(...xs), Math.max(...ys)],
+        ];
+    }
+
+    view_register_cell(cell) {
+        this.view_registry.add(cell);
+        this.connect_preview.register_cell(cell);
+    }
+
+    view_unregister_cell(cell) {
+        this.connect_preview.unregister_cell(cell);
+        this.view_registry.remove(cell);
+    }
+
+    view_update_level(cell, level) {
+        this.view_registry.update_level(cell, level);
+    }
+
+    view_rerender() {
+        const cells = this.view_all_cells();
+        cells.sort((a, b) => a.level - b.level);
+        for (const cell of cells) {
+            cell.render(this);
+        }
     }
 
     kwiver_select_all_runtime(origin = "ui.select.all") {
@@ -1941,7 +2267,7 @@ class UI {
         );
     }
 
-    kwiver_apply_connect_action(action, to = "to", context = "ui.connect") {
+    kwiver_apply_connect_action(action, to = "to", context = "ui.connect", render = true) {
         const connect_envelope = this.kwiver_history_connect(action, to);
         if (connect_envelope === null) {
             throw new Error("[kwiver-only] " + context + ": reconnect dispatch failed");
@@ -1955,25 +2281,28 @@ class UI {
             throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
         }
         const runtime_edge = runtime_by_id.get(action.edge.kwiver_id);
-        const source_id = Number(runtime_edge?.source_id);
-        const target_id = Number(runtime_edge?.target_id);
-        if (
-            !runtime_edge
-            || runtime_edge.kind !== "edge"
-            || !Number.isInteger(source_id)
-            || !Number.isInteger(target_id)
-        ) {
+        if (!runtime_edge || runtime_edge.kind !== "edge") {
             throw new Error("[kwiver-only] " + context + ": runtime edge snapshot invalid");
         }
 
-        const js_by_id = this.kwiver_js_cells_by_id();
-        const runtime_source = js_by_id.get(source_id);
-        const runtime_target = js_by_id.get(target_id);
-        if (!runtime_source || !runtime_target) {
-            throw new Error("[kwiver-only] " + context + ": endpoint mapping missing");
+        UI.kwiver_apply_runtime_edge_snapshot(
+            this,
+            action.edge,
+            runtime_edge,
+            context,
+            false,
+        );
+        if (render) {
+            const dependencies_to_render = this.kwiver_require_runtime_transitive_dependency_cells(
+                [action.edge],
+                false,
+                context + ".dependencies",
+            );
+            for (const cell of dependencies_to_render) {
+                cell.render(this);
+            }
+            this.panel.update(this);
         }
-
-        action.edge.reconnect(this, runtime_source, runtime_target);
         if (!this.kwiver_apply_runtime_selection(connect_envelope.selection)) {
             throw new Error("[kwiver-only] " + context + ": selection sync failed");
         }
@@ -2417,7 +2746,12 @@ class UI {
             false,
         ));
         this.history.add(this, [{ kind: "create", cells }]);
-        this.kwiver_sync_cell_ids();
+        const runtime_cells_after_paste = kwiver_bridge_all_cells();
+        this.kwiver_bind_new_cell_ids_from_runtime_cells(
+            cells,
+            runtime_cells_after_paste,
+            "ui.clipboard.paste.bind_ids",
+        );
     }
 
     /// Clear the current diagram. This also clears the history.
@@ -2428,10 +2762,12 @@ class UI {
         }
 
         // Clear the existing quiver.
-        for (const cell of this.quiver.all_cells()) {
+        for (const cell of this.view_all_cells()) {
             cell.element.remove();
         }
-        this.quiver = new Quiver();
+        this.bridge_quiver = new Quiver();
+        this.view_registry = new ViewRegistry();
+        this.connect_preview = new ConnectPreview();
 
         // Reset data regarding existing vertices.
         this.cell_width = new Map();
@@ -2912,7 +3248,9 @@ class UI {
         // Add a move to the history.
         const commit_move_event = () => {
             if (!this.mode.previous.sub(this.mode.origin).is_zero()) {
-                // We only want to commit the move event if it actually did moved things.
+                // We only want to commit the move event if it actually moved things. The preview
+                // has already updated the local view, but the committed move still replays through
+                // runtime so the final JS state is snapped back to canonical runtime positions.
                 this.history.add(this, [{
                     kind: "move",
                     displacements: Array.from(this.mode.selection).map((vertex) => ({
@@ -2920,7 +3258,7 @@ class UI {
                         from: vertex.position.sub(this.mode.previous.sub(this.mode.origin)),
                         to: vertex.position,
                     })),
-                }]);
+                }], true);
             }
         };
 
@@ -3470,7 +3808,7 @@ class UI {
                     const actions = [];
                     for (const code of codes) {
                         const cell = this.codes.get(code);
-                        if (cell !== undefined && this.quiver.contains_cell(cell)) {
+                        if (cell !== undefined && this.view_contains_cell(cell)) {
                             switch (mode) {
                                 case "Select":
                                 case "Toggle":
@@ -3607,7 +3945,7 @@ class UI {
                                 // We currently do not flush the `codes`, so we need to make sure
                                 // we're only considering cells that currently exist (and haven't
                                 // been deleted).
-                                return this.quiver.contains_cell(cell);
+                                return this.view_contains_cell(cell);
                             });
                             const selected_index = codes.findIndex(([, cell]) => {
                                 return cell.element.class_list.contains("selected");
@@ -4326,7 +4664,7 @@ class UI {
             // First, we reposition the grid and redraw it.
             this.pan_view(view_offset);
             // Then, we rerender all of the cells, which will have changed position.
-            this.quiver.rerender(this);
+            this.view_rerender();
             // Similarly, the focus point may have changed position.
             if (this.focus_point.class_list.contains("focused")) {
                 // Don't animate the size change, which should happen instantaneously.
@@ -4430,7 +4768,7 @@ class UI {
     diagram_size() {
         let [width, height] = [0, 0];
         // Compute the extrema of the diagram.
-        const bounding_rect = this.quiver.bounding_rect();
+        const bounding_rect = this.view_bounding_rect();
         if (bounding_rect === null) {
             return Dimensions.zero();
         }
@@ -4488,7 +4826,7 @@ class UI {
         // ensure that existing references to the selection are not modified.
         this.selection = new Set(this.selection);
         for (const cell of cells) {
-            if (this.quiver.deleted.has(cell)) {
+            if (!this.view_contains_cell(cell)) {
                 // This should not happen in practice, but to avoid bugs, we make sure only to
                 // select cells that exist in the diagram. In the past, the history system has
                 // occasionally had trouble keeping track of which cells to select.
@@ -4536,6 +4874,9 @@ class UI {
 
     /// Adds a cell to the canvas.
     add_cell(cell) {
+        if (!this.view_contains_cell(cell)) {
+            this.view_register_cell(cell);
+        }
         this.canvas.add(cell.element);
         if (cell.is_vertex()) {
             this.positions.set(`${cell.position}`, cell);
@@ -4545,19 +4886,22 @@ class UI {
     }
 
     /// Removes a cell.
-    remove_cell(cell, when) {
-        // Remove this cell and its dependents from the quiver and then from the HTML.
-        const update_positions = new Set();
-        for (const removed of this.quiver.remove(cell, when)) {
-            if (removed.is_vertex()) {
-                this.positions.delete(`${removed.position}`);
-                this.cell_width_constraints.get(cell.position.x).delete(cell);
-                this.cell_height_constraints.get(cell.position.y).delete(cell);
-                update_positions.add(removed.position);
-            }
-            this.deselect(removed);
-            removed.element.remove();
+    remove_cell(cell) {
+        if (!this.view_contains_cell(cell)) {
+            return;
         }
+
+        // Remove this cell from the active view registry and then from the HTML.
+        const update_positions = new Set();
+        this.view_unregister_cell(cell);
+        if (cell.is_vertex()) {
+            this.positions.delete(`${cell.position}`);
+            this.cell_width_constraints.get(cell.position.x).delete(cell);
+            this.cell_height_constraints.get(cell.position.y).delete(cell);
+            update_positions.add(cell.position);
+        }
+        this.deselect(cell);
+        cell.element.remove();
         this.update_col_row_size(...update_positions);
         this.colour_picker.update_diagram_colours(this);
     }
@@ -4626,10 +4970,11 @@ class UI {
         let cells;
         if (this.selection.size > 0) {
             cells = this.selection;
-        } else if (this.quiver.cells.length > 0 && this.quiver.cells[0].size > 0) {
-            cells = this.quiver.cells[0];
         } else {
-            return;
+            cells = this.view_vertices();
+            if (cells.length === 0) {
+                return;
+            }
         }
 
         // We want to centre the view on the cells, so we take the range of all cell offsets.
@@ -5102,7 +5447,7 @@ class UI {
         this.colours = colours;
 
         // Rerender all the existing labels with the new macro definitions.
-        for (const cell of this.quiver.all_cells()) {
+        for (const cell of this.view_all_cells()) {
             this.panel.render_maths(this, cell);
         }
 
@@ -5170,7 +5515,7 @@ class UI {
             this.colours = new Map();
 
             // Rerender all the existing labels without the new macro definitions.
-            for (const cell of this.quiver.all_cells()) {
+            for (const cell of this.view_all_cells()) {
                 this.panel.render_maths(this, cell);
             }
 
@@ -5208,7 +5553,6 @@ class History {
     add(ui, actions, invoke = false, selection = ui.selection) {
         // Append a new history event.
         // If there are future actions, clear them. (Our history only forms a list, not a tree.)
-        ui.quiver.flush(this.present);
         this.states.splice(this.present + 1, this.actions.length - this.present);
         // Update the current state, so that if we undo to it, we restore the exact
         // state we had before making the action.
@@ -5295,7 +5639,6 @@ class History {
     pop(ui) {
         --this.present;
         this.permanentise();
-        ui.quiver.flush(this.present);
         this.states.splice(this.present + 1, 1);
         this.actions.splice(this.present, 1);
     }
@@ -5327,6 +5670,30 @@ class History {
             }
             return runtime_by_id;
         };
+
+        const kwiver_apply_runtime_cell = (
+            context,
+            cell,
+            runtime_cell,
+            render = false,
+            sync_position_index = true,
+            render_label = true,
+        ) => UI.kwiver_apply_runtime_cell_snapshot(
+            ui,
+            cell,
+            runtime_cell,
+            context,
+            render,
+            sync_position_index,
+            render_label,
+        );
+
+        const kwiver_apply_runtime_edge = (
+            context,
+            edge,
+            runtime_edge,
+            render = false,
+        ) => UI.kwiver_apply_runtime_edge_snapshot(ui, edge, runtime_edge, context, render);
 
         const kwiver_clone_style = (style) => ({
             name: typeof style?.name === "string" ? style.name : "arrow",
@@ -5422,7 +5789,6 @@ class History {
             }
 
             const runtime_by_id = kwiver_runtime_cells(context);
-            const js_by_id = ui.kwiver_js_cells_by_id();
 
             for (const edge of edge_cells) {
                 if (!Number.isInteger(edge.kwiver_id)) {
@@ -5477,21 +5843,7 @@ class History {
                     kwiver_fail(context, "runtime edge transform mismatch");
                 }
 
-                if (reverse_edge) {
-                    const source = js_by_id.get(source_id);
-                    const target = js_by_id.get(target_id);
-                    if (!source || !target) {
-                        kwiver_fail(context, "missing JS endpoint mapping");
-                    }
-                    edge.reconnect(ui, source, target);
-                }
-
-                edge.options.label_alignment = runtime_alignment;
-                edge.options.offset = runtime_offset;
-                edge.options.curve = runtime_curve;
-                edge.options.radius = runtime_radius;
-                edge.options.angle = runtime_angle;
-                edge.options.style = runtime_style;
+                kwiver_apply_runtime_edge(context, edge, runtime_edge, false);
                 rendered_cells.add(edge);
             }
 
@@ -5525,7 +5877,6 @@ class History {
                     }
 
                     const runtime_by_id = kwiver_runtime_cells("history.move");
-                    const runtime_positions = [];
                     for (const displacement of action.displacements) {
                         const runtime_vertex = runtime_by_id.get(displacement.vertex.kwiver_id);
                         const x = Number(runtime_vertex?.x);
@@ -5541,15 +5892,21 @@ class History {
                         if (x !== displacement[to].x || y !== displacement[to].y) {
                             kwiver_fail("history.move", "runtime vertex position mismatch");
                         }
-                        runtime_positions.push(new Position(x, y));
                     }
 
                     for (const displacement of action.displacements) {
                         ui.positions.delete(`${displacement[from]}`);
                     }
-                    for (let i = 0; i < action.displacements.length; ++i) {
-                        const displacement = action.displacements[i];
-                        displacement.vertex.set_position(ui, runtime_positions[i]);
+                    for (const displacement of action.displacements) {
+                        const runtime_vertex = runtime_by_id.get(displacement.vertex.kwiver_id);
+                        kwiver_apply_runtime_cell(
+                            "history.move",
+                            displacement.vertex,
+                            runtime_vertex,
+                            false,
+                            false,
+                            false,
+                        );
                         ui.positions.set(
                             `${displacement.vertex.position}`,
                             displacement.vertex,
@@ -5579,8 +5936,7 @@ class History {
                         }
 
                         for (const cell of create_result.ordered) {
-                            if (!ui.quiver.contains_cell(cell)) {
-                                ui.quiver.add(cell);
+                            if (!ui.view_contains_cell(cell)) {
                                 ui.add_cell(cell);
                             }
                             cells.add(cell);
@@ -5621,7 +5977,7 @@ class History {
 
                     const runtime_ids = new Set(runtime_by_id.keys());
                     const to_remove = [];
-                    for (const cell of ui.quiver.all_cells()) {
+                    for (const cell of ui.view_all_cells()) {
                         if (
                             Number.isInteger(cell.kwiver_id)
                             && !runtime_ids.has(cell.kwiver_id)
@@ -5631,8 +5987,8 @@ class History {
                     }
                     to_remove.sort((a, b) => b.level - a.level);
                     for (const cell of to_remove) {
-                        if (!ui.quiver.deleted.has(cell)) {
-                            ui.remove_cell(cell, this.present);
+                        if (ui.view_contains_cell(cell)) {
+                            ui.remove_cell(cell);
                         }
                     }
                     if (!ui.kwiver_apply_runtime_selection(delete_envelope.selection)) {
@@ -5652,7 +6008,6 @@ class History {
                     }
 
                     const runtime_by_id = kwiver_runtime_cells("history.label");
-                    const runtime_labels = [];
                     for (const label of action.labels) {
                         const runtime_cell = runtime_by_id.get(label.cell.kwiver_id);
                         if (!runtime_cell || typeof runtime_cell.label !== "string") {
@@ -5661,13 +6016,15 @@ class History {
                         if (runtime_cell.label !== label[to]) {
                             kwiver_fail("history.label", "runtime label mismatch");
                         }
-                        runtime_labels.push(runtime_cell.label);
-                    }
-
-                    for (let i = 0; i < action.labels.length; ++i) {
-                        const label = action.labels[i];
-                        label.cell.label = runtime_labels[i];
-                        ui.panel.render_maths(ui, label.cell);
+                        kwiver_apply_runtime_cell(
+                            "history.label",
+                            label.cell,
+                            runtime_cell,
+                            false,
+                        );
+                        if (label.cell.is_edge()) {
+                            cells.add(label.cell);
+                        }
                     }
                     if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
                         kwiver_fail("history.label", "selection sync failed");
@@ -5685,27 +6042,27 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.label_colour");
-                        const runtime_colours = [];
                         for (const label_colour of action.label_colours) {
                             const runtime_cell = runtime_by_id.get(label_colour.cell.kwiver_id);
                             const runtime_colour_raw = runtime_cell?.label_colour;
-                            const runtime_colour = UI.kwiver_colour_from_runtime(runtime_colour_raw);
-                            if (!runtime_cell || runtime_colour === null) {
+                            if (
+                                !runtime_cell
+                                || UI.kwiver_colour_from_runtime(runtime_colour_raw) === null
+                            ) {
                                 kwiver_fail("history.label_colour", "runtime label colour snapshot invalid");
                             }
                             if (!UI.kwiver_colour_equals(runtime_colour_raw, label_colour[to])) {
                                 kwiver_fail("history.label_colour", "runtime label colour mismatch");
                             }
-                            runtime_colours.push(runtime_colour);
-                        }
-
-                        for (let i = 0; i < action.label_colours.length; ++i) {
-                            const label_colour = action.label_colours[i];
-                            label_colour.cell.label_colour = runtime_colours[i];
-                            label_colour.cell.element.query_selector(".label").set_style({
-                                color: label_colour.cell.label_colour.css(),
-                                fill: label_colour.cell.label_colour.css(),
-                            });
+                            kwiver_apply_runtime_cell(
+                                "history.label_colour",
+                                label_colour.cell,
+                                runtime_cell,
+                                false,
+                            );
+                            if (label_colour.cell.is_edge()) {
+                                cells.add(label_colour.cell);
+                            }
                         }
                         if (!ui.kwiver_apply_runtime_selection(label_colour_envelope.selection)) {
                             kwiver_fail("history.label_colour", "selection sync failed");
@@ -5726,27 +6083,27 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.label_alignment");
-                        const runtime_alignments = [];
                         for (const alignment of action.alignments) {
                             const runtime_edge = runtime_by_id.get(alignment.edge.kwiver_id);
-                            const runtime_alignment = runtime_edge?.options?.label_alignment;
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || typeof runtime_alignment !== "string"
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.label_alignment", "runtime alignment snapshot invalid");
                             }
-                            if (runtime_alignment !== alignment[to]) {
+                            if (runtime_options.label_alignment !== alignment[to]) {
                                 kwiver_fail("history.label_alignment", "runtime alignment mismatch");
                             }
-                            runtime_alignments.push(runtime_alignment);
-                        }
-
-                        for (let i = 0; i < action.alignments.length; ++i) {
-                            const alignment = action.alignments[i];
-                            alignment.edge.options.label_alignment = runtime_alignments[i];
-                            alignment.edge.render(ui);
+                            kwiver_apply_runtime_edge(
+                                "history.label_alignment",
+                                alignment.edge,
+                                runtime_edge,
+                                false,
+                            );
+                            cells.add(alignment.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(alignment_envelope.selection)) {
                             kwiver_fail("history.label_alignment", "selection sync failed");
@@ -5766,27 +6123,27 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.label_position");
-                        const runtime_positions = [];
                         for (const label_position of action.label_positions) {
                             const runtime_edge = runtime_by_id.get(label_position.edge.kwiver_id);
-                            const runtime_position = Number(runtime_edge?.options?.label_position);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_position)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.label_position", "runtime label position snapshot invalid");
                             }
-                            if (runtime_position !== Number(label_position[to])) {
+                            if (runtime_options.label_position !== Number(label_position[to])) {
                                 kwiver_fail("history.label_position", "runtime label position mismatch");
                             }
-                            runtime_positions.push(runtime_position);
-                        }
-
-                        for (let i = 0; i < action.label_positions.length; ++i) {
-                            const label_position = action.label_positions[i];
-                            label_position.edge.options.label_position = runtime_positions[i];
-                            label_position.edge.render(ui);
+                            kwiver_apply_runtime_edge(
+                                "history.label_position",
+                                label_position.edge,
+                                runtime_edge,
+                                false,
+                            );
+                            cells.add(label_position.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(label_position_envelope.selection)) {
                             kwiver_fail("history.label_position", "selection sync failed");
@@ -5803,26 +6160,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.offset");
-                        const runtime_offsets = [];
                         for (const offset of action.offsets) {
                             const runtime_edge = runtime_by_id.get(offset.edge.kwiver_id);
-                            const runtime_offset = Number(runtime_edge?.options?.offset);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_offset)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.offset", "runtime offset snapshot invalid");
                             }
-                            if (runtime_offset !== Number(offset[to])) {
+                            if (runtime_options.offset !== Number(offset[to])) {
                                 kwiver_fail("history.offset", "runtime offset mismatch");
                             }
-                            runtime_offsets.push(runtime_offset);
-                        }
-
-                        for (let i = 0; i < action.offsets.length; ++i) {
-                            const offset = action.offsets[i];
-                            offset.edge.options.offset = runtime_offsets[i];
+                            kwiver_apply_runtime_edge(
+                                "history.offset",
+                                offset.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(offset.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(offset_envelope.selection)) {
@@ -5841,25 +6198,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.curve");
-                        const runtime_curves = new Map();
                         for (const curve of curve_applicable) {
                             const runtime_edge = runtime_by_id.get(curve.edge.kwiver_id);
-                            const runtime_curve = Number(runtime_edge?.options?.curve);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_curve)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.curve", "runtime curve snapshot invalid");
                             }
-                            if (runtime_curve !== Number(curve[to])) {
+                            if (runtime_options.curve !== Number(curve[to])) {
                                 kwiver_fail("history.curve", "runtime curve mismatch");
                             }
-                            runtime_curves.set(curve.edge, runtime_curve);
-                        }
-
-                        for (const curve of curve_applicable) {
-                            curve.edge.options.curve = runtime_curves.get(curve.edge);
+                            kwiver_apply_runtime_edge(
+                                "history.curve",
+                                curve.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(curve.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(curve_envelope.selection)) {
@@ -5878,25 +6236,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.radius");
-                        const runtime_radii = new Map();
                         for (const radius of radius_applicable) {
                             const runtime_edge = runtime_by_id.get(radius.edge.kwiver_id);
-                            const runtime_radius = Number(runtime_edge?.options?.radius);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_radius)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.radius", "runtime radius snapshot invalid");
                             }
-                            if (runtime_radius !== Number(radius[to])) {
+                            if (runtime_options.radius !== Number(radius[to])) {
                                 kwiver_fail("history.radius", "runtime radius mismatch");
                             }
-                            runtime_radii.set(radius.edge, runtime_radius);
-                        }
-
-                        for (const radius of radius_applicable) {
-                            radius.edge.options.radius = runtime_radii.get(radius.edge);
+                            kwiver_apply_runtime_edge(
+                                "history.radius",
+                                radius.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(radius.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(radius_envelope.selection)) {
@@ -5915,25 +6274,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.angle");
-                        const runtime_angles = new Map();
                         for (const angle of angle_applicable) {
                             const runtime_edge = runtime_by_id.get(angle.edge.kwiver_id);
-                            const runtime_angle = Number(runtime_edge?.options?.angle);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_angle)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.angle", "runtime angle snapshot invalid");
                             }
-                            if (runtime_angle !== Number(angle[to])) {
+                            if (runtime_options.angle !== Number(angle[to])) {
                                 kwiver_fail("history.angle", "runtime angle mismatch");
                             }
-                            runtime_angles.set(angle.edge, runtime_angle);
-                        }
-
-                        for (const angle of angle_applicable) {
-                            angle.edge.options.angle = runtime_angles.get(angle.edge);
+                            kwiver_apply_runtime_edge(
+                                "history.angle",
+                                angle.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(angle.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(angle_envelope.selection)) {
@@ -5951,16 +6311,16 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.length");
-                        const runtime_shortens = [];
                         for (const length of action.lengths) {
                             const runtime_edge = runtime_by_id.get(length.edge.kwiver_id);
-                            const source = Number(runtime_edge?.options?.shorten_source);
-                            const target = Number(runtime_edge?.options?.shorten_target);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
+                            const source = runtime_options?.shorten.source;
+                            const target = runtime_options?.shorten.target;
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(source)
-                                || !Number.isInteger(target)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.length", "runtime shorten snapshot invalid");
                             }
@@ -5980,13 +6340,12 @@ class History {
                             if (source !== expected_source || target !== 100 - expected_target) {
                                 kwiver_fail("history.length", "runtime shorten mismatch");
                             }
-
-                            runtime_shortens.push({ source, target });
-                        }
-
-                        for (let i = 0; i < action.lengths.length; ++i) {
-                            const length = action.lengths[i];
-                            length.edge.options.shorten = runtime_shortens[i];
+                            kwiver_apply_runtime_edge(
+                                "history.length",
+                                length.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(length.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(length_envelope.selection)) {
@@ -6040,26 +6399,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.level");
-                        const runtime_levels = [];
                         for (const level of action.levels) {
                             const runtime_edge = runtime_by_id.get(level.edge.kwiver_id);
-                            const runtime_level = Number(runtime_edge?.options?.level);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || !Number.isInteger(runtime_level)
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.level", "runtime level snapshot invalid");
                             }
-                            if (runtime_level !== Number(level[to])) {
+                            if (runtime_options.level !== Number(level[to])) {
                                 kwiver_fail("history.level", "runtime level mismatch");
                             }
-                            runtime_levels.push(runtime_level);
-                        }
-
-                        for (let i = 0; i < action.levels.length; ++i) {
-                            const level = action.levels[i];
-                            level.edge.options.level = runtime_levels[i];
+                            kwiver_apply_runtime_edge(
+                                "history.level",
+                                level.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(level.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(level_envelope.selection)) {
@@ -6077,16 +6436,14 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.style");
-                        const runtime_styles = [];
                         for (const style of action.styles) {
                             const runtime_edge = runtime_by_id.get(style.edge.kwiver_id);
-                            const runtime_style = UI.kwiver_style_from_runtime(
-                                runtime_edge?.options?.style,
-                            );
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || runtime_style === null
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.style", "runtime style snapshot invalid");
                             }
@@ -6096,17 +6453,17 @@ class History {
                             );
                             if (
                                 expected_style === null
-                                || !UI.kwiver_edge_styles_equal(runtime_style, expected_style)
+                                || !UI.kwiver_edge_styles_equal(runtime_options.style, expected_style)
                             ) {
                                 kwiver_fail("history.style", "runtime style mismatch");
                             }
-                            runtime_styles.push(runtime_style);
-                        }
-
-                        for (let i = 0; i < action.styles.length; ++i) {
-                            const style = action.styles[i];
-                            style.edge.options.style = runtime_styles[i];
-                            style.edge.render(ui);
+                            kwiver_apply_runtime_edge(
+                                "history.style",
+                                style.edge,
+                                runtime_edge,
+                                false,
+                            );
+                            cells.add(style.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(style_envelope.selection)) {
                             kwiver_fail("history.style", "selection sync failed");
@@ -6116,7 +6473,8 @@ class History {
                     break;
                 }
                 case "connect": {
-                    ui.kwiver_apply_connect_action(action, to, "history.connect");
+                    ui.kwiver_apply_connect_action(action, to, "history.connect", false);
+                    cells.add(action.edge);
                     update_panel = true;
                     break;
                 }
@@ -6128,27 +6486,26 @@ class History {
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.colour");
-                        const runtime_colours = [];
                         for (const colour_change of action.colours) {
                             const runtime_edge = runtime_by_id.get(colour_change.edge.kwiver_id);
-                            const runtime_colour_raw = runtime_edge?.options?.colour;
-                            const runtime_colour = UI.kwiver_colour_from_runtime(runtime_colour_raw);
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || runtime_colour === null
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.colour", "runtime colour snapshot invalid");
                             }
-                            if (!UI.kwiver_colour_equals(runtime_colour_raw, colour_change[to])) {
+                            if (!UI.kwiver_js_colours_equal(runtime_options.colour, colour_change[to])) {
                                 kwiver_fail("history.colour", "runtime colour mismatch");
                             }
-                            runtime_colours.push(runtime_colour);
-                        }
-
-                        for (let i = 0; i < action.colours.length; ++i) {
-                            const colour_change = action.colours[i];
-                            colour_change.edge.options.colour = runtime_colours[i];
+                            kwiver_apply_runtime_edge(
+                                "history.colour",
+                                colour_change.edge,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(colour_change.edge);
                         }
                         if (!ui.kwiver_apply_runtime_selection(colour_envelope.selection)) {
@@ -6174,23 +6531,21 @@ class History {
                             kwiver_fail("history.edge_alignment", "dispatch failed");
                         }
 
-                        const alignment_key = action.end === "source"
-                            ? "edge_alignment_source"
-                            : action.end === "target"
-                                ? "edge_alignment_target"
-                                : null;
-                        if (alignment_key === null) {
+                        if (action.end !== "source" && action.end !== "target") {
                             kwiver_fail("history.edge_alignment", "invalid alignment end");
                         }
 
                         const runtime_by_id = kwiver_runtime_cells("history.edge_alignment");
                         for (const cell of action.cells) {
                             const runtime_edge = runtime_by_id.get(cell.kwiver_id);
-                            const runtime_alignment = runtime_edge?.options?.[alignment_key];
+                            const runtime_options =
+                                UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
+                            const runtime_alignment =
+                                runtime_options?.edge_alignment?.[action.end];
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
-                                || typeof runtime_alignment !== "boolean"
+                                || runtime_options === null
                             ) {
                                 kwiver_fail("history.edge_alignment", "runtime alignment snapshot invalid");
                             }
@@ -6200,7 +6555,12 @@ class History {
                                 kwiver_fail("history.edge_alignment", "runtime alignment mismatch");
                             }
 
-                            cell.options.edge_alignment[action.end] = runtime_alignment;
+                            kwiver_apply_runtime_edge(
+                                "history.edge_alignment",
+                                cell,
+                                runtime_edge,
+                                false,
+                            );
                             cells.add(cell);
                         }
                         if (!ui.kwiver_apply_runtime_selection(edge_alignment_envelope.selection)) {
@@ -6225,6 +6585,21 @@ class History {
                 );
             } else {
                 render_cells = new Set();
+            }
+            if (render_cells.size > 0) {
+                const runtime_by_id = kwiver_runtime_cells("ui.history.render.apply");
+                for (const cell of render_cells) {
+                    if (!cell.is_edge()) {
+                        continue;
+                    }
+                    const runtime_cell = runtime_by_id.get(cell.kwiver_id);
+                    kwiver_apply_runtime_edge(
+                        "ui.history.render.apply",
+                        cell,
+                        runtime_cell,
+                        false,
+                    );
+                }
             }
             for (const cell of render_cells) {
                 cell.render(ui);
@@ -6751,63 +7126,6 @@ class Panel {
         const ARROW_LENGTH = 72; // The body styles.
         const SHORTER_ARROW_LENGTH = 48; // The edge styles.
 
-        // To make selecting the arrow style button work as expected, we automatically
-        // trigger the `"change"` event for the arrow style buttons. This in turn will
-        // trigger `record_edge_style_change`, creating many unintentional history
-        // actions. To avoid this, we prevent `record_edge_style_change` from taking
-        // effect when it's already in progress using the `recording` flag.
-        let recording = false;
-
-        // Compute the difference in styling effected by `modify` and record the change in the
-        // history.
-        const record_edge_style_change = (modify) => {
-            if (recording) {
-                return;
-            }
-            recording = true;
-
-            const clone = (x) => JSON.parse(JSON.stringify(x));
-            const styles = new Map();
-            for (const cell of ui.selection) {
-                if (cell.is_edge()) {
-                    styles.set(cell, clone(cell.options.style));
-                }
-            }
-
-            try {
-                modify();
-
-                ui.history.add(ui, [{
-                    kind: "style",
-                    styles: Array.from(ui.selection)
-                        .filter((cell) => cell.is_edge())
-                        .map((edge) => ({
-                            edge,
-                            from: styles.get(edge),
-                            to: clone(edge.options.style),
-                        })),
-                }], true);
-            } catch (error) {
-                for (const [edge, previous_style] of styles.entries()) {
-                    edge.options.style = clone(previous_style);
-                    edge.render(ui);
-                }
-                throw error;
-            } finally {
-                recording = false;
-            }
-        };
-
-        // Trigger an effect that changes an edge style, optionally recording the change in the
-        // history.
-        const effect_edge_style_change = (record, modify) => {
-            if (record) {
-                record_edge_style_change(modify);
-            } else {
-                modify();
-            }
-        };
-
         // To each style for each component (tail, body, head), we associated a number, so the user
         // can select it from the keyboard.
         let key_index = 1;
@@ -6816,40 +7134,84 @@ class Panel {
         // events below.
         let progress_style_selection;
 
-        const update_style = (option_list, name) => {
-            return (edges, _, data, user_triggered, idempotent) => {
-                if (!idempotent) {
-                    effect_edge_style_change(user_triggered, () => {
-                        edges.forEach((edge) => edge.options.style[name] = data);
-                    });
+        const commit_style_actions = (styles) => {
+            if (styles.length === 0) {
+                return;
+            }
+            ui.history.add(ui, [{
+                kind: "style",
+                styles,
+            }], true);
+        };
+
+        const set_arrow_style_controls_enabled = (enabled) => {
+            ui.element.query_selector_all(".arrow-style input")
+                .forEach((input) => input.element.disabled = !enabled);
+            for (const slider of ui.element.query_selector_all(".arrow-style .slider")) {
+                slider.class_list.toggle("disabled", !enabled);
+            }
+        };
+
+        const checked_style_value = (name, values, context) => {
+            const checked = this.element.query_selector(`input[name="${name}"]:checked`);
+            const value = typeof checked?.element?.value === "string" ? checked.element.value : null;
+            if (value === null || !values.has(value)) {
+                throw new Error("[kwiver-only] " + context + ": checked style option missing");
+            }
+            return values.get(value);
+        };
+
+        const style_component_actions = (edges, component, endpoint, context) => {
+            const normalized_endpoint = UI.kwiver_style_endpoint_from_runtime(endpoint);
+            if (normalized_endpoint === null) {
+                throw new Error("[kwiver-only] " + context + ": style endpoint invalid");
+            }
+
+            const styles = [];
+            for (const edge of edges) {
+                const from = UI.kwiver_clone_style(edge.options.style);
+                const to = UI.kwiver_clone_style(edge.options.style);
+                to[component] = normalized_endpoint;
+                if (!UI.kwiver_edge_styles_equal(from, to)) {
+                    styles.push({ edge, from, to });
                 }
-                if (option_list.class_list.contains("focused")) {
+            }
+            return styles;
+        };
+
+        // The list of tail styles.
+        const tail_style_entries = [
+            ["mono", "Mono", { name: "mono"}, `${key_index++}`],
+            ["none", "No tail", { name: "none" }, `${key_index++}`],
+            ["maps to", "Maps to", { name: "maps to" }, `${key_index++}`],
+            ["top-hook", "Top hook",
+                { name: "hook", side: "top" }, `${key_index++}`, ["short", "start-of-line"]],
+            ["bottom-hook", "Bottom hook",
+                { name: "hook", side: "bottom" }, `${key_index++}`, ["short"]],
+            ["arrowhead", "Arrowhead", { name: "arrowhead"}, `${key_index++}`],
+        ];
+        const tail_style_values = new Map(
+            tail_style_entries.map(([value, , data]) => [value, data]),
+        );
+        const tail_styles = this.create_option_list(
+            ui,
+            wrapper,
+            tail_style_entries,
+            "tail-type",
+            ["vertical", "short", "arrow-style", "kbd-requires-focus"],
+            true, // `disabled`
+            (edges, _, data, user_triggered, idempotent) => {
+                if (!idempotent && user_triggered) {
+                    commit_style_actions(
+                        style_component_actions(edges, "tail", data, "ui.panel.style.tail"),
+                    );
+                }
+                if (tail_styles.class_list.contains("focused")) {
                     progress_style_selection();
                 } else {
                     this.defocus_inputs();
                 }
-            };
-        };
-
-        // The list of tail styles.
-        const tail_styles = this.create_option_list(
-            ui,
-            wrapper,
-            [
-                ["mono", "Mono", { name: "mono"}, `${key_index++}`],
-                ["none", "No tail", { name: "none" }, `${key_index++}`],
-                ["maps to", "Maps to", { name: "maps to" }, `${key_index++}`],
-                ["top-hook", "Top hook",
-                    { name: "hook", side: "top" }, `${key_index++}`, ["short", "start-of-line"]],
-                ["bottom-hook", "Bottom hook",
-                    { name: "hook", side: "bottom" }, `${key_index++}`, ["short"]],
-                ["arrowhead", "Arrowhead", { name: "arrowhead"}, `${key_index++}`],
-            ],
-            "tail-type",
-            ["vertical", "short", "arrow-style", "kbd-requires-focus"],
-            true, // `disabled`
-            (edges, _, data, user_triggered, idempotent) =>
-                update_style(tail_styles, "tail")(edges, _, data, user_triggered, idempotent),
+            },
             (data) => ({
                 length: 0,
                 options: Edge.default_options(null, {
@@ -6862,30 +7224,44 @@ class Panel {
 
         // The list of body styles.
         key_index = 1;
+        const body_style_entries = [
+            ["solid", "Solid", { name: "cell" }, `${key_index++}`],
+            ["none", "No body", { name: "none" }, `${key_index++}`],
+            ["dashed", "Dashed", { name: "dashed" }, `${key_index++}`,
+                ["short", "start-of-line"]],
+            ["dotted", "Dotted", { name: "dotted" }, `${key_index++}`, ["short"]],
+            ["squiggly", "Squiggly", { name: "squiggly" }, `${key_index++}`],
+            ["barred", "Barred", { name: "barred" }, `${key_index++}`,
+                ["short", "start-of-line"]],
+            ["double barred", "Double barred", { name: "double barred" }, `${key_index++}`,
+                ["short"]],
+            ["bullet solid", "Solid bullet", { name: "bullet solid" }, `${key_index++}`,
+                ["short", "start-of-line"]],
+            ["bullet hollow", "Hollow bullet", { name: "bullet hollow" }, `${key_index++}`,
+                ["short"]],
+        ];
+        const body_style_values = new Map(
+            body_style_entries.map(([value, , data]) => [value, data]),
+        );
         const body_styles = this.create_option_list(
             ui,
             wrapper,
-            [
-                ["solid", "Solid", { name: "cell" }, `${key_index++}`],
-                ["none", "No body", { name: "none" }, `${key_index++}`],
-                ["dashed", "Dashed", { name: "dashed" }, `${key_index++}`,
-                    ["short", "start-of-line"]],
-                ["dotted", "Dotted", { name: "dotted" }, `${key_index++}`, ["short"]],
-                ["squiggly", "Squiggly", { name: "squiggly" }, `${key_index++}`],
-                ["barred", "Barred", { name: "barred" }, `${key_index++}`,
-                    ["short", "start-of-line"]],
-                ["double barred", "Double barred", { name: "double barred" }, `${key_index++}`,
-                    ["short"]],
-                ["bullet solid", "Solid bullet", { name: "bullet solid" }, `${key_index++}`,
-                    ["short", "start-of-line"]],
-                ["bullet hollow", "Hollow bullet", { name: "bullet hollow" }, `${key_index++}`,
-                    ["short"]],
-            ],
+            body_style_entries,
             "body-type",
             ["vertical", "arrow-style", "kbd-requires-focus"],
             true, // `disabled`
-            (edges, _, data, user_triggered, idempotent) =>
-                update_style(body_styles, "body")(edges, _, data, user_triggered, idempotent),
+            (edges, _, data, user_triggered, idempotent) => {
+                if (!idempotent && user_triggered) {
+                    commit_style_actions(
+                        style_component_actions(edges, "body", data, "ui.panel.style.body"),
+                    );
+                }
+                if (body_styles.class_list.contains("focused")) {
+                    progress_style_selection();
+                } else {
+                    this.defocus_inputs();
+                }
+            },
             (data) => ({
                 length: [
                     "dashed", "dotted", "barred", "double barred", "bullet solid", "bullet hollow"
@@ -6899,23 +7275,37 @@ class Panel {
 
         // The list of head styles.
         key_index = 1;
+        const head_style_entries = [
+            ["arrowhead", "Arrowhead", { name: "arrowhead" }, `${key_index++}`],
+            ["none", "No arrowhead", { name: "none" }, `${key_index++}`],
+            ["epi", "Epi", { name: "epi"}, `${key_index++}`],
+            ["top-harpoon", "Top harpoon",
+                { name: "harpoon", side: "top" }, `${key_index++}`, ["short", "start-of-line"]],
+            ["bottom-harpoon", "Bottom harpoon",
+                { name: "harpoon", side: "bottom" }, `${key_index++}`, ["short"]],
+        ];
+        const head_style_values = new Map(
+            head_style_entries.map(([value, , data]) => [value, data]),
+        );
         const head_styles = this.create_option_list(
             ui,
             wrapper,
-            [
-                ["arrowhead", "Arrowhead", { name: "arrowhead" }, `${key_index++}`],
-                ["none", "No arrowhead", { name: "none" }, `${key_index++}`],
-                ["epi", "Epi", { name: "epi"}, `${key_index++}`],
-                ["top-harpoon", "Top harpoon",
-                    { name: "harpoon", side: "top" }, `${key_index++}`, ["short", "start-of-line"]],
-                ["bottom-harpoon", "Bottom harpoon",
-                    { name: "harpoon", side: "bottom" }, `${key_index++}`, ["short"]],
-            ],
+            head_style_entries,
             "head-type",
             ["vertical", "short", "arrow-style", "kbd-requires-focus"],
             true, // `disabled`
-            (edges, _, data, user_triggered, idempotent) =>
-                update_style(head_styles, "head")(edges, _, data, user_triggered, idempotent),
+            (edges, _, data, user_triggered, idempotent) => {
+                if (!idempotent && user_triggered) {
+                    commit_style_actions(
+                        style_component_actions(edges, "head", data, "ui.panel.style.head"),
+                    );
+                }
+                if (head_styles.class_list.contains("focused")) {
+                    progress_style_selection();
+                } else {
+                    this.defocus_inputs();
+                }
+            },
             (data) => ({
                 length: 0,
                 options: Edge.default_options(null, {
@@ -6925,71 +7315,85 @@ class Panel {
             }),
         );
 
+        const selected_arrow_style = (context = "ui.panel.style.arrow") => {
+            return {
+                name: "arrow",
+                tail: UI.kwiver_style_endpoint_from_runtime(
+                    checked_style_value("tail-type", tail_style_values, context),
+                ),
+                body: UI.kwiver_style_endpoint_from_runtime(
+                    checked_style_value("body-type", body_style_values, context),
+                ),
+                head: UI.kwiver_style_endpoint_from_runtime(
+                    checked_style_value("head-type", head_style_values, context),
+                ),
+            };
+        };
+
+        const edge_type_style_actions = (edges, data, context) => {
+            if (!data || typeof data.name !== "string") {
+                throw new Error("[kwiver-only] " + context + ": edge style invalid");
+            }
+
+            const styles = [];
+            const arrow_style = data.name === "arrow"
+                ? selected_arrow_style(context + ".arrow")
+                : null;
+            if (data.name === "arrow" && (
+                arrow_style.tail === null
+                || arrow_style.body === null
+                || arrow_style.head === null
+            )) {
+                throw new Error("[kwiver-only] " + context + ": selected arrow style invalid");
+            }
+
+            for (const edge of edges) {
+                if (edge.is_loop()) {
+                    continue;
+                }
+
+                const from = UI.kwiver_clone_style(edge.options.style);
+                let to = UI.kwiver_clone_style(edge.options.style);
+                if (data.name === "arrow") {
+                    if (from.name !== "arrow") {
+                        to = UI.kwiver_clone_style(arrow_style);
+                    }
+                } else {
+                    to.name = data.name;
+                }
+
+                if (!UI.kwiver_edge_styles_equal(from, to)) {
+                    styles.push({ edge, from, to });
+                }
+            }
+
+            return styles;
+        };
+
         // The list of (non-arrow) edge styles.
+        const edge_style_entries = [
+            ["arrow", "Arrow", Edge.default_options().style, "a"],
+            ["adjunction", "Adjunction", { name: "adjunction" }, "j"],
+            ["corner", "Pullback / pushout", { name: "corner" }, "p"],
+            ["corner-inverse", "Pullback / pushout", { name: "corner-inverse" }, "p"],
+        ];
         const edge_styles = this.create_option_list(
             ui,
             wrapper,
-            [
-                ["arrow", "Arrow", Edge.default_options().style, "a"],
-                ["adjunction", "Adjunction", { name: "adjunction" }, "j"],
-                ["corner", "Pullback / pushout", { name: "corner" }, "p"],
-                ["corner-inverse", "Pullback / pushout", { name: "corner-inverse" }, "p"],
-            ],
+            edge_style_entries,
             "edge-type",
             ["large", "nonloop"],
             true, // `disabled`
             (edges, _, data, user_triggered) => {
-                effect_edge_style_change(user_triggered, () => {
-                    for (const edge of edges) {
-                        // These edge styles are not applicable to loops.
-                        if (edge.is_loop()) {
-                            continue;
-                        }
-                        // We reset `curve`, `radius`, `angle`, `level` and `length` for non-arrow
-                        // edges, because that data isn't relevant to them. Otherwise, we set them
-                        // to whatever the sliders are currently set to. This will preserve them
-                        // under switching between arrow styles, because we don't reset the sliders
-                        // when switching.
-                        if (data.name !== "arrow") {
-                            edge.options.curve = 0;
-                            edge.options.level = 1;
-                            edge.options.shorten = { source: 0, target: 0 };
-                        } else if (edge.options.style.name !== "arrow") {
-                            for (const property of ["curve", "radius", "angle", "level"]) {
-                                edge.options[property] = this.sliders.get(property).values();
-                            }
-                            const [source, target] = this.sliders.get("length").values();
-                            edge.options.shorten = { source, target: 100 - target };
-                        }
-                        // Update the edge style.
-                        if (data.name !== "arrow" || edge.options.style.name !== "arrow") {
-                            // The arrow is a special case, because it contains suboptions that we
-                            // don't necessarily want to override. For example, if we have multiple
-                            // edges selected, one of which is a non-default arrow and another which
-                            // has a different style, clicking on the arrow option should not reset
-                            // the style of the existing arrow.
-                            edge.options.style = data;
-                        }
-                    }
-
-                    // Enable/disable the arrow style buttons.
-                    ui.element.query_selector_all(".arrow-style input")
-                        .forEach((input) => input.element.disabled = data.name !== "arrow");
-                    // Enable/disable the the curve, length, and level sliders.
-                    for (const slider of ui.element.query_selector_all(".arrow-style .slider")) {
-                        slider.class_list.toggle("disabled", data.name !== "arrow");
-                    }
-
-                    // If we've selected the `"arrow"` style, then we need to trigger the
-                    // currently-checked buttons and the curve, length, and level sliders so that
-                    // we get the expected style, rather than the default style.
-                    if (data.name === "arrow") {
-                        ui.element.query_selector_all('.arrow-style input[type="radio"]:checked')
-                            .forEach((input) => input.dispatch(new Event("change")))
-                    } else {
-                        this.defocus_inputs();
-                    }
-                });
+                set_arrow_style_controls_enabled(data.name === "arrow");
+                if (user_triggered) {
+                    commit_style_actions(
+                        edge_type_style_actions(edges, data, "ui.panel.style.edge_type"),
+                    );
+                }
+                if (data.name !== "arrow") {
+                    this.defocus_inputs();
+                }
             },
             (data) => ({
                 length: SHORTER_ARROW_LENGTH,
@@ -7159,7 +7563,7 @@ class Panel {
                 // Get the encoding of the diagram. The output may be modified by the caller.
                 const { data, metadata } = modify(kind === "import" ?
                     { data: "", metadata: null } :
-                    ui.quiver.export(
+                    ui.bridge_quiver.export(
                         format,
                         ui.settings,
                         ui.options(),
@@ -7169,6 +7573,7 @@ class Panel {
 
                 let port_pane, latex_tip, typst_tip, warning, error, latex_options, typst_options;
                 let embed_options, note, content, textarea, parse_button, import_success;
+                let import_diagnostic_navigation = null;
 
                 // Clear any errors and warnings.
                 const hide_errors_and_warnings = () => {
@@ -7223,7 +7628,7 @@ class Panel {
                         this.sep[axis] = sep_sliders[axis].values();
                         // Update the output. We ignore `metadata`, which currently does not
                         // change in response to the settings.
-                        const { data } = modify(ui.quiver.export(
+                        const { data } = modify(ui.bridge_quiver.export(
                             format,
                             ui.settings,
                             ui.options(),
@@ -7394,7 +7799,7 @@ class Panel {
                             );
                             // Update the output. We ignore `metadata`, which currently does not
                             // change in response to the settings.
-                            const { data } = modify(ui.quiver.export(
+                            const { data } = modify(ui.bridge_quiver.export(
                                 format,
                                 ui.settings,
                                 ui.options(),
@@ -7413,7 +7818,7 @@ class Panel {
                             value = CONSTANTS.DEFAULT_EMBED_SIZE[dimension.toUpperCase()];
                         }
                         ui.settings.set(`export.embed.${dimension}`, value);
-                        const { data } = modify(ui.quiver.export(
+                        const { data } = modify(ui.bridge_quiver.export(
                             "html",
                             ui.settings,
                             ui.options(),
@@ -7463,8 +7868,153 @@ class Panel {
                         }
                     };
 
+                    const diagnostic_kind_badge = (diagnostic) => {
+                        const kind = typeof diagnostic.kwiver_kind === "string"
+                            ? diagnostic.kwiver_kind
+                            : "";
+                        switch (kind) {
+                            case "syntax":
+                                return {
+                                    label: "Syntax",
+                                    class_name: "diagnostic-kind-syntax",
+                                };
+                            case "option":
+                                return {
+                                    label: "Option",
+                                    class_name: "diagnostic-kind-option",
+                                };
+                            case "reference":
+                                return {
+                                    label: "Reference",
+                                    class_name: "diagnostic-kind-reference",
+                                };
+                            case "base64":
+                                return {
+                                    label: "Base64",
+                                    class_name: "diagnostic-kind-base64",
+                                };
+                            case "tikz":
+                                return {
+                                    label: "Import",
+                                    class_name: "diagnostic-kind-import",
+                                };
+                            default:
+                                return null;
+                        }
+                    };
+
+                    const text_offset_to_line_column = (source, offset) => {
+                        const text = typeof source === "string" ? source : "";
+                        const target = Math.max(
+                            0,
+                            Math.min(text.length, Number.isInteger(offset) ? offset : 0),
+                        );
+                        let line = 1;
+                        let column = 1;
+                        for (let i = 0; i < target; ++i) {
+                            if (text[i] === "\n") {
+                                ++line;
+                                column = 1;
+                            } else {
+                                ++column;
+                            }
+                        }
+                        return { line, column };
+                    };
+
+                    const diagnostic_location_badge = (diagnostic, source) => {
+                        const line = Number(diagnostic.kwiver_line);
+                        const column = Number(diagnostic.kwiver_column);
+                        const hasLine = Number.isInteger(line) && line > 0;
+                        const hasColumn = Number.isInteger(column) && column > 0;
+                        if (hasLine || hasColumn) {
+                            if (hasLine && hasColumn) {
+                                return { label: `L${line}:C${column}` };
+                            }
+                            if (hasLine) {
+                                return { label: `L${line}` };
+                            }
+                            return { label: `C${column}` };
+                        }
+
+                        if (
+                            diagnostic.range === null ||
+                            typeof diagnostic.range !== "object" ||
+                            typeof diagnostic.range.start !== "number"
+                        ) {
+                            return null;
+                        }
+                        const position = text_offset_to_line_column(
+                            source,
+                            Math.floor(diagnostic.range.start),
+                        );
+                        return { label: `L${position.line}:C${position.column}` };
+                    };
+
+                    const text_offset_to_dom_position = (root, offset) => {
+                        const target = Math.max(0, Number.isInteger(offset) ? offset : 0);
+                        const walker = document.createTreeWalker(
+                            root,
+                            NodeFilter.SHOW_TEXT,
+                        );
+                        let remaining = target;
+                        let last = null;
+                        let current = walker.nextNode();
+                        while (current !== null) {
+                            last = current;
+                            const length = current.textContent.length;
+                            if (remaining <= length) {
+                                return { node: current, offset: remaining };
+                            }
+                            remaining -= length;
+                            current = walker.nextNode();
+                        }
+                        if (last !== null) {
+                            return { node: last, offset: last.textContent.length };
+                        }
+                        return { node: root, offset: 0 };
+                    };
+
+                    const focus_diagnostic_range = (range) => {
+                        if (range === null || typeof range !== "object") {
+                            return;
+                        }
+                        if (
+                            typeof range.start !== "number" ||
+                            typeof range.end !== "number"
+                        ) {
+                            return;
+                        }
+
+                        const text = textarea.element.textContent || "";
+                        const textLength = text.length;
+                        const startIndex = Math.max(0, Math.min(textLength, Math.floor(range.start)));
+                        const endIndex = Math.max(
+                            startIndex,
+                            Math.min(textLength, Math.floor(range.end)),
+                        );
+                        const startPos = text_offset_to_dom_position(textarea.element, startIndex);
+                        const endPos = text_offset_to_dom_position(textarea.element, endIndex);
+
+                        try {
+                            const selection = window.getSelection();
+                            if (selection === null) {
+                                return;
+                            }
+                            textarea.element.focus();
+                            const caret = document.createRange();
+                            caret.setStart(startPos.node, startPos.offset);
+                            caret.setEnd(endPos.node, endPos.offset);
+                            selection.removeAllRanges();
+                            selection.addRange(caret);
+                        } catch (_error) {
+                            // Ignore selection failures in mixed contenteditable nodes.
+                        }
+                    };
+
                     // Parse the text in the `contenteditable` and load the resulting diagram.
                     const parse_text = () => {
+                        import_diagnostic_navigation = null;
                         // Show the loading screen.
                         ui.element.query_selector(".loading-screen").class_list.remove("hidden");
                         hide_errors_and_warnings();
@@ -7478,7 +8028,7 @@ class Panel {
                             ui.clear_quiver("ui.port.import.clear");
                             // The following should never throw an error: any parse errors will be
                             // reported in `diagnostics`.
-                            const { diagnostics } = ui.quiver.import(
+                            const { diagnostics } = ui.bridge_quiver.import(
                                 ui,
                                 format,
                                 text,
@@ -7490,7 +8040,7 @@ class Panel {
                             delay(() => {
                                 // Edges are shortened after initial rendering, so we may need to
                                 // rerender them afterwards.
-                                ui.quiver.all_cells().filter((cell) => {
+                                ui.view_all_cells().filter((cell) => {
                                     return cell.is_edge() && (cell.options.shorten.source > 0 ||
                                         cell.options.shorten.target > 0);
                                 }).forEach((edge) => edge.render(ui));
@@ -7532,31 +8082,175 @@ class Panel {
                                     let endpoints = new Set([0, text.length]);
                                     const fragments_for_diagnostic = new Map();
                                     const diagnostics_for_fragment = new Map();
+                                    const diagnostic_order = [];
+                                    let selected_diagnostic = null;
+
+                                    const clear_diagnostic_selection = () => {
+                                        if (selected_diagnostic === null) {
+                                            return;
+                                        }
+                                        if (selected_diagnostic.element) {
+                                            selected_diagnostic.element.class_list
+                                                .remove("selected");
+                                        }
+                                        for (const fragment of fragments_for_diagnostic
+                                            .get(selected_diagnostic) || []
+                                        ) {
+                                            fragment.class_list.remove("selected");
+                                        }
+                                        selected_diagnostic = null;
+                                    };
+
+                                    const set_diagnostic_selection = (diagnostic) => {
+                                        if (selected_diagnostic === diagnostic) {
+                                            return;
+                                        }
+                                        clear_diagnostic_selection();
+                                        selected_diagnostic = diagnostic;
+                                        if (diagnostic.element) {
+                                            diagnostic.element.class_list.add("selected");
+                                        }
+                                        for (const fragment of fragments_for_diagnostic
+                                            .get(diagnostic) || []
+                                        ) {
+                                            fragment.class_list.add("selected");
+                                        }
+                                    };
+
+                                    const highlight_diagnostic_fragments = (diagnostic) => {
+                                        for (const fragment of fragments_for_diagnostic
+                                            .get(diagnostic)
+                                        ) {
+                                            fragment.class_list.add("highlight");
+                                        }
+                                    };
+
+                                    const clear_fragment_highlights = () => {
+                                        for (const fragment of textarea
+                                            .query_selector_all(".fragment.highlight")
+                                        ) {
+                                            fragment.class_list.remove("highlight");
+                                        }
+                                    };
+
+                                    const activate_diagnostic = (diagnostic) => {
+                                        set_diagnostic_selection(diagnostic);
+                                        focus_diagnostic_range(diagnostic.range);
+                                        const fragments = fragments_for_diagnostic
+                                            .get(diagnostic) || [];
+                                        if (fragments.length > 0) {
+                                            fragments[0].element.scrollIntoView({
+                                                block: "nearest",
+                                                inline: "nearest",
+                                            });
+                                        }
+                                    };
+
+                                    const focus_and_activate_diagnostic = (diagnostic) => {
+                                        if (diagnostic === null) {
+                                            return;
+                                        }
+                                        if (diagnostic.element) {
+                                            diagnostic.element.element.focus();
+                                        }
+                                        activate_diagnostic(diagnostic);
+                                    };
+
+                                    const navigate_diagnostic = (diagnostic, direction) => {
+                                        const index = diagnostic_order.indexOf(diagnostic);
+                                        if (index < 0) {
+                                            return;
+                                        }
+                                        const nextIndex = Math.max(
+                                            0,
+                                            Math.min(
+                                                diagnostic_order.length - 1,
+                                                index + direction,
+                                            ),
+                                        );
+                                        if (nextIndex === index) {
+                                            return;
+                                        }
+                                        focus_and_activate_diagnostic(diagnostic_order[nextIndex]);
+                                    };
+
+                                    const primary_diagnostic_for_fragment = (fragment) => {
+                                        const related = diagnostics_for_fragment.get(fragment) || [];
+                                        if (related.length === 0) {
+                                            return null;
+                                        }
+                                        if (
+                                            selected_diagnostic !== null &&
+                                            related.includes(selected_diagnostic)
+                                        ) {
+                                            return selected_diagnostic;
+                                        }
+                                        for (const diagnostic of related) {
+                                            if (diagnostic instanceof Parser.Error) {
+                                                return diagnostic;
+                                            }
+                                        }
+                                        return related[0];
+                                    };
+
                                     // Create the list items associated to the diagnostics.
                                     for (const diagnostic of diagnostics) {
+                                        diagnostic_order.push(diagnostic);
                                         fragments_for_diagnostic.set(diagnostic, []);
                                         let { message, range } = diagnostic;
                                         if (range !== null) {
                                             endpoints.add(range.start);
                                             endpoints.add(range.end);
                                         }
-                                        const li = new DOM.Element("li")
+                                        const li = new DOM.Element("li", {
+                                            tabindex: "0",
+                                        })
                                             .listen("mouseenter", () => {
-                                            for (const fragment of fragments_for_diagnostic
-                                                .get(diagnostic)
-                                            ) {
-                                                fragment.class_list.add("highlight");
-                                            }
+                                            highlight_diagnostic_fragments(diagnostic);
+                                        }).listen("focus", () => {
+                                            highlight_diagnostic_fragments(diagnostic);
                                         }).listen("mouseleave", () => {
-                                            for (const fragment of textarea
-                                                .query_selector_all(".fragment.highlight")
-                                            ) {
-                                                fragment.class_list.remove("highlight");
+                                            clear_fragment_highlights();
+                                        }).listen("blur", () => {
+                                            clear_fragment_highlights();
+                                        }).listen("click", () => {
+                                            activate_diagnostic(diagnostic);
+                                        }).listen("keydown", (event) => {
+                                            if (event.key === "Enter" || event.key === " ") {
+                                                event.preventDefault();
+                                                activate_diagnostic(diagnostic);
+                                            }
+                                            if (event.key === "ArrowDown") {
+                                                event.preventDefault();
+                                                navigate_diagnostic(diagnostic, 1);
+                                            }
+                                            if (event.key === "ArrowUp") {
+                                                event.preventDefault();
+                                                navigate_diagnostic(diagnostic, -1);
                                             }
                                         });
                                         diagnostic.element = li;
                                         if (typeof message === "string") {
                                             message = [message];
+                                        }
+                                        const kind_badge = diagnostic_kind_badge(diagnostic);
+                                        if (kind_badge !== null) {
+                                            li.add(
+                                                new DOM.Element("span", {
+                                                    class: `diagnostic-kind ${kind_badge.class_name}`,
+                                                }).add(kind_badge.label),
+                                            ).add(" ");
+                                        }
+                                        const location_badge = diagnostic_location_badge(
+                                            diagnostic,
+                                            text,
+                                        );
+                                        if (location_badge !== null) {
+                                            li.add(
+                                                new DOM.Element("span", {
+                                                    class: "diagnostic-location",
+                                                }).add(location_badge.label),
+                                            ).add(" ");
                                         }
                                         message.forEach((part) => li.add(part));
                                         if (diagnostic instanceof Parser.Error) {
@@ -7605,7 +8299,9 @@ class Panel {
                                             for (const diagnostic of diagnostics_for_fragment
                                                 .get(fragment)
                                             ) {
-                                                diagnostic.class_list.add("highlight");
+                                                if (diagnostic.element) {
+                                                    diagnostic.element.class_list.add("highlight");
+                                                }
                                             }
                                         }).listen("mouseleave", () => {
                                             for (const diagnostic of port_pane
@@ -7613,6 +8309,10 @@ class Panel {
                                             ) {
                                                 diagnostic.class_list.remove("highlight");
                                             }
+                                        }).listen("click", () => {
+                                            focus_and_activate_diagnostic(
+                                                primary_diagnostic_for_fragment(fragment),
+                                            );
                                         });
                                         diagnostics_for_fragment.set(fragment, []);
                                         for (const diagnostic of diagnostics) {
@@ -7628,7 +8328,7 @@ class Panel {
                                                 fragments_for_diagnostic
                                                     .get(diagnostic).push(fragment);
                                                 diagnostics_for_fragment
-                                                    .get(fragment).push(diagnostic.element);
+                                                    .get(fragment).push(diagnostic);
                                                 fragment.class_list.add(
                                                     diagnostic instanceof Parser.Error ?
                                                         "error" : "warning"
@@ -7637,6 +8337,32 @@ class Panel {
                                         }
                                         textarea.add(fragment);
                                     }
+                                    const initial_diagnostic = diagnostics.find((diagnostic) => {
+                                        return diagnostic instanceof Parser.Error;
+                                    }) || diagnostics[0] || null;
+                                    if (initial_diagnostic !== null) {
+                                        activate_diagnostic(initial_diagnostic);
+                                    }
+                                    import_diagnostic_navigation = {
+                                        next: () => {
+                                            if (selected_diagnostic === null) {
+                                                focus_and_activate_diagnostic(
+                                                    diagnostic_order[0] || null,
+                                                );
+                                                return;
+                                            }
+                                            navigate_diagnostic(selected_diagnostic, 1);
+                                        },
+                                        previous: () => {
+                                            if (selected_diagnostic === null) {
+                                                focus_and_activate_diagnostic(
+                                                    diagnostic_order[0] || null,
+                                                );
+                                                return;
+                                            }
+                                            navigate_diagnostic(selected_diagnostic, -1);
+                                        },
+                                    };
                                 } else {
                                     // If the parse was successful, i.e. there were no errors or
                                     // warnings, we close the import pane immediately.
@@ -7669,6 +8395,7 @@ class Panel {
                         // not seem convenient to override, but users should mostly be pasting
                         // code so it should not matter significantly.
                     }).listen("input", () => {
+                        import_diagnostic_navigation = null;
                         // If the user starts editing, we want to hide the warning/error
                         // highlighting, because they will no longer be correct once the text has
                         // been modified.
@@ -7679,6 +8406,17 @@ class Panel {
                             parse_button.set_attributes({ disabled: "" });
                         }
                     }).listen("keydown", (event) => {
+                        if (event.key === "F8") {
+                            event.preventDefault();
+                            if (import_diagnostic_navigation !== null) {
+                                if (event.shiftKey) {
+                                    import_diagnostic_navigation.previous();
+                                } else {
+                                    import_diagnostic_navigation.next();
+                                }
+                            }
+                            return;
+                        }
                         // For some reason, `contenteditable` only inserts newlines when Shift +
                         // Enter is pressed. It does not seem possible to configure this behaviour,
                         // so we have to manually insert newlines.
@@ -7940,9 +8678,9 @@ class Panel {
 
                 const previous_bullet = `${renderer === "typst" ? "\\" : ""}bullet`;
                 const new_bullet = `${renderer === "typst" ? "" : "\\"}bullet`;
-                if (!ui.quiver.is_empty()) {
+                if (!ui.view_is_empty()) {
                     const label_updates = [];
-                    for (const vertex of ui.quiver.cells[0]) {
+                    for (const vertex of ui.view_vertices()) {
                         if (vertex.label === previous_bullet) {
                             label_updates.push({
                                 cell: vertex,
@@ -7974,7 +8712,12 @@ class Panel {
                             if (runtime_cell.label !== label_update.to) {
                                 throw new Error("[kwiver-only] ui.renderer: runtime label mismatch");
                             }
-                            label_update.cell.label = runtime_cell.label;
+                            UI.kwiver_apply_runtime_cell_snapshot(
+                                ui,
+                                label_update.cell,
+                                runtime_cell,
+                                "ui.renderer",
+                            );
                         }
 
                         if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
@@ -7984,7 +8727,7 @@ class Panel {
                 }
 
                 const label_rerender = () => {
-                    ui.quiver.all_cells().forEach((cell) => ui.panel.render_maths(ui, cell));
+                    ui.view_all_cells().forEach((cell) => ui.panel.render_maths(ui, cell));
                 };
 
                 switch (renderer) {
@@ -9147,7 +9890,7 @@ class Toolbar {
             "save",
             [{ key: "S", modifier: true, context: Shortcuts.SHORTCUT_PRIORITY.Always }],
             () => {
-                const { data } = ui.quiver.export(
+                const { data } = ui.bridge_quiver.export(
                     "base64",
                     ui.settings,
                     ui.options(),
@@ -9237,8 +9980,8 @@ class Toolbar {
             "flip-hor",
             [],
             () => {
-                const vertices = ui.quiver.all_cells().filter((cell) => cell.is_vertex());
-                const bounding_rect = ui.quiver.bounding_rect();
+                const vertices = ui.view_vertices();
+                const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
                     const [[x_min,], [x_max,]] = bounding_rect;
                     ui.history.add(ui, [{
@@ -9253,17 +9996,17 @@ class Toolbar {
                         })),
                     }, {
                         kind: "flip",
-                        cells: ui.quiver.all_cells().filter((cell) => {
+                        cells: ui.view_edges().filter((cell) => {
                             return cell.is_edge() && !cell.is_loop();
                         }),
                     },
                     {
                         kind: "reverse",
-                        cells: ui.quiver.all_cells().filter((cell) => cell.is_loop()),
+                        cells: ui.view_edges().filter((cell) => cell.is_loop()),
                     },
                     {
                         kind: "angle",
-                        angles: ui.quiver.all_cells().filter((cell) => cell.is_loop())
+                        angles: ui.view_edges().filter((cell) => cell.is_loop())
                             .map((edge) => {
                                 return {
                                     edge,
@@ -9281,8 +10024,8 @@ class Toolbar {
             "flip-ver",
             [],
             () => {
-                const vertices = ui.quiver.all_cells().filter((cell) => cell.is_vertex());
-                const bounding_rect = ui.quiver.bounding_rect();
+                const vertices = ui.view_vertices();
+                const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
                     const [[, y_min], [, y_max]] = bounding_rect;
                     ui.history.add(ui, [{
@@ -9297,17 +10040,17 @@ class Toolbar {
                         })),
                     }, {
                         kind: "flip",
-                        cells: ui.quiver.all_cells().filter((cell) => {
+                        cells: ui.view_edges().filter((cell) => {
                             return cell.is_edge() && !cell.is_loop();
                         }),
                     },
                     {
                         kind: "reverse",
-                        cells: ui.quiver.all_cells().filter((cell) => cell.is_loop()),
+                        cells: ui.view_edges().filter((cell) => cell.is_loop()),
                     },
                     {
                         kind: "angle",
-                        angles: ui.quiver.all_cells().filter((cell) => cell.is_loop())
+                        angles: ui.view_edges().filter((cell) => cell.is_loop())
                             .map((edge) => {
                                 return {
                                     edge,
@@ -9325,8 +10068,8 @@ class Toolbar {
             "rotate",
             [],
             () => {
-                const vertices = ui.quiver.all_cells().filter((cell) => cell.is_vertex());
-                const bounding_rect = ui.quiver.bounding_rect();
+                const vertices = ui.view_vertices();
+                const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
                     const [[x_min, y_min], [x_max,]] = bounding_rect;
                     ui.history.add(ui, [{
@@ -9341,7 +10084,7 @@ class Toolbar {
                         })),
                     }, {
                         kind: "angle",
-                        angles: ui.quiver.all_cells().filter((cell) => cell.is_loop()).map((edge) => {
+                        angles: ui.view_edges().filter((cell) => cell.is_loop()).map((edge) => {
                             let to = edge.options.angle - 90;
                             if (to < -180) {
                                 to += 360;
@@ -9533,7 +10276,7 @@ class Toolbar {
             ui.element.query_selector(".focus-point.focused")
             // Technically the first condition below is subsumed by the latter, but we keep it to
             // mirror the conditions in `centre_view`.
-            || ui.selection.size > 0 || (ui.quiver.cells.length > 0 && ui.quiver.cells[0].size > 0)
+            || ui.selection.size > 0 || ui.view_vertices().length > 0
         );
         enable_if("zoom-in", ui.scale < CONSTANTS.MAX_ZOOM);
         enable_if("zoom-out", ui.scale > CONSTANTS.MIN_ZOOM);
@@ -9871,7 +10614,7 @@ class ColourPicker {
         // whenever a cell is added or removed, or a colour is changed). Even for large diagrams,
         // this ought to be fast.
         const colours = new Set();
-        for (const cell of ui.quiver.all_cells()) {
+        for (const cell of ui.view_all_cells()) {
             colours.add(`${cell.label_colour}`);
             if (cell.is_edge()) {
                 colours.add(`${cell.options.colour}`);
@@ -9897,7 +10640,7 @@ ColourPicker.TARGET = new Enum(
 /// An k-cell (such as a vertex or edge). This object represents both the
 /// abstract properties of the cell as well as their HTML representation.
 class Cell {
-    constructor(quiver, level, label = "", label_colour = Colour.black()) {
+    constructor(level, label = "", label_colour = Colour.black()) {
         // The k for which this cell is an k-cell.
         this.level = level;
 
@@ -9916,9 +10659,6 @@ class Cell {
         for (let value = Cell.NEXT_ID++; value >= 0; value = Math.floor(value / chars.length) - 1) {
             this.code = chars[value % chars.length] + this.code;
         }
-
-        // Add this cell to the quiver.
-        quiver.add(this);
 
         // Elements are specialised depending on whether the cell is a vertex (0-cell) or edge.
         this.element = null;
@@ -10218,7 +10958,7 @@ Cell.NEXT_ID = 0;
 /// 0-cells, or vertices. This is primarily specialised in its set up of HTML elements.
 export class Vertex extends Cell {
     constructor(ui, label, position, label_colour = Colour.black()) {
-        super(ui.quiver, 0, label, label_colour);
+        super(0, label, label_colour);
 
         this.position = position;
         // The shape data is going to be overwritten immediately, so really this information is
@@ -10344,7 +11084,7 @@ export class Vertex extends Cell {
 /// k-cells (for k > 0), or edges. This is primarily specialised in its set up of HTML elements.
 export class Edge extends Cell {
     constructor(ui, label, source, target, options, label_colour) {
-        super(ui.quiver, Math.max(source.level, target.level) + 1, label, label_colour);
+        super(Math.max(source.level, target.level) + 1, label, label_colour);
 
         this.options = Edge.default_options(Object.assign({ level: this.level }, options));
 
@@ -10550,7 +11290,12 @@ export class Edge extends Cell {
 
     /// Changes the source and target.
     reconnect(ui, source, target) {
-        ui.quiver.connect(source, target, this);
+        if (ui.view_contains_cell(this)) {
+            ui.connect_preview.reconnect(this, source, target);
+        } else {
+            ui.connect_preview.set_endpoints(this, source, target, false);
+        }
+        ui.connect_preview.update_edge_levels(this, (cell, level) => ui.view_update_level(cell, level));
         this.options.shape = source !== target ? "bezier" : "arc";
         for (const end of ["source", "target"]) {
             if (this[end].is_vertex()) {
@@ -10610,20 +11355,8 @@ export class Edge extends Cell {
 
     /// Reverses the edge, swapping the `source` and `target`.
     reverse(ui) {
-        // Flip all the dependency relationships.
-        const reverse_dependencies = ui.kwiver_require_runtime_reverse_dependency_cells(
-            this,
-            "ui.edge.reverse.reverse_dependencies",
-        );
-        for (const cell of reverse_dependencies) {
-            const dependencies = ui.quiver.dependencies.get(cell);
-            dependencies.set(
-                this,
-                { source: "target", target: "source" }[dependencies.get(this)],
-            );
-        }
-
-        // Swap the `source` and `target`.
+        // Dependency relationships in the view graph are derived from cell endpoints,
+        // so reversing only needs to swap the endpoints locally.
         [this.source, this.target] = [this.target, this.source];
         [this.arrow.source, this.arrow.target] = [this.source.shape, this.target.shape];
 
@@ -10792,7 +11525,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             // Because Typst takes some time to load, we only hide the loading
                             // screen if the diagram is empty; otherwise, the loading screen is
                             // hidden when the Typst labels render.
-                            if (ui.quiver.is_empty()) {
+                            if (ui.view_is_empty()) {
                                 Typst.then(hide_loading_screen);
                             }
                             break;
@@ -10819,8 +11552,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     throw new Error("[kwiver-only] ui.bootstrap.query: import_payload failed");
                 }
 
-                QuiverImportExport.base64.import(ui, imported_payload.payload);
-                ui.kwiver_sync_cell_ids();
+                const imported_cells = QuiverImportExport.base64.import(
+                    ui,
+                    imported_payload.payload,
+                );
+                const runtime_cells_after_import = kwiver_bridge_all_cells();
+                ui.kwiver_bind_new_cell_ids_from_runtime_cells(
+                    imported_cells,
+                    runtime_cells_after_import,
+                    "ui.bootstrap.query.bind_ids",
+                );
                 const runtime_selection = Array.isArray(imported_payload.after?.selection)
                     ? imported_payload.after.selection
                     : [];
@@ -10839,7 +11580,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 dismiss_loading_screen();
             } catch (error) {
-                if (ui.quiver.is_empty()) {
+                if (ui.view_is_empty()) {
                     UI.display_error(
                         "The saved diagram was malformed and could not be loaded."
                     );
