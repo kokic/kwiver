@@ -54,10 +54,12 @@ function testMutationExportImportRoundtrip(bridge) {
   const {
     kwiver_bridge_add_edge_json,
     kwiver_bridge_add_vertex_json,
+    kwiver_bridge_all_cells,
     kwiver_bridge_all_cell_ids,
     kwiver_bridge_export,
     kwiver_bridge_export_payload,
     kwiver_bridge_import_payload_json,
+    kwiver_bridge_patch_edge_options_json,
     kwiver_bridge_reset,
   } = bridge;
 
@@ -92,9 +94,26 @@ function testMutationExportImportRoundtrip(bridge) {
   );
   assert.equal(addEdge?.ok, true);
 
+  const addLoop = kwiver_bridge_add_edge_json(
+    1,
+    1,
+    "l",
+    null,
+    null,
+    "ui.test.non_mock.add_edge.loop",
+  );
+  assert.equal(addLoop?.ok, true);
+
+  const patchLevel = kwiver_bridge_patch_edge_options_json(
+    3,
+    { level: 4 },
+    "ui.test.non_mock.patch_edge_options.level",
+  );
+  assert.equal(patchLevel?.ok, true);
+
   const idsBefore = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.before");
   assertIntegerIdList(idsBefore, "roundtrip before");
-  assert.equal(idsBefore.length, 3, "roundtrip before: expected 3 cells");
+  assert.equal(idsBefore.length, 4, "roundtrip before: expected 4 cells");
 
   const tikzExported = kwiver_bridge_export(
     "tikz-cd",
@@ -121,14 +140,22 @@ function testMutationExportImportRoundtrip(bridge) {
 
   const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.after");
   assertIntegerIdList(idsAfter, "roundtrip after");
-  assert.equal(idsAfter.length, 3, "roundtrip after: expected 3 cells");
+  assert.equal(idsAfter.length, 4, "roundtrip after: expected 4 cells");
+
+  const cellsAfter = kwiver_bridge_all_cells();
+  assert.equal(Array.isArray(cellsAfter), true);
+  const lifted = cellsAfter.find((cell) => cell?.kind === "edge" && cell?.label === "f");
+  const loop = cellsAfter.find((cell) => cell?.kind === "edge" && cell?.label === "l");
+  assert.equal(Number(lifted?.level), 1, "roundtrip after: expected structural edge level");
+  assert.equal(Number(lifted?.options?.level), 4, "roundtrip after: expected lifted option level");
+  assert.equal(loop?.options?.shape, "arc", "roundtrip after: expected loop arc shape");
 }
 
 function testTikzImportPath(bridge) {
   const {
     kwiver_bridge_all_cell_ids,
     kwiver_bridge_export,
-    kwiver_bridge_import_tikz_payload,
+    kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
   } = bridge;
 
@@ -141,12 +168,13 @@ function testTikzImportPath(bridge) {
     "\\end{tikzcd}",
   ].join("");
 
-  const importedPayload = kwiver_bridge_import_tikz_payload(
+  const imported = kwiver_bridge_import_tikz_result(
     tikzText,
     defaultSettings(),
   );
-  assert.equal(typeof importedPayload, "string");
-  assert.notEqual(importedPayload, "");
+  assert.equal(imported?.ok, true);
+  assert.equal(typeof imported?.payload, "string");
+  assert.notEqual(imported?.payload, "");
 
   const ids = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz");
   assertIntegerIdList(ids, "tikz import");
@@ -165,7 +193,8 @@ function testTikzImportPath(bridge) {
 function testTikzImportFailFastPath(bridge) {
   const {
     kwiver_bridge_all_cell_ids,
-    kwiver_bridge_import_tikz_payload,
+    kwiver_bridge_export_payload,
+    kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
   } = bridge;
 
@@ -182,11 +211,16 @@ function testTikzImportFailFastPath(bridge) {
     "\\end{tikzcd}",
   ].join("");
 
-  const importedPayload = kwiver_bridge_import_tikz_payload(
+  const imported = kwiver_bridge_import_tikz_result(
     invalidTikz,
     defaultSettings(),
   );
-  assert.equal(importedPayload, null);
+  assert.equal(imported?.ok, false);
+  assert.equal(typeof imported?.payload, "string");
+  assert.equal(
+    imported?.payload,
+    kwiver_bridge_export_payload("ui.test.non_mock.export_payload.tikz_fail_fast"),
+  );
 
   const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz_fail_fast.after");
   assert.deepEqual(idsAfter, []);

@@ -29,6 +29,21 @@ test "ui ffi adapter wraps update/import/export calls" {
 }
 
 ///|
+test "ui ffi adapter add_edge canonicalises self-loop shape to arc" {
+  let adapter = ffi_adapter_new()
+  let vertex_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  ignore(ffi_adapter_add_edge(adapter, vertex_id, vertex_id, label="l"))
+
+  let snapshot = ffi_adapter_snapshot(adapter)
+  inspect(snapshot.edges.length(), content="1")
+
+  let edge = snapshot.edges[0]
+  inspect(edge.source_id, content="1")
+  inspect(edge.target_id, content="1")
+  inspect(edge.options.shape, content="arc")
+}
+
+///|
 test "ui ffi adapter export tikz json wrapper includes metadata contract" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)

@@ -1,34 +1,4 @@
 ///|
-type ColourTuple = (Int, Int, Int, Double)
-
-///|
-type EncodedVertex = (Int, Int, Int, String, ColourTuple)
-
-///|
-type EncodedEdgeStyles = (
-  String,
-  (String, String),
-  (String, String),
-  (String, String),
-)
-
-///|
-type EncodedEdgeOptions = (
-  (Int, Int, Int, Int, Int),
-  (Int, Int),
-  (Int, Int),
-  ColourTuple,
-  (Bool, Bool),
-  EncodedEdgeStyles,
-)
-
-///|
-type EncodedEdge = (Int, Int, Int, String, Int, ColourTuple, EncodedEdgeOptions)
-
-///|
-type EncodedQuiver = (Int, Array[EncodedVertex], Array[EncodedEdge])
-
-///|
 pub struct Base64ShareUrlParts {
   payload : String?
   macro_url : String?
@@ -50,13 +20,6 @@ pub struct Base64SelectionImportResult {
   id_remap : Map[Int, Int]
 }
 
-///|
-fn colour_from_tuple(tuple : ColourTuple) -> Colour {
-  let (h, s, l, a) = tuple
-  Colour::new(h, s, l, a)
-}
-
-///|
 fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
   match alignment {
     LabelAlignment::Left => 0
@@ -66,69 +29,6 @@ fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
   }
 }
 
-///|
-fn int_to_label_alignment(value : Int) -> LabelAlignment {
-  match value {
-    0 => LabelAlignment::Left
-    1 => LabelAlignment::Centre
-    2 => LabelAlignment::Right
-    3 => LabelAlignment::Over
-    _ => LabelAlignment::Left
-  }
-}
-
-///|
-fn int_to_edge_shape(value : Int) -> EdgeShape {
-  match value {
-    0 => EdgeShape::Bezier
-    1 => EdgeShape::Arc
-    _ => EdgeShape::Bezier
-  }
-}
-
-///|
-fn edge_options_from_encoded(
-  alignment : Int,
-  encoded : EncodedEdgeOptions,
-) -> EdgeOptions {
-  let (core, shorten, level_shape, colour, edge_alignment, style) = encoded
-  let (label_position, offset, curve, radius, angle) = core
-  let (shorten_source, shorten_target) = shorten
-  let (level, shape) = level_shape
-  let (edge_alignment_source, edge_alignment_target) = edge_alignment
-  let (style_name, tail, body, head) = style
-  let (tail_name, tail_side) = tail
-  let (body_name, body_side) = body
-  let (head_name, head_side) = head
-  {
-    label_alignment: int_to_label_alignment(alignment),
-    label_position,
-    offset,
-    curve,
-    radius,
-    angle,
-    shorten: { source: shorten_source, target: shorten_target },
-    level: if level < 1 {
-      1
-    } else {
-      level
-    },
-    shape: int_to_edge_shape(shape),
-    colour: colour_from_tuple(colour),
-    edge_alignment: {
-      source: edge_alignment_source,
-      target: edge_alignment_target,
-    },
-    style: {
-      name: style_name,
-      tail: { name: tail_name, side: tail_side },
-      body: { name: body_name, side: body_side },
-      head: { name: head_name, side: head_side },
-    },
-  }
-}
-
-///|
 fn base64_is_url_unreserved(code : Int) -> Bool {
   let is_digit = code >= 48 && code <= 57
   let is_upper = code >= 65 && code <= 90
@@ -579,7 +479,12 @@ fn Quiver::base64_export_v0_with_ids(
     (a.l == 100 && b.l == 100)
   }
 
-  let options_delta = (options : EdgeOptions) => {
+  let options_delta = (edge : Edge) => {
+    let options = edge.options
+    let canonical_level = Int::max(
+      self.cell_level_or_default(edge.source),
+      self.cell_level_or_default(edge.target),
+    ) + 1
     let defaults = EdgeOptions::at_level(options.level)
     let delta : Map[String, Json] = Map::new()
 
@@ -597,6 +502,9 @@ fn Quiver::base64_export_v0_with_ids(
     }
     if options.angle != defaults.angle {
       delta.set("angle", json_int(options.angle))
+    }
+    if options.level != canonical_level {
+      delta.set("level", json_int(options.level))
     }
 
     if options.shorten.source != defaults.shorten.source ||
@@ -681,10 +589,18 @@ fn Quiver::base64_export_v0_with_ids(
 
     match options.shape {
       EdgeShape::Bezier => {
+        let preserve_loop_geometry = edge.source == edge.target
+        if preserve_loop_geometry {
+          delta.remove("curve")
+          return delta
+        }
         delta.remove("radius")
         delta.remove("angle")
       }
-      EdgeShape::Arc => delta.remove("curve")
+      EdgeShape::Arc => {
+        delta.remove("curve")
+        delta.set("shape", Json::string("arc"))
+      }
     }
 
     delta
@@ -736,7 +652,7 @@ fn Quiver::base64_export_v0_with_ids(
       end.push(json_colour(edge.cell.label_colour))
     }
 
-    let delta = options_delta(edge.options)
+    let delta = options_delta(edge)
     if !end.is_empty() || !delta.is_empty() {
       end.push(Json::object(delta))
     }
@@ -1050,7 +966,7 @@ fn base64_import_apply_options_delta(
       }
     }
     None =>
-      // JS canonical payload omits `shape`; infer it from which curve parameters were encoded.
+      // Legacy payloads may omit `shape`; infer it from which curve parameters were encoded.
       if has_radius_or_angle && !has_curve {
         out = out.with_shape_arc()
       } else if has_curve && !has_radius_or_angle {
@@ -1070,52 +986,6 @@ fn base64_import_apply_options_delta(
   out
 }
 
-///|
-fn base64_import_quiver_from_legacy(parsed : EncodedQuiver) -> Quiver {
-  let (version, vertices, edges) = parsed
-  if version != 0 {
-    abort("unsupported base64 quiver version")
-  }
-
-  let quiver = Quiver::new()
-
-  for encoded_vertex in vertices {
-    let (id, x, y, label, label_colour) = encoded_vertex
-    quiver.add(
-      CellData::from_vertex(
-        Vertex::new(id, label, x, y, colour_from_tuple(label_colour)),
-      ),
-    )
-  }
-
-  let pending_connections : Array[(Int, Int, Int)] = []
-  for encoded_edge in edges {
-    let (id, source, target, label, alignment, label_colour, edge_options) = encoded_edge
-    let options = edge_options_from_encoded(alignment, edge_options)
-    quiver.add(
-      CellData::from_edge(
-        Edge::new(
-          id,
-          label,
-          source,
-          target,
-          options,
-          colour_from_tuple(label_colour),
-        ),
-      ),
-    )
-    pending_connections.push((id, source, target))
-  }
-
-  for pending in pending_connections {
-    let (id, source, target) = pending
-    quiver.connect(source, target, id)
-  }
-
-  quiver
-}
-
-///|
 fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
   base64_import_assert(root.length() >= 2, "invalid quiver format")
 
@@ -1194,7 +1064,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       } else {
         0
       }
-      let mut level = Int::max(
+      let structural_level = Int::max(
           index_to_level.unsafe_get(source_index),
           index_to_level.unsafe_get(target_index),
         ) +
@@ -1210,7 +1080,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
         Map::new()
       }
 
-      let mut options = EdgeOptions::at_level(level)
+      let mut options = EdgeOptions::at_level(structural_level)
       options = match alignment {
         0 => options.with_label_alignment_left()
         1 => options.with_label_alignment_centre()
@@ -1225,14 +1095,15 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
           )
           options = styled
           match level_override {
-            Some(value) => level = value
+            Some(value) => options = options.with_level(value)
             None => ()
           }
         }
         None => ()
       }
       options = base64_import_apply_options_delta(options, options_map)
-      options = options.with_level(level)
+      let imported_options = options
+      let structural_options = imported_options.with_level(structural_level)
 
       let label_colour = if cell.length() >= 6 {
         base64_import_colour(cell.unsafe_get(5))
@@ -1242,10 +1113,32 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       let id = i + 1
       quiver.add(
         CellData::from_edge(
-          Edge::new(id, label, source_id, target_id, options, label_colour),
+          Edge::new(
+            id,
+            label,
+            source_id,
+            target_id,
+            structural_options,
+            label_colour,
+          ),
         ),
       )
       quiver.connect(source_id, target_id, id)
+      if imported_options.level != structural_level {
+        match quiver.cells.get(id) {
+          Some(CellData::Edge(edge)) =>
+            quiver.cells.set(
+              id,
+              CellData::from_edge({
+                cell: edge.cell,
+                source: edge.source,
+                target: edge.target,
+                options: imported_options,
+              }),
+            )
+          _ => ()
+        }
+      }
       index_to_id.push(id)
       index_to_level.push(quiver.cell_level_or_default(id))
     }
@@ -1260,16 +1153,6 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
   let decoded = @utf8.decode(@base64.decode(encoded))
   let json = @json.parse(decoded)
   let root : Array[Json] = @json.from_json(json)
-
-  if root.length() == 3 {
-    match (root.unsafe_get(1), root.unsafe_get(2)) {
-      (Json::Array(_), Json::Array(_)) => {
-        let parsed : EncodedQuiver = @json.from_json(json)
-        return base64_import_quiver_from_legacy(parsed)
-      }
-      _ => ()
-    }
-  }
 
   base64_import_quiver_from_js(root)
 }

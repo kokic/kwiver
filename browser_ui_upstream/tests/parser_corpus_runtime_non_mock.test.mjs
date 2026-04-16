@@ -45,7 +45,7 @@ async function ensureRuntimeReady(bridge) {
 function assertCaseImports(bridge, parserCase) {
   const {
     kwiver_bridge_all_cell_ids,
-    kwiver_bridge_import_tikz_payload,
+    kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
   } = bridge;
 
@@ -53,9 +53,10 @@ function assertCaseImports(bridge, parserCase) {
   assert.equal(kwiver_bridge_reset(`${originBase}.reset`)?.ok, true);
   assert.deepEqual(kwiver_bridge_all_cell_ids(`${originBase}.ids.before`), []);
 
-  const payload = kwiver_bridge_import_tikz_payload(parserCase.snippet, defaultSettings());
-  assert.equal(typeof payload, "string", `${parserCase.title}: expected payload`);
-  assert.notEqual(payload, "", `${parserCase.title}: expected non-empty payload`);
+  const result = kwiver_bridge_import_tikz_result(parserCase.snippet, defaultSettings());
+  assert.equal(result?.ok, true, `${parserCase.title}: expected successful import result`);
+  assert.equal(typeof result?.payload, "string", `${parserCase.title}: expected payload`);
+  assert.notEqual(result?.payload, "", `${parserCase.title}: expected non-empty payload`);
 
   const idsAfter = kwiver_bridge_all_cell_ids(`${originBase}.ids.after`);
   assertIntegerIdList(idsAfter, parserCase.title);
@@ -70,7 +71,8 @@ function assertCaseImports(bridge, parserCase) {
 function assertCaseFailFast(bridge, parserCase) {
   const {
     kwiver_bridge_all_cell_ids,
-    kwiver_bridge_import_tikz_payload,
+    kwiver_bridge_export_payload,
+    kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
   } = bridge;
 
@@ -78,8 +80,14 @@ function assertCaseFailFast(bridge, parserCase) {
   assert.equal(kwiver_bridge_reset(`${originBase}.reset`)?.ok, true);
   assert.deepEqual(kwiver_bridge_all_cell_ids(`${originBase}.ids.before`), []);
 
-  const payload = kwiver_bridge_import_tikz_payload(parserCase.snippet, defaultSettings());
-  assert.equal(payload, null, `${parserCase.title}: expected fail-fast null payload`);
+  const result = kwiver_bridge_import_tikz_result(parserCase.snippet, defaultSettings());
+  assert.equal(result?.ok, false, `${parserCase.title}: expected fail-fast result`);
+  assert.equal(typeof result?.payload, "string", `${parserCase.title}: expected canonical payload on failure`);
+  assert.equal(
+    result?.payload,
+    kwiver_bridge_export_payload(`${originBase}.payload.after`),
+    `${parserCase.title}: payload should match unchanged state`,
+  );
 
   const idsAfter = kwiver_bridge_all_cell_ids(`${originBase}.ids.after`);
   assert.deepEqual(idsAfter, [], `${parserCase.title}: state should remain empty`);

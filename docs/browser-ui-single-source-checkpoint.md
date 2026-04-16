@@ -11,6 +11,9 @@ Record the exact browser-UI migration state so the next session can continue dir
 - Product browser UI entrypoint remains `kwiver/browser_ui_upstream/ui.mjs`.
 - Product import/export shell remains `kwiver/browser_ui_upstream/quiver.mjs`.
 - Product bridge remains `kwiver/browser_ui_upstream/kwiver_bridge.mjs`.
+- `kwiver_bridge_import_tikz_payload(...)` has been removed. Structured tikz import now goes only through `kwiver_bridge_import_tikz_result(...)`.
+- `QuiverImportExport.base64.import(...)` has been removed from `browser_ui_upstream/quiver.mjs`.
+- `Quiver::import_base64_v0(...)` no longer accepts the removed internal `EncodedQuiver` tuple shape; it imports the canonical JSON payload shape only.
 - There is no remaining `ui.quiver` / `this.quiver` runtime-path usage in `browser_ui_upstream/ui.mjs` or `browser_ui_upstream/quiver.mjs`.
 - Browser-side state in `ui.mjs` is now split into:
   - `bridge_quiver`: runtime-backed import/export shell
@@ -126,6 +129,18 @@ Record the exact browser-UI migration state so the next session can continue dir
   - label/edge sync checkbox state from runtime colour equality
 - Renderer bullet-label rewrite now also uses runtime label baselines before dispatching label updates.
 
+### 10. Internal kwiver-compat cleanup for browser/runtime product paths is complete
+
+- The dead bridge wrapper `kwiver_bridge_import_tikz_payload(...)` has been removed.
+- Runtime/browser tests now use the structured bridge result `{ ok, payload, error }` directly.
+- `kwiver_bridge_import_tikz_result(...)` fail-fast behavior is now treated as:
+  - `ok === false`
+  - `payload` is still the canonical payload for the unchanged runtime state
+  - `error` carries parser/runtime diagnostics
+- The dead browser-side constructor importer `QuiverImportExport.base64.import(...)` has been removed.
+- The removed internal `EncodedQuiver` tuple branch is no longer accepted by `Quiver::import_base64_v0(...)`.
+- Remaining `base64` compatibility in engine tests now refers only to upstream/original `quiver` payload conventions, not to prior `kwiver` internal formats.
+
 ## What Is Still Not Done
 
 ### 1. JS view objects still own committed semantic fields
@@ -141,15 +156,18 @@ Record the exact browser-UI migration state so the next session can continue dir
 
 ### 2. Pre-commit UI code still mutates committed-looking fields locally
 
-- Many interaction paths still write directly to JS view objects before runtime-confirmed history replay, especially:
-  - pointer-drag move preview before committed move history is recorded
-  - connect/reconnect preview state and the temporary endpoint/level updates it drives
-- Those writes are now reconciled from runtime after commit, but JS still behaves as a temporary owner of committed semantics during the interaction.
+- Most of the obvious preview-time committed-field writes have now been removed.
+- `pointer-drag` move preview no longer writes live `vertex.position`; temporary drag positions now live in `UIMode.PointerMove.preview_positions`.
+- Temporary reconnect validation no longer rewrites live `edge.source`, `edge.target`, or `cell.level`.
+- Active reconnect drag rendering now reads preview-owned endpoint/level/shape state via `ConnectPreview`, instead of assuming live `edge.source`, `edge.target`, `cell.level`, or `edge.options.shape` were temporarily rewritten.
+- Remaining preview-state work is now mostly audit/cleanup rather than another large ownership cutover.
 
-### 3. Fresh-cell construction still materializes committed state in JS constructors/importers
+### 3. Runtime-backed fresh-cell hydration now materializes directly from runtime snapshots
 
-- `Vertex` / `Edge` constructors and base64 import/bootstrap paths still instantiate JS cells with committed semantic fields already populated.
-- That keeps product behavior correct, but the browser view layer is still not a pure projection from runtime snapshots.
+- Direct UI create paths now add through runtime first and decode runtime snapshots before constructing `Vertex` / `Edge`.
+- Runtime-backed paste, query bootstrap, and tikz import now materialize JS cells through `kwiver_import_runtime_cells(...)` directly from runtime cell snapshots.
+- Product paths no longer depend on `QuiverImportExport.base64.import(...)` plus a later post-bind rehydrate step to recover canonical committed state.
+- The old browser-side constructor-based `base64` importer has been removed from `browser_ui_upstream/quiver.mjs`; runtime payload import is now the only product path.
 
 ### 4. Browser helper-module replacement is explicitly deferred
 
@@ -168,25 +186,89 @@ Before any helper-library/API work:
 
 ### Priority 1
 
-Audit and classify remaining direct JS writes to committed fields in `ui.mjs`.
-
-Start with:
-
-- any remaining preview paths that leak committed-looking writes beyond transient interaction state
-- connect/reconnect preview state that may still look like temporary committed ownership in JS view objects
-
-For each path, decide whether the write is:
-
-- preview-only transient state that may remain local, or
-- committed state that should move behind runtime-first mutation + snapshot reapply
+- Audit the remaining product shell in `browser_ui_upstream/quiver.mjs` and `browser_ui_upstream/kwiver_bridge.mjs` for any local reconstruction of committed state that is no longer needed after runtime-backed hydration.
+- Start from:
+  - `QuiverImportExport.tikz_cd.import(...)`
+  - `QuiverImportExport.export(...)`
+  - bridge import/export helpers that still normalize metadata or payloads for UI consumption
+- For each candidate path, classify it as exactly one of:
+  - required external/upstream compatibility surface
+  - runtime projection/helper glue that still belongs in JS
+  - dead product-path shell that can be deleted
+- Do not add a new JS-side importer/rebuilder while simplifying these paths. If a path still needs cell materialization, route it through runtime snapshots and `kwiver_import_runtime_cells(...)`.
+- Validation after each slice:
+  - `node --check kwiver/browser_ui_upstream/quiver.mjs`
+  - `node kwiver/browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs`
+  - `node kwiver/browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs`
 
 ### Priority 2
 
-Revisit fresh-cell hydration paths (`create`, `paste`, bootstrap/import) and decide whether they should normalize through runtime snapshot helpers or remain constructor-based until a later projection-only refactor.
+- Audit remaining committed-looking JS field reads in `browser_ui_upstream/ui.mjs` and separate harmless projection reads from hidden semantic ownership.
+- Start with `rg` over:
+  - `cell.level`
+  - `cell.label`
+  - `cell.label_colour`
+  - `edge.source`
+  - `edge.target`
+  - `edge.options`
+- First-pass hotspots to inspect:
+  - `panel.update(...)`
+  - colour aggregation / palette helpers
+  - selection-derived UI summaries
+  - renderer-adjacent label/style helpers
+- Rule for cleanup:
+  - display-only reads are acceptable if they are obviously projection-only
+  - any read that chooses a mutation baseline, history `from`, selection semantic, dependency semantic, or persistence/export semantic must come from runtime snapshot helpers instead
+- Preferred implementation pattern:
+  - add a focused runtime getter/helper if repeated
+  - switch the callsite to runtime-backed baseline
+  - delete the old local semantic fallback instead of keeping both
 
 ### Priority 3
 
-Audit remaining non-preview JS field reads that are now mostly display/book-keeping (`panel.update`, colour palette aggregation, renderer-adjacent helpers) and distinguish acceptable projection reads from hidden committed ownership.
+- Keep preview-only regressions on a short leash while Priority 1 and Priority 2 continue.
+- Highest-value targeted manual checks after any reconnect/import/export change:
+  - reconnect normal edge -> edge reference closure remains visually stable
+  - reconnect loop -> non-loop -> loop does not lose shape/level/rerender order
+  - paste/import/share bootstrap still preserves loop geometry and explicit `level`
+  - tikz import fail-fast still leaves runtime state unchanged and diagnostics usable
+- Rebuild release artifact before browser testing if behavior looks stale:
+  - `moon build --release`
+
+## Archived Progress Snapshot (2026-04-16)
+
+- Browser UI committed-state replay is now centralized on runtime snapshot helpers rather than ad hoc local field mutation.
+- Connect/reconnect drag preview and pointer-drag move preview both use preview-owned state instead of rewriting committed-looking live fields during interaction.
+- Fresh-cell creation, paste, query bootstrap, and tikz import now materialize cells from runtime snapshots rather than from payload-shaped local constructors.
+- Loop creation and `base64` persistence regressions were fixed in runtime:
+  - new self-loop edges now canonicalize to `shape_arc()` in runtime add-edge flow
+  - persisted `shape=arc` and explicit `options.level` now survive save/refresh
+- tikz export/import round-trip was repaired by:
+  - passing `share_base_url` through the bridge
+  - preserving loop geometry in share/base64 payload encoding
+- Internal `kwiver` compatibility cleanup completed in this snapshot:
+  - removed dead bridge tikz wrapper
+  - removed dead browser-side base64 importer
+  - removed internal `EncodedQuiver` import branch
+- Current remaining work is no longer a broad architecture rewrite. It is a narrower audit of:
+  - remaining shell code in `quiver.mjs` / `kwiver_bridge.mjs`
+  - remaining hidden semantic reads in `ui.mjs`
+  - targeted preview/import/export regressions found by browser testing
+
+## Resume Checklist
+
+1. Read:
+   - `roadmap.md`
+   - `kwiver/docs/browser-ui-single-source-checkpoint.md`
+2. Run:
+   - `node --check kwiver/browser_ui_upstream/ui.mjs`
+   - `node --check kwiver/browser_ui_upstream/quiver.mjs`
+   - `node kwiver/browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs`
+   - `node kwiver/browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs`
+   - `node kwiver/browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs`
+3. If browser behavior looks stale:
+   - `moon build --release`
+4. Resume from `Priority 1` above; do not reopen helper-module replacement or new compatibility-shim work first.
 
 ## Invariants To Preserve
 
@@ -203,6 +285,11 @@ Audit remaining non-preview JS field reads that are now mostly display/book-keep
 - Edge transform behavior now exists only in runtime/history replay plus transient render helpers, not as a second direct local mutation API on `Edge`.
 - Panel edge-option/style controls now read committed baselines from runtime snapshots rather than from live `edge.options` fields.
 - Label / colour edit paths now read committed baselines from runtime snapshots rather than from live `cell.label`, `cell.label_colour`, or `edge.options.colour` fields.
+- `ConnectPreview.with_temporary_reconnect(...)` now keeps temporary reconnect endpoints/levels in preview-owned getters instead of rewriting live `edge.source`, `edge.target`, or `cell.level` during validation.
+- `UIMode.PointerMove` now keeps drag-preview positions in `preview_positions`; pointer-drag preview no longer writes live `vertex.position` before runtime-confirmed move replay.
+- `kwiver_create_vertex(...)` / `kwiver_create_edge(...)` now decode runtime snapshots after add and construct JS cells from runtime values rather than from local pre-runtime inputs.
+- Runtime-backed paste/query bootstrap/tikz import now materialize JS cells directly from runtime snapshots via `kwiver_import_runtime_cells(...)`, instead of creating payload-shaped cells and repairing them afterwards.
+- Active reconnect drag rendering now uses preview-owned endpoint/level/shape state during render, so dependent-edge preview no longer relies on live committed-looking endpoint/level mutation.
 
 ## Useful Entry Points
 

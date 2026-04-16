@@ -1459,6 +1459,12 @@ pub fn QuiverUiAdapter::add_edge(
     abort("missing target cell")
   }
 
+  let options = if source_id == target_id {
+    options.with_shape_arc()
+  } else {
+    options
+  }
+
   let id = self.quiver.next_available_id()
   self.quiver.add(
     CellData::from_edge(

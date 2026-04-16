@@ -153,7 +153,7 @@ The bridge is the only JS owner of command-envelope dispatch.
 - edge transforms: `kwiver_bridge_reverse_edge_json` / `kwiver_bridge_flip_edge_json` / `kwiver_bridge_flip_edge_labels_json`
 - selection sync and clipboard payload: `kwiver_bridge_set_selection` / `kwiver_bridge_export_selection` / `kwiver_bridge_paste_selection_json`
 - payload import: `kwiver_bridge_import_payload_json` -> `import_payload`
-- tikz text import: `kwiver_bridge_import_tikz_result` (structured `{ ok, payload, error }`) and compatibility wrapper `kwiver_bridge_import_tikz_payload` (`String|null`)
+- tikz text import: `kwiver_bridge_import_tikz_result` (structured `{ ok, payload, error }`)
 - render/export text: `kwiver_bridge_export("tikz-cd"|"fletcher"|"html")` -> `render_tikz_json` / `render_fletcher` / `render_html_embed`
 - base64 share export: `kwiver_bridge_export("base64")` -> `export_payload`
 - graph snapshot/query sync: `kwiver_bridge_all_cells` / `kwiver_bridge_all_cell_ids` / `kwiver_bridge_connected_components` / `kwiver_bridge_dependencies` / `kwiver_bridge_transitive_dependencies` / `kwiver_bridge_transitive_reverse_dependencies` / `kwiver_bridge_reverse_dependencies` -> `all_cells_json` / `all_cell_ids_json` / `connected_components_json` / `dependencies_of_json` / `transitive_dependencies_json` / `transitive_reverse_dependencies_json` / `reverse_dependencies_of_json`

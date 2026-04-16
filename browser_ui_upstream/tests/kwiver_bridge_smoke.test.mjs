@@ -454,17 +454,35 @@ function testRenderWrappersDispatchRuntimeCommands() {
     macro_url: "https://example.com/macros.tex",
   };
 
-  const tikzExported = kwiver_bridge_export("tikz-cd", settings, options, {});
-  assert.equal(tikzExported?.data, "\\begin{tikzcd}A\\end{tikzcd}");
-  assertRecordedCommand(recorded, 0, "render_tikz_json", "ui.bridge.export.tikz");
+  const previousWindow = globalThis.window;
+  globalThis.window = {
+    location: {
+      href: "https://q.uiver.app/editor?x=1#hash",
+    },
+  };
+  try {
+    const tikzExported = kwiver_bridge_export("tikz-cd", settings, options, {});
+    assert.equal(tikzExported?.data, "\\begin{tikzcd}A\\end{tikzcd}");
+    assertRecordedCommand(recorded, 0, "render_tikz_json", "ui.bridge.export.tikz");
+    assert.equal(
+      recorded[0]?.input?.options?.share_base_url,
+      "https://q.uiver.app/editor",
+    );
 
-  const fletcherExported = kwiver_bridge_export("fletcher", settings, options, {});
-  assert.equal(fletcherExported?.data, "\\fletcher{}");
-  assertRecordedCommand(recorded, 1, "render_fletcher", "ui.bridge.export.fletcher");
+    const fletcherExported = kwiver_bridge_export("fletcher", settings, options, {});
+    assert.equal(fletcherExported?.data, "\\fletcher{}");
+    assertRecordedCommand(recorded, 1, "render_fletcher", "ui.bridge.export.fletcher");
+    assert.equal(
+      recorded[1]?.input?.options?.share_base_url,
+      "https://q.uiver.app/editor",
+    );
 
-  const htmlExported = kwiver_bridge_export("html", settings, options, {});
-  assert.equal(htmlExported?.data, "<iframe></iframe>");
-  assertRecordedCommand(recorded, 2, "render_html_embed", "ui.bridge.export.html");
+    const htmlExported = kwiver_bridge_export("html", settings, options, {});
+    assert.equal(htmlExported?.data, "<iframe></iframe>");
+    assertRecordedCommand(recorded, 2, "render_html_embed", "ui.bridge.export.html");
+  } finally {
+    globalThis.window = previousWindow;
+  }
 }
 
 function testExportBase64UsesRuntimePayload() {

@@ -104,6 +104,80 @@ test "base64 v0 roundtrip preserves edge options" {
 }
 
 ///|
+test "base64 v0 roundtrip preserves self-loop geometry" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let options = EdgeOptions::at_level(1).with_radius(5).with_angle(45)
+  let edge = Edge::new(2, "l", 1, 1, options, Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 1, 2)
+
+  let encoded = quiver.export_base64_v0()
+  let decoded = Quiver::import_base64_v0(encoded)
+  let decoded_edge = find_edge_by_label(decoded, "l")
+
+  inspect(decoded_edge is Some(_), content="true")
+  match decoded_edge {
+    Some(edge) => {
+      inspect(edge.options.shape is EdgeShape::Arc, content="true")
+      inspect(edge.options.radius, content="5")
+      inspect(edge.options.angle, content="45")
+    }
+    None => abort("expected loop edge")
+  }
+}
+
+///|
+test "base64 v0 roundtrip preserves default loop shape" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+
+  let options = EdgeOptions::at_level(1).with_shape_arc()
+  let edge = Edge::new(2, "loop-default", 1, 1, options, Colour::black())
+  quiver.add(CellData::from_edge(edge))
+  quiver.connect(1, 1, 2)
+
+  let encoded = quiver.export_base64_v0()
+  let decoded = Quiver::import_base64_v0(encoded)
+  let decoded_edge = find_edge_by_label(decoded, "loop-default")
+
+  inspect(decoded_edge is Some(_), content="true")
+  match decoded_edge {
+    Some(edge) => {
+      inspect(edge.options.shape is EdgeShape::Arc, content="true")
+      inspect(edge.options.radius, content="3")
+      inspect(edge.options.angle, content="0")
+    }
+    None => abort("expected loop edge")
+  }
+}
+
+///|
+test "base64 v0 roundtrip preserves explicit edge level" {
+  let encoded = base64_encode_json("[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"n\",0,{\"level\":4}]]")
+  let quiver = Quiver::import_base64_v0(encoded)
+  let re_encoded = quiver.export_base64_v0()
+  let root = base64_decode_json_array(re_encoded)
+  let encoded_edge : Array[Json] = @json.from_json(root.unsafe_get(4))
+  let encoded_options : Map[String, Json] = @json.from_json(
+    encoded_edge.unsafe_get(4),
+  )
+  let decoded = Quiver::import_base64_v0(re_encoded)
+  let decoded_edge = find_edge_by_label(decoded, "n")
+
+  inspect(encoded_options.get("level") is Some(_), content="true")
+  inspect(decoded_edge is Some(_), content="true")
+  match decoded_edge {
+    Some(edge) => {
+      inspect(edge.cell.level, content="1")
+      inspect(edge.options.level, content="4")
+    }
+    None => abort("expected lifted edge")
+  }
+}
+
+///|
 test "base64 v0 selection export includes transitive dependencies by default" {
   let quiver = Quiver::new()
   quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))

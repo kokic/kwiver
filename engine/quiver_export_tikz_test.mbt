@@ -1046,6 +1046,82 @@ test "tikz-cd import wrapper roundtrips from exported text and preserves metadat
 }
 
 ///|
+test "tikz-cd import wrapper roundtrips exported geometry loops and edge references" {
+  let quiver = Quiver::new()
+  quiver.add(CellData::from_vertex(Vertex::new_black(1, "A", 0, 0)))
+  quiver.add(CellData::from_vertex(Vertex::new_black(2, "B", 1, 0)))
+
+  let curved_options = EdgeOptions::at_level(1)
+    .with_offset(2)
+    .with_curve(-1)
+    .with_shorten(10, 20)
+  quiver.add(
+    CellData::from_edge(Edge::new(3, "m", 1, 2, curved_options, Colour::black())),
+  )
+  quiver.connect(1, 2, 3)
+
+  let reference_options = EdgeOptions::at_level(2).with_edge_alignment_source(false)
+  quiver.add(
+    CellData::from_edge(
+      Edge::new(4, "alpha", 3, 2, reference_options, Colour::black()),
+    ),
+  )
+  quiver.connect(3, 2, 4)
+
+  let loop_options = EdgeOptions::at_level(1).with_radius(3).with_angle(45)
+  quiver.add(
+    CellData::from_edge(Edge::new(5, "l", 1, 1, loop_options, Colour::black())),
+  )
+  quiver.connect(1, 1, 5)
+
+  let out = quiver.export_tikz_cd(
+    options=TikzCdExportOptions::default().with_share_base_url("https://q.uiver.app"),
+  )
+
+  let imported = tikz_test_import_success(out)
+  inspect(imported.quiver.all_cell_ids(), content="[1, 2, 3, 4, 5]")
+
+  let a_id = match tikz_test_find_vertex_id_by_label(imported.quiver, "A") {
+    Some(value) => value
+    None => abort("expected vertex A")
+  }
+  let b_id = match tikz_test_find_vertex_id_by_label(imported.quiver, "B") {
+    Some(value) => value
+    None => abort("expected vertex B")
+  }
+
+  let m_edge = match tikz_test_find_edge_by_label(imported.quiver, "m") {
+    Some(edge) => edge
+    None => abort("expected edge m")
+  }
+  inspect(m_edge.source == a_id, content="true")
+  inspect(m_edge.target == b_id, content="true")
+  inspect(m_edge.options.offset, content="2")
+  inspect(m_edge.options.curve, content="-1")
+  inspect(m_edge.options.shorten.source, content="10")
+  inspect(m_edge.options.shorten.target, content="20")
+
+  let alpha_edge = match tikz_test_find_edge_by_label(imported.quiver, "alpha") {
+    Some(edge) => edge
+    None => abort("expected edge alpha")
+  }
+  inspect(alpha_edge.source == m_edge.cell.id, content="true")
+  inspect(alpha_edge.target == b_id, content="true")
+  inspect(alpha_edge.options.level, content="2")
+  inspect(alpha_edge.options.edge_alignment.source, content="false")
+  inspect(alpha_edge.options.edge_alignment.target, content="true")
+
+  let loop_edge = match tikz_test_find_edge_by_label(imported.quiver, "l") {
+    Some(edge) => edge
+    None => abort("expected edge l")
+  }
+  inspect(loop_edge.source == a_id, content="true")
+  inspect(loop_edge.target == a_id, content="true")
+  inspect(loop_edge.options.radius, content="3")
+  inspect(loop_edge.options.angle, content="45")
+}
+
+///|
 test "tikz-cd import minimal parser supports handwritten matrix and right arrow" {
   let input = [
     "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}",

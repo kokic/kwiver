@@ -229,11 +229,31 @@ UIMode.Connect = class extends UIMode {
             // dependencies to be converted, and we'd have to interpolate curves into loops, etc.).
             // Thus, the only time `this.loop` will be true is if we're reconnecting an existing
             // loop. We can convert loops into non-loops.
-            this.loop = this.reconnect.edge.is_loop();
+            const preview_source = this.reconnect.end === "source" ? this.target : this.source;
+            const preview_target = this.reconnect.end === "target" ? this.target : this.source;
+            const render_preview = () => {
+                this.reconnect.edge.render(ui, offset);
+                for (
+                    const cell of ui.connect_preview.transitive_dependencies(
+                        [this.reconnect.edge],
+                        true,
+                    )
+                ) {
+                    cell.render(ui);
+                }
+            };
 
-            this.reconnect.edge.render(ui, offset);
-            for (const cell of ui.connect_preview.transitive_dependencies([this.reconnect.edge], true)) {
-                cell.render(ui);
+            if (preview_source !== null && preview_target !== null) {
+                this.loop = this.reconnect.edge.is_loop() && preview_source === preview_target;
+                ui.connect_preview.with_temporary_reconnect(
+                    this.reconnect.edge,
+                    preview_source,
+                    preview_target,
+                    render_preview,
+                );
+            } else {
+                this.loop = this.reconnect.edge.is_loop();
+                render_preview();
             }
         }
     }
@@ -280,7 +300,7 @@ UIMode.Connect = class extends UIMode {
                             // We shouldn't be able to connect to an edge that's connected to this one.
                             return false;
                         }
-                        if (cell.level > CONSTANTS.MAXIMUM_CELL_LEVEL) {
+                        if (ui.connect_preview.level_of(cell) > CONSTANTS.MAXIMUM_CELL_LEVEL) {
                             return false;
                         }
                     }
@@ -542,6 +562,14 @@ UIMode.PointerMove = class extends UIMode {
         /// The group of cells that should be moved.
         this.selection = selection;
 
+        /// Temporary vertex positions during pointer-drag preview.
+        this.preview_positions = new Map(
+            Array.from(selection).filter((cell) => cell.is_vertex()).map((cell) => [
+                cell,
+                cell.position,
+            ]),
+        );
+
         // Cells that are being moved are not considered part of the grid of cells
         // and therefore do not interact with one another.
         for (const cell of selection) {
@@ -549,7 +577,50 @@ UIMode.PointerMove = class extends UIMode {
         }
     }
 
+    preview_position(cell) {
+        return this.preview_positions.get(cell) || cell.position;
+    }
+
+    remove_preview_size_constraints(ui, cell, position) {
+        ui.cell_width_constraints.get(position.x)?.delete(cell);
+        ui.cell_height_constraints.get(position.y)?.delete(cell);
+    }
+
+    set_preview_position(ui, cell, position) {
+        const previous_position = this.preview_position(cell);
+        if (previous_position.x === position.x && previous_position.y === position.y) {
+            return;
+        }
+        this.remove_preview_size_constraints(ui, cell, previous_position);
+        this.preview_positions.set(cell, position);
+    }
+
     release(ui) {
+        const preview_positions = new Map(this.preview_positions);
+        this.preview_positions.clear();
+
+        const reverted = Array.from(this.selection).filter((cell) => {
+            const preview_position = preview_positions.get(cell);
+            return preview_position !== undefined && (
+                preview_position.x !== cell.position.x || preview_position.y !== cell.position.y
+            );
+        });
+        if (reverted.length > 0) {
+            for (const cell of reverted) {
+                this.remove_preview_size_constraints(ui, cell, preview_positions.get(cell));
+            }
+            if (!ui.update_col_row_size(...reverted.map((cell) => preview_positions.get(cell)))) {
+                const dependencies_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                    new Set(reverted),
+                    false,
+                    "ui.pointer_move.release",
+                );
+                for (const cell of dependencies_to_render) {
+                    cell.render(ui);
+                }
+            }
+        }
+
         // Make sure we're not trying to release any cells on top of existing ones.
         for (const cell of this.selection) {
             const occupant = ui.positions.get(`${cell.position}`);
@@ -710,9 +781,10 @@ class ViewRegistry {
 class ConnectPreview {
     constructor() {
         this.edges_by_endpoint = new Map();
+        this.preview_reconnect = null;
     }
 
-    set_endpoints(edge, source, target, registered = true) {
+    apply_committed_endpoints(edge, source, target, registered = true) {
         if (registered) {
             this.unregister_cell(edge);
         }
@@ -720,6 +792,46 @@ class ConnectPreview {
         if (registered) {
             this.register_cell(edge);
         }
+    }
+
+    preview_reconnect_of(edge) {
+        return this.preview_reconnect?.edge === edge ? this.preview_reconnect : null;
+    }
+
+    source_of(edge) {
+        return this.preview_reconnect_of(edge)?.source || edge.source;
+    }
+
+    target_of(edge) {
+        return this.preview_reconnect_of(edge)?.target || edge.target;
+    }
+
+    level_of(cell) {
+        return this.preview_reconnect?.levels.get(cell) ?? cell.level;
+    }
+
+    shape_of(edge) {
+        const preview = this.preview_reconnect_of(edge);
+        if (preview === null || preview === undefined) {
+            return edge.options.shape;
+        }
+
+        const committed_loop = edge.source === edge.target;
+        const preview_loop = preview.source === preview.target;
+        return committed_loop && preview_loop ? "arc" : "bezier";
+    }
+
+    options_of(edge) {
+        const preview = this.preview_reconnect_of(edge);
+        if (preview === null || preview === undefined) {
+            return edge.options;
+        }
+
+        return {
+            ...edge.options,
+            level: this.level_of(edge),
+            shape: this.shape_of(edge),
+        };
     }
 
     endpoint_edges(cell) {
@@ -756,11 +868,20 @@ class ConnectPreview {
     dependencies_of(cell) {
         const dependencies = new Map();
         for (const candidate of this.edges_by_endpoint.get(cell) || []) {
-            if (candidate.source === cell) {
+            if (this.source_of(candidate) === cell) {
                 dependencies.set(candidate, "source");
             }
-            if (candidate.target === cell) {
+            if (this.target_of(candidate) === cell) {
                 dependencies.set(candidate, "target");
+            }
+        }
+        const preview_edge = this.preview_reconnect?.edge;
+        if (preview_edge !== null && preview_edge !== undefined) {
+            if (this.source_of(preview_edge) === cell) {
+                dependencies.set(preview_edge, "source");
+            }
+            if (this.target_of(preview_edge) === cell) {
+                dependencies.set(preview_edge, "target");
             }
         }
         return dependencies;
@@ -777,17 +898,19 @@ class ConnectPreview {
             }
         }
         closure = Array.from(closure);
-        closure.sort((a, b) => a.level - b.level);
+        closure.sort((a, b) => this.level_of(a) - this.level_of(b));
         return new Set(closure);
     }
 
-    update_edge_levels(edge, apply_level = null) {
-        const levels = new Map();
+    update_edge_levels(edge, apply_level = null, levels = new Map()) {
         for (const cell of this.transitive_dependencies([edge])) {
             if (!cell.is_edge()) {
                 continue;
             }
-            const level = Math.max(cell.source.level, cell.target.level) + 1;
+            const level = Math.max(
+                this.level_of(this.source_of(cell)),
+                this.level_of(this.target_of(cell)),
+            ) + 1;
             levels.set(cell, level);
             if (apply_level !== null) {
                 apply_level(cell, level);
@@ -796,32 +919,21 @@ class ConnectPreview {
         return levels;
     }
 
-    apply_levels(levels) {
-        for (const [cell, level] of levels) {
-            cell.level = level;
-        }
-    }
-
     with_temporary_reconnect(edge, source, target, callback) {
-        const original_source = edge.source;
-        const original_target = edge.target;
-        const original_levels = new Map(
-            Array.from(this.update_edge_levels(edge)).map(([cell, level]) => [cell, cell.level]),
-        );
-
-        this.set_endpoints(edge, source, target);
-        this.apply_levels(this.update_edge_levels(edge));
+        const previous_preview = this.preview_reconnect;
+        this.preview_reconnect = {
+            edge,
+            source,
+            target,
+            levels: new Map(),
+        };
+        this.update_edge_levels(edge, null, this.preview_reconnect.levels);
 
         try {
             return callback();
         } finally {
-            this.set_endpoints(edge, original_source, original_target);
-            this.apply_levels(original_levels);
+            this.preview_reconnect = previous_preview;
         }
-    }
-
-    reconnect(edge, source, target) {
-        this.set_endpoints(edge, source, target);
     }
 }
 
@@ -1440,78 +1552,66 @@ class UI {
         return cell;
     }
 
-    kwiver_bind_new_cell_ids_from_runtime_cells(
-        new_cells,
+    kwiver_runtime_cells_for_ids(
+        runtime_ids,
+        runtime_cells = null,
+        origin = "ui.runtime.cells_for_ids",
+    ) {
+        if (!Array.isArray(runtime_ids)) {
+            throw new Error("[kwiver-only] " + origin + ": runtime ids unavailable");
+        }
+
+        const runtime_snapshot = runtime_cells ?? kwiver_bridge_all_cells();
+        if (!Array.isArray(runtime_snapshot)) {
+            throw new Error("[kwiver-only] " + origin + ": runtime snapshot unavailable");
+        }
+
+        const runtime_by_id = new Map();
+        for (const runtime_cell of runtime_snapshot) {
+            const runtime_id = Number(runtime_cell?.id);
+            if (!Number.isInteger(runtime_id) || runtime_by_id.has(runtime_id)) {
+                throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
+            }
+            runtime_by_id.set(runtime_id, runtime_cell);
+        }
+
+        const selected = [];
+        const selected_ids = new Set();
+        for (const raw_id of runtime_ids) {
+            const runtime_id = Number(raw_id);
+            if (!Number.isInteger(runtime_id) || selected_ids.has(runtime_id)) {
+                throw new Error("[kwiver-only] " + origin + ": invalid requested runtime id");
+            }
+            const runtime_cell = runtime_by_id.get(runtime_id);
+            if (!runtime_cell) {
+                throw new Error("[kwiver-only] " + origin + ": requested runtime cell missing");
+            }
+            selected_ids.add(runtime_id);
+            selected.push(runtime_cell);
+        }
+
+        return selected;
+    }
+
+    kwiver_import_runtime_cells(
         runtime_cells,
-        origin = "ui.runtime.bind_new_cell_ids",
+        origin = "ui.runtime.import_cells",
+        centre_view = true,
     ) {
         if (!Array.isArray(runtime_cells)) {
             throw new Error("[kwiver-only] " + origin + ": runtime snapshot unavailable");
         }
 
-        const js_new_cells = (new_cells instanceof Set || Array.isArray(new_cells))
-            ? Array.from(new_cells)
-            : [];
-        const js_new_cell_set = new Set(js_new_cells);
-        for (const cell of js_new_cells) {
-            if (Number.isInteger(cell?.kwiver_id)) {
-                throw new Error("[kwiver-only] " + origin + ": new cell already bound");
-            }
-        }
-
-        const existing_runtime_ids = new Set();
-        for (const cell of this.view_all_cells()) {
-            if (js_new_cell_set.has(cell)) {
-                continue;
-            }
-            const cell_id = Number(cell?.kwiver_id);
-            if (!Number.isInteger(cell_id)) {
-                throw new Error("[kwiver-only] " + origin + ": existing cell id missing");
-            }
-            if (existing_runtime_ids.has(cell_id)) {
-                throw new Error("[kwiver-only] " + origin + ": duplicate existing cell id");
-            }
-            existing_runtime_ids.add(cell_id);
-        }
-
-        const runtime_ids = new Set();
-        const runtime_new_cells = [];
+        const runtime_by_id = new Map();
         for (const runtime_cell of runtime_cells) {
             const runtime_id = Number(runtime_cell?.id);
-            if (!Number.isInteger(runtime_id)) {
+            if (!Number.isInteger(runtime_id) || runtime_by_id.has(runtime_id)) {
                 throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
             }
-            if (runtime_ids.has(runtime_id)) {
-                throw new Error("[kwiver-only] " + origin + ": duplicate runtime id");
-            }
-            runtime_ids.add(runtime_id);
-            if (!existing_runtime_ids.has(runtime_id)) {
-                runtime_new_cells.push(runtime_cell);
-            }
-        }
-        for (const existing_id of existing_runtime_ids) {
-            if (!runtime_ids.has(existing_id)) {
-                throw new Error("[kwiver-only] " + origin + ": runtime snapshot missing existing cell");
-            }
-        }
-        if (js_new_cells.length !== runtime_new_cells.length) {
-            throw new Error("[kwiver-only] " + origin + ": new cell count mismatch");
+            runtime_by_id.set(runtime_id, runtime_cell);
         }
 
-        const js_order = new Map();
-        for (let i = 0; i < js_new_cells.length; ++i) {
-            js_order.set(js_new_cells[i], i);
-        }
-
-        const js_sorted = [...js_new_cells].sort((a, b) => {
-            const level_delta = Number(a.level) - Number(b.level);
-            if (level_delta !== 0) {
-                return level_delta;
-            }
-            return Number(js_order.get(a)) - Number(js_order.get(b));
-        });
-
-        const runtime_sorted = [...runtime_new_cells].sort((a, b) => {
+        const ordered_runtime_cells = [...runtime_cells].sort((a, b) => {
             const level_delta = Number(a?.level) - Number(b?.level);
             if (level_delta !== 0) {
                 return level_delta;
@@ -1519,25 +1619,90 @@ class UI {
             return Number(a?.id) - Number(b?.id);
         });
 
-        for (let i = 0; i < js_sorted.length; ++i) {
-            const cell = js_sorted[i];
-            const runtime_cell = runtime_sorted[i];
-            const runtime_id = Number(runtime_cell?.id);
-            if (!Number.isInteger(runtime_id)) {
-                throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const imported_cells = [];
+        QuiverImportExport.base64.begin_import(this);
+        try {
+            for (const runtime_cell of ordered_runtime_cells) {
+                const runtime_id = Number(runtime_cell?.id);
+                if (!Number.isInteger(runtime_id)) {
+                    throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
+                }
+                if (js_by_id.has(runtime_id)) {
+                    throw new Error("[kwiver-only] " + origin + ": runtime id already exists in UI");
+                }
+
+                let cell = null;
+                if (runtime_cell?.kind === "vertex") {
+                    const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
+                    const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
+                    const x = Number(runtime_cell.x);
+                    const y = Number(runtime_cell.y);
+                    if (
+                        label === null
+                        || label_colour === null
+                        || !Number.isInteger(x)
+                        || !Number.isInteger(y)
+                    ) {
+                        throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
+                    }
+                    cell = new Vertex(this, label, new Position(x, y), label_colour);
+                } else if (runtime_cell?.kind === "edge") {
+                    const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
+                    const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
+                    const options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
+                    const source = js_by_id.get(Number(runtime_cell.source_id));
+                    const target = js_by_id.get(Number(runtime_cell.target_id));
+                    if (
+                        label === null
+                        || label_colour === null
+                        || options === null
+                        || !source
+                        || !target
+                    ) {
+                        throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
+                    }
+                    cell = new Edge(this, label, source, target, options, label_colour);
+                } else {
+                    throw new Error("[kwiver-only] " + origin + ": unsupported runtime cell kind");
+                }
+
+                cell.kwiver_id = runtime_id;
+                UI.kwiver_apply_runtime_cell_snapshot(
+                    this,
+                    cell,
+                    runtime_cell,
+                    origin,
+                    false,
+                    false,
+                    false,
+                );
+                js_by_id.set(runtime_id, cell);
+                imported_cells.push(cell);
             }
-            if (cell.is_vertex() && runtime_cell?.kind !== "vertex") {
-                throw new Error("[kwiver-only] " + origin + ": kind mismatch");
+
+            for (const cell of imported_cells) {
+                if (cell.is_vertex()) {
+                    this.panel.render_maths(this, cell);
+                } else {
+                    cell.render(this);
+                }
             }
-            if (cell.is_edge() && runtime_cell?.kind !== "edge") {
-                throw new Error("[kwiver-only] " + origin + ": kind mismatch");
+
+            QuiverImportExport.base64.end_import(this, imported_cells, centre_view);
+        } catch (error) {
+            for (const cell of [...imported_cells].reverse()) {
+                this.remove_cell(cell);
             }
-            cell.kwiver_id = runtime_id;
+            this.buffer_updates = false;
+            throw error;
         }
 
-        for (const cell of js_sorted) {
-            this.kwiver_assert_runtime_cell_match(cell, origin);
+        for (const cell of imported_cells) {
+            this.kwiver_assert_runtime_cell_match(cell, origin, runtime_by_id);
         }
+
+        return new Set(imported_cells);
     }
 
     kwiver_ensure_cell_ids() {
@@ -1944,6 +2109,13 @@ class UI {
         this.view_registry.update_level(cell, level);
     }
 
+    view_position(cell) {
+        if (this.in_mode(UIMode.PointerMove) && this.mode.selection?.has(cell)) {
+            return this.mode.preview_position(cell);
+        }
+        return cell.position;
+    }
+
     view_rerender() {
         const cells = this.view_all_cells();
         cells.sort((a, b) => a.level - b.level);
@@ -2053,17 +2225,17 @@ class UI {
         return { id, envelope };
     }
 
-    kwiver_assert_runtime_cell_match(cell, context = "ui.create") {
+    kwiver_assert_runtime_cell_match(cell, context = "ui.create", runtime_by_id = null) {
         if (!cell || !Number.isInteger(cell.kwiver_id)) {
             throw new Error("[kwiver-only] " + context + ": cell missing kwiver id");
         }
 
-        const runtime_by_id = this.kwiver_runtime_cells_by_id();
-        if (runtime_by_id === null) {
+        const runtime_cells_by_id = runtime_by_id ?? this.kwiver_runtime_cells_by_id();
+        if (runtime_cells_by_id === null) {
             throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
         }
 
-        const runtime_cell = runtime_by_id.get(cell.kwiver_id);
+        const runtime_cell = runtime_cells_by_id.get(cell.kwiver_id);
         if (!runtime_cell) {
             throw new Error("[kwiver-only] " + context + ": runtime cell missing");
         }
@@ -2115,7 +2287,29 @@ class UI {
             throw new Error(["[kwiver-only] ", origin, ": add_vertex_json failed (", detail, ")"].join(""));
         }
 
-        const vertex = new Vertex(this, label, position, label_colour);
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        const runtime_vertex = runtime_by_id?.get(added.id);
+        const runtime_label = typeof runtime_vertex?.label === "string" ? runtime_vertex.label : null;
+        const runtime_label_colour = UI.kwiver_colour_from_runtime(runtime_vertex?.label_colour);
+        const runtime_x = Number(runtime_vertex?.x);
+        const runtime_y = Number(runtime_vertex?.y);
+        if (
+            !runtime_vertex
+            || runtime_vertex.kind !== "vertex"
+            || runtime_label === null
+            || runtime_label_colour === null
+            || !Number.isInteger(runtime_x)
+            || !Number.isInteger(runtime_y)
+        ) {
+            throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
+        }
+
+        const vertex = new Vertex(
+            this,
+            runtime_label,
+            new Position(runtime_x, runtime_y),
+            runtime_label_colour,
+        );
         vertex.kwiver_id = added.id;
         this.kwiver_assert_runtime_cell_match(vertex, origin);
         return vertex;
@@ -2146,15 +2340,45 @@ class UI {
             throw new Error("[kwiver-only] " + origin + ": add_edge_json failed");
         }
 
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        const runtime_edge = runtime_by_id?.get(added.id);
+        const runtime_label = typeof runtime_edge?.label === "string" ? runtime_edge.label : null;
+        const runtime_label_colour = UI.kwiver_colour_from_runtime(runtime_edge?.label_colour);
+        const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
+        const source_id = Number(runtime_edge?.source_id);
+        const target_id = Number(runtime_edge?.target_id);
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const runtime_source = js_by_id.get(source_id);
+        const runtime_target = js_by_id.get(target_id);
+        if (
+            !runtime_edge
+            || runtime_edge.kind !== "edge"
+            || runtime_label === null
+            || runtime_label_colour === null
+            || runtime_options === null
+            || !runtime_source
+            || !runtime_target
+        ) {
+            throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
+        }
+
         const edge = new Edge(
             this,
-            label,
-            source,
-            target,
-            normalized_options,
-            label_colour,
+            runtime_label,
+            runtime_source,
+            runtime_target,
+            runtime_options,
+            runtime_label_colour,
         );
         edge.kwiver_id = added.id;
+        UI.kwiver_apply_runtime_edge_snapshot(
+            this,
+            edge,
+            runtime_edge,
+            origin,
+            true,
+            false,
+        );
         this.kwiver_assert_runtime_cell_match(edge, origin);
         return edge;
     }
@@ -2831,24 +3055,17 @@ class UI {
             throw new Error("[kwiver-only] ui.clipboard.paste: dispatch failed");
         }
 
-        const payload_to_import = kwiver_bridge_export_selection(true, "ui.clipboard.paste");
-        if (typeof payload_to_import !== "string" || payload_to_import === "") {
-            throw new Error("[kwiver-only] ui.clipboard.paste: export_selection failed");
-        }
-
-        const cells = new Set(QuiverImportExport.base64.import(
-            this,
-            payload_to_import,
-            this.focus_position,
-            false,
-        ));
-        this.history.add(this, [{ kind: "create", cells }]);
         const runtime_cells_after_paste = kwiver_bridge_all_cells();
-        this.kwiver_bind_new_cell_ids_from_runtime_cells(
-            cells,
-            runtime_cells_after_paste,
-            "ui.clipboard.paste.bind_ids",
+        const cells = this.kwiver_import_runtime_cells(
+            this.kwiver_runtime_cells_for_ids(
+                pasted.result?.imported_ids,
+                runtime_cells_after_paste,
+                "ui.clipboard.paste.runtime_ids",
+            ),
+            "ui.clipboard.paste",
+            false,
         );
+        this.history.add(this, [{ kind: "create", cells }]);
     }
 
     /// Clear the current diagram. This also clears the history.
@@ -3346,14 +3563,15 @@ class UI {
         const commit_move_event = () => {
             if (!this.mode.previous.sub(this.mode.origin).is_zero()) {
                 // We only want to commit the move event if it actually moved things. The preview
-                // has already updated the local view, but the committed move still replays through
-                // runtime so the final JS state is snapped back to canonical runtime positions.
+                // now lives in pointer-move preview state, and the committed move still replays
+                // through runtime so the final JS state is snapped back to canonical runtime
+                // positions.
                 this.history.add(this, [{
                     kind: "move",
                     displacements: Array.from(this.mode.selection).map((vertex) => ({
                         vertex,
-                        from: vertex.position.sub(this.mode.previous.sub(this.mode.origin)),
-                        to: vertex.position,
+                        from: vertex.position,
+                        to: this.mode.preview_position(vertex),
                     })),
                 }], true);
             }
@@ -3787,7 +4005,9 @@ class UI {
                 // Prevent dragging from selecting random elements.
                 event.preventDefault();
 
-                const new_position = (cell) => cell.position.add(position).sub(this.mode.previous);
+                const new_position = (cell) => {
+                    return this.mode.preview_position(cell).add(position).sub(this.mode.previous);
+                };
 
                 // We will only try to reposition if the new position is actually different
                 // (rather than the cursor simply having moved within the same grid cell).
@@ -3804,7 +4024,7 @@ class UI {
                     // Move all the selected vertices.
                     for (const cell of this.mode.selection) {
                         if (cell.is_vertex()) {
-                            cell.set_position(this, new_position(cell));
+                            this.mode.set_preview_position(this, cell, new_position(cell));
                             moved.add(cell);
                         }
                     }
@@ -3813,7 +4033,7 @@ class UI {
                     // vertices.
                     if (!this.update_col_row_size(...Array.from(moved)
                         // Undo the transformation performed by `new_position`.
-                        .map((vertex) => vertex.position.sub(position).add(this.mode.previous))
+                        .map((vertex) => this.mode.preview_position(vertex).sub(position).add(this.mode.previous))
                     )) {
                         // If we haven't rerendered the entire canvas due to a resize, then
                         // rerender the dependencies to make sure we move all of the edges connected
@@ -4779,6 +4999,8 @@ class UI {
     /// This means we do not have to resize the text inside a cell, for instance, to make things
     /// fit.
     update_cell_size(cell, width, height) {
+        const position = this.view_position(cell);
+
         const update_size = (constraints, offset, size) => {
             if (!constraints.has(offset)) {
                 constraints.set(offset, new Map());
@@ -4786,12 +5008,12 @@ class UI {
             constraints.get(offset).set(cell, size);
         };
 
-        update_size(this.cell_width_constraints, cell.position.x, width);
-        update_size(this.cell_height_constraints, cell.position.y, height);
+        update_size(this.cell_width_constraints, position.x, width);
+        update_size(this.cell_height_constraints, position.y, height);
 
         // Resize the grid if need be.
         if (!this.buffer_updates) {
-            this.update_col_row_size(cell.position);
+            this.update_col_row_size(position);
         }
     }
 
@@ -11249,6 +11471,7 @@ export class Vertex extends Cell {
     /// Create the HTML element associated with the vertex.
     render(ui) {
         const construct = this.element === null;
+        const position = ui.view_position(this);
 
         // The container for the cell.
         if (construct) {
@@ -11256,18 +11479,18 @@ export class Vertex extends Cell {
         }
 
         // Position the vertex.
-        const offset = ui.offset_from_position(this.position);
+        const offset = ui.offset_from_position(position);
         this.element.set_style({
             left: `${offset.x}px`,
             top: `${offset.y}px`,
         });
-        const centre_offset = offset.add(ui.cell_centre_at_position(this.position));
+        const centre_offset = offset.add(ui.cell_centre_at_position(position));
         this.shape.origin = centre_offset;
         // Shape width is controlled elsewhere.
 
         // Resize according to the grid cell.
-        const cell_width = ui.cell_size(ui.cell_width, this.position.x);
-        const cell_height = ui.cell_size(ui.cell_height, this.position.y);
+        const cell_width = ui.cell_size(ui.cell_width, position.x);
+        const cell_height = ui.cell_size(ui.cell_height, position.y);
         this.element.set_style({
             width: `${cell_width}px`,
             height: `${cell_height}px`,
@@ -11453,12 +11676,20 @@ export class Edge extends Cell {
     /// Create the HTML element associated with the edge.
     /// Note that `render_maths` triggers redrawing the edge, rather than the other way around.
     render(ui, pointer_offset = null) {
+        const preview_source = ui.connect_preview.source_of(this);
+        const preview_target = ui.connect_preview.target_of(this);
+        const preview_options = ui.connect_preview.options_of(this);
+
         if (pointer_offset !== null) {
             const end = ui.mode.reconnect.end;
+            const fixed_end = end === "source" ? "target" : "source";
+            this.arrow[fixed_end] = preview_options.edge_alignment[fixed_end]
+                ? ({ source: preview_source, target: preview_target })[fixed_end].shape
+                : ({ source: preview_source, target: preview_target })[fixed_end].phantom_shape;
             if (ui.mode.target !== null) {
                 // In this case, we're hovering over another cell.
                 this.arrow[end] =
-                    (ui.mode.target.is_vertex() || this.options.edge_alignment[end]) ?
+                    (ui.mode.target.is_vertex() || preview_options.edge_alignment[end]) ?
                         ui.mode.target.shape : ui.mode.target.phantom_shape
             } else {
                 // In this case, we're not hovering over another cell.
@@ -11468,12 +11699,13 @@ export class Edge extends Cell {
             }
         } else {
             for (const end of ["source", "target"]) {
-                this.arrow[end] = this.options.edge_alignment[end] ?
-                    this[end].shape : this[end].phantom_shape
+                this.arrow[end] = preview_options.edge_alignment[end]
+                    ? ({ source: preview_source, target: preview_target })[end].shape
+                    : ({ source: preview_source, target: preview_target })[end].phantom_shape
             }
         }
 
-        UI.update_style(this.arrow, this.options);
+        UI.update_style(this.arrow, preview_options);
         this.arrow.redraw();
 
         // Safari has a longstanding bug (https://bugs.webkit.org/show_bug.cgi?id=23113),
@@ -11530,8 +11762,8 @@ export class Edge extends Cell {
         }
 
         // We override the source and target whilst drawing, so we need to reset them.
-        this.arrow.source = this.source.shape;
-        this.arrow.target = this.target.shape;
+        this.arrow.source = preview_source.shape;
+        this.arrow.target = preview_target.shape;
     }
 
     /// Returns the angle of this edge.
@@ -11544,11 +11776,12 @@ export class Edge extends Cell {
 
     /// Changes the source and target.
     reconnect(ui, source, target) {
-        if (ui.view_contains_cell(this)) {
-            ui.connect_preview.reconnect(this, source, target);
-        } else {
-            ui.connect_preview.set_endpoints(this, source, target, false);
-        }
+        ui.connect_preview.apply_committed_endpoints(
+            this,
+            source,
+            target,
+            ui.view_contains_cell(this),
+        );
         ui.connect_preview.update_edge_levels(this, (cell, level) => ui.view_update_level(cell, level));
         this.options.shape = source !== target ? "bezier" : "arc";
         for (const end of ["source", "target"]) {
@@ -11746,15 +11979,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     throw new Error("[kwiver-only] ui.bootstrap.query: import_payload failed");
                 }
 
-                const imported_cells = QuiverImportExport.base64.import(
-                    ui,
-                    imported_payload.payload,
-                );
                 const runtime_cells_after_import = kwiver_bridge_all_cells();
-                ui.kwiver_bind_new_cell_ids_from_runtime_cells(
-                    imported_cells,
+                ui.kwiver_import_runtime_cells(
                     runtime_cells_after_import,
-                    "ui.bootstrap.query.bind_ids",
+                    "ui.bootstrap.query",
                 );
                 const runtime_selection = Array.isArray(imported_payload.after?.selection)
                     ? imported_payload.after.selection

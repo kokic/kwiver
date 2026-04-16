@@ -356,6 +356,7 @@ function base64ShareUrl(payload, settings, options) {
 
 function tikzInput(settings, options, definitions) {
   const sep = options && options.sep ? options.sep : {};
+  const shareBaseUrl = base64UrlPrefix();
   const colours = {};
   const definitionColours = definitions && definitions.colours ? definitions.colours : {};
   for (const [name, colour] of iterableEntries(definitionColours)) {
@@ -386,6 +387,9 @@ function tikzInput(settings, options, definitions) {
     },
   };
 
+  if (shareBaseUrl !== "") {
+    input.options.share_base_url = shareBaseUrl;
+  }
   if (options && typeof options.macro_url === "string" && options.macro_url !== "") {
     input.options.macro_url = options.macro_url;
   }
@@ -394,6 +398,7 @@ function tikzInput(settings, options, definitions) {
 }
 
 function fletcherInput(settings, options) {
+  const shareBaseUrl = base64UrlPrefix();
   const input = {
     settings: {
       centre_diagram: Boolean(settingValue(settings, "export.centre_diagram", true)),
@@ -402,6 +407,9 @@ function fletcherInput(settings, options) {
       renderer: rendererFromSettings(settings, options),
     },
   };
+  if (shareBaseUrl !== "") {
+    input.options.share_base_url = shareBaseUrl;
+  }
   if (options && typeof options.macro_url === "string" && options.macro_url !== "") {
     input.options.macro_url = options.macro_url;
   }
@@ -734,14 +742,6 @@ export function kwiver_bridge_import_tikz_result(input, settings) {
     payload: typeof payload === "string" && payload !== "" ? payload : null,
     error,
   };
-}
-
-export function kwiver_bridge_import_tikz_payload(input, settings) {
-  const result = kwiver_bridge_import_tikz_result(input, settings);
-  if (!result || result.ok !== true) {
-    return null;
-  }
-  return typeof result.payload === "string" && result.payload !== "" ? result.payload : null;
 }
 
 export function kwiver_bridge_import_payload_json(
