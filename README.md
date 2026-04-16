@@ -60,8 +60,8 @@ Run smoke-only checks (skip `moon test -v`):
 node scripts/local_regression.mjs --smoke-only
 ```
 
-A deferred manual browser checklist for `browser_ui_upstream` is documented in `docs/browser-ui-manual-checklist.md`.
-Run it after the single-source graph migration stabilizes; it is not the current gate.
+A targeted manual browser checklist for `browser_ui_upstream` is documented in `docs/browser-ui-manual-checklist.md`.
+Run it after reconnect/import/export/persistence changes, once lightweight regression checks are green.
 
 ## Tokei
 

@@ -451,39 +451,6 @@ function commandResultPayload(result, after) {
   return null;
 }
 
-function normalizeCommandResultEnvelope(envelope) {
-  if (!envelope || typeof envelope !== "object") {
-    return envelope;
-  }
-
-  const result = envelope.result && typeof envelope.result === "object"
-    ? envelope.result
-    : null;
-  const after = envelope.after && typeof envelope.after === "object"
-    ? envelope.after
-    : null;
-  const normalized = { ...envelope };
-
-  if (!Array.isArray(normalized.selection)) {
-    if (Array.isArray(result?.selection)) {
-      normalized.selection = result.selection;
-    } else if (Array.isArray(after?.selection)) {
-      normalized.selection = after.selection;
-    } else {
-      normalized.selection = [];
-    }
-  }
-
-  if (typeof normalized.payload !== "string" || normalized.payload === "") {
-    const payload = commandResultPayload(result, after);
-    if (typeof payload === "string" && payload !== "") {
-      normalized.payload = payload;
-    }
-  }
-
-  return normalized;
-}
-
 function asIntOr(value, fallback = 0) {
   const n = Number(value);
   return Number.isInteger(n) ? n : fallback;
@@ -544,7 +511,7 @@ function dispatchCommandEnvelope(command) {
     if (typeof parsed.protocol !== "string" || parsed.protocol !== protocol) {
       return null;
     }
-    return normalizeCommandResultEnvelope(parsed);
+    return parsed;
   } catch (_e) {
     return null;
   }
@@ -694,13 +661,7 @@ export function kwiver_bridge_export_payload(origin = "ui.bridge.export.payload"
   if (!envelope) {
     return null;
   }
-  if (typeof envelope.result === "string") {
-    return envelope.result;
-  }
-  if (envelope.after && typeof envelope.after.payload === "string") {
-    return envelope.after.payload;
-  }
-  return null;
+  return commandResultPayload(envelope.result, envelope.after);
 }
 
 export function kwiver_bridge_reset(origin = "ui.bridge.reset") {

@@ -236,9 +236,11 @@ function installRecordingMock(recorder) {
             result: {
               ok: true,
               payload: `payload-${command.action}`,
+              selection: [1, 2],
             },
             after: {
               payload: `payload-${command.action}`,
+              selection: [1, 2],
             },
           };
       }
@@ -256,8 +258,18 @@ function assertRecordedCommand(recorded, index, action, origin) {
   assert.notEqual(command?.command_id, "");
 }
 
+function envelopeSelection(envelope) {
+  if (Array.isArray(envelope?.result?.selection)) {
+    return envelope.result.selection;
+  }
+  if (Array.isArray(envelope?.after?.selection)) {
+    return envelope.after.selection;
+  }
+  return null;
+}
+
 function assertSelectionEnvelope(envelope) {
-  assert.equal(Array.isArray(envelope?.selection), true);
+  assert.equal(Array.isArray(envelopeSelection(envelope)), true);
 }
 
 function testInteractionWrappersDispatchRuntimeCommands() {

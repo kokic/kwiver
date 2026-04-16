@@ -166,6 +166,29 @@ UIMode.Connect = class extends UIMode {
         }
     }
 
+    static committed_cell_level(ui, cell, runtime_by_id = null) {
+        if (cell?.is_vertex?.() || cell?.is_edge?.()) {
+            const runtime_level = ui.kwiver_runtime_cell_level(cell, runtime_by_id);
+            return Number.isInteger(runtime_level) ? runtime_level : null;
+        }
+        const level = Number(cell?.level);
+        return Number.isInteger(level) ? level : null;
+    }
+
+    static committed_edge_is_loop(ui, edge, runtime_by_id = null) {
+        if (!edge?.is_edge?.()) {
+            return false;
+        }
+        return ui.kwiver_runtime_edge_is_loop(edge, runtime_by_id) === true;
+    }
+
+    static committed_edge_options(ui, edge, runtime_by_id = null) {
+        if (!edge?.is_edge?.()) {
+            return null;
+        }
+        return ui.kwiver_runtime_edge_options(edge, runtime_by_id);
+    }
+
     release(ui) {
         this.source.element.class_list.remove("source");
         if (this.target !== null) {
@@ -191,6 +214,7 @@ UIMode.Connect = class extends UIMode {
     update(ui, offset) {
         // If we're creating a new edge...
         if (this.reconnect === null) {
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
             // We're drawing the edge again from scratch, so we need to remove all existing
             // elements.
             const svg = this.overlay.query_selector("svg");
@@ -204,7 +228,17 @@ UIMode.Connect = class extends UIMode {
 
             this.arrow.source = this.source.shape;
             this.arrow.target = target.shape;
-            const level = Math.max(this.source.level, target.level) + 1;
+            const source_level = UIMode.Connect.committed_cell_level(
+                ui,
+                this.source,
+                runtime_by_id,
+            ) ?? 0;
+            const target_level = UIMode.Connect.committed_cell_level(
+                ui,
+                target,
+                runtime_by_id,
+            ) ?? 0;
+            const level = Math.max(source_level, target_level) + 1;
             const distance = this.arrow.target.origin.sub(this.arrow.source.origin).length();
             // We only permit loops on vertices, not edges.
             if (level === 1 && distance >= CONSTANTS.ARC.OUTER_DIS) {
@@ -223,6 +257,12 @@ UIMode.Connect = class extends UIMode {
             this.arrow.redraw();
         } else {
             // We're reconnecting an existing edge.
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+            const reconnect_is_loop = UIMode.Connect.committed_edge_is_loop(
+                ui,
+                this.reconnect.edge,
+                runtime_by_id,
+            );
 
             // Note that we currently do not permit existing edges to be converted into loops,
             // simply because the desired behaviour is subtle (e.g. we don't want edges with
@@ -244,7 +284,7 @@ UIMode.Connect = class extends UIMode {
             };
 
             if (preview_source !== null && preview_target !== null) {
-                this.loop = this.reconnect.edge.is_loop() && preview_source === preview_target;
+                this.loop = reconnect_is_loop && preview_source === preview_target;
                 ui.connect_preview.with_temporary_reconnect(
                     this.reconnect.edge,
                     preview_source,
@@ -252,7 +292,7 @@ UIMode.Connect = class extends UIMode {
                     render_preview,
                 );
             } else {
-                this.loop = this.reconnect.edge.is_loop();
+                this.loop = reconnect_is_loop;
                 render_preview();
             }
         }
@@ -266,16 +306,24 @@ UIMode.Connect = class extends UIMode {
         // We allow cells to be connected even if they do not have the same level. This is
         // because it's often useful when drawing diagrams, even if it may not always be
         // semantically valid.
+        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+        const source_level = this.committed_cell_level(ui, source, runtime_by_id) ?? 0;
+        const target_level = target === null
+            ? 0
+            : this.committed_cell_level(ui, target, runtime_by_id) ?? 0;
 
         if (source === target) {
             // We currently only permit loops on nodes.
-            return source.level === 0;
+            return source_level === 0;
         }
-        if (source.is_loop() || (target !== null && target.is_loop())) {
+        if (
+            this.committed_edge_is_loop(ui, source, runtime_by_id)
+            || (target !== null && this.committed_edge_is_loop(ui, target, runtime_by_id))
+        ) {
             // We do not permit loops to be connected to anything else.
             return false;
         }
-        const source_target_level = Math.max(source.level, target === null ? 0 : target.level);
+        const source_target_level = Math.max(source_level, target_level);
         if (source_target_level + 1 > CONSTANTS.MAXIMUM_CELL_LEVEL) {
             return false;
         }
@@ -326,6 +374,11 @@ UIMode.Connect = class extends UIMode {
     /// Returns the suggested default options for an edge, e.g. automatically offsetting to reducing
     /// overlap with existing parallel edges where possible.
     static suggested_edge_options(ui, source, target) {
+        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+        const source_level = this.committed_cell_level(ui, source, runtime_by_id) ?? 0;
+        const target_level = this.committed_cell_level(ui, target, runtime_by_id) ?? 0;
+        const edge_options = (edge) => this.committed_edge_options(ui, edge, runtime_by_id);
+
         // We attempt to guess what the intended label alignment is and what the intended edge
         // offset is, if the cells being connected form some path with existing connections.
         // Otherwise we revert to the currently-selected label alignment in the panel and the
@@ -333,8 +386,8 @@ UIMode.Connect = class extends UIMode {
         const options = {
             // By default, 2-cells and above have a little padding for aesthetic purposes.
             shorten: {
-                source: source.level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
-                target: target.level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
+                source: source_level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
+                target: target_level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
             },
             // We will guess the label alignment below, but in case there's no selected label
             // alignment, we default to "left".
@@ -422,23 +475,31 @@ UIMode.Connect = class extends UIMode {
             const source_dependencies = ui.connect_preview.dependencies_of(source);
             const target_dependencies = ui.connect_preview.dependencies_of(target);
             for (const [edge, relationship] of source_dependencies) {
+                const committed_options = edge_options(edge);
+                if (committed_options === null) {
+                    continue;
+                }
                 // We consider each edge whose source or target is the source of the new edge.
                 consider(conserve({
                     // If the source of the edge is the same as the source of the new edge, we want
                     // to invert the offset/curve/etc., so that the new edge will not overlap the
                     // new one.
-                    source: flip(edge.options),
-                    target: edge.options,
+                    source: flip(committed_options),
+                    target: committed_options,
                 }[relationship], target_dependencies.has(edge)), -1);
             }
             for (const [edge, relationship] of target_dependencies) {
+                const committed_options = edge_options(edge);
+                if (committed_options === null) {
+                    continue;
+                }
                 // We consider each edge whose source or target is the target of the new edge.
                 consider(conserve({
-                    source: edge.options,
+                    source: committed_options,
                     // If the target of the edge is the same as the target of the new edge, we want
                     // to invert the offset/curve/etc., so that the new edge will not overlap the
                     // new one.
-                    target: flip(edge.options),
+                    target: flip(committed_options),
                 }[relationship], source_dependencies.has(edge)), 1);
             }
 
@@ -479,15 +540,19 @@ UIMode.Connect = class extends UIMode {
             // existing loops.
             const angles = new Map();
             for (const [loop,] of Array.from(ui.connect_preview.dependencies_of(source))
-                .filter(([edge,]) => edge.is_loop()))
+                .filter(([edge,]) => this.committed_edge_is_loop(ui, edge, runtime_by_id)))
             {
+                const loop_options = edge_options(loop);
+                if (loop_options === null) {
+                    continue;
+                }
                 const angle = mod(
-                    loop.options.angle + 180 - (loop.options.radius < -1 ? 180 : 0), 360) - 180;
-                angles.set(angle, Math.abs(loop.options.radius));
+                    loop_options.angle + 180 - (loop_options.radius < -1 ? 180 : 0), 360) - 180;
+                angles.set(angle, Math.abs(loop_options.radius));
                 // Both -180 and 180 are possible angle values for symmetry, but they should count
                 // as the same angle.
                 if (Math.abs(angle) === 180) {
-                    angles.set(-angle, Math.abs(loop.options.radius));
+                    angles.set(-angle, Math.abs(loop_options.radius));
                 }
             }
             let found_space = false;
@@ -534,12 +599,10 @@ UIMode.Connect = class extends UIMode {
         } else {
             // Reconnect an existing edge.
             const { edge, end } = this.reconnect;
-            const connect_action = {
-                edge,
-                end,
-                from: edge[end],
-                to: this.target,
-            };
+            const connect_action = ui.kwiver_runtime_connect_action(edge, end, this.target);
+            if (connect_action === null) {
+                throw new Error("[kwiver-only] ui.connect: runtime reconnect baseline unavailable");
+            }
             ui.kwiver_apply_connect_action(connect_action, "to", "ui.connect");
             return edge;
         }
@@ -779,18 +842,83 @@ class ViewRegistry {
 }
 
 class ConnectPreview {
-    constructor() {
+    constructor(ui) {
+        this.ui = ui;
         this.edges_by_endpoint = new Map();
         this.preview_reconnect = null;
     }
 
+    runtime_cells_by_id() {
+        return this.ui?.kwiver_runtime_cells_by_id?.() ?? null;
+    }
+
+    committed_endpoint_of(edge, end, runtime_by_id = null) {
+        if (!edge?.is_edge?.() || (end !== "source" && end !== "target")) {
+            return null;
+        }
+        return this.ui?.kwiver_runtime_edge_endpoint_cell?.(edge, end, runtime_by_id)
+            ?? edge[end]
+            ?? null;
+    }
+
+    committed_level_of(cell, runtime_by_id = null) {
+        const runtime_level =
+            (cell?.is_vertex?.() || cell?.is_edge?.())
+                ? this.ui?.kwiver_runtime_cell_level?.(cell, runtime_by_id)
+                : null;
+        if (Number.isInteger(runtime_level)) {
+            return runtime_level;
+        }
+        const level = Number(cell?.level);
+        return Number.isInteger(level) ? level : null;
+    }
+
+    committed_edge_options(edge, runtime_by_id = null) {
+        if (!edge?.is_edge?.()) {
+            return null;
+        }
+        return this.ui?.kwiver_runtime_edge_options?.(edge, runtime_by_id) ?? edge.options ?? null;
+    }
+
+    committed_edge_is_loop(edge, runtime_by_id = null) {
+        if (!edge?.is_edge?.()) {
+            return false;
+        }
+        const runtime_is_loop = this.ui?.kwiver_runtime_edge_is_loop?.(edge, runtime_by_id);
+        return typeof runtime_is_loop === "boolean" ? runtime_is_loop : edge.is_loop();
+    }
+
+    register_edge_at_endpoints(edge, source = edge?.source, target = edge?.target) {
+        if (!edge?.is_edge?.() || !source || !target) {
+            return;
+        }
+        this.endpoint_edges(source).add(edge);
+        this.endpoint_edges(target).add(edge);
+    }
+
+    unregister_edge_at_endpoints(edge, source = edge?.source, target = edge?.target) {
+        if (!edge?.is_edge?.()) {
+            return;
+        }
+        for (const endpoint of [source, target]) {
+            const edges = this.edges_by_endpoint.get(endpoint);
+            if (!(edges instanceof Set)) {
+                continue;
+            }
+            edges.delete(edge);
+            if (edges.size === 0) {
+                this.edges_by_endpoint.delete(endpoint);
+            }
+        }
+    }
+
     apply_committed_endpoints(edge, source, target, registered = true) {
         if (registered) {
-            this.unregister_cell(edge);
+            this.unregister_edge_at_endpoints(edge, edge.source, edge.target);
         }
         [edge.source, edge.target] = [source, target];
         if (registered) {
-            this.register_cell(edge);
+            this.register_edge_at_endpoints(edge, source, target);
         }
     }
 
@@ -798,39 +926,44 @@ class ConnectPreview {
         return this.preview_reconnect?.edge === edge ? this.preview_reconnect : null;
     }
 
-    source_of(edge) {
-        return this.preview_reconnect_of(edge)?.source || edge.source;
+    source_of(edge, runtime_by_id = null) {
+        return this.preview_reconnect_of(edge)?.source
+            ?? this.committed_endpoint_of(edge, "source", runtime_by_id);
     }
 
-    target_of(edge) {
-        return this.preview_reconnect_of(edge)?.target || edge.target;
+    target_of(edge, runtime_by_id = null) {
+        return this.preview_reconnect_of(edge)?.target
+            ?? this.committed_endpoint_of(edge, "target", runtime_by_id);
     }
 
-    level_of(cell) {
-        return this.preview_reconnect?.levels.get(cell) ?? cell.level;
+    level_of(cell, runtime_by_id = null) {
+        return this.preview_reconnect?.levels.get(cell)
+            ?? this.committed_level_of(cell, runtime_by_id)
+            ?? cell.level;
     }
 
-    shape_of(edge) {
+    shape_of(edge, runtime_by_id = null) {
         const preview = this.preview_reconnect_of(edge);
         if (preview === null || preview === undefined) {
-            return edge.options.shape;
+            return this.committed_edge_options(edge, runtime_by_id)?.shape ?? edge.options.shape;
         }
 
-        const committed_loop = edge.source === edge.target;
+        const committed_loop = this.committed_edge_is_loop(edge, runtime_by_id);
         const preview_loop = preview.source === preview.target;
         return committed_loop && preview_loop ? "arc" : "bezier";
     }
 
-    options_of(edge) {
+    options_of(edge, runtime_by_id = null) {
         const preview = this.preview_reconnect_of(edge);
+        const committed_options = this.committed_edge_options(edge, runtime_by_id);
         if (preview === null || preview === undefined) {
-            return edge.options;
+            return committed_options ?? edge.options;
         }
 
         return {
-            ...edge.options,
-            level: this.level_of(edge),
-            shape: this.shape_of(edge),
+            ...(committed_options ?? edge.options),
+            level: this.level_of(edge, runtime_by_id),
+            shape: this.shape_of(edge, runtime_by_id),
         };
     }
 
@@ -845,52 +978,39 @@ class ConnectPreview {
         if (!cell?.is_edge?.()) {
             return;
         }
-        this.endpoint_edges(cell.source).add(cell);
-        this.endpoint_edges(cell.target).add(cell);
+        this.register_edge_at_endpoints(cell, cell.source, cell.target);
     }
 
     unregister_cell(cell) {
-        if (!cell?.is_edge?.()) {
-            return;
-        }
-        for (const endpoint of [cell.source, cell.target]) {
-            const edges = this.edges_by_endpoint.get(endpoint);
-            if (!(edges instanceof Set)) {
-                continue;
-            }
-            edges.delete(cell);
-            if (edges.size === 0) {
-                this.edges_by_endpoint.delete(endpoint);
-            }
-        }
+        this.unregister_edge_at_endpoints(cell, cell?.source, cell?.target);
     }
 
-    dependencies_of(cell) {
+    dependencies_of(cell, runtime_by_id = null) {
         const dependencies = new Map();
         for (const candidate of this.edges_by_endpoint.get(cell) || []) {
-            if (this.source_of(candidate) === cell) {
+            if (this.source_of(candidate, runtime_by_id) === cell) {
                 dependencies.set(candidate, "source");
             }
-            if (this.target_of(candidate) === cell) {
+            if (this.target_of(candidate, runtime_by_id) === cell) {
                 dependencies.set(candidate, "target");
             }
         }
         const preview_edge = this.preview_reconnect?.edge;
         if (preview_edge !== null && preview_edge !== undefined) {
-            if (this.source_of(preview_edge) === cell) {
+            if (this.source_of(preview_edge, runtime_by_id) === cell) {
                 dependencies.set(preview_edge, "source");
             }
-            if (this.target_of(preview_edge) === cell) {
+            if (this.target_of(preview_edge, runtime_by_id) === cell) {
                 dependencies.set(preview_edge, "target");
             }
         }
         return dependencies;
     }
 
-    transitive_dependencies(cells, exclude_roots = false) {
+    transitive_dependencies(cells, exclude_roots = false, runtime_by_id = null) {
         let closure = new Set(cells);
         for (const cell of closure) {
-            this.dependencies_of(cell).forEach((_, dependency) => closure.add(dependency));
+            this.dependencies_of(cell, runtime_by_id).forEach((_, dependency) => closure.add(dependency));
         }
         if (exclude_roots) {
             for (const cell of cells) {
@@ -898,18 +1018,18 @@ class ConnectPreview {
             }
         }
         closure = Array.from(closure);
-        closure.sort((a, b) => this.level_of(a) - this.level_of(b));
+        closure.sort((a, b) => this.level_of(a, runtime_by_id) - this.level_of(b, runtime_by_id));
         return new Set(closure);
     }
 
-    update_edge_levels(edge, apply_level = null, levels = new Map()) {
-        for (const cell of this.transitive_dependencies([edge])) {
+    update_edge_levels(edge, apply_level = null, levels = new Map(), runtime_by_id = null) {
+        for (const cell of this.transitive_dependencies([edge], false, runtime_by_id)) {
             if (!cell.is_edge()) {
                 continue;
             }
             const level = Math.max(
-                this.level_of(this.source_of(cell)),
-                this.level_of(this.target_of(cell)),
+                this.level_of(this.source_of(cell, runtime_by_id), runtime_by_id),
+                this.level_of(this.target_of(cell, runtime_by_id), runtime_by_id),
             ) + 1;
             levels.set(cell, level);
             if (apply_level !== null) {
@@ -921,13 +1041,14 @@ class ConnectPreview {
 
     with_temporary_reconnect(edge, source, target, callback) {
         const previous_preview = this.preview_reconnect;
+        const runtime_by_id = this.runtime_cells_by_id();
         this.preview_reconnect = {
             edge,
             source,
             target,
             levels: new Map(),
         };
-        this.update_edge_levels(edge, null, this.preview_reconnect.levels);
+        this.update_edge_levels(edge, null, this.preview_reconnect.levels, runtime_by_id);
 
         try {
             return callback();
@@ -946,7 +1067,7 @@ class UI {
         // Local view registry for active DOM-backed cells.
         this.view_registry = new ViewRegistry();
         // Local temporary dependency index for connect/reconnect dragging.
-        this.connect_preview = new ConnectPreview();
+        this.connect_preview = new ConnectPreview(this);
 
         // The UI mode (e.g. whether cells are being rearranged, or connected, etc.).
         this.mode = null;
@@ -1472,8 +1593,13 @@ class UI {
             throw new Error("[kwiver-only] " + origin + ": runtime edge endpoints missing");
         }
 
-        edge.source = source;
-        edge.target = target;
+        const registered = ui.view_contains_cell(edge);
+        if (registered && (edge.source !== source || edge.target !== target)) {
+            ui.connect_preview.apply_committed_endpoints(edge, source, target, true);
+        } else {
+            edge.source = source;
+            edge.target = target;
+        }
         edge.arrow.source = source.shape;
         edge.arrow.target = target.shape;
         UI.kwiver_apply_runtime_cell_level(ui, edge, level, origin);
@@ -1621,7 +1747,7 @@ class UI {
 
         const js_by_id = this.kwiver_js_cells_by_id();
         const imported_cells = [];
-        QuiverImportExport.base64.begin_import(this);
+        QuiverImportExport.begin_import(this);
         try {
             for (const runtime_cell of ordered_runtime_cells) {
                 const runtime_id = Number(runtime_cell?.id);
@@ -1689,7 +1815,7 @@ class UI {
                 }
             }
 
-            QuiverImportExport.base64.end_import(this, imported_cells, centre_view);
+            QuiverImportExport.end_import(this, imported_cells, centre_view);
         } catch (error) {
             for (const cell of [...imported_cells].reverse()) {
                 this.remove_cell(cell);
@@ -1777,6 +1903,12 @@ class UI {
             : UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
     }
 
+    kwiver_runtime_cell_level(cell, runtime_by_id = null) {
+        const runtime_cell = this.kwiver_runtime_cell_snapshot(cell, runtime_by_id);
+        const level = Number(runtime_cell?.level);
+        return Number.isInteger(level) ? level : null;
+    }
+
     kwiver_runtime_edge_snapshot(edge, runtime_by_id = null) {
         const edge_id = this.kwiver_cell_id(edge);
         if (!Number.isInteger(edge_id)) {
@@ -1803,6 +1935,88 @@ class UI {
         return runtime_options === null ? null : runtime_options.colour;
     }
 
+    kwiver_runtime_edge_is_loop(edge, runtime_by_id = null) {
+        const runtime_edge = this.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+        const source_id = Number(runtime_edge?.source_id);
+        const target_id = Number(runtime_edge?.target_id);
+        return runtime_edge !== null
+            && Number.isInteger(source_id)
+            && Number.isInteger(target_id)
+            ? source_id === target_id
+            : null;
+    }
+
+    kwiver_runtime_edge_endpoint_cell(
+        edge,
+        end,
+        runtime_by_id = null,
+        js_by_id = null,
+    ) {
+        if (end !== "source" && end !== "target") {
+            return null;
+        }
+        const runtime_edge = this.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+        const endpoint_id = Number(runtime_edge?.[`${end}_id`]);
+        if (!runtime_edge || !Number.isInteger(endpoint_id)) {
+            return null;
+        }
+        const js_cells_by_id = js_by_id ?? this.kwiver_js_cells_by_id();
+        return js_cells_by_id.get(endpoint_id) ?? null;
+    }
+
+    kwiver_runtime_edge_angle(edge, runtime_by_id = null, js_by_id = null) {
+        const runtime_is_loop = this.kwiver_runtime_edge_is_loop(edge, runtime_by_id);
+        if (runtime_is_loop === true) {
+            const runtime_options = this.kwiver_runtime_edge_options(edge, runtime_by_id);
+            return runtime_options === null ? null : deg_to_rad(runtime_options.angle);
+        }
+
+        const source = this.kwiver_runtime_edge_endpoint_cell(
+            edge,
+            "source",
+            runtime_by_id,
+            js_by_id,
+        );
+        const target = this.kwiver_runtime_edge_endpoint_cell(
+            edge,
+            "target",
+            runtime_by_id,
+            js_by_id,
+        );
+        if (!source || !target) {
+            return null;
+        }
+        return target.shape.origin.sub(source.shape.origin).angle();
+    }
+
+    kwiver_runtime_connect_action(
+        edge,
+        end,
+        to_cell,
+        runtime_by_id = null,
+        js_by_id = null,
+    ) {
+        if ((end !== "source" && end !== "target") || !to_cell) {
+            return null;
+        }
+        const from_cell = this.kwiver_runtime_edge_endpoint_cell(
+            edge,
+            end,
+            runtime_by_id,
+            js_by_id,
+        );
+        if (from_cell === null) {
+            return null;
+        }
+        return {
+            kind: "connect",
+            edge,
+            end,
+            from: from_cell,
+            to: to_cell,
+        };
+    }
+
     kwiver_js_cells_by_id() {
         const js_by_id = new Map();
         for (const cell of this.view_all_cells()) {
@@ -1824,6 +2038,31 @@ class UI {
 
         const envelope = kwiver_bridge_set_selection(selected_ids, origin);
         return envelope !== null && envelope.ok === true;
+    }
+
+    kwiver_runtime_selection_ids_from_envelope(envelope) {
+        if (!envelope || typeof envelope !== "object") {
+            return null;
+        }
+
+        const result = envelope.result && typeof envelope.result === "object"
+            ? envelope.result
+            : null;
+        const after = envelope.after && typeof envelope.after === "object"
+            ? envelope.after
+            : null;
+        if (Array.isArray(result?.selection)) {
+            return result.selection;
+        }
+        if (Array.isArray(after?.selection)) {
+            return after.selection;
+        }
+        return [];
+    }
+
+    kwiver_apply_runtime_selection_from_envelope(envelope) {
+        const selected_ids = this.kwiver_runtime_selection_ids_from_envelope(envelope);
+        return selected_ids !== null && this.kwiver_apply_runtime_selection(selected_ids);
     }
 
     kwiver_apply_runtime_selection(selected_ids) {
@@ -2323,8 +2562,14 @@ class UI {
         label_colour = Colour.black(),
         origin = "ui.create.edge",
     ) {
+        const runtime_before_by_id = this.kwiver_runtime_cells_by_id();
+        const source_level = this.kwiver_runtime_cell_level(source, runtime_before_by_id);
+        const target_level = this.kwiver_runtime_cell_level(target, runtime_before_by_id);
+        if (runtime_before_by_id === null || source_level === null || target_level === null) {
+            throw new Error("[kwiver-only] " + origin + ": runtime endpoint snapshot unavailable");
+        }
         const normalized_options = Edge.default_options(Object.assign(
-            { level: Math.max(source.level, target.level) + 1 },
+            { level: Math.max(source_level, target_level) + 1 },
             options,
         ));
 
@@ -2340,8 +2585,8 @@ class UI {
             throw new Error("[kwiver-only] " + origin + ": add_edge_json failed");
         }
 
-        const runtime_by_id = this.kwiver_runtime_cells_by_id();
-        const runtime_edge = runtime_by_id?.get(added.id);
+        const runtime_after_by_id = this.kwiver_runtime_cells_by_id();
+        const runtime_edge = runtime_after_by_id?.get(added.id);
         const runtime_label = typeof runtime_edge?.label === "string" ? runtime_edge.label : null;
         const runtime_label_colour = UI.kwiver_colour_from_runtime(runtime_edge?.label_colour);
         const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
@@ -2426,9 +2671,7 @@ class UI {
 
         return {
             ordered,
-            selection: Array.isArray(last_envelope?.selection)
-                ? last_envelope.selection
-                : [],
+            selection: this.kwiver_runtime_selection_ids_from_envelope(last_envelope) ?? [],
         };
     }
 
@@ -2563,8 +2806,27 @@ class UI {
             return null;
         }
 
-        const source_cell = action.end === "source" ? action[to] : action.edge.source;
-        const target_cell = action.end === "target" ? action[to] : action.edge.target;
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        const js_by_id = this.kwiver_js_cells_by_id();
+        if (runtime_by_id === null) {
+            return null;
+        }
+        const source_cell = action.end === "source"
+            ? action[to]
+            : this.kwiver_runtime_edge_endpoint_cell(
+                action.edge,
+                "source",
+                runtime_by_id,
+                js_by_id,
+            );
+        const target_cell = action.end === "target"
+            ? action[to]
+            : this.kwiver_runtime_edge_endpoint_cell(
+                action.edge,
+                "target",
+                runtime_by_id,
+                js_by_id,
+            );
         const source_id = this.kwiver_cell_id(source_cell);
         const target_id = this.kwiver_cell_id(target_cell);
         if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
@@ -2615,7 +2877,7 @@ class UI {
             }
             this.panel.update(this);
         }
-        if (!this.kwiver_apply_runtime_selection(connect_envelope.selection)) {
+        if (!this.kwiver_apply_runtime_selection_from_envelope(connect_envelope)) {
             throw new Error("[kwiver-only] " + context + ": selection sync failed");
         }
         return connect_envelope;
@@ -2711,9 +2973,13 @@ class UI {
             return null;
         }
 
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            return null;
+        }
         let last_envelope = null;
         for (const curve of curves) {
-            if (curve.edge.is_loop()) {
+            if (this.kwiver_runtime_edge_is_loop(curve.edge, runtime_by_id) !== false) {
                 continue;
             }
             const edge_id = this.kwiver_cell_id(curve.edge);
@@ -2803,9 +3069,13 @@ class UI {
             return null;
         }
 
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            return null;
+        }
         let last_envelope = null;
         for (const radius of radiuss) {
-            if (!radius.edge.is_loop()) {
+            if (this.kwiver_runtime_edge_is_loop(radius.edge, runtime_by_id) !== true) {
                 continue;
             }
             const edge_id = this.kwiver_cell_id(radius.edge);
@@ -2834,9 +3104,13 @@ class UI {
             return null;
         }
 
+        const runtime_by_id = this.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            return null;
+        }
         let last_envelope = null;
         for (const angle of angles) {
-            if (!angle.edge.is_loop()) {
+            if (this.kwiver_runtime_edge_is_loop(angle.edge, runtime_by_id) !== true) {
                 continue;
             }
             const edge_id = this.kwiver_cell_id(angle.edge);
@@ -3081,7 +3355,7 @@ class UI {
         }
         this.bridge_quiver = new Quiver();
         this.view_registry = new ViewRegistry();
-        this.connect_preview = new ConnectPreview();
+        this.connect_preview = new ConnectPreview(this);
 
         // Reset data regarding existing vertices.
         this.cell_width = new Map();
@@ -3915,13 +4189,15 @@ class UI {
                                 if (!event.shiftKey && !event.metaKey && !event.ctrlKey) {
                                     this.panel.label_input.element.select();
                                 }
-                                actions.push({
-                                    kind: "connect",
+                                const connect_action = this.kwiver_runtime_connect_action(
                                     edge,
                                     end,
-                                    from: edge[end],
-                                    to: this.mode.target,
-                                });
+                                    this.mode.target,
+                                );
+                                if (connect_action === null) {
+                                    throw new Error("[kwiver-only] ui.pointer.connect: runtime reconnect action unavailable");
+                                }
+                                actions.push(connect_action);
                                 this.mode.connect(this, event);
                             }
 
@@ -4145,9 +4421,29 @@ class UI {
                                     const end = mode.toLowerCase();
                                     const edges = Array.from(this.selection)
                                         .filter((cell) => cell.is_edge());
+                                    const runtime_by_id = this.kwiver_runtime_cells_by_id();
+                                    if (runtime_by_id === null) {
+                                        throw new Error("[kwiver-only] ui.command.connect: runtime snapshot unavailable");
+                                    }
+                                    const js_by_id = this.kwiver_js_cells_by_id();
                                     for (const edge of edges) {
-                                        const source = mode === "Source" ? cell : edge.source;
-                                        const target = mode === "Target" ? cell : edge.target;
+                                        const runtime_source = this.kwiver_runtime_edge_endpoint_cell(
+                                            edge,
+                                            "source",
+                                            runtime_by_id,
+                                            js_by_id,
+                                        );
+                                        const runtime_target = this.kwiver_runtime_edge_endpoint_cell(
+                                            edge,
+                                            "target",
+                                            runtime_by_id,
+                                            js_by_id,
+                                        );
+                                        if (!runtime_source || !runtime_target) {
+                                            throw new Error("[kwiver-only] ui.command.connect: runtime edge endpoint unavailable");
+                                        }
+                                        const source = mode === "Source" ? cell : runtime_source;
+                                        const target = mode === "Target" ? cell : runtime_target;
                                         const valid_connection = UIMode.Connect.valid_connection(
                                             this,
                                             { source: target, target: source }[end],
@@ -4155,13 +4451,16 @@ class UI {
                                             { end, edge },
                                         );
                                         if (valid_connection) {
-                                            const connect_action = {
-                                                kind: "connect",
+                                            const connect_action = this.kwiver_runtime_connect_action(
                                                 edge,
                                                 end,
-                                                from: edge[end],
-                                                to: cell,
-                                            };
+                                                cell,
+                                                runtime_by_id,
+                                                js_by_id,
+                                            );
+                                            if (connect_action === null) {
+                                                throw new Error("[kwiver-only] ui.command.connect: runtime reconnect action unavailable");
+                                            }
                                             actions.push(connect_action);
                                             this.kwiver_apply_connect_action(
                                                 connect_action,
@@ -6044,23 +6343,35 @@ class History {
                 ? "left"
                 : alignment;
 
-        const kwiver_expected_edge_transform = (edge, reverse_edge, flip_arrow) => {
-            const source_id = ui.kwiver_cell_id(edge.source);
-            const target_id = ui.kwiver_cell_id(edge.target);
-            if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
+        const kwiver_expected_edge_transform = (
+            edge,
+            runtime_before_by_id,
+            reverse_edge,
+            flip_arrow,
+        ) => {
+            const runtime_edge = ui.kwiver_runtime_edge_snapshot(edge, runtime_before_by_id);
+            const runtime_options = ui.kwiver_runtime_edge_options(edge, runtime_before_by_id);
+            const source_id = Number(runtime_edge?.source_id);
+            const target_id = Number(runtime_edge?.target_id);
+            if (
+                runtime_edge === null
+                || runtime_options === null
+                || !Number.isInteger(source_id)
+                || !Number.isInteger(target_id)
+            ) {
                 return null;
             }
 
-            const is_loop = edge.is_loop();
+            const is_loop = source_id === target_id;
             const expected = {
                 source_id: reverse_edge ? target_id : source_id,
                 target_id: reverse_edge ? source_id : target_id,
-                label_alignment: kwiver_flip_label_alignment(edge.options.label_alignment),
-                offset: Number(edge.options.offset),
-                curve: Number(edge.options.curve),
-                radius: Number(edge.options.radius),
-                angle: Number(edge.options.angle),
-                style: kwiver_clone_style(edge.options.style),
+                label_alignment: kwiver_flip_label_alignment(runtime_options.label_alignment),
+                offset: Number(runtime_options.offset),
+                curve: Number(runtime_options.curve),
+                radius: Number(runtime_options.radius),
+                angle: Number(runtime_options.angle),
+                style: kwiver_clone_style(runtime_options.style),
             };
 
             if (reverse_edge && is_loop) {
@@ -6102,6 +6413,7 @@ class History {
                 return;
             }
 
+            const runtime_before_by_id = kwiver_runtime_cells(context + ".before");
             const envelope = dispatch_transform(action_cells);
             if (envelope === null) {
                 kwiver_fail(context, "dispatch failed");
@@ -6116,6 +6428,7 @@ class History {
 
                 const expected = kwiver_expected_edge_transform(
                     edge,
+                    runtime_before_by_id,
                     reverse_edge,
                     flip_arrow,
                 );
@@ -6166,7 +6479,7 @@ class History {
                 rendered_cells.add(edge);
             }
 
-            if (!ui.kwiver_apply_runtime_selection(envelope.selection)) {
+            if (!ui.kwiver_apply_runtime_selection_from_envelope(envelope)) {
                 kwiver_fail(context, "selection sync failed");
             }
         };
@@ -6237,7 +6550,7 @@ class History {
                     )) {
                         cells.clear();
                     }
-                    if (!ui.kwiver_apply_runtime_selection(move_envelope.selection)) {
+                    if (!ui.kwiver_apply_runtime_selection_from_envelope(move_envelope)) {
                         kwiver_fail("history.move", "selection sync failed");
                     }
                     break;
@@ -6310,7 +6623,7 @@ class History {
                             ui.remove_cell(cell);
                         }
                     }
-                    if (!ui.kwiver_apply_runtime_selection(delete_envelope.selection)) {
+                    if (!ui.kwiver_apply_runtime_selection_from_envelope(delete_envelope)) {
                         kwiver_fail("history.delete", "selection sync failed");
                     }
                     update_panel = true;
@@ -6343,7 +6656,7 @@ class History {
                         );
                         cells.add(label.cell);
                     }
-                    if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
+                    if (!ui.kwiver_apply_runtime_selection_from_envelope(label_envelope)) {
                         kwiver_fail("history.label", "selection sync failed");
                     }
                     break;
@@ -6379,7 +6692,7 @@ class History {
                             );
                             cells.add(label_colour.cell);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(label_colour_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(label_colour_envelope)) {
                             kwiver_fail("history.label_colour", "selection sync failed");
                         }
                     }
@@ -6420,7 +6733,7 @@ class History {
                             );
                             cells.add(alignment.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(alignment_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(alignment_envelope)) {
                             kwiver_fail("history.label_alignment", "selection sync failed");
                         }
                     }
@@ -6460,7 +6773,7 @@ class History {
                             );
                             cells.add(label_position.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(label_position_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(label_position_envelope)) {
                             kwiver_fail("history.label_position", "selection sync failed");
                         }
                     }
@@ -6497,24 +6810,27 @@ class History {
                             );
                             cells.add(offset.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(offset_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(offset_envelope)) {
                             kwiver_fail("history.offset", "selection sync failed");
                         }
-                    }
+                }
                     update_panel = true;
                     break;
                 }
                 case "curve": {
-                    const curve_applicable = action.curves.filter((curve) => !curve.edge.is_loop());
+                    const runtime_by_id = kwiver_runtime_cells("history.curve.applicable");
+                    const curve_applicable = action.curves.filter((curve) => {
+                        return ui.kwiver_runtime_edge_is_loop(curve.edge, runtime_by_id) === false;
+                    });
                     if (curve_applicable.length > 0) {
                         const curve_envelope = ui.kwiver_history_set_edge_curve(action.curves, to);
                         if (curve_envelope === null) {
                             kwiver_fail("history.curve", "dispatch failed");
                         }
 
-                        const runtime_by_id = kwiver_runtime_cells("history.curve");
+                        const runtime_after_by_id = kwiver_runtime_cells("history.curve");
                         for (const curve of curve_applicable) {
-                            const runtime_edge = runtime_by_id.get(curve.edge.kwiver_id);
+                            const runtime_edge = runtime_after_by_id.get(curve.edge.kwiver_id);
                             const runtime_options =
                                 UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
@@ -6535,7 +6851,7 @@ class History {
                             );
                             cells.add(curve.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(curve_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(curve_envelope)) {
                             kwiver_fail("history.curve", "selection sync failed");
                         }
                     }
@@ -6543,16 +6859,19 @@ class History {
                     break;
                 }
                 case "radius": {
-                    const radius_applicable = action.radiuss.filter((radius) => radius.edge.is_loop());
+                    const runtime_by_id = kwiver_runtime_cells("history.radius.applicable");
+                    const radius_applicable = action.radiuss.filter((radius) => {
+                        return ui.kwiver_runtime_edge_is_loop(radius.edge, runtime_by_id) === true;
+                    });
                     if (radius_applicable.length > 0) {
                         const radius_envelope = ui.kwiver_history_set_edge_radius(action.radiuss, to);
                         if (radius_envelope === null) {
                             kwiver_fail("history.radius", "dispatch failed");
                         }
 
-                        const runtime_by_id = kwiver_runtime_cells("history.radius");
+                        const runtime_after_by_id = kwiver_runtime_cells("history.radius");
                         for (const radius of radius_applicable) {
-                            const runtime_edge = runtime_by_id.get(radius.edge.kwiver_id);
+                            const runtime_edge = runtime_after_by_id.get(radius.edge.kwiver_id);
                             const runtime_options =
                                 UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
@@ -6573,7 +6892,7 @@ class History {
                             );
                             cells.add(radius.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(radius_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(radius_envelope)) {
                             kwiver_fail("history.radius", "selection sync failed");
                         }
                     }
@@ -6581,16 +6900,19 @@ class History {
                     break;
                 }
                 case "angle": {
-                    const angle_applicable = action.angles.filter((angle) => angle.edge.is_loop());
+                    const runtime_by_id = kwiver_runtime_cells("history.angle.applicable");
+                    const angle_applicable = action.angles.filter((angle) => {
+                        return ui.kwiver_runtime_edge_is_loop(angle.edge, runtime_by_id) === true;
+                    });
                     if (angle_applicable.length > 0) {
                         const angle_envelope = ui.kwiver_history_set_edge_angle(action.angles, to);
                         if (angle_envelope === null) {
                             kwiver_fail("history.angle", "dispatch failed");
                         }
 
-                        const runtime_by_id = kwiver_runtime_cells("history.angle");
+                        const runtime_after_by_id = kwiver_runtime_cells("history.angle");
                         for (const angle of angle_applicable) {
-                            const runtime_edge = runtime_by_id.get(angle.edge.kwiver_id);
+                            const runtime_edge = runtime_after_by_id.get(angle.edge.kwiver_id);
                             const runtime_options =
                                 UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             if (
@@ -6611,7 +6933,7 @@ class History {
                             );
                             cells.add(angle.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(angle_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(angle_envelope)) {
                             kwiver_fail("history.angle", "selection sync failed");
                         }
                     }
@@ -6663,7 +6985,7 @@ class History {
                             );
                             cells.add(length.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(length_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(length_envelope)) {
                             kwiver_fail("history.length", "selection sync failed");
                         }
                     }
@@ -6736,7 +7058,7 @@ class History {
                             );
                             cells.add(level.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(level_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(level_envelope)) {
                             kwiver_fail("history.level", "selection sync failed");
                         }
                     }
@@ -6780,7 +7102,7 @@ class History {
                             );
                             cells.add(style.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(style_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(style_envelope)) {
                             kwiver_fail("history.style", "selection sync failed");
                         }
                     }
@@ -6823,7 +7145,7 @@ class History {
                             );
                             cells.add(colour_change.edge);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(colour_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(colour_envelope)) {
                             kwiver_fail("history.colour", "selection sync failed");
                         }
                     }
@@ -6838,6 +7160,7 @@ class History {
                             ? action.cells.length
                             : 0;
                     if (edge_alignment_count > 0) {
+                        const runtime_before_by_id = kwiver_runtime_cells("history.edge_alignment.before");
                         const edge_alignment_envelope = ui.kwiver_history_set_edge_alignment(
                             action.cells,
                             action.end,
@@ -6853,6 +7176,8 @@ class History {
                         const runtime_by_id = kwiver_runtime_cells("history.edge_alignment");
                         for (const cell of action.cells) {
                             const runtime_edge = runtime_by_id.get(cell.kwiver_id);
+                            const runtime_before_options =
+                                ui.kwiver_runtime_edge_options(cell, runtime_before_by_id);
                             const runtime_options =
                                 UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
                             const runtime_alignment =
@@ -6860,12 +7185,14 @@ class History {
                             if (
                                 !runtime_edge
                                 || runtime_edge.kind !== "edge"
+                                || runtime_before_options === null
                                 || runtime_options === null
                             ) {
                                 kwiver_fail("history.edge_alignment", "runtime alignment snapshot invalid");
                             }
 
-                            const expected_alignment = !Boolean(cell.options.edge_alignment[action.end]);
+                            const expected_alignment =
+                                !Boolean(runtime_before_options.edge_alignment[action.end]);
                             if (runtime_alignment !== expected_alignment) {
                                 kwiver_fail("history.edge_alignment", "runtime alignment mismatch");
                             }
@@ -6878,7 +7205,7 @@ class History {
                             );
                             cells.add(cell);
                         }
-                        if (!ui.kwiver_apply_runtime_selection(edge_alignment_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(edge_alignment_envelope)) {
                             kwiver_fail("history.edge_alignment", "selection sync failed");
                         }
                     }
@@ -7719,7 +8046,11 @@ class Panel {
             }
 
             for (const edge of edges) {
-                if (edge.is_loop()) {
+                const runtime_is_loop = ui.kwiver_runtime_edge_is_loop(edge, runtime_by_id);
+                if (typeof runtime_is_loop !== "boolean") {
+                    throw new Error("[kwiver-only] " + context + ": runtime edge snapshot invalid");
+                }
+                if (runtime_is_loop) {
                     continue;
                 }
 
@@ -7899,14 +8230,22 @@ class Panel {
             const runtime_by_id = require_runtime_by_id("ui.panel.edge_alignment");
             const cells = new Set();
             for (const cell of ui.selection) {
-                if (!cell.is_edge() || !cell[end].is_edge()) {
+                if (!cell.is_edge()) {
                     continue;
                 }
+                const runtime_edge = ui.kwiver_runtime_edge_snapshot(cell, runtime_by_id);
                 const runtime_options = require_runtime_edge_options(
                     cell,
                     runtime_by_id,
                     "ui.panel.edge_alignment",
                 );
+                if (runtime_edge === null) {
+                    throw new Error("[kwiver-only] ui.panel.edge_alignment: runtime edge snapshot invalid");
+                }
+                const runtime_endpoint = runtime_by_id.get(Number(runtime_edge[`${end}_id`]));
+                if (runtime_endpoint?.kind !== "edge") {
+                    continue;
+                }
                 if (runtime_options.edge_alignment[end] !== element.checked) {
                     cells.add(cell);
                 }
@@ -8424,9 +8763,19 @@ class Panel {
                             delay(() => {
                                 // Edges are shortened after initial rendering, so we may need to
                                 // rerender them afterwards.
+                                const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+                                if (runtime_by_id === null) {
+                                    throw new Error("[kwiver-only] ui.port.import: runtime snapshot unavailable");
+                                }
                                 ui.view_all_cells().filter((cell) => {
-                                    return cell.is_edge() && (cell.options.shorten.source > 0 ||
-                                        cell.options.shorten.target > 0);
+                                    if (!cell.is_edge()) {
+                                        return false;
+                                    }
+                                    const runtime_options =
+                                        ui.kwiver_runtime_edge_options(cell, runtime_by_id);
+                                    return runtime_options !== null
+                                        && (runtime_options.shorten.source > 0
+                                            || runtime_options.shorten.target > 0);
                                 }).forEach((edge) => edge.render(ui));
 
                                 // Display the diagnostics.
@@ -9115,7 +9464,7 @@ class Panel {
                             );
                         }
 
-                        if (!ui.kwiver_apply_runtime_selection(label_envelope.selection)) {
+                        if (!ui.kwiver_apply_runtime_selection_from_envelope(label_envelope)) {
                             throw new Error("[kwiver-only] ui.renderer: selection sync failed");
                         }
                     }
@@ -9522,6 +9871,65 @@ class Panel {
     /// Update the panel state (i.e. enable/disable fields as relevant).
     update(ui) {
         const label_alignments = this.element.query_selector_all('input[name="label_alignment"]');
+        const runtime_by_id = ui.selection.size > 0 ? ui.kwiver_runtime_cells_by_id() : null;
+        const js_by_id = ui.selection.size > 0 ? ui.kwiver_js_cells_by_id() : null;
+        if (ui.selection.size > 0 && runtime_by_id === null) {
+            throw new Error("[kwiver-only] ui.panel.update: runtime snapshot unavailable");
+        }
+
+        const runtime_cell = (cell) => {
+            const snapshot = ui.kwiver_runtime_cell_snapshot(cell, runtime_by_id);
+            if (snapshot === null) {
+                throw new Error("[kwiver-only] ui.panel.update: runtime cell snapshot invalid");
+            }
+            return snapshot;
+        };
+
+        const runtime_label_colour = (cell) => {
+            const colour = ui.kwiver_runtime_cell_label_colour(cell, runtime_by_id);
+            if (colour === null) {
+                throw new Error("[kwiver-only] ui.panel.update: runtime label colour invalid");
+            }
+            return colour;
+        };
+
+        const runtime_edge_options = (edge) => {
+            const options = ui.kwiver_runtime_edge_options(edge, runtime_by_id);
+            if (options === null) {
+                throw new Error("[kwiver-only] ui.panel.update: runtime edge options invalid");
+            }
+            return options;
+        };
+
+        const runtime_edge_snapshot = (edge) => {
+            const snapshot = ui.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+            if (snapshot === null) {
+                throw new Error("[kwiver-only] ui.panel.update: runtime edge snapshot invalid");
+            }
+            return snapshot;
+        };
+
+        const runtime_edge_is_loop = (edge) => {
+            const snapshot = runtime_edge_snapshot(edge);
+            return Number(snapshot.source_id) === Number(snapshot.target_id);
+        };
+
+        const runtime_edge_has_vertex_endpoint = (runtime_edge_cell) => {
+            if (!runtime_edge_cell || runtime_edge_cell.kind !== "edge") {
+                return false;
+            }
+            const source = runtime_by_id?.get(Number(runtime_edge_cell.source_id));
+            const target = runtime_by_id?.get(Number(runtime_edge_cell.target_id));
+            return source?.kind === "vertex" || target?.kind === "vertex";
+        };
+
+        const runtime_edge_angle = (edge) => {
+            const angle = ui.kwiver_runtime_edge_angle(edge, runtime_by_id, js_by_id);
+            if (angle === null) {
+                throw new Error("[kwiver-only] ui.panel.update: runtime edge angle invalid");
+            }
+            return angle;
+        };
 
         // Multiple selection is always permitted, so the following code must provide sensible
         // behaviour for both single and multiple selections (including empty selections).
@@ -9533,9 +9941,11 @@ class Panel {
         // it is to avoid any un-aesthetic size changes while the panel disappears.
         if (selection_contains_edge) {
             const selection_contains_nonloop = Array.from(ui.selection).some((cell) => {
-                return cell.is_edge() && !cell.is_loop();
+                return cell.is_edge() && !runtime_edge_is_loop(cell);
             });
-            const selection_contains_loop = Array.from(ui.selection).some((cell) => cell.is_loop());
+            const selection_contains_loop = Array.from(ui.selection).some((cell) => {
+                return cell.is_edge() && runtime_edge_is_loop(cell);
+            });
             // Disable transitions, so that slider thumbs do not appear to move when the are
             // revealed.
             if ((selection_contains_nonloop && !this.element.class_list.contains("nonloop"))
@@ -9633,49 +10043,51 @@ class Panel {
                 // jurisdiction of `Panel` (though they were at one point). However, since we want
                 // to use the same logic for these options as edge-specific options, it's convenient
                 // to include them here.
-                consider("{label}", cell.label);
-                consider("{label_colour}", cell.label_colour);
+                const runtime_snapshot = runtime_cell(cell);
+                consider("{label}", typeof runtime_snapshot.label === "string" ? runtime_snapshot.label : "");
+                consider("{label_colour}", runtime_label_colour(cell));
 
                 // Edge-specific options.
                 if (cell.is_edge()) {
-                    consider("label_alignment", cell.options.label_alignment);
+                    const edge_runtime_options = runtime_edge_options(cell);
+                    consider("label_alignment", edge_runtime_options.label_alignment);
                     // The label alignment buttons are rotated to reflect the direction of the arrow
                     // when all arrows have the same direction (at least to the nearest multiple of
                     // 90°). Otherwise, rotation defaults to 0°.
-                    consider("{edge_angle}", cell.angle());
-                    consider("{label_position}", cell.options.label_position);
-                    consider("{offset}", cell.options.offset);
-                    if (!cell.is_loop()) {
-                        consider("{curve}", cell.options.curve);
+                    consider("{edge_angle}", runtime_edge_angle(cell));
+                    consider("{label_position}", edge_runtime_options.label_position);
+                    consider("{offset}", edge_runtime_options.offset);
+                    if (!runtime_edge_is_loop(cell)) {
+                        consider("{curve}", edge_runtime_options.curve);
                     }
-                    if (cell.is_loop()) {
-                        consider("{radius}", cell.options.radius);
-                        consider("{angle}", cell.options.angle);
+                    if (runtime_edge_is_loop(cell)) {
+                        consider("{radius}", edge_runtime_options.radius);
+                        consider("{angle}", edge_runtime_options.angle);
                     }
-                    consider("{length}", cell.options.shorten);
-                    consider("{level}", cell.options.level);
-                    consider("edge-type", cell.options.style.name);
-                    consider("{colour}", cell.options.colour);
+                    consider("{length}", edge_runtime_options.shorten);
+                    consider("{level}", edge_runtime_options.level);
+                    consider("edge-type", edge_runtime_options.style.name);
+                    consider("{colour}", edge_runtime_options.colour);
 
                     // Arrow-specific options.
-                    if (cell.options.style.name === "arrow") {
+                    if (edge_runtime_options.style.name === "arrow") {
                         for (const component of ["tail", "body", "head"]) {
                             let value;
                             // The following makes the assumption that the distinguished names
                             // `cell`, `hook` and `harpoon` are unique, even between different
                             // components.
-                            switch (cell.options.style[component].name) {
+                            switch (edge_runtime_options.style[component].name) {
                                 case "cell":
                                     value = "solid";
                                     break;
                                 case "hook":
                                 case "harpoon":
                                     value = `${
-                                        cell.options.style[component].side
-                                    }-${cell.options.style[component].name}`;
+                                        edge_runtime_options.style[component].side
+                                    }-${edge_runtime_options.style[component].name}`;
                                     break;
                                 default:
-                                    value = cell.options.style[component].name;
+                                    value = edge_runtime_options.style[component].name;
                                     break;
                             }
 
@@ -9683,10 +10095,10 @@ class Panel {
                         }
                     } else {
                         all_edges_are_arrows = false;
-                        if (cell.options.style.name === "corner") {
+                        if (edge_runtime_options.style.name === "corner") {
                             ++corners;
                         }
-                        if (cell.options.style.name === "corner-inverse") {
+                        if (edge_runtime_options.style.name === "corner-inverse") {
                             ++inverse_corners;
                         }
                     }
@@ -9833,21 +10245,25 @@ class Panel {
             let ep_source_checked = null, ep_target_checked = null;
             for (const cell of ui.selection) {
                 if (cell.is_edge()) {
-                    if (cell.source.is_edge()
-                        && (cell.source.source.is_vertex() || cell.source.target.is_vertex())) {
+                    const runtime_edge = runtime_edge_snapshot(cell);
+                    const runtime_options = runtime_edge_options(cell);
+                    const runtime_source = runtime_by_id?.get(Number(runtime_edge.source_id));
+                    const runtime_target = runtime_by_id?.get(Number(runtime_edge.target_id));
+                    if (runtime_source?.kind === "edge"
+                        && runtime_edge_has_vertex_endpoint(runtime_source)) {
                         if (ep_source_checked === null) {
                             ep_source_checked = true;
                         }
                         ep_source_checked = ep_source_checked &&
-                            cell.options.edge_alignment.source;
+                            runtime_options.edge_alignment.source;
                     }
-                    if (cell.target.is_edge()
-                        && (cell.target.source.is_vertex() || cell.target.target.is_vertex())) {
+                    if (runtime_target?.kind === "edge"
+                        && runtime_edge_has_vertex_endpoint(runtime_target)) {
                         if (ep_target_checked === null) {
                             ep_target_checked = true;
                         }
                         ep_target_checked = ep_target_checked &&
-                            cell.options.edge_alignment.target;
+                            runtime_options.edge_alignment.target;
                     }
                 }
             }
@@ -10369,6 +10785,28 @@ class Toolbar {
         );
 
         const transform = add_subtoolbar("Transform", "transform");
+        const require_runtime_transform_edges = (context) => {
+            const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+            if (runtime_by_id === null) {
+                throw new Error("[kwiver-only] " + context + ": runtime snapshot unavailable");
+            }
+
+            const nonloop_edges = [];
+            const loop_edges = [];
+            for (const edge of ui.view_edges()) {
+                const runtime_edge = ui.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+                const runtime_options = ui.kwiver_runtime_edge_options(edge, runtime_by_id);
+                if (runtime_edge === null || runtime_options === null) {
+                    throw new Error("[kwiver-only] " + context + ": runtime edge snapshot invalid");
+                }
+                if (Number(runtime_edge.source_id) === Number(runtime_edge.target_id)) {
+                    loop_edges.push({ edge, angle: runtime_options.angle });
+                } else {
+                    nonloop_edges.push(edge);
+                }
+            }
+            return { nonloop_edges, loop_edges };
+        };
 
         add_action(
             "Flip hor.",
@@ -10378,6 +10816,9 @@ class Toolbar {
                 const vertices = ui.view_vertices();
                 const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
+                    const { nonloop_edges, loop_edges } = require_runtime_transform_edges(
+                        "ui.toolbar.flip_hor",
+                    );
                     const [[x_min,], [x_max,]] = bounding_rect;
                     ui.history.add(ui, [{
                         kind: "move",
@@ -10391,24 +10832,19 @@ class Toolbar {
                         })),
                     }, {
                         kind: "flip",
-                        cells: ui.view_edges().filter((cell) => {
-                            return cell.is_edge() && !cell.is_loop();
-                        }),
+                        cells: nonloop_edges,
                     },
                     {
                         kind: "reverse",
-                        cells: ui.view_edges().filter((cell) => cell.is_loop()),
+                        cells: loop_edges.map(({ edge }) => edge),
                     },
                     {
                         kind: "angle",
-                        angles: ui.view_edges().filter((cell) => cell.is_loop())
-                            .map((edge) => {
-                                return {
-                                    edge,
-                                    from: edge.options.angle,
-                                    to: 180 - edge.options.angle,
-                                };
-                            }),
+                        angles: loop_edges.map(({ edge, angle }) => ({
+                            edge,
+                            from: angle,
+                            to: 180 - angle,
+                        })),
                     }], true);
                 }
             },
@@ -10422,6 +10858,9 @@ class Toolbar {
                 const vertices = ui.view_vertices();
                 const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
+                    const { nonloop_edges, loop_edges } = require_runtime_transform_edges(
+                        "ui.toolbar.flip_ver",
+                    );
                     const [[, y_min], [, y_max]] = bounding_rect;
                     ui.history.add(ui, [{
                         kind: "move",
@@ -10435,24 +10874,19 @@ class Toolbar {
                         })),
                     }, {
                         kind: "flip",
-                        cells: ui.view_edges().filter((cell) => {
-                            return cell.is_edge() && !cell.is_loop();
-                        }),
+                        cells: nonloop_edges,
                     },
                     {
                         kind: "reverse",
-                        cells: ui.view_edges().filter((cell) => cell.is_loop()),
+                        cells: loop_edges.map(({ edge }) => edge),
                     },
                     {
                         kind: "angle",
-                        angles: ui.view_edges().filter((cell) => cell.is_loop())
-                            .map((edge) => {
-                                return {
-                                    edge,
-                                    from: edge.options.angle,
-                                    to: -edge.options.angle,
-                                };
-                            }),
+                        angles: loop_edges.map(({ edge, angle }) => ({
+                            edge,
+                            from: angle,
+                            to: -angle,
+                        })),
                     }], true);
                 }
             },
@@ -10466,6 +10900,9 @@ class Toolbar {
                 const vertices = ui.view_vertices();
                 const bounding_rect = ui.view_bounding_rect();
                 if (bounding_rect !== null) {
+                    const { loop_edges } = require_runtime_transform_edges(
+                        "ui.toolbar.rotate",
+                    );
                     const [[x_min, y_min], [x_max,]] = bounding_rect;
                     ui.history.add(ui, [{
                         kind: "move",
@@ -10479,12 +10916,12 @@ class Toolbar {
                         })),
                     }, {
                         kind: "angle",
-                        angles: ui.view_edges().filter((cell) => cell.is_loop()).map((edge) => {
-                            let to = edge.options.angle - 90;
+                        angles: loop_edges.map(({ edge, angle }) => {
+                            let to = angle - 90;
                             if (to < -180) {
                                 to += 360;
                             }
-                            return { edge, from: edge.options.angle, to };
+                            return { edge, from: angle, to };
                         }),
                     }], true);
                 }
@@ -11084,23 +11521,27 @@ class ColourPicker {
 
     /// Update the diagram colour palette group.
     update_diagram_colours(ui) {
-        // Rather than keep track of the current colours in the diagram, which would be most
-        // efficient, but also involve a fair deal of book-keeping, we instead simply iterate
-        // through all the cells and collect their colours every time that the diagram changes (i.e.
-        // whenever a cell is added or removed, or a colour is changed). Even for large diagrams,
-        // this ought to be fast.
-        const colours = new Set();
-        for (const cell of ui.view_all_cells()) {
-            colours.add(`${cell.label_colour}`);
-            if (cell.is_edge()) {
-                colours.add(`${cell.options.colour}`);
+        const group = this.element.query_selector(`label[data-group="Diagram"]`);
+        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+        if (runtime_by_id === null) {
+            this.set_colours_in_palette_group(ui, group, []);
+            return;
+        }
+
+        const colours = new Map();
+        for (const runtime_cell of runtime_by_id.values()) {
+            const label_colour = UI.kwiver_colour_from_runtime(runtime_cell?.label_colour);
+            if (label_colour !== null) {
+                colours.set(`${label_colour}`, label_colour);
+            }
+            if (runtime_cell?.kind === "edge") {
+                const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
+                if (runtime_options !== null) {
+                    colours.set(`${runtime_options.colour}`, runtime_options.colour);
+                }
             }
         }
-        const group = this.element.query_selector(`label[data-group="Diagram"]`);
-        this.set_colours_in_palette_group(ui, group, Array.from(colours).map((string) => {
-            const [h, s, l, a] = string.split(",");
-            return new Colour(parseInt(h), parseInt(s), parseInt(l), parseFloat(a));
-        }));
+        this.set_colours_in_palette_group(ui, group, Array.from(colours.values()));
     }
 }
 
@@ -11341,13 +11782,15 @@ class Cell {
                         } else {
                             // Otherwise, reconnect the existing edge.
                             const { edge, end } = ui.mode.reconnect;
-                            actions.push({
-                                kind: "connect",
+                            const connect_action = ui.kwiver_runtime_connect_action(
                                 edge,
                                 end,
-                                from: edge[end],
-                                to: ui.mode.target,
-                            });
+                                ui.mode.target,
+                            );
+                            if (connect_action === null) {
+                                throw new Error("[kwiver-only] ui.touch.connect: runtime reconnect action unavailable");
+                            }
+                            actions.push(connect_action);
                             ui.mode.connect(ui, event);
                         }
 
@@ -11561,14 +12004,12 @@ export class Vertex extends Cell {
 /// k-cells (for k > 0), or edges. This is primarily specialised in its set up of HTML elements.
 export class Edge extends Cell {
     constructor(ui, label, source, target, options, label_colour) {
-        super(Math.max(source.level, target.level) + 1, label, label_colour);
+        const initial_level = Number(options?.level);
+        super(Number.isInteger(initial_level) ? initial_level : 1, label, label_colour);
 
         this.options = Edge.default_options(Object.assign({ level: this.level }, options));
 
         this.arrow = new Arrow(source.shape, target.shape, new ArrowStyle(), new Label());
-        if (this.source === this.target) {
-            this.options.shape = "arc";
-        }
         this.element = this.arrow.element;
 
         // `this.shape` is used for the source/target from (higher) cells connected to this one.
@@ -11766,15 +12207,7 @@ export class Edge extends Cell {
         this.arrow.target = preview_target.shape;
     }
 
-    /// Returns the angle of this edge.
-    angle() {
-        if (this.is_loop()) {
-            return deg_to_rad(this.options.angle);
-        }
-        return this.target.shape.origin.sub(this.source.shape.origin).angle();
-    }
-
-    /// Changes the source and target.
+    /// Applies committed endpoints and derived level projection for runtime-backed hydration.
     reconnect(ui, source, target) {
         ui.connect_preview.apply_committed_endpoints(
             this,
@@ -11782,13 +12215,10 @@ export class Edge extends Cell {
             target,
             ui.view_contains_cell(this),
         );
-        ui.connect_preview.update_edge_levels(this, (cell, level) => ui.view_update_level(cell, level));
-        this.options.shape = source !== target ? "bezier" : "arc";
-        for (const end of ["source", "target"]) {
-            if (this[end].is_vertex()) {
-                this.options.edge_alignment[end] = true;
-            }
-        }
+        ui.connect_preview.update_edge_levels(
+            this,
+            (cell, level) => UI.kwiver_apply_runtime_cell_level(ui, cell, level, "ui.edge.reconnect"),
+        );
         const dependencies_to_render = ui.connect_preview.transitive_dependencies([this]);
         for (const cell of dependencies_to_render) {
             cell.render(ui);
