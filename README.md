@@ -30,14 +30,10 @@ Current migration priority:
 
 ```sh
 moon build --release --target-dir browser_ui/_build
-miniserve ./
+miniserve ./browser_ui
 ```
 
-Open `http://localhost:8080/browser_ui`.
-
-Runtime bootstrap expects the fixed release artifact to be reachable at:
-
-- `browser_ui/_build/js/release/build/runtime/runtime.js`
+Open `http://localhost:8080/`.
 
 Runbook notes:
 
