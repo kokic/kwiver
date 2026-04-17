@@ -1238,42 +1238,113 @@ class UI {
                 === UI.kwiver_edge_style_side(js_style.head?.side);
     }
 
-    static kwiver_runtime_edge_matches(runtime_edge, edge, source_id, target_id) {
-        if (!runtime_edge || runtime_edge.kind !== "edge") {
-            return false;
+    static kwiver_runtime_cell_record(runtime_cell, js_by_id = null) {
+        if (!runtime_cell || typeof runtime_cell !== "object") {
+            return null;
         }
-        if (Number(runtime_edge.source_id) !== Number(source_id)
-            || Number(runtime_edge.target_id) !== Number(target_id)) {
+
+        const runtime_id = Number(runtime_cell.id);
+        const level = Number(runtime_cell.level);
+        const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
+        const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
+        if (
+            !Number.isInteger(runtime_id)
+            || !Number.isInteger(level)
+            || label === null
+            || label_colour === null
+        ) {
+            return null;
+        }
+
+        if (runtime_cell.kind === "vertex") {
+            const x = Number(runtime_cell.x);
+            const y = Number(runtime_cell.y);
+            if (!Number.isInteger(x) || !Number.isInteger(y)) {
+                return null;
+            }
+            return {
+                kind: "vertex",
+                runtime_id,
+                level,
+                label,
+                label_colour,
+                position: new Position(x, y),
+            };
+        }
+
+        if (runtime_cell.kind === "edge") {
+            const source_id = Number(runtime_cell.source_id);
+            const target_id = Number(runtime_cell.target_id);
+            const options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
+            if (
+                !Number.isInteger(source_id)
+                || !Number.isInteger(target_id)
+                || options === null
+            ) {
+                return null;
+            }
+            return {
+                kind: "edge",
+                runtime_id,
+                level,
+                label,
+                label_colour,
+                source_id,
+                target_id,
+                source: js_by_id?.get(source_id) ?? null,
+                target: js_by_id?.get(target_id) ?? null,
+                options,
+            };
+        }
+
+        return null;
+    }
+
+    static kwiver_cell_matches_runtime_record(cell, runtime_record) {
+        if (!cell || !runtime_record || cell.is_vertex() !== (runtime_record.kind === "vertex")) {
             return false;
         }
         if (
-            runtime_edge.label !== edge?.kwiver_projection_label?.()
-            || Number(runtime_edge.level) !== Number(edge?.kwiver_projection_level?.())
+            cell.kwiver_projection_label() !== runtime_record.label
+            || cell.kwiver_projection_level() !== runtime_record.level
+            || !UI.kwiver_js_colours_equal(
+                cell.kwiver_projection_label_colour(),
+                runtime_record.label_colour,
+            )
         ) {
             return false;
         }
-        if (!UI.kwiver_colour_equals(runtime_edge.label_colour, edge?.kwiver_projection_label_colour?.())) {
+        if (runtime_record.kind === "vertex") {
+            return cell.position?.x === runtime_record.position.x
+                && cell.position?.y === runtime_record.position.y;
+        }
+
+        const source_id = Number(cell.kwiver_projection_source()?.kwiver_id);
+        const target_id = Number(cell.kwiver_projection_target()?.kwiver_id);
+        const edge_options = cell.kwiver_projection_options();
+        if (
+            !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+            || edge_options == null
+        ) {
             return false;
         }
-        const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_edge.options);
-        const edge_options = edge?.kwiver_projection_options?.();
-        if (!runtime_options || !edge_options) {
-            return false;
-        }
-        return runtime_options.label_alignment === edge_options.label_alignment
-            && runtime_options.label_position === Number(edge_options.label_position)
-            && runtime_options.offset === Number(edge_options.offset)
-            && runtime_options.curve === Number(edge_options.curve)
-            && runtime_options.radius === Number(edge_options.radius)
-            && runtime_options.angle === Number(edge_options.angle)
-            && runtime_options.shorten.source === Number(edge_options.shorten.source)
-            && runtime_options.shorten.target === Number(edge_options.shorten.target)
-            && runtime_options.level === Number(edge_options.level)
-            && runtime_options.shape === edge_options.shape
-            && runtime_options.edge_alignment.source === Boolean(edge_options.edge_alignment.source)
-            && runtime_options.edge_alignment.target === Boolean(edge_options.edge_alignment.target)
-            && UI.kwiver_js_colours_equal(runtime_options.colour, edge_options.colour)
-            && UI.kwiver_edge_styles_equal(runtime_options.style, edge_options.style);
+        return source_id === runtime_record.source_id
+            && target_id === runtime_record.target_id
+            && runtime_record.options.label_alignment === edge_options.label_alignment
+            && runtime_record.options.label_position === Number(edge_options.label_position)
+            && runtime_record.options.offset === Number(edge_options.offset)
+            && runtime_record.options.curve === Number(edge_options.curve)
+            && runtime_record.options.radius === Number(edge_options.radius)
+            && runtime_record.options.angle === Number(edge_options.angle)
+            && runtime_record.options.shorten.source === Number(edge_options.shorten.source)
+            && runtime_record.options.shorten.target === Number(edge_options.shorten.target)
+            && runtime_record.options.level === Number(edge_options.level)
+            && runtime_record.options.shape === edge_options.shape
+            && runtime_record.options.edge_alignment.source === Boolean(edge_options.edge_alignment.source)
+            && runtime_record.options.edge_alignment.target === Boolean(edge_options.edge_alignment.target)
+            && UI.kwiver_js_colours_equal(runtime_record.options.colour, edge_options.colour)
+            && UI.kwiver_edge_styles_equal(runtime_record.options.style, edge_options.style);
     }
 
     static kwiver_apply_runtime_cell_level(ui, cell, level, origin = "ui.runtime.apply.level") {
@@ -1303,71 +1374,6 @@ class UI {
         });
     }
 
-    static kwiver_apply_runtime_edge_snapshot(
-        ui,
-        edge,
-        runtime_edge,
-        origin = "ui.runtime.apply.edge",
-        render = true,
-        render_label = false,
-    ) {
-        if (!ui || !edge || !runtime_edge || runtime_edge.kind !== "edge") {
-            throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
-        }
-
-        const level = Number(runtime_edge.level);
-        const label = typeof runtime_edge.label === "string" ? runtime_edge.label : null;
-        const label_colour = UI.kwiver_colour_from_runtime(runtime_edge.label_colour);
-        const source_id = Number(runtime_edge.source_id);
-        const target_id = Number(runtime_edge.target_id);
-        const options = UI.kwiver_edge_options_from_runtime(runtime_edge.options);
-        if (
-            !Number.isInteger(level)
-            || label === null
-            || label_colour === null
-            || !Number.isInteger(source_id)
-            || !Number.isInteger(target_id)
-            || options === null
-        ) {
-            throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
-        }
-
-        const js_by_id = ui.kwiver_js_cells_by_id();
-        const source = js_by_id.get(source_id);
-        const target = js_by_id.get(target_id);
-        if (!source || !target) {
-            throw new Error("[kwiver-only] " + origin + ": runtime edge endpoints missing");
-        }
-
-        const registered = ui.view_contains_cell(edge);
-        if (
-            registered
-            && (
-                edge?.kwiver_projection_source?.() !== source
-                || edge?.kwiver_projection_target?.() !== target
-            )
-        ) {
-            ui.connect_preview.apply_committed_endpoints(edge, source, target, true);
-        } else {
-            edge.kwiver_set_projection_endpoints(source, target);
-        }
-        edge.arrow.source = source.shape;
-        edge.arrow.target = target.shape;
-        UI.kwiver_apply_runtime_cell_level(ui, edge, level, origin);
-        edge.kwiver_set_projection_label(label);
-        edge.kwiver_set_projection_label_colour(label_colour);
-        edge.kwiver_set_projection_options(options);
-
-        if (render_label) {
-            ui.panel.render_maths(ui, edge);
-        } else if (render) {
-            edge.render(ui);
-        }
-
-        UI.kwiver_apply_runtime_label_colour(edge, origin);
-        return edge;
-    }
-
     static kwiver_apply_runtime_cell_snapshot(
         ui,
         cell,
@@ -1380,39 +1386,64 @@ class UI {
         if (!ui || !cell || !runtime_cell || typeof runtime_cell !== "object") {
             throw new Error("[kwiver-only] " + origin + ": runtime cell snapshot invalid");
         }
-
-        if (cell.is_edge()) {
-            return UI.kwiver_apply_runtime_edge_snapshot(
-                ui,
-                cell,
-                runtime_cell,
-                origin,
-                render,
-                render_label,
-            );
+        const runtime_record = UI.kwiver_runtime_cell_record(
+            runtime_cell,
+            cell.is_edge() ? ui.kwiver_js_cells_by_id() : null,
+        );
+        if (runtime_record === null) {
+            throw new Error("[kwiver-only] " + origin + ": runtime cell snapshot invalid");
+        }
+        if (cell.is_vertex() !== (runtime_record.kind === "vertex")) {
+            throw new Error("[kwiver-only] " + origin + ": runtime cell kind mismatch");
         }
 
-        const level = Number(runtime_cell.level);
-        const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
-        const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
-        const x = Number(runtime_cell.x);
-        const y = Number(runtime_cell.y);
-        if (
-            runtime_cell.kind !== "vertex"
-            || !Number.isInteger(level)
-            || label === null
-            || label_colour === null
-            || !Number.isInteger(x)
-            || !Number.isInteger(y)
-        ) {
-            throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
+        if (runtime_record.kind === "edge") {
+            if (!runtime_record.source || !runtime_record.target) {
+                throw new Error("[kwiver-only] " + origin + ": runtime edge endpoints missing");
+            }
+            const registered = ui.view_contains_cell(cell);
+            if (
+                registered
+                && (
+                    cell.kwiver_projection_source() !== runtime_record.source
+                    || cell.kwiver_projection_target() !== runtime_record.target
+                )
+            ) {
+                ui.connect_preview.apply_committed_endpoints(
+                    cell,
+                    runtime_record.source,
+                    runtime_record.target,
+                    true,
+                );
+            } else {
+                cell.kwiver_set_projection_endpoints(
+                    runtime_record.source,
+                    runtime_record.target,
+                );
+            }
+            cell.arrow.source = runtime_record.source.shape;
+            cell.arrow.target = runtime_record.target.shape;
+            UI.kwiver_apply_runtime_cell_level(ui, cell, runtime_record.level, origin);
+            cell.kwiver_set_projection_label(runtime_record.label);
+            cell.kwiver_set_projection_label_colour(runtime_record.label_colour);
+            cell.kwiver_set_projection_options(runtime_record.options);
+
+            if (render_label) {
+                ui.panel.render_maths(ui, cell);
+            } else if (render) {
+                cell.render(ui);
+            }
+
+            UI.kwiver_apply_runtime_label_colour(cell, origin);
+            return cell;
         }
 
         const previous_position = cell.position;
-        const position_changed = previous_position.x !== x || previous_position.y !== y;
-        UI.kwiver_apply_runtime_cell_level(ui, cell, level, origin);
+        const position_changed = previous_position.x !== runtime_record.position.x
+            || previous_position.y !== runtime_record.position.y;
+        UI.kwiver_apply_runtime_cell_level(ui, cell, runtime_record.level, origin);
         if (position_changed) {
-            cell.set_position(ui, new Position(x, y));
+            cell.set_position(ui, runtime_record.position);
             if (sync_position_index) {
                 if (ui.positions.get(`${previous_position}`) === cell) {
                     ui.positions.delete(`${previous_position}`);
@@ -1420,8 +1451,8 @@ class UI {
                 ui.positions.set(`${cell.position}`, cell);
             }
         }
-        cell.kwiver_set_projection_label(label);
-        cell.kwiver_set_projection_label_colour(label_colour);
+        cell.kwiver_set_projection_label(runtime_record.label);
+        cell.kwiver_set_projection_label_colour(runtime_record.label_colour);
         if (render_label) {
             ui.panel.render_maths(ui, cell);
         }
@@ -1501,45 +1532,36 @@ class UI {
         QuiverImportExport.begin_import(this);
         try {
             for (const runtime_cell of ordered_runtime_cells) {
-                const runtime_id = Number(runtime_cell?.id);
-                if (!Number.isInteger(runtime_id)) {
-                    throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
+                const runtime_record = UI.kwiver_runtime_cell_record(runtime_cell, js_by_id);
+                const runtime_id = runtime_record?.runtime_id;
+                if (!runtime_record || !Number.isInteger(runtime_id)) {
+                    throw new Error("[kwiver-only] " + origin + ": runtime cell snapshot invalid");
                 }
                 if (js_by_id.has(runtime_id)) {
                     throw new Error("[kwiver-only] " + origin + ": runtime id already exists in UI");
                 }
 
                 let cell = null;
-                if (runtime_cell?.kind === "vertex") {
-                    const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
-                    const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
-                    const x = Number(runtime_cell.x);
-                    const y = Number(runtime_cell.y);
-                    if (
-                        label === null
-                        || label_colour === null
-                        || !Number.isInteger(x)
-                        || !Number.isInteger(y)
-                    ) {
-                        throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
-                    }
-                    cell = new Vertex(this, label, new Position(x, y), label_colour);
-                } else if (runtime_cell?.kind === "edge") {
-                    const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
-                    const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
-                    const options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
-                    const source = js_by_id.get(Number(runtime_cell.source_id));
-                    const target = js_by_id.get(Number(runtime_cell.target_id));
-                    if (
-                        label === null
-                        || label_colour === null
-                        || options === null
-                        || !source
-                        || !target
-                    ) {
+                if (runtime_record.kind === "vertex") {
+                    cell = new Vertex(
+                        this,
+                        runtime_record.label,
+                        runtime_record.position,
+                        runtime_record.label_colour,
+                    );
+                } else if (runtime_record.kind === "edge") {
+                    if (!runtime_record.source || !runtime_record.target) {
                         throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
                     }
-                    cell = new Edge(this, label, source, target, options, label_colour, runtime_id);
+                    cell = new Edge(
+                        this,
+                        runtime_record.label,
+                        runtime_record.source,
+                        runtime_record.target,
+                        runtime_record.options,
+                        runtime_record.label_colour,
+                        runtime_id,
+                    );
                 } else {
                     throw new Error("[kwiver-only] " + origin + ": unsupported runtime cell kind");
                 }
@@ -2226,34 +2248,15 @@ class UI {
         }
 
         const runtime_cell = runtime_cells_by_id.get(cell.kwiver_id);
-        if (!runtime_cell) {
+        const runtime_record = UI.kwiver_runtime_cell_record(
+            runtime_cell,
+            cell.is_edge() ? this.kwiver_js_cells_by_id() : null,
+        );
+        if (runtime_record === null) {
             throw new Error("[kwiver-only] " + context + ": runtime cell missing");
         }
-
-        if (cell.is_vertex()) {
-            if (
-                runtime_cell.kind !== "vertex"
-                || Number(runtime_cell.x) !== Number(cell.position.x)
-                || Number(runtime_cell.y) !== Number(cell.position.y)
-                || runtime_cell.label !== cell.kwiver_projection_label()
-                || !UI.kwiver_colour_equals(
-                    runtime_cell.label_colour,
-                    cell.kwiver_projection_label_colour(),
-                )
-            ) {
-                throw new Error("[kwiver-only] " + context + ": runtime vertex mismatch");
-            }
-            return;
-        }
-
-        const source_id = Number(cell.kwiver_projection_source()?.kwiver_id);
-        const target_id = Number(cell.kwiver_projection_target()?.kwiver_id);
-        if (!Number.isInteger(source_id) || !Number.isInteger(target_id)) {
-            throw new Error("[kwiver-only] " + context + ": edge endpoints missing kwiver ids");
-        }
-
-        if (!UI.kwiver_runtime_edge_matches(runtime_cell, cell, source_id, target_id)) {
-            throw new Error("[kwiver-only] " + context + ": runtime edge mismatch");
+        if (!UI.kwiver_cell_matches_runtime_record(cell, runtime_record)) {
+            throw new Error("[kwiver-only] " + context + ": runtime cell mismatch");
         }
     }
 
@@ -2281,29 +2284,18 @@ class UI {
         }
 
         const runtime_by_id = this.kwiver_runtime_cells_by_id();
-        const runtime_vertex = runtime_by_id?.get(added.id);
-        const runtime_label = typeof runtime_vertex?.label === "string" ? runtime_vertex.label : null;
-        const runtime_label_colour = UI.kwiver_colour_from_runtime(runtime_vertex?.label_colour);
-        const runtime_x = Number(runtime_vertex?.x);
-        const runtime_y = Number(runtime_vertex?.y);
-        if (
-            !runtime_vertex
-            || runtime_vertex.kind !== "vertex"
-            || runtime_label === null
-            || runtime_label_colour === null
-            || !Number.isInteger(runtime_x)
-            || !Number.isInteger(runtime_y)
-        ) {
+        const runtime_record = UI.kwiver_runtime_cell_record(runtime_by_id?.get(added.id));
+        if (!runtime_record || runtime_record.kind !== "vertex") {
             throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
         }
 
         const vertex = new Vertex(
             this,
-            runtime_label,
-            new Position(runtime_x, runtime_y),
-            runtime_label_colour,
+            runtime_record.label,
+            runtime_record.position,
+            runtime_record.label_colour,
         );
-        vertex.kwiver_id = added.id;
+        vertex.kwiver_id = runtime_record.runtime_id;
         this.kwiver_assert_runtime_cell_match(vertex, origin);
         return vertex;
     }
@@ -2341,41 +2333,35 @@ class UI {
 
         const runtime_after_by_id = this.kwiver_runtime_cells_by_id();
         const runtime_edge = runtime_after_by_id?.get(added.id);
-        const runtime_label = typeof runtime_edge?.label === "string" ? runtime_edge.label : null;
-        const runtime_label_colour = UI.kwiver_colour_from_runtime(runtime_edge?.label_colour);
-        const runtime_options = UI.kwiver_edge_options_from_runtime(runtime_edge?.options);
-        const source_id = Number(runtime_edge?.source_id);
-        const target_id = Number(runtime_edge?.target_id);
-        const js_by_id = this.kwiver_js_cells_by_id();
-        const runtime_source = js_by_id.get(source_id);
-        const runtime_target = js_by_id.get(target_id);
+        const runtime_record = UI.kwiver_runtime_cell_record(
+            runtime_edge,
+            this.kwiver_js_cells_by_id(),
+        );
         if (
-            !runtime_edge
-            || runtime_edge.kind !== "edge"
-            || runtime_label === null
-            || runtime_label_colour === null
-            || runtime_options === null
-            || !runtime_source
-            || !runtime_target
+            !runtime_record
+            || runtime_record.kind !== "edge"
+            || !runtime_record.source
+            || !runtime_record.target
         ) {
             throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
         }
 
         const edge = new Edge(
             this,
-            runtime_label,
-            runtime_source,
-            runtime_target,
-            runtime_options,
-            runtime_label_colour,
-            added.id,
+            runtime_record.label,
+            runtime_record.source,
+            runtime_record.target,
+            runtime_record.options,
+            runtime_record.label_colour,
+            runtime_record.runtime_id,
         );
-        UI.kwiver_apply_runtime_edge_snapshot(
+        UI.kwiver_apply_runtime_cell_snapshot(
             this,
             edge,
             runtime_edge,
             origin,
             true,
+            false,
             false,
         );
         this.kwiver_assert_runtime_cell_match(edge, origin);
@@ -2416,57 +2402,14 @@ class UI {
                 throw new Error("[kwiver-only] " + origin + ": runtime cell missing");
             }
 
-            const level = Number(runtime_cell.level);
-            const label = typeof runtime_cell.label === "string" ? runtime_cell.label : null;
-            const label_colour = UI.kwiver_colour_from_runtime(runtime_cell.label_colour);
-            if (!Number.isInteger(level) || label === null || label_colour === null) {
+            const runtime_record = UI.kwiver_runtime_cell_record(runtime_cell);
+            if (runtime_record === null) {
                 throw new Error("[kwiver-only] " + origin + ": runtime cell snapshot invalid");
             }
-
-            if (runtime_cell.kind === "vertex") {
-                const x = Number(runtime_cell.x);
-                const y = Number(runtime_cell.y);
-                if (!Number.isInteger(x) || !Number.isInteger(y)) {
-                    throw new Error("[kwiver-only] " + origin + ": runtime vertex snapshot invalid");
-                }
-                records.push({
-                    kind: "vertex",
-                    cell,
-                    runtime_id: cell.kwiver_id,
-                    level,
-                    label,
-                    label_colour,
-                    position: new Position(x, y),
-                });
-                continue;
-            }
-
-            if (runtime_cell.kind === "edge") {
-                const source_id = Number(runtime_cell.source_id);
-                const target_id = Number(runtime_cell.target_id);
-                const options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
-                if (
-                    !Number.isInteger(source_id)
-                    || !Number.isInteger(target_id)
-                    || options === null
-                ) {
-                    throw new Error("[kwiver-only] " + origin + ": runtime edge snapshot invalid");
-                }
-                records.push({
-                    kind: "edge",
-                    cell,
-                    runtime_id: cell.kwiver_id,
-                    level,
-                    label,
-                    label_colour,
-                    source_id,
-                    target_id,
-                    options,
-                });
-                continue;
-            }
-
-            throw new Error("[kwiver-only] " + origin + ": unknown runtime cell kind");
+            records.push({
+                ...runtime_record,
+                cell,
+            });
         }
 
         return records;
@@ -2754,11 +2697,13 @@ class UI {
             throw new Error("[kwiver-only] " + context + ": runtime edge snapshot invalid");
         }
 
-        UI.kwiver_apply_runtime_edge_snapshot(
+        UI.kwiver_apply_runtime_cell_snapshot(
             this,
             action.edge,
             runtime_edge,
             context,
+            false,
+            true,
             false,
         );
         if (render) {
@@ -6244,7 +6189,7 @@ class History {
             edge,
             runtime_edge,
             render = false,
-        ) => UI.kwiver_apply_runtime_edge_snapshot(ui, edge, runtime_edge, context, render);
+        ) => UI.kwiver_apply_runtime_cell_snapshot(ui, edge, runtime_edge, context, render, true, false);
 
         const kwiver_clone_style = (style) => ({
             name: typeof style?.name === "string" ? style.name : "arrow",
