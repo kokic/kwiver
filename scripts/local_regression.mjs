@@ -7,19 +7,19 @@ const STEPS = smokeOnly
   ? [
       ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
       ["moon", ["build", "--release"]],
-      ["node", ["browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs"]],
+      ["node", ["browser_ui/tests/kwiver_bridge_smoke.test.mjs"]],
+      ["node", ["browser_ui/tests/toolbar_update_fail_fast.test.mjs"]],
+      ["node", ["browser_ui/tests/runtime_smoke_non_mock.test.mjs"]],
+      ["node", ["browser_ui/tests/parser_corpus_runtime_non_mock.test.mjs"]],
     ]
   : [
       ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
       ["moon", ["build", "--release"]],
       ["moon", ["test", "-v"]],
-      ["node", ["browser_ui_upstream/tests/kwiver_bridge_smoke.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/toolbar_update_fail_fast.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/runtime_smoke_non_mock.test.mjs"]],
-      ["node", ["browser_ui_upstream/tests/parser_corpus_runtime_non_mock.test.mjs"]],
+      ["node", ["browser_ui/tests/kwiver_bridge_smoke.test.mjs"]],
+      ["node", ["browser_ui/tests/toolbar_update_fail_fast.test.mjs"]],
+      ["node", ["browser_ui/tests/runtime_smoke_non_mock.test.mjs"]],
+      ["node", ["browser_ui/tests/parser_corpus_runtime_non_mock.test.mjs"]],
     ];
 
 function runStep(command, commandArgs, index, total) {

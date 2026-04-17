@@ -1,0 +1,34 @@
+import {
+  "kokic/kwiver/engine",
+  "kokic/kwiver/geometry",
+  "moonbitlang/core/json",
+}
+
+options(
+  link: {
+    "js": {
+      "exports": [
+        "ffi_runtime_command_protocol",
+        "ffi_runtime_session_new",
+        "ffi_runtime_session_dispatch_command_json",
+        "ffi_runtime_bezier_point",
+        "ffi_runtime_bezier_tangent",
+        "ffi_runtime_bezier_arc_length",
+        "ffi_runtime_bezier_t_after_length",
+        "ffi_runtime_bezier_height",
+        "ffi_runtime_bezier_width",
+        "ffi_runtime_bezier_intersections_with_rounded_rectangle",
+        "ffi_runtime_arc_point",
+        "ffi_runtime_arc_tangent",
+        "ffi_runtime_arc_arc_length",
+        "ffi_runtime_arc_t_after_length",
+        "ffi_runtime_arc_height",
+        "ffi_runtime_arc_width",
+        "ffi_runtime_arc_angle_in_arc",
+        "ffi_runtime_arc_intersections_with_rounded_rectangle",
+        "ffi_runtime_arrow_find_endpoints_local",
+        "ffi_runtime_arrow_label_position_local",
+      ],
+    },
+  },
+)

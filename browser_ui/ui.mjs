@@ -6200,6 +6200,10 @@ class UI {
             radius: int_or(options.radius, 3),
             angle: int_or(options.angle, 0),
             offset: int_or(options.offset, 0),
+            label_alignment: typeof options.label_alignment === "string"
+                ? options.label_alignment
+                : "left",
+            label_position: int_or(options.label_position, 50),
         };
 
         return style;

@@ -1,5 +1,5 @@
 ///|
-fn browser_demo_parse_json_object(input : String) -> Map[String, Json]? {
+fn runtime_parse_json_object(input : String) -> Map[String, Json]? {
   let parsed : Result[Json, Error] = try? @json.parse(input)
   match parsed {
     Ok(Json::Object(root)) => Some(root)
@@ -8,7 +8,7 @@ fn browser_demo_parse_json_object(input : String) -> Map[String, Json]? {
 }
 
 ///|
-fn browser_demo_json_string_or(
+fn runtime_json_string_or(
   root : Map[String, Json],
   key : String,
   fallback : String,
@@ -26,7 +26,7 @@ fn browser_demo_json_string_or(
 }
 
 ///|
-fn browser_demo_json_optional_string(
+fn runtime_json_optional_string(
   root : Map[String, Json],
   key : String,
 ) -> String? {
@@ -44,7 +44,7 @@ fn browser_demo_json_optional_string(
 }
 
 ///|
-fn browser_demo_json_bool_or(
+fn runtime_json_bool_or(
   root : Map[String, Json],
   key : String,
   fallback : Bool,
@@ -62,7 +62,7 @@ fn browser_demo_json_bool_or(
 }
 
 ///|
-fn browser_demo_optional_string_json(value : String?) -> Json {
+fn runtime_optional_string_json(value : String?) -> Json {
   match value {
     Some(raw) => Json::string(raw)
     None => Json::null()
@@ -70,7 +70,7 @@ fn browser_demo_optional_string_json(value : String?) -> Json {
 }
 
 ///|
-fn browser_demo_int_array_json(values : Array[Int]) -> Json {
+fn runtime_int_array_json(values : Array[Int]) -> Json {
   let out : Array[Json] = []
   for value in values {
     out.push(Json::number(value.to_double()))
@@ -79,7 +79,7 @@ fn browser_demo_int_array_json(values : Array[Int]) -> Json {
 }
 
 ///|
-fn browser_demo_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
+fn runtime_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
   if lhs.length() != rhs.length() {
     return false
   }
@@ -92,30 +92,30 @@ fn browser_demo_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
 }
 
 ///|
-fn browser_demo_state_json(
+fn runtime_state_json(
   payload : String,
   selection : Array[Int],
   cell_ids : Array[Int],
 ) -> Json {
   Json::object({
     "payload": Json::string(payload),
-    "selection": browser_demo_int_array_json(selection),
-    "cell_ids": browser_demo_int_array_json(cell_ids),
+    "selection": runtime_int_array_json(selection),
+    "cell_ids": runtime_int_array_json(cell_ids),
   })
 }
 
 ///|
-fn browser_demo_action(action : String) -> String {
+fn runtime_action(action : String) -> String {
   Json::object({ "action": Json::string(action) }).stringify()
 }
 
 ///|
-fn browser_demo_command_protocol() -> String {
+fn runtime_command_protocol() -> String {
   "kwiver.command.v1"
 }
 
 ///|
-fn browser_demo_dispatch_error_output(action : String, message : String) -> String {
+fn runtime_dispatch_error_output(action : String, message : String) -> String {
   Json::object({
     "ok": Json::boolean(false),
     "action": Json::string(action),
@@ -126,7 +126,7 @@ fn browser_demo_dispatch_error_output(action : String, message : String) -> Stri
 
 ///|
 pub struct BrowserDemoSession {
-  runtime : @browser_adapter.BrowserRuntime
+  runtime : BrowserRuntime
   mut command_sequence : Int
 }
 
@@ -135,12 +135,12 @@ fn BrowserDemoSession::dispatch_json_safe(
   self : BrowserDemoSession,
   action_json : String,
 ) -> String {
-  @browser_adapter.ffi_browser_runtime_dispatch_json_safe(self.runtime, action_json)
+  ffi_runtime_dispatch_json_safe(self.runtime, action_json)
 }
 
 ///|
 fn BrowserDemoSession::query_result(self : BrowserDemoSession, action : String) -> Json? {
-  match browser_demo_parse_json_object(self.dispatch_json_safe(browser_demo_action(action))) {
+  match runtime_parse_json_object(self.dispatch_json_safe(runtime_action(action))) {
     Some(root) => root.get("result")
     None => None
   }
@@ -191,7 +191,7 @@ fn BrowserDemoSession::all_cell_ids(self : BrowserDemoSession) -> Array[Int] {
 ///|
 pub fn BrowserDemoSession::new() -> BrowserDemoSession {
   {
-    runtime: @browser_adapter.ffi_browser_runtime_new(),
+    runtime: ffi_runtime_new(),
     command_sequence: 0,
   }
 }
@@ -205,22 +205,22 @@ pub fn BrowserDemoSession::dispatch_command_json(
   let before_selection = self.selection()
   let before_cell_ids = self.all_cell_ids()
 
-  let protocol = browser_demo_command_protocol()
+  let protocol = runtime_command_protocol()
   let mut origin : String? = None
   let mut command_id : String? = None
   let mut requested_action = "unknown"
   let mut protocol_error : String? = None
 
-  match browser_demo_parse_json_object(command_json) {
+  match runtime_parse_json_object(command_json) {
     Some(command_root) => {
-      origin = browser_demo_json_optional_string(command_root, "origin")
-      command_id = browser_demo_json_optional_string(command_root, "command_id")
-      requested_action = browser_demo_json_string_or(
+      origin = runtime_json_optional_string(command_root, "origin")
+      command_id = runtime_json_optional_string(command_root, "command_id")
+      requested_action = runtime_json_string_or(
         command_root,
         "action",
         requested_action,
       )
-      match browser_demo_json_optional_string(command_root, "protocol") {
+      match runtime_json_optional_string(command_root, "protocol") {
         Some(requested_protocol) =>
           if requested_protocol != protocol {
             protocol_error = Some(
@@ -254,7 +254,7 @@ pub fn BrowserDemoSession::dispatch_command_json(
   let sequence = self.command_sequence
 
   let dispatch_output = match protocol_error {
-    Some(message) => browser_demo_dispatch_error_output(requested_action, message)
+    Some(message) => runtime_dispatch_error_output(requested_action, message)
     None => self.dispatch_json_safe(command_json)
   }
 
@@ -262,15 +262,15 @@ pub fn BrowserDemoSession::dispatch_command_json(
   let mut action = requested_action
   let mut result : Json = Json::null()
   let mut error : String? = Some("dispatch output parse failed")
-  match browser_demo_parse_json_object(dispatch_output) {
+  match runtime_parse_json_object(dispatch_output) {
     Some(dispatch_root) => {
-      ok = browser_demo_json_bool_or(dispatch_root, "ok", false)
-      action = browser_demo_json_string_or(dispatch_root, "action", action)
+      ok = runtime_json_bool_or(dispatch_root, "ok", false)
+      action = runtime_json_string_or(dispatch_root, "action", action)
       match dispatch_root.get("result") {
         Some(runtime_result) => result = runtime_result
         None => ()
       }
-      error = browser_demo_json_optional_string(dispatch_root, "error")
+      error = runtime_json_optional_string(dispatch_root, "error")
     }
     None => ()
   }
@@ -279,8 +279,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
   let after_selection = self.selection()
   let after_cell_ids = self.all_cell_ids()
   let changed = before_payload != after_payload ||
-    !browser_demo_int_arrays_equal(before_selection, after_selection) ||
-    !browser_demo_int_arrays_equal(before_cell_ids, after_cell_ids)
+    !runtime_int_arrays_equal(before_selection, after_selection) ||
+    !runtime_int_arrays_equal(before_cell_ids, after_cell_ids)
 
   let undo_checkpoint = if changed {
     Some(before_payload)
@@ -298,19 +298,19 @@ pub fn BrowserDemoSession::dispatch_command_json(
     "ok": Json::boolean(ok),
     "action": Json::string(action),
     "protocol": Json::string(protocol),
-    "origin": browser_demo_optional_string_json(origin),
-    "command_id": browser_demo_optional_string_json(command_id),
+    "origin": runtime_optional_string_json(origin),
+    "command_id": runtime_optional_string_json(command_id),
     "result": result,
-    "error": browser_demo_optional_string_json(error),
+    "error": runtime_optional_string_json(error),
     "changed": Json::boolean(changed),
-    "undo_checkpoint": browser_demo_optional_string_json(undo_checkpoint),
-    "redo_checkpoint": browser_demo_optional_string_json(redo_checkpoint),
-    "before": browser_demo_state_json(
+    "undo_checkpoint": runtime_optional_string_json(undo_checkpoint),
+    "redo_checkpoint": runtime_optional_string_json(redo_checkpoint),
+    "before": runtime_state_json(
       before_payload,
       before_selection,
       before_cell_ids,
     ),
-    "after": browser_demo_state_json(
+    "after": runtime_state_json(
       after_payload,
       after_selection,
       after_cell_ids,
@@ -319,17 +319,17 @@ pub fn BrowserDemoSession::dispatch_command_json(
 }
 
 ///|
-pub fn ffi_browser_demo_command_protocol() -> String {
-  browser_demo_command_protocol()
+pub fn ffi_runtime_command_protocol() -> String {
+  runtime_command_protocol()
 }
 
 ///|
-pub fn ffi_browser_demo_session_new() -> BrowserDemoSession {
+pub fn ffi_runtime_session_new() -> BrowserDemoSession {
   BrowserDemoSession::new()
 }
 
 ///|
-pub fn ffi_browser_demo_session_dispatch_command_json(
+pub fn ffi_runtime_session_dispatch_command_json(
   session : BrowserDemoSession,
   command_json : String,
 ) -> String {

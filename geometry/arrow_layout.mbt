@@ -272,27 +272,76 @@ pub fn ArrowLayout::label_position(
   label_height : Double,
   edge_width? : Double = 1.5,
 ) -> Point {
-  let interval = self.shortened_interval()
+  self.curve_model.local_to_world(
+    self.label_position_local(label_width, label_height, edge_width~),
+  )
+}
+
+///|
+pub fn ArrowLayout::label_position_local(
+  self : ArrowLayout,
+  label_width : Double,
+  label_height : Double,
+  edge_width? : Double = 1.5,
+) -> Point {
+  let endpoints = self.clipped_endpoints()
   let ratio = self.options.label_position.to_double() / 100.0
-  let t = interval.start_t + (interval.end_t - interval.start_t) * ratio
-  let centre = self.curve_model.point(t)
+  let t = endpoints.start.t + (endpoints.end.t - endpoints.start.t) * ratio
+  let centre = self.curve_model.local_point(t)
+
+  let mut offset_angle = if self.curve_model.local_is_arc() {
+    self.curve_model.local_tangent(ratio)
+  } else {
+    0.0
+  }
 
   match self.options.label_alignment {
-    LabelAlignment::Centre => centre
-    LabelAlignment::Over => centre
-    LabelAlignment::Left => {
-      let offset_angle = self.curve_model.tangent(t) - @math.PI / 2.0
-      let distance = self.config.label_padding +
-        edge_width / 2.0 +
-        @math.hypot(label_width / 2.0, label_height / 2.0)
-      centre.add(Point::lendir(distance, offset_angle))
+    LabelAlignment::Centre => return centre
+    LabelAlignment::Over => return centre
+    LabelAlignment::Left => offset_angle = offset_angle - @math.PI / 2.0
+    LabelAlignment::Right => offset_angle = offset_angle + @math.PI / 2.0
+  }
+
+  let offset_allowance = 4.0
+  let label_size = Point::new(label_width + edge_width, label_height + edge_width)
+  let mut offset_min = 0.0
+  let mut offset_max = offset_allowance +
+    Double::abs(self.curve_model.local_height()) +
+    label_size.div(2.0).length()
+  let mut label_offset = 0.0
+  let angle = self.curve_model.display_angle()
+
+  let bail_out = 1024
+  let mut i = 0
+  while true {
+    label_offset = (offset_min + offset_max) / 2.0
+    let rect_centre = centre.rotate(angle).add(
+      Point::lendir(label_offset, angle + offset_angle),
+    )
+    let intersections = self.curve_model.display_intersections_with_rounded_rectangle(
+      RoundedRectangle::new(
+        rect_centre,
+        label_width + edge_width,
+        label_height + edge_width,
+        edge_width / 2.0,
+      ),
+      true,
+    )
+
+    if intersections.is_empty() {
+      if offset_max - offset_min < 1.0 {
+        break
+      }
+      offset_max = label_offset
+    } else {
+      offset_min = label_offset
     }
-    LabelAlignment::Right => {
-      let offset_angle = self.curve_model.tangent(t) + @math.PI / 2.0
-      let distance = self.config.label_padding +
-        edge_width / 2.0 +
-        @math.hypot(label_width / 2.0, label_height / 2.0)
-      centre.add(Point::lendir(distance, offset_angle))
+
+    i = i + 1
+    if i >= bail_out {
+      break
     }
   }
+
+  centre.add(Point::lendir(label_offset, offset_angle))
 }

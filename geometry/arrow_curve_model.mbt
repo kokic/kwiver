@@ -138,6 +138,16 @@ fn ArrowCurveModel::arc_for_chord(
   chord : Double,
   loop_radius : Double,
 ) -> Arc {
+  self.arc_for_chord_at_angle(chord, loop_radius, 0.0)
+}
+
+///|
+fn ArrowCurveModel::arc_for_chord_at_angle(
+  self : ArrowCurveModel,
+  chord : Double,
+  loop_radius : Double,
+  angle : Double,
+) -> Arc {
   let outer_dis = self.config.arc_outer_dis
   let inner_dis = self.config.arc_inner_dis
   let semicircle_radius = inner_dis / 2.0
@@ -154,7 +164,7 @@ fn ArrowCurveModel::arc_for_chord(
   } else {
     r_for_sagitta
   }
-  Arc::new(Point::zero(), chord, chord <= inner_dis, r, 0.0)
+  Arc::new(Point::zero(), chord, chord <= inner_dis, r, angle)
 }
 
 ///|
@@ -226,6 +236,66 @@ fn ArrowCurveModel::curve_t_after_length(
   match curve {
     ArrowCurveModelData::Bezier(bezier) => bezier.t_after_length(clamp~)(length)
     ArrowCurveModelData::Arc(arc) => arc.t_after_length(clamp~)(length)
+  }
+}
+
+///|
+fn ArrowCurveModel::local_point(self : ArrowCurveModel, t : Double) -> Point {
+  ArrowCurveModel::curve_point(self.curve_data(), t)
+}
+
+///|
+fn ArrowCurveModel::local_tangent(self : ArrowCurveModel, t : Double) -> Double {
+  ArrowCurveModel::curve_tangent(self.curve_data(), t)
+}
+
+///|
+fn ArrowCurveModel::local_height(self : ArrowCurveModel) -> Double {
+  match self.curve_data() {
+    ArrowCurveModelData::Bezier(bezier) => bezier.height()
+    ArrowCurveModelData::Arc(arc) => arc.height()
+  }
+}
+
+///|
+fn ArrowCurveModel::local_is_arc(self : ArrowCurveModel) -> Bool {
+  match self.options.shape {
+    EdgeShape::Arc => true
+    _ => false
+  }
+}
+
+///|
+fn ArrowCurveModel::display_angle(self : ArrowCurveModel) -> Double {
+  if self.local_is_arc() && self.source_origin.eq(self.target_origin) {
+    arrow_curve_model_deg_to_rad(self.options.angle.to_double())
+  } else {
+    self.base_angle()
+  }
+}
+
+///|
+fn ArrowCurveModel::display_intersections_with_rounded_rectangle(
+  self : ArrowCurveModel,
+  rect : RoundedRectangle,
+  permit_containment : Bool,
+) -> Array[CurvePoint] {
+  let chord = self.chord_length()
+  let angle = self.display_angle()
+  match self.options.shape {
+    EdgeShape::Bezier =>
+      Bezier::new(Point::zero(), chord, self.bezier_height_pixels(), angle)
+      .intersections_with_rounded_rectangle(rect, permit_containment)
+    EdgeShape::Arc => {
+      let loop_radius = self.loop_radius_pixels()
+      if self.source_origin.eq(self.target_origin) {
+        Arc::new(Point::zero(), chord, true, loop_radius, angle)
+        .intersections_with_rounded_rectangle(rect, permit_containment)
+      } else {
+        self.arc_for_chord_at_angle(chord, loop_radius, angle)
+        .intersections_with_rounded_rectangle(rect, permit_containment)
+      }
+    }
   }
 }
 

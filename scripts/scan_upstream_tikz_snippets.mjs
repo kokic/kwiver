@@ -7,7 +7,7 @@ import {
   kwiver_bridge_status,
   kwiver_bridge_test_reset,
   kwiver_bridge_test_set_autoload,
-} from "../browser_ui_upstream/kwiver_bridge.mjs";
+} from "../browser_ui/kwiver_bridge.mjs";
 
 const UPSTREAM_ROOT = path.resolve("../quiver");
 const TEXT_EXTENSIONS = new Set([".tex", ".md", ".markdown", ".txt", ".js", ".mjs"]);

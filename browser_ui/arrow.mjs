@@ -1,7 +1,10 @@
 import { Arc, Bezier, Curve, CurvePoint, EPSILON, RoundedRectangle } from "./curve.mjs";
 import { DOM } from "./dom.mjs";
 import { Dimensions, Enum, Path, Point, rad_to_deg, clamp } from "./ds.mjs";
-import { kwiver_bridge_arrow_find_endpoints_local } from "./kwiver_bridge.mjs";
+import {
+    kwiver_bridge_arrow_find_endpoints_local,
+    kwiver_bridge_arrow_label_position_local,
+} from "./kwiver_bridge.mjs";
 
 /// `Array.prototype.includes` but for multiple needles.
 function includes_any(array, ...values) {
@@ -1473,6 +1476,42 @@ export class Arrow {
     /// such that the label no longer overlaps the edge.
     determine_label_position(constants) {
         const { edge_width, start, end } = constants;
+        const geometry_options = this.kwiver_geometry_options;
+
+        if (geometry_options !== null) {
+            const origin = this.origin();
+            const bridged = kwiver_bridge_arrow_label_position_local(
+                origin.source.x,
+                origin.source.y,
+                origin.target.x,
+                origin.target.y,
+                this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
+                this.source.origin.x,
+                this.source.origin.y,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
+                this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
+                this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
+                this.target.origin.x,
+                this.target.origin.y,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
+                this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+                geometry_options.shape === "arc",
+                geometry_options.curve,
+                geometry_options.radius,
+                geometry_options.angle,
+                geometry_options.offset,
+                geometry_options.label_alignment,
+                geometry_options.label_position,
+                this.label.size.width,
+                this.label.size.height,
+                edge_width,
+            );
+            if (bridged !== null) {
+                return new Point(bridged.x, bridged.y);
+            }
+        }
 
         const curve = this.curve(Point.zero());
         const centre = curve.point(start.t + (end.t - start.t) * this.style.label_position);

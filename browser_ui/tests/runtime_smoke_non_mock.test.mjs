@@ -47,7 +47,7 @@ async function testRuntimeLoadsWithoutMock(bridge) {
   assert.equal(typeof status.command_protocol, "string");
   assert.notEqual(status.command_protocol, "");
   assert.equal(typeof status.loaded_candidate, "string");
-  assert.match(status.loaded_candidate, /browser_demo\.js$/);
+  assert.match(status.loaded_candidate, /runtime\.js$/);
 }
 
 function testMutationExportImportRoundtrip(bridge) {

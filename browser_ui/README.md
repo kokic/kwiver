@@ -6,11 +6,11 @@ Current migration status: the bridge is not finished. Some graph semantics still
 
 ## What Is Patched
 
-- `quiver.mjs` routes `tikz-cd` / `fletcher` / `html` export through kwiver (`browser_demo` runtime).
+- `quiver.mjs` routes `tikz-cd` / `fletcher` / `html` export through kwiver (`runtime` runtime).
 - `quiver.mjs` routes `tikz-cd` import through kwiver (`import_text_auto_json` in runtime).
 - `kwiver_bridge.mjs` is the bridge module that talks to MoonBit build output.
-- command protocol is sourced from runtime via `ffi_browser_demo_command_protocol()`.
-- bridge calls use `ffi_browser_demo_session_dispatch_command_json` as the command entrypoint.
+- command protocol is sourced from runtime via `ffi_runtime_command_protocol()`.
+- bridge calls use `ffi_runtime_session_dispatch_command_json` as the command entrypoint.
 
 Do not treat the current JS graph ownership as final architecture. New work should reduce JS graph-state responsibility, not expand it.
 
@@ -30,5 +30,5 @@ node scripts/local_regression.mjs --smoke-only
 
 Parser corpus fixture expectations are declared in `tests/parser_corpus_manifest.json` and shared with engine tests via the sync script.
 
-The smoke suite verifies protocol enforcement, startup fail-fast formatting, command routing for interaction/export entrypoints, non-mock runtime command dispatch against built browser_demo artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.
+The smoke suite verifies protocol enforcement, startup fail-fast formatting, command routing for interaction/export entrypoints, non-mock runtime command dispatch against built runtime artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.
 These checks do not mean the browser graph migration is complete; they only guard the current bridge/runtime boundary while JS graph ownership is still being removed.

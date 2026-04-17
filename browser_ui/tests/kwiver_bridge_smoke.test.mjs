@@ -6,6 +6,7 @@ import {
   kwiver_bridge_add_vertex_json,
   kwiver_bridge_all_cells,
   kwiver_bridge_arrow_find_endpoints_local,
+  kwiver_bridge_arrow_label_position_local,
   kwiver_bridge_arc_intersections_with_rounded_rectangle,
   kwiver_bridge_arc_angle_in_arc,
   kwiver_bridge_arc_arc_length,
@@ -60,13 +61,13 @@ const COMMAND_PROTOCOL = "kwiver.command.v1";
 
 function mockApiFromResponder(responder) {
   return {
-    ffi_browser_demo_session_new() {
+    ffi_runtime_session_new() {
       return { session: "mock" };
     },
-    ffi_browser_demo_command_protocol() {
+    ffi_runtime_command_protocol() {
       return COMMAND_PROTOCOL;
     },
-    ffi_browser_demo_session_dispatch_command_json(_session, rawCommand) {
+    ffi_runtime_session_dispatch_command_json(_session, rawCommand) {
       const parsedCommand = JSON.parse(rawCommand);
       return JSON.stringify(responder(parsedCommand));
     },
@@ -147,12 +148,12 @@ function testDispatchCarriesProtocolAndCommandId() {
 
 function testBridgeUnavailableErrorFormatting() {
   const message = kwiver_bridge_unavailable_error({
-    loaded_candidate: "http://localhost:8080/_build/js/debug/build/browser_demo/browser_demo.js",
+    loaded_candidate: "http://localhost:8080/_build/js/debug/build/runtime/runtime.js",
     load_errors: ["mock-load-error"],
   });
   assert.equal(
     message,
-    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=http://localhost:8080/_build/js/debug/build/browser_demo/browser_demo.js, error=mock-load-error)",
+    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=http://localhost:8080/_build/js/debug/build/runtime/runtime.js, error=mock-load-error)",
   );
   assert.equal(
     KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
@@ -660,63 +661,66 @@ function testPureGeometryWrappersUseBridgeExports() {
       protocol: COMMAND_PROTOCOL,
       result: {},
     })),
-    ffi_browser_demo_bezier_point(originX, originY, w, h, _angle, t) {
+    ffi_runtime_bezier_point(originX, originY, w, h, _angle, t) {
       return { x: originX + w * t, y: originY + h * t };
     },
-    ffi_browser_demo_bezier_tangent() {
+    ffi_runtime_bezier_tangent() {
       return 1.25;
     },
-    ffi_browser_demo_bezier_arc_length(_originX, _originY, w, _h, _angle, t) {
+    ffi_runtime_bezier_arc_length(_originX, _originY, w, _h, _angle, t) {
       return w * t;
     },
-    ffi_browser_demo_bezier_t_after_length(_originX, _originY, w, _h, _angle, length) {
+    ffi_runtime_bezier_t_after_length(_originX, _originY, w, _h, _angle, length) {
       return length / w;
     },
-    ffi_browser_demo_bezier_height(_originX, _originY, _w, h) {
+    ffi_runtime_bezier_height(_originX, _originY, _w, h) {
       return h / 2;
     },
-    ffi_browser_demo_bezier_width(_originX, _originY, w) {
+    ffi_runtime_bezier_width(_originX, _originY, w) {
       return w;
     },
-    ffi_browser_demo_bezier_intersections_with_rounded_rectangle() {
+    ffi_runtime_bezier_intersections_with_rounded_rectangle() {
       return [
         { x: 1, y: 2, t: 0.25, angle: 0.5 },
         { x: 3, y: 4, t: 0.75, angle: 1.5 },
       ];
     },
-    ffi_browser_demo_arc_point(originX, originY, chord, _major, _radius, _angle, t) {
+    ffi_runtime_arc_point(originX, originY, chord, _major, _radius, _angle, t) {
       return { x: originX + chord * t, y: originY + t };
     },
-    ffi_browser_demo_arc_tangent() {
+    ffi_runtime_arc_tangent() {
       return 2.5;
     },
-    ffi_browser_demo_arc_arc_length(_originX, _originY, chord, _major, _radius, _angle, t) {
+    ffi_runtime_arc_arc_length(_originX, _originY, chord, _major, _radius, _angle, t) {
       return chord * t;
     },
-    ffi_browser_demo_arc_t_after_length(_originX, _originY, chord, _major, _radius, _angle, length) {
+    ffi_runtime_arc_t_after_length(_originX, _originY, chord, _major, _radius, _angle, length) {
       return length / chord;
     },
-    ffi_browser_demo_arc_height() {
+    ffi_runtime_arc_height() {
       return 8;
     },
-    ffi_browser_demo_arc_width() {
+    ffi_runtime_arc_width() {
       return 13;
     },
-    ffi_browser_demo_arc_angle_in_arc(_originX, _originY, _chord, _major, _radius, _angle, targetAngle) {
+    ffi_runtime_arc_angle_in_arc(_originX, _originY, _chord, _major, _radius, _angle, targetAngle) {
       return targetAngle < Math.PI;
     },
-    ffi_browser_demo_arc_intersections_with_rounded_rectangle() {
+    ffi_runtime_arc_intersections_with_rounded_rectangle() {
       return [
         { x: 6, y: 7, t: 0.1, angle: 0.2 },
         { x: 8, y: 9, t: 0.9, angle: 0.4 },
       ];
     },
-    ffi_browser_demo_arrow_find_endpoints_local() {
+    ffi_runtime_arrow_find_endpoints_local() {
       return {
         ok: true,
         start: { x: 10, y: 11, t: 0.2, angle: 0.3 },
         end: { x: 20, y: 21, t: 0.8, angle: 0.9 },
       };
+    },
+    ffi_runtime_arrow_label_position_local() {
+      return { x: 14, y: -6 };
     },
   });
   assert.equal(installed, true);
@@ -776,6 +780,17 @@ function testPureGeometryWrappersUseBridgeExports() {
       start: { x: 10, y: 11, t: 0.2, angle: 0.3 },
       end: { x: 20, y: 21, t: 0.8, angle: 0.9 },
     },
+  );
+  assert.deepEqual(
+    kwiver_bridge_arrow_label_position_local(
+      1, 2, 3, 4,
+      false, 5, 6, 20, 10, 4,
+      true, 7, 8, 0, 0, 0,
+      false, 1, 3, 15, -2,
+      "left", 60,
+      22, 12, 3,
+    ),
+    { x: 14, y: -6 },
   );
 }
 

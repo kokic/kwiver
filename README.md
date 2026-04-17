@@ -14,13 +14,13 @@ We gratefully acknowledge the original design, file format, and user experience 
 ## JS FFI Boundary
 
 The browser/runtime integration surface is documented in `docs/js-ffi-boundary.md` and implemented in `engine/quiver_ui_ffi.mbt`.
-`browser_demo/` provides the runtime session layer consumed by the browser bridge.
+`runtime/` provides the runtime session layer consumed by the browser bridge.
 The current handwritten `tikz-cd` import compatibility matrix is documented in `docs/tikz-cd-parser-support.md`.
 
-## Browser UI (`browser_ui_upstream`)
+## Browser UI (`browser_ui`)
 
-The product UI is `browser_ui_upstream/`, backed by MoonBit runtime/state APIs from the `browser_demo` package build output.
-Runtime command dispatch uses the stable command-envelope contract (`ffi_browser_demo_session_dispatch_command_json`) through the JS bridge layer.
+The product UI is `browser_ui/`, backed by MoonBit runtime/state APIs from the `runtime` package build output.
+Runtime command dispatch uses the stable command-envelope contract (`ffi_runtime_session_dispatch_command_json`) through the JS bridge layer.
 
 Current migration priority:
 
@@ -33,16 +33,16 @@ moon build --release
 miniserve ./
 ```
 
-Open `http://localhost:8080/browser_ui_upstream`.
+Open `http://localhost:8080/browser_ui`.
 
 Runtime bootstrap expects MoonBit browser demo artifacts to be reachable from the server root:
 
-- release candidate: `_build/js/release/build/browser_demo/browser_demo.js`
-- debug candidate: `_build/js/debug/build/browser_demo/browser_demo.js`
+- release candidate: `_build/js/release/build/runtime/runtime.js`
+- debug candidate: `_build/js/debug/build/runtime/runtime.js`
 
 Runbook notes:
 
-- serve from the `kwiver/` repository root (the same directory that contains `_build/` and `browser_ui_upstream/`)
+- serve from the `kwiver/` repository root (the same directory that contains `_build/` and `browser_ui/`)
 - if startup shows `Kwiver runtime unavailable`, verify the two candidate paths above exist under the served root
 - if needed, rebuild artifacts first (`moon build` for debug or `moon build --release` for release)
 
@@ -60,7 +60,7 @@ Run smoke-only checks (skip `moon test -v`):
 node scripts/local_regression.mjs --smoke-only
 ```
 
-A targeted manual browser checklist for `browser_ui_upstream` is documented in `docs/browser-ui-manual-checklist.md`.
+A targeted manual browser checklist for `browser_ui` is documented in `docs/browser-ui-manual-checklist.md`.
 Run it after reconnect/import/export/persistence changes, once lightweight regression checks are green.
 
 ## Tokei

@@ -20,4 +20,7 @@ type Bezier = @engine.Bezier
 type Arc = @engine.Arc
 
 ///|
+type RoundedRectangle = @engine.RoundedRectangle
+
+///|
 const EPSILON : Double = @engine.EPSILON

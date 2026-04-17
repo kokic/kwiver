@@ -1,8 +1,8 @@
 const MODULE_CANDIDATE_PATHS = [
-  "../_build/js/release/build/browser_demo/browser_demo.js",
-  "../_build/js/debug/build/browser_demo/browser_demo.js",
-  "./_build/js/release/build/browser_demo/browser_demo.js",
-  "./_build/js/debug/build/browser_demo/browser_demo.js",
+  "../_build/js/release/build/runtime/runtime.js",
+  "../_build/js/debug/build/runtime/runtime.js",
+  "./_build/js/release/build/runtime/runtime.js",
+  "./_build/js/debug/build/runtime/runtime.js",
 ];
 
 function addModuleCandidate(target, candidate) {
@@ -29,14 +29,14 @@ function moduleCandidates() {
 
     if (origin !== "" && origin !== "null") {
       const rootSuffixes = [
-        "/_build/js/release/build/browser_demo/browser_demo.js",
-        "/_build/js/debug/build/browser_demo/browser_demo.js",
+        "/_build/js/release/build/runtime/runtime.js",
+        "/_build/js/debug/build/runtime/runtime.js",
       ];
       for (const suffix of rootSuffixes) {
         addModuleCandidate(candidates, origin + suffix);
       }
 
-      const marker = "/browser_ui_upstream/";
+      const marker = "/browser_ui/";
       const markerIndex = pathname.indexOf(marker);
       if (markerIndex >= 0) {
         const prefix = pathname.slice(0, markerIndex);
@@ -74,11 +74,11 @@ function nextCommandId(origin = "ui.bridge") {
 }
 
 function commandProtocolFromApi(api) {
-  if (!api || typeof api.ffi_browser_demo_command_protocol !== "function") {
+  if (!api || typeof api.ffi_runtime_command_protocol !== "function") {
     return null;
   }
   try {
-    const protocol = api.ffi_browser_demo_command_protocol();
+    const protocol = api.ffi_runtime_command_protocol();
     return typeof protocol === "string" && protocol !== "" ? protocol : null;
   } catch (_e) {
     return null;
@@ -111,18 +111,18 @@ async function loadBridgeApi() {
   for (const candidate of candidates) {
     try {
       const mod = await import(candidate);
-      const hasSession = mod && typeof mod.ffi_browser_demo_session_new === "function";
-      const hasProtocol = mod && typeof mod.ffi_browser_demo_command_protocol === "function";
+      const hasSession = mod && typeof mod.ffi_runtime_session_new === "function";
+      const hasProtocol = mod && typeof mod.ffi_runtime_command_protocol === "function";
       if (hasSession && hasProtocol) {
         return { api: mod, candidate, loadErrors };
       }
 
       const missing = [];
       if (!hasSession) {
-        missing.push("ffi_browser_demo_session_new");
+        missing.push("ffi_runtime_session_new");
       }
       if (!hasProtocol) {
-        missing.push("ffi_browser_demo_command_protocol");
+        missing.push("ffi_runtime_command_protocol");
       }
       loadErrors.push(candidate + " (missing " + missing.join(", ") + ")");
     } catch (e) {
@@ -155,15 +155,15 @@ function ensureBridgeLoading() {
       BRIDGE.loadErrors = loaded && Array.isArray(loaded.loadErrors)
         ? loaded.loadErrors
         : [];
-      if (api && typeof api.ffi_browser_demo_session_new === "function") {
+      if (api && typeof api.ffi_runtime_session_new === "function") {
         const protocol = commandProtocolFromApi(api);
         if (typeof protocol === "string" && protocol !== "") {
           BRIDGE.api = api;
-          BRIDGE.session = api.ffi_browser_demo_session_new();
+          BRIDGE.session = api.ffi_runtime_session_new();
           BRIDGE.commandProtocol = protocol;
         } else {
           const candidate = BRIDGE.loadedCandidate ?? "unknown";
-          BRIDGE.loadErrors.push(candidate + " (invalid ffi_browser_demo_command_protocol)");
+          BRIDGE.loadErrors.push(candidate + " (invalid ffi_runtime_command_protocol)");
         }
       }
     })
@@ -236,9 +236,9 @@ export function kwiver_bridge_test_install_mock_api(api) {
     return false;
   }
   if (
-    typeof api.ffi_browser_demo_session_new !== "function"
-    || typeof api.ffi_browser_demo_command_protocol !== "function"
-    || typeof api.ffi_browser_demo_session_dispatch_command_json !== "function"
+    typeof api.ffi_runtime_session_new !== "function"
+    || typeof api.ffi_runtime_command_protocol !== "function"
+    || typeof api.ffi_runtime_session_dispatch_command_json !== "function"
   ) {
     return false;
   }
@@ -247,7 +247,7 @@ export function kwiver_bridge_test_install_mock_api(api) {
     return false;
   }
   BRIDGE.api = api;
-  BRIDGE.session = api.ffi_browser_demo_session_new();
+  BRIDGE.session = api.ffi_runtime_session_new();
   BRIDGE.commandProtocol = protocol;
   return true;
 }
@@ -613,7 +613,7 @@ function dispatchCommandEnvelope(command) {
   }
   try {
     const normalized = normalizeCommand(command);
-    const raw = BRIDGE.api.ffi_browser_demo_session_dispatch_command_json(
+    const raw = BRIDGE.api.ffi_runtime_session_dispatch_command_json(
       BRIDGE.session,
       JSON.stringify(normalized),
     );
@@ -784,32 +784,32 @@ export function kwiver_bridge_reset(origin = "ui.bridge.reset") {
 
 export function kwiver_bridge_bezier_point(originX, originY, w, h, angle, t) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePurePoint("ffi_browser_demo_bezier_point", args);
+  return args === null ? null : bridgePurePoint("ffi_runtime_bezier_point", args);
 }
 
 export function kwiver_bridge_bezier_tangent(originX, originY, w, h, angle, t) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_tangent", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_tangent", args);
 }
 
 export function kwiver_bridge_bezier_arc_length(originX, originY, w, h, angle, t) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_arc_length", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_arc_length", args);
 }
 
 export function kwiver_bridge_bezier_t_after_length(originX, originY, w, h, angle, length) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle, [length]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_t_after_length", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_t_after_length", args);
 }
 
 export function kwiver_bridge_bezier_height(originX, originY, w, h, angle) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_height", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_height", args);
 }
 
 export function kwiver_bridge_bezier_width(originX, originY, w, h, angle) {
   const args = bezierGeometryArgs(originX, originY, w, h, angle);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_bezier_width", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_width", args);
 }
 
 export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
@@ -832,7 +832,7 @@ export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
   }
   return bridgeCurvePoints(
     bridgePureFunction(
-      "ffi_browser_demo_bezier_intersections_with_rounded_rectangle",
+      "ffi_runtime_bezier_intersections_with_rounded_rectangle",
       [...curveArgs, ...rectArgs, Boolean(permitContainment)],
     ),
   );
@@ -840,17 +840,17 @@ export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
 
 export function kwiver_bridge_arc_point(originX, originY, chord, major, radius, angle, t) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePurePoint("ffi_browser_demo_arc_point", args);
+  return args === null ? null : bridgePurePoint("ffi_runtime_arc_point", args);
 }
 
 export function kwiver_bridge_arc_tangent(originX, originY, chord, major, radius, angle, t) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_tangent", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_arc_tangent", args);
 }
 
 export function kwiver_bridge_arc_arc_length(originX, originY, chord, major, radius, angle, t) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_arc_length", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_arc_arc_length", args);
 }
 
 export function kwiver_bridge_arc_t_after_length(
@@ -863,17 +863,17 @@ export function kwiver_bridge_arc_t_after_length(
   length,
 ) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [length]);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_t_after_length", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_arc_t_after_length", args);
 }
 
 export function kwiver_bridge_arc_height(originX, originY, chord, major, radius, angle) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_height", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_arc_height", args);
 }
 
 export function kwiver_bridge_arc_width(originX, originY, chord, major, radius, angle) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
-  return args === null ? null : bridgePureNumber("ffi_browser_demo_arc_width", args);
+  return args === null ? null : bridgePureNumber("ffi_runtime_arc_width", args);
 }
 
 export function kwiver_bridge_arc_angle_in_arc(
@@ -886,7 +886,7 @@ export function kwiver_bridge_arc_angle_in_arc(
   targetAngle,
 ) {
   const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [targetAngle]);
-  return args === null ? null : bridgePureBoolean("ffi_browser_demo_arc_angle_in_arc", args);
+  return args === null ? null : bridgePureBoolean("ffi_runtime_arc_angle_in_arc", args);
 }
 
 export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
@@ -910,7 +910,7 @@ export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
   }
   return bridgeCurvePoints(
     bridgePureFunction(
-      "ffi_browser_demo_arc_intersections_with_rounded_rectangle",
+      "ffi_runtime_arc_intersections_with_rounded_rectangle",
       [...curveArgs, ...rectArgs, Boolean(permitContainment)],
     ),
   );
@@ -986,8 +986,94 @@ export function kwiver_bridge_arrow_find_endpoints_local(
     Math.round(renderArgs[17]),
   ];
   return bridgeArrowEndpoints(
-    bridgePureFunction("ffi_browser_demo_arrow_find_endpoints_local", args),
+    bridgePureFunction("ffi_runtime_arrow_find_endpoints_local", args),
   );
+}
+
+export function kwiver_bridge_arrow_label_position_local(
+  renderSourceX,
+  renderSourceY,
+  renderTargetX,
+  renderTargetY,
+  sourceIsEndpoint,
+  sourceOriginX,
+  sourceOriginY,
+  sourceWidth,
+  sourceHeight,
+  sourceRadius,
+  targetIsEndpoint,
+  targetOriginX,
+  targetOriginY,
+  targetWidth,
+  targetHeight,
+  targetRadius,
+  shapeIsArc,
+  curve,
+  radius,
+  angle,
+  offset,
+  labelAlignment,
+  labelPosition,
+  labelWidth,
+  labelHeight,
+  edgeWidth,
+) {
+  const renderArgs = finiteNumberArray([
+    renderSourceX,
+    renderSourceY,
+    renderTargetX,
+    renderTargetY,
+    sourceOriginX,
+    sourceOriginY,
+    sourceWidth,
+    sourceHeight,
+    sourceRadius,
+    targetOriginX,
+    targetOriginY,
+    targetWidth,
+    targetHeight,
+    targetRadius,
+    curve,
+    radius,
+    angle,
+    offset,
+    labelPosition,
+    labelWidth,
+    labelHeight,
+    edgeWidth,
+  ]);
+  if (renderArgs === null) {
+    return null;
+  }
+  const args = [
+    renderArgs[0],
+    renderArgs[1],
+    renderArgs[2],
+    renderArgs[3],
+    Boolean(sourceIsEndpoint),
+    renderArgs[4],
+    renderArgs[5],
+    renderArgs[6],
+    renderArgs[7],
+    renderArgs[8],
+    Boolean(targetIsEndpoint),
+    renderArgs[9],
+    renderArgs[10],
+    renderArgs[11],
+    renderArgs[12],
+    renderArgs[13],
+    Boolean(shapeIsArc),
+    Math.round(renderArgs[14]),
+    Math.round(renderArgs[15]),
+    Math.round(renderArgs[16]),
+    Math.round(renderArgs[17]),
+    typeof labelAlignment === "string" ? labelAlignment : "left",
+    Math.round(renderArgs[18]),
+    renderArgs[19],
+    renderArgs[20],
+    renderArgs[21],
+  ];
+  return bridgePurePoint("ffi_runtime_arrow_label_position_local", args);
 }
 
 export function kwiver_bridge_import_tikz_result(input, settings) {
