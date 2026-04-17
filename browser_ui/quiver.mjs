@@ -1,6 +1,6 @@
 import { delay } from "./dom.mjs";
+import { DiagnosticError, DiagnosticRange } from "./diagnostics.mjs";
 import { Point } from "./ds.mjs";
-import { Parser } from "./parser.mjs";
 import {
     kwiver_bridge_all_cells,
     kwiver_bridge_export,
@@ -51,7 +51,7 @@ function tikzImportRangeFromLineColumn(text, line, column) {
     const lineEnd = index;
     const zeroBasedColumn = column - 1;
     const caret = Math.max(lineStart, Math.min(lineStart + zeroBasedColumn, lineEnd));
-    return new Parser.Range(caret, 0);
+    return new DiagnosticRange(caret, 0);
 }
 
 /// Bridge-facing import/export shell.
@@ -129,7 +129,7 @@ export class Quiver {
                     message += ` (line ${hasLine ? line : 0}, column ${hasColumn ? column : 0})`;
                 }
 
-                const diagnostic = new Parser.Error(message, range);
+                const diagnostic = new DiagnosticError(message, range);
                 diagnostic.kwiver_kind = errorKind !== "" ? errorKind : "tikz";
                 diagnostic.kwiver_source = "bridge_import";
                 diagnostic.kwiver_line = hasLine ? line : null;
@@ -149,7 +149,7 @@ export class QuiverExport {
 }
 
 QuiverExport.CONSTANTS = {
-    // The parser still reuses these heuristics when recovering curve heights from tikz-cd.
+    // The import pipeline still reuses these heuristics when recovering curve heights from tikz-cd.
     TIKZ_HORIZONTAL_MULTIPLIER: 1 / 4,
     TIKZ_VERTICAL_MULTIPLIER: 1 / 6,
 };

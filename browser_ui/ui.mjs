@@ -1,9 +1,15 @@
 import { Arrow, ArrowStyle, CONSTANTS, Label, Shape } from "./arrow.mjs";
 import { CubicBezier } from "./curve.mjs";
+import {
+    isDiagnosticError,
+    isDiagnosticWarning,
+} from "./diagnostics.mjs";
 import { cancel, DOM, delay, pointer_event } from "./dom.mjs";
 import { Colour, Dimensions, Enum, Offset, Point, Position, clamp, deg_to_rad, mod, rad_to_deg, url_parameters } from "./ds.mjs";
-import { Parser } from "./parser.mjs";
 import { Quiver, QuiverImportExport } from "./quiver.mjs";
+import { ConnectPreview } from "./ui_connect_preview.mjs";
+import { Settings } from "./ui_settings.mjs";
+import { ViewRegistry } from "./ui_view_registry.mjs";
 import {
     KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
     kwiver_bridge_unavailable_error,
@@ -793,341 +799,6 @@ UIMode.Embedded = class extends UIMode {
         super();
 
         this.name = "embedded";
-    }
-}
-
-class ViewRegistry {
-    constructor() {
-        this.cells = [];
-        this.levels_by_cell = new Map();
-    }
-
-    ensure_level(level) {
-        while (this.cells.length <= level) {
-            this.cells.push(new Set());
-        }
-        return this.cells[level];
-    }
-
-    level_of(cell) {
-        const level = Number(this.levels_by_cell.get(cell));
-        return Number.isInteger(level) ? level : null;
-    }
-
-    projection_level_of(cell) {
-        const level = Number(cell?.kwiver_projection_level?.());
-        return Number.isInteger(level) ? level : null;
-    }
-
-    add(cell, level = null) {
-        const resolved_level = Number.isInteger(level) ? level : this.projection_level_of(cell);
-        if (!Number.isInteger(resolved_level)) {
-            return;
-        }
-        this.ensure_level(resolved_level).add(cell);
-        this.levels_by_cell.set(cell, resolved_level);
-    }
-
-    contains_cell(cell) {
-        const level = this.level_of(cell);
-        return level !== null && this.cells[level]?.has(cell) === true;
-    }
-
-    all_cells() {
-        const cells = [];
-        for (const level of this.cells) {
-            if (!(level instanceof Set)) {
-                continue;
-            }
-            for (const cell of level) {
-                cells.push(cell);
-            }
-        }
-        return cells;
-    }
-
-    remove(cell) {
-        const level = this.level_of(cell);
-        if (level === null) {
-            return;
-        }
-        this.cells[level]?.delete(cell);
-        this.levels_by_cell.delete(cell);
-    }
-
-    update_level(cell, level) {
-        if (!Number.isInteger(level)) {
-            return;
-        }
-        this.ensure_level(level);
-        const current_level = this.level_of(cell);
-        if (current_level !== null) {
-            this.cells[current_level]?.delete(cell);
-        }
-        this.levels_by_cell.set(cell, level);
-        this.cells[level].add(cell);
-    }
-}
-
-class ConnectPreview {
-    constructor(ui) {
-        this.ui = ui;
-        this.edges_by_endpoint = new Map();
-        this.preview_reconnect = null;
-    }
-
-    runtime_cells_by_id() {
-        return this.ui?.kwiver_runtime_cells_by_id?.() ?? null;
-    }
-
-    committed_endpoint_of(edge, end, runtime_by_id = null) {
-        if (!edge?.is_edge?.() || (end !== "source" && end !== "target")) {
-            return null;
-        }
-        return this.ui?.kwiver_runtime_edge_endpoint_cell?.(edge, end, runtime_by_id) ?? null;
-    }
-
-    committed_level_of(cell, runtime_by_id = null) {
-        if (cell?.is_vertex?.() || cell?.is_edge?.()) {
-            const runtime_level = this.ui?.kwiver_runtime_cell_level?.(cell, runtime_by_id);
-            return Number.isInteger(runtime_level) ? runtime_level : null;
-        }
-        const level = Number(cell?.kwiver_projection_level?.());
-        return Number.isInteger(level) ? level : null;
-    }
-
-    committed_edge_options(edge, runtime_by_id = null) {
-        if (!edge?.is_edge?.()) {
-            return null;
-        }
-        return this.ui?.kwiver_runtime_edge_options?.(edge, runtime_by_id) ?? null;
-    }
-
-    committed_edge_is_loop(edge, runtime_by_id = null) {
-        if (!edge?.is_edge?.()) {
-            return false;
-        }
-        const runtime_is_loop = this.ui?.kwiver_runtime_edge_is_loop?.(edge, runtime_by_id);
-        return typeof runtime_is_loop === "boolean" ? runtime_is_loop : null;
-    }
-
-    register_edge_at_endpoints(
-        edge,
-        source = edge?.kwiver_projection_source?.(),
-        target = edge?.kwiver_projection_target?.(),
-    ) {
-        if (!edge?.is_edge?.() || !source || !target) {
-            return;
-        }
-        this.endpoint_edges(source).add(edge);
-        this.endpoint_edges(target).add(edge);
-    }
-
-    unregister_edge_at_endpoints(
-        edge,
-        source = edge?.kwiver_projection_source?.(),
-        target = edge?.kwiver_projection_target?.(),
-    ) {
-        if (!edge?.is_edge?.()) {
-            return;
-        }
-        for (const endpoint of [source, target]) {
-            const edges = this.edges_by_endpoint.get(endpoint);
-            if (!(edges instanceof Set)) {
-                continue;
-            }
-            edges.delete(edge);
-            if (edges.size === 0) {
-                this.edges_by_endpoint.delete(endpoint);
-            }
-        }
-    }
-
-    apply_committed_endpoints(edge, source, target, registered = true) {
-        if (registered) {
-            this.unregister_edge_at_endpoints(
-                edge,
-                edge?.kwiver_projection_source?.(),
-                edge?.kwiver_projection_target?.(),
-            );
-        }
-        edge.kwiver_set_projection_endpoints(source, target);
-        if (registered) {
-            this.register_edge_at_endpoints(edge, source, target);
-        }
-    }
-
-    preview_reconnect_of(edge) {
-        return this.preview_reconnect?.edge === edge ? this.preview_reconnect : null;
-    }
-
-    source_of(edge, runtime_by_id = null) {
-        const preview_source = this.preview_reconnect_of(edge)?.source;
-        if (preview_source !== null && preview_source !== undefined) {
-            return preview_source;
-        }
-        const source = this.committed_endpoint_of(edge, "source", runtime_by_id);
-        if (source === null && edge?.is_edge?.()) {
-            throw new Error("[kwiver-only] ui.connect_preview.source: runtime endpoint snapshot invalid");
-        }
-        return source;
-    }
-
-    target_of(edge, runtime_by_id = null) {
-        const preview_target = this.preview_reconnect_of(edge)?.target;
-        if (preview_target !== null && preview_target !== undefined) {
-            return preview_target;
-        }
-        const target = this.committed_endpoint_of(edge, "target", runtime_by_id);
-        if (target === null && edge?.is_edge?.()) {
-            throw new Error("[kwiver-only] ui.connect_preview.target: runtime endpoint snapshot invalid");
-        }
-        return target;
-    }
-
-    level_of(cell, runtime_by_id = null) {
-        const preview_level = this.preview_reconnect?.levels.get(cell);
-        if (Number.isInteger(preview_level)) {
-            return preview_level;
-        }
-        const committed_level = this.committed_level_of(cell, runtime_by_id);
-        if (Number.isInteger(committed_level)) {
-            return committed_level;
-        }
-        throw new Error("[kwiver-only] ui.connect_preview.level: runtime cell snapshot invalid");
-    }
-
-    shape_of(edge, runtime_by_id = null) {
-        const preview = this.preview_reconnect_of(edge);
-        const committed_options = this.committed_edge_options(edge, runtime_by_id);
-        if (committed_options === null) {
-            throw new Error("[kwiver-only] ui.connect_preview.shape: runtime edge snapshot invalid");
-        }
-        if (preview === null || preview === undefined) {
-            return committed_options.shape;
-        }
-
-        const committed_loop = this.committed_edge_is_loop(edge, runtime_by_id);
-        if (typeof committed_loop !== "boolean") {
-            throw new Error("[kwiver-only] ui.connect_preview.shape: runtime edge snapshot invalid");
-        }
-        const preview_loop = preview.source === preview.target;
-        return committed_loop && preview_loop ? "arc" : "bezier";
-    }
-
-    options_of(edge, runtime_by_id = null) {
-        const preview = this.preview_reconnect_of(edge);
-        const committed_options = this.committed_edge_options(edge, runtime_by_id);
-        if (committed_options === null) {
-            throw new Error("[kwiver-only] ui.connect_preview.options: runtime edge snapshot invalid");
-        }
-        if (preview === null || preview === undefined) {
-            return committed_options;
-        }
-
-        return {
-            ...committed_options,
-            level: this.level_of(edge, runtime_by_id),
-            shape: this.shape_of(edge, runtime_by_id),
-        };
-    }
-
-    endpoint_edges(cell) {
-        if (!this.edges_by_endpoint.has(cell)) {
-            this.edges_by_endpoint.set(cell, new Set());
-        }
-        return this.edges_by_endpoint.get(cell);
-    }
-
-    register_cell(cell) {
-        if (!cell?.is_edge?.()) {
-            return;
-        }
-        this.register_edge_at_endpoints(
-            cell,
-            cell?.kwiver_projection_source?.(),
-            cell?.kwiver_projection_target?.(),
-        );
-    }
-
-    unregister_cell(cell) {
-        this.unregister_edge_at_endpoints(
-            cell,
-            cell?.kwiver_projection_source?.(),
-            cell?.kwiver_projection_target?.(),
-        );
-    }
-
-    dependencies_of(cell, runtime_by_id = null) {
-        const dependencies = new Map();
-        for (const candidate of this.edges_by_endpoint.get(cell) || []) {
-            if (this.source_of(candidate, runtime_by_id) === cell) {
-                dependencies.set(candidate, "source");
-            }
-            if (this.target_of(candidate, runtime_by_id) === cell) {
-                dependencies.set(candidate, "target");
-            }
-        }
-        const preview_edge = this.preview_reconnect?.edge;
-        if (preview_edge !== null && preview_edge !== undefined) {
-            if (this.source_of(preview_edge, runtime_by_id) === cell) {
-                dependencies.set(preview_edge, "source");
-            }
-            if (this.target_of(preview_edge, runtime_by_id) === cell) {
-                dependencies.set(preview_edge, "target");
-            }
-        }
-        return dependencies;
-    }
-
-    transitive_dependencies(cells, exclude_roots = false, runtime_by_id = null) {
-        let closure = new Set(cells);
-        for (const cell of closure) {
-            this.dependencies_of(cell, runtime_by_id).forEach((_, dependency) => closure.add(dependency));
-        }
-        if (exclude_roots) {
-            for (const cell of cells) {
-                closure.delete(cell);
-            }
-        }
-        closure = Array.from(closure);
-        closure.sort((a, b) => this.level_of(a, runtime_by_id) - this.level_of(b, runtime_by_id));
-        return new Set(closure);
-    }
-
-    update_edge_levels(edge, apply_level = null, levels = new Map(), runtime_by_id = null) {
-        for (const cell of this.transitive_dependencies([edge], false, runtime_by_id)) {
-            if (!cell.is_edge()) {
-                continue;
-            }
-            const level = Math.max(
-                this.level_of(this.source_of(cell, runtime_by_id), runtime_by_id),
-                this.level_of(this.target_of(cell, runtime_by_id), runtime_by_id),
-            ) + 1;
-            levels.set(cell, level);
-            if (apply_level !== null) {
-                apply_level(cell, level);
-            }
-        }
-        return levels;
-    }
-
-    with_temporary_reconnect(edge, source, target, callback) {
-        const previous_preview = this.preview_reconnect;
-        const runtime_by_id = this.runtime_cells_by_id();
-        this.preview_reconnect = {
-            edge,
-            source,
-            target,
-            levels: new Map(),
-        };
-        this.update_edge_levels(edge, null, this.preview_reconnect.levels, runtime_by_id);
-
-        try {
-            return callback();
-        } finally {
-            this.preview_reconnect = previous_preview;
-        }
     }
 }
 
@@ -7598,52 +7269,6 @@ History.State = class {
     }
 };
 
-class Settings {
-    constructor() {
-        this.data = {
-            // Whether to wrap the `tikz-cd` output in `\[ \]`.
-            "export.centre_diagram": true,
-            // Whether to use `\&` instead of `&` for column separators in `tikz-cd` output.
-            "export.ampersand_replacement": false,
-            // Whether to export diagrams with the `cramped` option.
-            "export.cramped": false,
-            // Whether to wrap the `tikz-cd` output in a standalone LaTeX document.
-            "export.standalone": false,
-            // Whether to use a fixed size for the embedded `<iframe>`, or compute the size based on
-            // the diagram.
-            "export.embed.fixed_size": false,
-            // The width of an HTML embedded diagram in pixels.
-            "export.embed.width": CONSTANTS.DEFAULT_EMBED_SIZE.WIDTH,
-            // The height of an HTML embedded diagram in pixels.
-            "export.embed.height": CONSTANTS.DEFAULT_EMBED_SIZE.HEIGHT,
-            // Which variant of the corner to use for pullbacks/pushouts.
-            "diagram.var_corner": false,
-            // Whether to use KaTeX or Typst rendering.
-            "quiver.renderer": CONSTANTS.DEFAULT_RENDERER,
-        };
-        try {
-            // Try to update the default values with the saved settings.
-            this.data = Object.assign(
-                this.data,
-                JSON.parse(window.localStorage.getItem("settings"))
-            );
-        } catch (_) {
-            // The JSON stored in `settings` was malformed.
-        }
-    }
-
-    /// Returns a saved user setting, or the default value if a setting has not been modified yet.
-    get(setting) {
-        return this.data[setting];
-    }
-
-    /// Saves a user setting.
-    set(setting, value) {
-        this.data[setting] = value;
-        window.localStorage.setItem("settings", JSON.stringify(this.data));
-    }
-}
-
 /// A panel for editing cell data.
 class Panel {
     constructor() {
@@ -9062,14 +8687,14 @@ class Panel {
                                         "were encountered when parsing:");
 
                                     if (diagnostics.some((diagnostic) => {
-                                        return diagnostic instanceof Parser.Error
+                                        return isDiagnosticError(diagnostic);
                                     })) {
                                         error.class_list.remove("hidden");
                                     } else {
                                         import_success.class_list.remove("hidden");
                                     }
                                     if (diagnostics.some((diagnostic) => {
-                                        return diagnostic instanceof Parser.Warning
+                                        return isDiagnosticWarning(diagnostic);
                                     })) {
                                         warning.class_list.remove("hidden");
                                     }
@@ -9190,7 +8815,7 @@ class Panel {
                                             return selected_diagnostic;
                                         }
                                         for (const diagnostic of related) {
-                                            if (diagnostic instanceof Parser.Error) {
+                                            if (isDiagnosticError(diagnostic)) {
                                                 return diagnostic;
                                             }
                                         }
@@ -9257,7 +8882,7 @@ class Panel {
                                             ).add(" ");
                                         }
                                         message.forEach((part) => li.add(part));
-                                        if (diagnostic instanceof Parser.Error) {
+                                        if (isDiagnosticError(diagnostic)) {
                                             error.class_list.remove("hidden");
                                             error_list.add(li);
                                         } else {
@@ -9334,7 +8959,7 @@ class Panel {
                                                 diagnostics_for_fragment
                                                     .get(fragment).push(diagnostic);
                                                 fragment.class_list.add(
-                                                    diagnostic instanceof Parser.Error ?
+                                                    isDiagnosticError(diagnostic) ?
                                                         "error" : "warning"
                                                 );
                                             }
@@ -9342,7 +8967,7 @@ class Panel {
                                         textarea.add(fragment);
                                     }
                                     const initial_diagnostic = diagnostics.find((diagnostic) => {
-                                        return diagnostic instanceof Parser.Error;
+                                        return isDiagnosticError(diagnostic);
                                     }) || diagnostics[0] || null;
                                     if (initial_diagnostic !== null) {
                                         activate_diagnostic(initial_diagnostic);

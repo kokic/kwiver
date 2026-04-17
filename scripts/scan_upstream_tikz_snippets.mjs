@@ -57,7 +57,6 @@ function parseArgs(argv) {
   const args = new Set(argv.slice(2));
   return {
     includeTests: args.has("--include-tests"),
-    includeParserSource: args.has("--include-parser-source"),
     showAllFailures: args.has("--all-failures"),
   };
 }
@@ -65,9 +64,6 @@ function parseArgs(argv) {
 function includeFile(relativePath, options) {
   const normalized = relativePath.replace(/\\/g, "/");
   if (!options.includeTests && normalized.startsWith("src/tests/")) {
-    return false;
-  }
-  if (!options.includeParserSource && normalized === "src/parser.mjs") {
     return false;
   }
   return true;
