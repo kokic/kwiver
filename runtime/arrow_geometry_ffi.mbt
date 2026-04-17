@@ -251,55 +251,114 @@ pub fn ffi_runtime_arrow_label_position_local(
 
 ///|
 pub fn ffi_runtime_arrow_render_plan_local(
+  render_source_x : Double,
+  render_source_y : Double,
+  render_target_x : Double,
+  render_target_y : Double,
+  source_is_endpoint : Bool,
+  source_origin_x : Double,
+  source_origin_y : Double,
+  source_width : Double,
+  source_height : Double,
+  source_radius : Double,
+  target_is_endpoint : Bool,
+  target_origin_x : Double,
+  target_origin_y : Double,
+  target_width : Double,
+  target_height : Double,
+  target_radius : Double,
   shape_is_arc : Bool,
   is_loop : Bool,
-  length : Double,
-  curve : Double,
-  loop_angle : Double,
-  start_x : Double,
-  start_y : Double,
-  start_t : Double,
-  start_angle : Double,
-  end_x : Double,
-  end_y : Double,
-  end_t : Double,
-  end_angle : Double,
+  geometry_curve : Int,
+  geometry_radius : Int,
+  geometry_angle : Int,
+  geometry_offset : Int,
+  display_curve : Double,
+  display_loop_angle : Double,
   level : Int,
   stroke_width : Double,
+  edge_width : Double,
   head_width : Double,
   head_height : Double,
-  shorten_start : Double,
-  shorten_end : Double,
+  shift_distance : Double,
   shorten_tail : Double,
   shorten_head : Double,
-  dash_padding_start : Double,
-  dash_padding_end : Double,
-  offset_x : Double,
-  offset_y : Double,
-  direction_angle : Double,
+  body_style : String,
+  dash_style : String,
   tails_csv : String,
   heads_csv : String,
 ) -> @geometry.ArrowRenderPlan {
+  let render_source = runtime_point(render_source_x, render_source_y)
+  let render_target = runtime_point(render_target_x, render_target_y)
+  let render_angle = render_target.sub(render_source).angle()
+
+  let source = runtime_arrow_shape(
+    source_is_endpoint,
+    source_origin_x,
+    source_origin_y,
+    source_width,
+    source_height,
+    source_radius,
+  )
+  let target = runtime_arrow_shape(
+    target_is_endpoint,
+    target_origin_x,
+    target_origin_y,
+    target_width,
+    target_height,
+    target_radius,
+  )
+  let options = runtime_arrow_options(
+    shape_is_arc,
+    geometry_curve,
+    geometry_radius,
+    geometry_angle,
+    geometry_offset,
+  )
+  let curve_model = @geometry.ArrowCurveModel::new(
+    render_source,
+    render_target,
+    options,
+  )
+  let layout = @geometry.ArrowLayout::new(source, target, curve_model, options)
+  let endpoints = layout.clipped_endpoints()
+  let ok = (source_is_endpoint || endpoints.start.t > @engine.EPSILON) &&
+    (target_is_endpoint || endpoints.end.t < 1.0 - @engine.EPSILON) &&
+    endpoints.end.t >= endpoints.start.t
+  if !ok {
+    return @geometry.arrow_render_plan_invalid()
+  }
+
+  let local_start = runtime_arrow_local_curve_point(
+    endpoints.start,
+    render_source,
+    render_angle,
+  )
+  let local_end = runtime_arrow_local_curve_point(
+    endpoints.end,
+    render_source,
+    render_angle,
+  )
+
   @geometry.arrow_render_plan_local(
     shape_is_arc,
     is_loop,
-    length,
-    curve,
-    loop_angle,
-    runtime_curve_point(start_x, start_y, start_t, start_angle),
-    runtime_curve_point(end_x, end_y, end_t, end_angle),
+    render_target.sub(render_source).length(),
+    display_curve,
+    display_loop_angle,
+    runtime_curve_point(local_start.x, local_start.y, local_start.t, local_start.angle),
+    runtime_curve_point(local_end.x, local_end.y, local_end.t, local_end.angle),
     level,
     stroke_width,
+    edge_width,
     head_width,
     head_height,
-    shorten_start,
-    shorten_end,
+    shift_distance,
     shorten_tail,
     shorten_head,
-    dash_padding_start,
-    dash_padding_end,
-    runtime_point(offset_x, offset_y),
-    direction_angle,
+    body_style,
+    dash_style,
+    render_angle,
     runtime_arrow_style_tokens(tails_csv),
     runtime_arrow_style_tokens(heads_csv),
   )

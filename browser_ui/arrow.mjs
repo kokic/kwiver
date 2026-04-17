@@ -1,6 +1,6 @@
 import { Arc, Bezier, CurvePoint, EPSILON } from "./curve.mjs";
 import { DOM } from "./dom.mjs";
-import { Dimensions, Enum, Path, Point, rad_to_deg, clamp } from "./ds.mjs";
+import { Dimensions, Enum, Point, rad_to_deg } from "./ds.mjs";
 import {
     kwiver_bridge_arrow_find_endpoints_local,
     kwiver_bridge_arrow_label_position_local,
@@ -9,6 +9,41 @@ import {
 
 function heads_to_csv(heads) {
     return Array.isArray(heads) && heads.length > 0 ? heads.join(",") : "";
+}
+
+function shape_geometry_args(shape) {
+    const is_endpoint = shape instanceof Shape.Endpoint
+        || (shape.size !== undefined && shape.size.is_zero());
+    return [
+        is_endpoint,
+        shape.origin.x,
+        shape.origin.y,
+        is_endpoint ? 0 : shape.size.width,
+        is_endpoint ? 0 : shape.size.height,
+        is_endpoint ? 0 : shape.radius,
+    ];
+}
+
+function arrow_body_style_token(body_style) {
+    switch (body_style) {
+        case CONSTANTS.ARROW_BODY_STYLE.NONE: return "none";
+        case CONSTANTS.ARROW_BODY_STYLE.LINE: return "line";
+        case CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY: return "squiggly";
+        case CONSTANTS.ARROW_BODY_STYLE.ADJUNCTION: return "adjunction";
+        case CONSTANTS.ARROW_BODY_STYLE.PROARROW: return "proarrow";
+        case CONSTANTS.ARROW_BODY_STYLE.DOUBLE_PROARROW: return "double proarrow";
+        case CONSTANTS.ARROW_BODY_STYLE.BULLET_SOLID: return "bullet solid";
+        case CONSTANTS.ARROW_BODY_STYLE.BULLET_HOLLOW: return "bullet hollow";
+    }
+    return "line";
+}
+
+function arrow_dash_style_token(dash_style) {
+    switch (dash_style) {
+        case CONSTANTS.ARROW_DASH_STYLE.DASHED: return "dashed";
+        case CONSTANTS.ARROW_DASH_STYLE.DOTTED: return "dotted";
+    }
+    return "solid";
 }
 
 export class QuiverSVG {
@@ -277,23 +312,15 @@ export class Arrow {
     find_endpoints() {
         const origin = this.origin();
         const geometry_options = this.kwiver_geometry_options_or_throw();
+        const source_geometry = shape_geometry_args(this.source);
+        const target_geometry = shape_geometry_args(this.target);
         const bridged = kwiver_bridge_arrow_find_endpoints_local(
             origin.source.x,
             origin.source.y,
             origin.target.x,
             origin.target.y,
-            this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
-            this.source.origin.x,
-            this.source.origin.y,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
-            this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
-            this.target.origin.x,
-            this.target.origin.y,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+            ...source_geometry,
+            ...target_geometry,
             geometry_options.shape === "arc",
             geometry_options.curve,
             geometry_options.radius,
@@ -377,152 +404,120 @@ export class Arrow {
     /// should only be called if something has actually changed: for instance, its position or
     /// properties.
     redraw() {
-        // Calculate some constants that are relevant for all three components of the arrow: the
-        // mask, background and the arrow itself.
-
-        // The width of the stroke used for the edge.
         const stroke_width = this.style.level * CONSTANTS.STROKE_WIDTH
             + (this.style.level - 1) * CONSTANTS.LINE_SPACING;
-        // The total width of the edge line itself, not including the arrowhead, tail, label or /
-        // background. This is usually just the `stroke_width`, but when the edge is squiggly, the
-        // lines must be spaced out more to leave enough room between the triangles, and so the
-        // total width will be greater.
         const edge_width = this.style.body_style === CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY ?
             this.style.level * CONSTANTS.SQUIGGLY_TRIANGLE_HEIGHT * 2
                 + CONSTANTS.STROKE_WIDTH
                 + (this.style.level - 1) * CONSTANTS.LINE_SPACING
             : stroke_width;
-
-        // The width of an arrowhead, considered pointing left-to-right.
-        // This was determined by experimenting with what looked nice.
         const head_width =
             (CONSTANTS.LINE_SPACING + CONSTANTS.STROKE_WIDTH) + (this.style.level - 1) * 2;
-
-        // The height of an arrowhead, considered pointing left-to-right.
-        // This was determined by experimenting with what looked nice.
         const head_height = edge_width + (CONSTANTS.LINE_SPACING + CONSTANTS.STROKE_WIDTH) * 2;
-
-        // The horizontal and vertical padding. We have the same padding for both axes, because when
-        // the curve is very high, the tangent near the source/target can become essentially
-        // vertical. We always pad enough for the arrowhead (plus its stroke width).
-        const padding = CONSTANTS.BACKGROUND_PADDING +
-            + Math.max(head_height, CONSTANTS.STROKE_WIDTH) / 2;
-
-        // The distance from the source to the target.
-        const length = this.length();
-
-        const curve = this.curve(Point.zero(), 0);
-        // We clamp `t` to be at most 1, which handles edge cases more conveniently.
-        const t_after_length = curve.t_after_length(true);
-
-        // The width of the curve connecting the source to the target.
-        const width = curve.width;
-        // The vertical distance from the straight line connecting the source to the target, and the
-        // peak of the curve.
-        const height = 2 * Math.abs(curve.height);
-
-        // The angle of the straight line connecting the source to the target.
-        const angle = this.angle();
-
-        // The width and height of the SVG for the arrow.
-        const [svg_width, svg_height] = [width + padding * 2, height + padding * 2];
-
-        // We centre vertically, so we usually have to offset things by half the height. For arcs,
-        // the width may be greater than the length, so we must also adjust to take this into
-        // account.
-        const offset = new Point(padding + (width - length) / 2, padding + height / 2);
-
-        // The offset of the arrow. We don't apply this to `this.element`, because that causes
-        // issues with the z-indexes of the handles.
-        const shift = new Point(0, this.style.shift).rotate(angle);
-
-        // Reset the validity of the arrow. This will be set in edge cases, e.g. the arrow has
-        // negative length, or is completely cropped. Invalid arrows will not be drawn.
         this.element.class_list.remove("invalid");
         this.svg.class_list.remove("invalid");
 
-        let start, end;
-        try {
-            [start, end] = this.find_endpoints();
-        } catch (_) {
-            // If we hit this block, the arrow as specified is invalid, because it would be entirely
-            // cropped by the source or target. In this case, we do not draw the arrow.
+        const geometry_options = this.kwiver_geometry_options_or_throw();
+        const origin = this.origin();
+        const source_geometry = shape_geometry_args(this.source);
+        const target_geometry = shape_geometry_args(this.target);
+        const render_plan = kwiver_bridge_arrow_render_plan_local(
+            origin.source.x,
+            origin.source.y,
+            origin.target.x,
+            origin.target.y,
+            ...source_geometry,
+            ...target_geometry,
+            geometry_options.shape === "arc",
+            this.source === this.target,
+            geometry_options.curve,
+            geometry_options.radius,
+            geometry_options.angle,
+            geometry_options.offset,
+            this.style.curve,
+            this.style.angle,
+            this.style.level,
+            stroke_width,
+            edge_width,
+            head_width,
+            head_height,
+            this.style.shift,
+            this.style.shorten.tail,
+            this.style.shorten.head,
+            arrow_body_style_token(this.style.body_style),
+            arrow_dash_style_token(this.style.dash_style),
+            heads_to_csv(this.style.tails),
+            heads_to_csv(this.style.heads),
+        );
+        if (render_plan === null || !render_plan.ok) {
             this.element.class_list.add("invalid");
             return;
         }
 
-        // Clear the SVGs, resize them, and rotate them about the source, in the direction of the
-        // target.
+        const angle = render_plan.angle;
+        const shift = new Point(render_plan.shift.x, render_plan.shift.y);
+        const offset = new Point(render_plan.offset.x, render_plan.offset.y);
+        const start = new Point(render_plan.start.x, render_plan.start.y);
+        const end = new Point(render_plan.end.x, render_plan.end.y);
+        const apply_path_plan = (element, plan) => {
+            element.set_attributes({ d: plan.d });
+            if (plan.dash_array !== null) {
+                element.set_attributes({ "stroke-dasharray": plan.dash_array });
+            } else {
+                element.remove_attributes("stroke-dasharray");
+            }
+        };
+
         for (const svg of [this.background, this.svg]) {
-            // We need to set `width` and `height` explicitly so we can embed the SVGs properly
-            // in CSS backgrounds.
             svg.set_attributes({
-                width: svg_width,
-                height: svg_height,
+                width: render_plan.svg_width,
+                height: render_plan.svg_height,
             });
             svg.set_style({
-                width: `${svg_width}px`,
-                height: `${svg_height}px`,
+                width: `${render_plan.svg_width}px`,
+                height: `${render_plan.svg_height}px`,
                 "transform-origin": offset.px(false),
                 transform: `
                     translate(${shift.px()})
-                    translate(${this.origin().source.sub(offset).px()})
+                    translate(${origin.source.sub(offset).px()})
                     rotate(${angle}rad)
                 `,
             });
         }
 
-        // Redraw the background.
-        // First, set the opacity.
         this.background.set_style({
             opacity: CONSTANTS.BACKGROUND_OPACITY,
         });
 
-        // Draw the actual background. We only want to draw the background from endpoint to
-        // endpoint, so we use `stroke-dasharray` to control where the background starts and ends.
-        const arclen_to_start = curve.arc_length(start.t);
-        const arclen_to_end = curve.arc_length(end.t);
-        const arclen = curve.arc_length(1);
-        const bg_path = new Path().move_to(offset);
-        this.requisition_element(this.background, "path.arrow-background", {
-            d: `${ curve.render(bg_path) }`,
+        const background_path = this.requisition_element(this.background, "path.arrow-background", {
             fill: "none",
             stroke: "black",
             "stroke-width": edge_width + CONSTANTS.BACKGROUND_PADDING * 2,
-            "stroke-dasharray": `0 ${arclen_to_start} ${
-                arclen_to_end - arclen_to_start} ${Math.ceil(arclen - arclen_to_end)}`,
         });
+        apply_path_plan(background_path, render_plan.background);
 
-        // The background usually has flat ends, but we want rounded ends. Unfortunately, the
-        // `round` endpoint path option in SVG is not suitable, because it takes up too much space,
-        // so we have to simulate this ourselves.
         const round_bg_end = (endpoint, is_start) => {
-            // We should always have endpoints, but if something's gone wrong, we don't want to
-            // trigger another error.
             if (endpoint !== null) {
                 const point = offset.add(endpoint);
                 const name = is_start ? "source" : "target";
-                // Draw the semicircle (actually a circle, but half of it is idempotent).
                 this.requisition_element(this.background, `circle.${name}.arrow-background`, {
                     cx: point.x,
                     cy: point.y,
                     r: edge_width / 2 + CONSTANTS.BACKGROUND_PADDING,
                     fill: "black",
                 });
-                // Add a handle to the endpoint.
-                const origin = Point.diag(CONSTANTS.HANDLE_RADIUS).sub(endpoint);
-                const source_origin = this.origin().source;
+                const handle_origin = Point.diag(CONSTANTS.HANDLE_RADIUS).sub(endpoint);
                 this.requisition_element(this.element, `div.arrow-endpoint.${name}`, {}, {
                     width: `${CONSTANTS.HANDLE_RADIUS * 2}px`,
                     height: `${CONSTANTS.HANDLE_RADIUS * 2}px`,
                     left: `${endpoint.x}px`,
                     top: `${endpoint.y}px`,
                     "border-radius": `${CONSTANTS.HANDLE_RADIUS}px`,
-                    "transform-origin": `${origin.x}px ${origin.y}px`,
+                    "transform-origin": `${handle_origin.x}px ${handle_origin.y}px`,
                     transform: `
                         translate(${shift.x}px, ${shift.y}px)
-                        translate(calc(${source_origin.x}px - 50%),
-                            calc(${source_origin.y}px - 50%))
+                        translate(calc(${origin.source.x}px - 50%),
+                            calc(${origin.source.y}px - 50%))
                         rotate(${angle}rad)
                     `,
                 }, null);
@@ -531,21 +526,6 @@ export class Arrow {
         round_bg_end(start, true);
         round_bg_end(end, false);
 
-        // Redraw the arrow itself.
-
-        // Hooks are drawn at the end of the line, so we must adjust the length of the line
-        // to account for them. All other arrowhead styles are drawn within the bounds of the
-        // edge.
-        const shorten = {
-            start: this.style.tails.length > 0 && this.style.tails[0].startsWith("hook")
-                ? head_width : 0,
-            end: this.style.heads.length > 0 && this.style.heads[0].startsWith("hook")
-                ? head_width : 0,
-        };
-
-        // Create a clipping mask for the edge. We use this to cut out the gaps in an n-cell,
-        // and also to cut out space for the label when the alignment is `CENTRE`.
-        // Exclude defs that might be in the rendered typst svg.
         const defs
             = this.requisition_element(this.svg, "svg:not(.typst-doc) > defs.clipping-masks");
         const clipping_mask = this.requisition_element(
@@ -564,198 +544,26 @@ export class Arrow {
             { maskUnits: "userSpaceOnUse" },
         );
         for (const mask of [clipping_mask, label_clipping_mask]) {
-            // For simplicity, we clear the clipping masks and recreate everything.
             mask.clear();
-            // By default, we draw everything.
             this.requisition_element(mask, "rect.base", {
-                width: svg_width,
-                height: svg_height,
+                width: render_plan.svg_width,
+                height: render_plan.svg_height,
                 fill: "white",
             });
         }
 
-        // Draw the edge itself.
         const edge = this.requisition_element(this.svg, "path.arrow-edge", {
             mask: `url(#arrow${this.id}-clipping-mask)`,
             fill: "none",
             stroke: this.style.colour,
             "stroke-width": stroke_width,
-            // We use the default `stroke-linecap` option of `butt`. We'd prefer to use `round`,
-            // especially for dashed and dotted lines, but unfortunately this doesn't work well with
-            // thicker edges. Ideally, we want a `round-butt` option, specifying edges do not extend
-            // farther than the path. We manually draw rounded ends for the overall path, but we
-            // avoid doing this for every dash, as this would be very expensive.
         });
+        apply_path_plan(edge, render_plan.edge);
 
-        // When we draw squiggly arrows, we have straight line padding near the tail and head, which
-        // we need to account for when drawing dashed lines.
-        const adjust_dash_padding = (heads, endpoint, is_start) => {
-            if (heads.length > 0 && heads[0] === "mono") {
-                // The "mono" style is special in that its angle is not based on an endpoint, but is
-                // offset from an endpoint. When we draw n-cells, if we simply the dashes to the
-                // endpoint offset, these will be too short when the rotation of the head is
-                // different to the rotation of the endpoint. We therefore have to add some padding
-                // at the endpoint to make sure we always draw enough line.
-                const head_angle = curve.tangent(t_after_length(
-                    curve.arc_length(endpoint.t) + head_width * (is_start ? 1 : -1)
-                ));
-                const endpoint_angle = curve.tangent(endpoint.t);
-                const diff_angle = endpoint_angle - head_angle;
-                return Math.abs(edge_width * Math.sin(diff_angle) / 2);
-            }
-            return 0;
-        }
-
-        const dash_padding = {
-            start: adjust_dash_padding(this.style.tails, start, true),
-            end: adjust_dash_padding(this.style.heads, end, false),
-        };
-
-        // We use some of these variables frequently in other methods, so we package them up for
-        // convenience in passing them around.
-        const constants = {
-            curve, start, end, length, height, stroke_width, edge_width, head_width,
-            head_height, shorten, t_after_length, dash_padding, offset,
-        };
-        const bridged_head_plan = kwiver_bridge_arrow_render_plan_local(
-            this.style.shape === CONSTANTS.ARROW_SHAPE.ARC,
-            this.source === this.target,
-            length,
-            this.style.curve,
-            this.style.angle,
-            start.x,
-            start.y,
-            start.t,
-            start.angle,
-            end.x,
-            end.y,
-            end.t,
-            end.angle,
-            this.style.level,
-            stroke_width,
-            head_width,
-            head_height,
-            shorten.start,
-            shorten.end,
-            this.style.shorten.tail,
-            this.style.shorten.head,
-            dash_padding.start,
-            dash_padding.end,
-            offset.x,
-            offset.y,
-            this.angle(),
-            heads_to_csv(this.style.tails),
-            heads_to_csv(this.style.heads),
-        );
-        if (bridged_head_plan === null) {
-            this.svg.class_list.add("invalid");
-            return;
-        }
-
-        // Draw the body decoration, e.g. the proarrow bar.
-        let bar_offsets = [0];
-
-        const start_t = Math.max(
-            start.t,
-            t_after_length(arclen_to_start + this.style.shorten.tail)
-        );
-        const end_t = Math.min(
-            end.t,
-            t_after_length(arclen_to_end - this.style.shorten.head)
-        );
-        const mid = (start_t + end_t) / 2;
-
-        switch (this.style.body_style) {
-            case CONSTANTS.ARROW_BODY_STYLE.DOUBLE_PROARROW:
-                bar_offsets = [-2.5, 2.5];
-                // Fall-through.
-
-            case CONSTANTS.ARROW_BODY_STYLE.PROARROW: {
-                const arclen_to_mid = curve.arc_length(mid);
-                // It looks better if each of the multiple bars are parallel, rather than
-                // calculating their angle based on their individual position.
-                const angle = curve.tangent(mid);
-                const normal = angle + Math.PI / 2;
-                const adj_seg = new Point(head_height, 0);
-                const adj_seg_2 = adj_seg.div(2);
-                const path = new Path();
-
-                for (const bar_offset of bar_offsets) {
-                    const bar_t = t_after_length(clamp(
-                        arclen_to_start,
-                        arclen_to_mid + bar_offset,
-                        arclen_to_end,
-                    ));
-                    const centre = curve.point(bar_t).add(offset);
-
-                    // Top.
-                    path.move_to(centre.sub(adj_seg_2.rotate(normal)));
-                    // Bottom.
-                    path.line_by(adj_seg.rotate(normal));
-                }
-
-                this.release_element(this.svg, "circle.arrow-decoration");
-                this.requisition_element(this.svg, "path.arrow-decoration", {
-                    d: `${path}`,
-                    mask: `url(#arrow${this.id}-label-clipping-mask)`,
-                    fill: "none",
-                    stroke: this.style.colour,
-                    "stroke-width": CONSTANTS.STROKE_WIDTH,
-                    "stroke-linecap": "round",
-                });
-                }
-                break;
-
-            case CONSTANTS.ARROW_BODY_STYLE.BULLET_SOLID: {
-                const centre = curve.point(mid).add(offset);
-
-                this.release_element(this.svg, "path.arrow-decoration");
-                this.requisition_element(this.svg, "circle.arrow-decoration", {
-                    cx: centre.x,
-                    cy: centre.y,
-                    r: head_height / 2,
-                    mask: `url(#arrow${this.id}-label-clipping-mask)`,
-                    fill: this.style.colour,
-                    stroke: "none",
-                });
-                }
-                break;
-
-            case CONSTANTS.ARROW_BODY_STYLE.BULLET_HOLLOW: {
-                const centre = curve.point(mid).add(offset);
-
-                this.release_element(this.svg, "path.arrow-decoration");
-                // Bullet outline.
-                this.requisition_element(this.svg, "circle.arrow-decoration", {
-                    cx: centre.x,
-                    cy: centre.y,
-                    r: head_height / 2,
-                    mask: `url(#arrow${this.id}-label-clipping-mask)`,
-                    fill: "none",
-                    stroke: this.style.colour,
-                    "stroke-width": CONSTANTS.STROKE_WIDTH,
-                });
-                // Crop the inside out of the bullet.
-                this.requisition_element(clipping_mask, "circle.arrow-decoration", {
-                    cx: centre.x,
-                    cy: centre.y,
-                    r: head_height / 2,
-                    fill: "black",
-                });
-                }
-                break;
-
-            default:
-                this.release_element(this.svg, ".arrow-decoration");
-                break;
-        }
-
-        // We calculate the widths of the tails and heads whilst drawing them, so we have to
-        // sandwich the code to draw heads and tails in between the code to draw the path.
         const draw_heads = (is_start, is_mask) => {
             const render_plan_part = is_start
-                ? (is_mask ? bridged_head_plan.tail_mask : bridged_head_plan.tail)
-                : (is_mask ? bridged_head_plan.head_mask : bridged_head_plan.head);
+                ? (is_mask ? render_plan.tail_mask : render_plan.tail)
+                : (is_mask ? render_plan.head_mask : render_plan.head);
             if (render_plan_part.has_path) {
                 const element = !is_mask ? this.svg : clipping_mask;
                 new DOM.SVGElement("path", {
@@ -771,48 +579,59 @@ export class Arrow {
             return render_plan_part.total_width;
         };
 
-        // Clear any existing tails and heads: we're going to recreate them.
         this.svg.query_selector_all(".arrow-head").forEach((element) => element.remove());
-        // Draw the tails and heads.
-        constants.total_width_of_tails = draw_heads(true, false);
-        constants.total_width_of_heads = draw_heads(false, false);
+        draw_heads(true, false);
+        draw_heads(false, false);
 
-        // Check that the arrow length is actually nonnegative.
-        if (arclen_to_end - arclen_to_start
-            - this.style.shorten.tail - this.style.shorten.head
-            - shorten.start - shorten.end
-            - dash_padding.start - dash_padding.end
-            - constants.total_width_of_tails - constants.total_width_of_heads
-            < 0
-        ) {
-            // The arrow length is negative. Only the arrow edge is marked as invalid, rather than
-            // the entire element, because the background may still sensibly be drawn.
+        this.release_element(this.svg, "path.arrow-decoration");
+        this.release_element(this.svg, "circle.arrow-decoration");
+        this.release_element(clipping_mask, "circle.arrow-decoration");
+        switch (render_plan.decoration.kind) {
+            case "path":
+                this.requisition_element(this.svg, "path.arrow-decoration", {
+                    d: render_plan.decoration.path_d,
+                    mask: `url(#arrow${this.id}-label-clipping-mask)`,
+                    fill: "none",
+                    stroke: this.style.colour,
+                    "stroke-width": CONSTANTS.STROKE_WIDTH,
+                    "stroke-linecap": "round",
+                });
+                break;
+            case "solid-circle":
+                if (render_plan.decoration.circle !== null) {
+                    this.requisition_element(this.svg, "circle.arrow-decoration", {
+                        cx: render_plan.decoration.circle.cx,
+                        cy: render_plan.decoration.circle.cy,
+                        r: render_plan.decoration.circle.r,
+                        mask: `url(#arrow${this.id}-label-clipping-mask)`,
+                        fill: this.style.colour,
+                        stroke: "none",
+                    });
+                }
+                break;
+            case "hollow-circle":
+                if (render_plan.decoration.circle !== null) {
+                    this.requisition_element(this.svg, "circle.arrow-decoration", {
+                        cx: render_plan.decoration.circle.cx,
+                        cy: render_plan.decoration.circle.cy,
+                        r: render_plan.decoration.circle.r,
+                        mask: `url(#arrow${this.id}-label-clipping-mask)`,
+                        fill: "none",
+                        stroke: this.style.colour,
+                        "stroke-width": CONSTANTS.STROKE_WIDTH,
+                    });
+                }
+                break;
+        }
+
+        if (!render_plan.edge_valid) {
             this.svg.class_list.add("invalid");
             return;
         }
 
-        // Draw the edge shape and compute the dash array.
-        const { path, dash_array } = this.edge_path(constants);
-        edge.set_attributes({ d: `${path}` });
-        if (dash_array !== null) {
-            edge.set_attributes({ "stroke-dasharray": dash_array });
-        } else {
-            edge.remove_attributes("stroke-dasharray");
-        }
-
-        // We now draw the various parts making up the n-cell. The `edge` SVG is drawn as a thick
-        // solid line. We are going to apply a clipping mask, cutting out the parts of the line that
-        // ought not to be there. This makes it look as if we have multiple parallel lines, when
-        // we're really recursively cutting parts out: we first cut out a line that's a little
-        // thinner than `edge`, then we cut out a piece of *that* line, that's a little thinner
-        // still... all the way until we reach the end.
-        // You may wonder why we don't just try to offset n different lines. This would be ideal,
-        // and simpler. However, an offset Bézier curve is no longer a Bézier curve, so we would
-        // have to draw all these parallel paths manually, using line segments. This recursive
-        // cutting approach allows us to make use of SVG's Bézier abilities, which is nicer.
         for (let i = this.style.level - 1, cut = true; i > 0; --i, cut = !cut) {
             new DOM.SVGElement("path", {
-                d: `${path}`,
+                d: render_plan.edge.d,
                 fill: "none",
                 stroke: cut ? "black" : "white",
                 "stroke-width": `${
@@ -822,317 +641,44 @@ export class Arrow {
             }).add_to(clipping_mask);
         }
 
-        // Draw the tail and head masks. There are two components: a mask up until the
-        // endpoints, which deals with general overflow (especially egregious for squiggly arrows);
-        // and specific masks for each of the head styles.
-        // We need some padding to avoid aliasing issues.
-        const ENDPOINT_PADDING = 1;
-        new DOM.SVGElement("path", {
-            d: `${ curve.render(new Path().move_to(offset)) }`,
+        const clipping_path = new DOM.SVGElement("path", {
+            d: render_plan.clipping_path.d,
             fill: "none",
             stroke: "black",
             "stroke-width": edge_width + CONSTANTS.BACKGROUND_PADDING * 2,
-            "stroke-dasharray": `${
-                arclen_to_start + this.style.shorten.tail + shorten.start + ENDPOINT_PADDING} ${
-                arclen_to_end - (arclen_to_start + shorten.start + this.style.shorten.tail
-                    + ENDPOINT_PADDING * 2 + this.style.shorten.head + shorten.end)
-            } ${arclen - arclen_to_end + this.style.shorten.head + shorten.end + ENDPOINT_PADDING}`,
-        }).add_to(clipping_mask);
+        });
+        if (render_plan.clipping_path.dash_array !== null) {
+            clipping_path.set_attributes({ "stroke-dasharray": render_plan.clipping_path.dash_array });
+        }
+        clipping_path.add_to(clipping_mask);
         draw_heads(true, true);
         draw_heads(false, true);
 
-        // It's possible that, when drawing the body, we added to the clipping mask (e.g. for the
-        // hollow bullet body style). However, we may then have drawn over this in white when
-        // drawing the edge with level > 1. For this reason, we move anything drawn by the body to
-        // the end of the parent to avoid ordering issues.
-        for (const body_mask of clipping_mask.query_selector_all("circle.arrow-decoration")) {
-            body_mask.parent.add(body_mask);
+        if (render_plan.decoration.mask_circle !== null) {
+            this.requisition_element(clipping_mask, "circle.arrow-decoration", {
+                cx: render_plan.decoration.mask_circle.cx,
+                cy: render_plan.decoration.mask_circle.cy,
+                r: render_plan.decoration.mask_circle.r,
+                fill: "black",
+            });
         }
 
-        // At present, we don't clip the edge using the source and target masks, but this might be
-        // something we do in the future.
-
-        // Draw the label.
+        const constants = { offset, edge_width, angle };
         if (this.label !== null) {
-            // Clip the edge by the label mask.
             if (this.label.alignment === CONSTANTS.LABEL_ALIGNMENT.CENTRE) {
-                // We add the label mask to both the `clipping_mask` (for the arrow edge)
-                // and `label_clipping_mask` (for heads, tails and the proarrow bar).
                 this.redraw_label(constants, "rect").add_to(clipping_mask);
                 this.redraw_label(constants, "rect").add_to(label_clipping_mask);
             }
-            // Release the existing label.
             const label_content = this.svg.query_selector(".arrow-label div");
             this.release_element(this.svg, "foreignObject.arrow-label");
-            // Create a new label.
             const label = this.redraw_label(constants, "foreignObject");
             label.set_attributes({ class: "arrow-label" });
-            // Add a generic content container, which makes it more convenient to manipulate.
-            // If we previously had content, we reuse that.
             this.label.element = (label_content || new DOM.Div({
                 xmlns: "http://www.w3.org/1999/xhtml",
                 class: "label",
             })).add_to(label);
             this.svg.add(label);
         }
-    }
-
-    // Computes the SVG path for the edge itself, whether that's a line, adjunction or squiggly
-    // line.
-    // Returns `{ path, dash_array }`.
-    edge_path(constants) {
-        // Various arc lengths, which are used for drawing various parts of the Bézier curve
-        // manually (e.g. for squiggly lines) or to determine dash distances.
-        const {
-            curve, start, end, shorten, t_after_length, dash_padding, total_width_of_tails,
-            total_width_of_heads, offset,
-        } = constants;
-        let arclen_to_start = curve.arc_length(start.t) + (this.style.shorten.tail + shorten.start)
-            - dash_padding.start;
-        let arclen_to_end = curve.arc_length(end.t) - (this.style.shorten.head + shorten.end)
-            + dash_padding.end;
-        let arclen = curve.arc_length(1);
-
-        // Each squiggle triangle has a width equal to twice its height.
-        const HALF_WAVELENGTH = CONSTANTS.SQUIGGLY_TRIANGLE_HEIGHT * 2;
-
-        const path = new Path();
-        switch (this.style.body_style) {
-            // The normal case: a straight or curved line.
-            case CONSTANTS.ARROW_BODY_STYLE.LINE:
-            case CONSTANTS.ARROW_BODY_STYLE.PROARROW:
-            case CONSTANTS.ARROW_BODY_STYLE.DOUBLE_PROARROW:
-            case CONSTANTS.ARROW_BODY_STYLE.BULLET_SOLID:
-            case CONSTANTS.ARROW_BODY_STYLE.BULLET_HOLLOW:
-                path.move_to(offset);
-                curve.render(path);
-                break;
-
-            // A ⊣ shape, for adjunctions.
-            case CONSTANTS.ARROW_BODY_STYLE.ADJUNCTION:
-                const centre = curve.point(0.5).add(offset);
-                const angle = curve.tangent(0.5);
-                const normal = angle + Math.PI / 2;
-                const adj_seg = new Point(CONSTANTS.ADJUNCTION_LINE_LENGTH, 0);
-                const adj_seg_2 = adj_seg.div(2);
-
-                // Left.
-                path.move_to(centre.sub(adj_seg_2.rotate(angle)));
-                // Right.
-                path.line_by(adj_seg.rotate(angle));
-                // Top.
-                path.move_to(centre.add(adj_seg_2.rotate(angle)).sub(adj_seg_2.rotate(normal)));
-                // Bottom.
-                path.line_by(adj_seg.rotate(normal));
-                break;
-
-            // A squiggly line.
-            case CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY:
-                // This case is tricky. Because we want to draw curved squiggly lines, which are
-                // (shockingly) not supported by default by SVG, we need to draw these manually.
-                // This means we need to draw a Bézier curve, but add little triangles along its
-                // arc length. These should look good no matter what the width or height of the
-                // Bézier curve.
-                if (start === null || end === null) {
-                    // We need the endpoints to draw the squiggly line. If they don't exist, this
-                    // will have been previously reported, so we simply bail out here.
-                    return;
-                }
-
-                // The arc length after which to start drawing triangles.
-                const arclen_to_squiggle_start =
-                    arclen_to_start + total_width_of_tails + CONSTANTS.SQUIGGLY_PADDING;
-                const squiggle_start_point = curve.point(t_after_length(arclen_to_squiggle_start));
-                // The arc length after which to stop drawing triangles.
-                const arclen_to_squiggle_end =
-                    arclen_to_end - (total_width_of_heads + CONSTANTS.SQUIGGLY_PADDING);
-                // The start and end points.
-                const start_point = curve.point(t_after_length(arclen_to_start));
-                const end_point = curve.point(t_after_length(arclen_to_end));
-
-                // Move to the tail.
-                path.move_to(start_point.add(offset));
-                // Draw a straight line segment for the first section. This gives some breathing
-                // space around the tail and the squiggles.
-                path.line_to(squiggle_start_point.add(offset));
-
-                // We keep track of the total length of the squiggly path. This is used to calculate
-                // dash arrays for dashed lines.
-                let path_len = squiggle_start_point.sub(start_point).length();
-                let prev_point = squiggle_start_point;
-
-                // We now draw the Bézier curve, augmented by triangular squiggles.
-                for (
-                    // The current arc length along the Bézier curve we are tracing.
-                    let l = arclen_to_squiggle_start,
-                    // Which direction to draw the triangle: up (`-1`) or down (`1`).
-                    sign = -1,
-                    // Whether to draw a point offset by the triangle amplitude (`1`) or not (`0`).
-                    m = 1;
-                    l + m * HALF_WAVELENGTH / 2 < arclen_to_squiggle_end;
-                    // Flip the direction of the triangle each time a triangle
-                    // is drawn. We alternate between drawing tips and bases of
-                    // the triangles.
-                    sign = [sign, -sign][m], m = 1 - m
-                ) {
-                    l += HALF_WAVELENGTH / 2;
-                    const t = t_after_length(l);
-                    const angle = curve.tangent(t) + Math.PI / 2 * sign;
-                    const next_point = curve.point(t).add(
-                        Point.lendir(CONSTANTS.SQUIGGLY_TRIANGLE_HEIGHT * m, angle)
-                    );
-                    path_len += next_point.sub(prev_point).length();
-                    prev_point = next_point;
-                    path.line_to(next_point.add(offset));
-                }
-
-                // Draw the padding next to the head of the arrow.
-                path.line_to(end_point.add(offset));
-                path_len += end_point.sub(prev_point).length();
-
-                // We draw squiggly lines differently from other lines, in that we start then at
-                // the start point, rather than the source. We have to take this into account when
-                // calculating the arc length.
-                arclen_to_start = 0;
-                arclen_to_end = arclen = path_len + dash_padding.start + dash_padding.end;
-
-                break;
-        }
-
-        // Now we will set the dash style for the edge. It would be nice to just use the SVG
-        // `stroke-dasharray` option and be done with it. However, we already use `stroke-dasharray`
-        // to avoid drawing the entire Bézier curve. That is, the path of the Bézier curve is
-        // between the source and target for simplicity in calculation (namely, the Bézier curves
-        // are then always symmetric), but we really only want to draw it between the endpoints. The
-        // solution we pick is to use `stroke-dasharray` to avoid drawing the stroke except between
-        // the endpoints, but this means that when drawing dashes, we need to explicitly calculate
-        // how many dashes we're going to draw. This falls into an all-too-common pattern here where
-        // we end up doing things manually because we're not given enough flexibility. Drawing
-        // modular arrows turns out to be pretty tricky.
-
-        if (start === null || end === null
-            || this.style.body_style === CONSTANTS.ARROW_BODY_STYLE.ADJUNCTION
-        ) {
-            // We can't effectively draw dashed lines when we don't know where the tail and head
-            // are. Additionally, drawing dashes doesn't make sense for the adjunction symbol.
-            return { path, dash_array: null };
-        }
-
-        let arclen_line = arclen_to_end - arclen_to_start;
-        // By default, we draw a single "dash" between the two endpoints.
-        let dashes = [arclen_line];
-
-        if (this.style.dash_style !== CONSTANTS.ARROW_DASH_STYLE.SOLID) {
-            switch (this.style.body_style) {
-                // It only really makes sense to dash (curved or squiggly) lines.
-                case CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY:
-                    if (this.style.level > 1) {
-                        // We can't draw dashed or dotted n-cells nicely, at least for n > 1, so we
-                        // report this as an error.
-                        console.error(
-                            "Dashed and dotted lines are only supported for squiggly n-cells where "
-                            + "n = 1."
-                        );
-                        break;
-                    }
-
-                // We are deliberately falling through here.
-                case CONSTANTS.ARROW_BODY_STYLE.LINE:
-                case CONSTANTS.ARROW_BODY_STYLE.PROARROW:
-                case CONSTANTS.ARROW_BODY_STYLE.DOUBLE_PROARROW:
-                case CONSTANTS.ARROW_BODY_STYLE.BULLET_SOLID:
-                case CONSTANTS.ARROW_BODY_STYLE.BULLET_HOLLOW:
-                    // Reset the dash array, because we're calculating everything manually.
-                    dashes = [];
-
-                    if (this.style.body_style === CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY) {
-                        // We offset the dashes when the line is squiggly so as to pick the most
-                        // aesthetically pleasing pattern. This is not in `CONSTANTS` because I feel
-                        // it should be close to the `dash_pairs` settings.
-                        const DASH_OFFSET = 4;
-                        // The initial padding, free of squiggles.
-                        dashes.push(total_width_of_tails + DASH_OFFSET);
-                        dashes.push(0);
-                        // We need to adjust the length of the line to restrict it to just the
-                        // Bézier approximation.
-                        arclen_line -= total_width_of_tails + total_width_of_heads - DASH_OFFSET;
-                    }
-
-                    // We only try to draw dashes if there's any space for them: otherwise, we can
-                    // just draw a solid line. We apply this check here to take the squiggly padding
-                    // into account.
-                    if (arclen_line > 0) {
-
-                        const TRIANGLE_SIDE = HALF_WAVELENGTH * 2 ** 0.5;
-                        // A (dash, gap) pair, which will be repeated along the length of the line.
-                        // We could pull the constants below out into `CONSTANTS`, but the special-
-                        // casing makes this a bit unpleasant, so we leave them here for now.
-                        let dash_pairs;
-                        if (this.style.body_style !== CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY) {
-                            switch (this.style.dash_style) {
-                                case CONSTANTS.ARROW_DASH_STYLE.DASHED: dash_pairs = [6, 6]; break;
-                                case CONSTANTS.ARROW_DASH_STYLE.DOTTED: dash_pairs = [2, 4]; break;
-                            }
-                        } else {
-                            switch (this.style.dash_style) {
-                                case CONSTANTS.ARROW_DASH_STYLE.DASHED:
-                                    dash_pairs = [2 * TRIANGLE_SIDE, 1 * TRIANGLE_SIDE]; break;
-                                case CONSTANTS.ARROW_DASH_STYLE.DOTTED:
-                                    dash_pairs = [0.5 * TRIANGLE_SIDE, 0.25 * TRIANGLE_SIDE]; break;
-                            }
-                        }
-                        // The combined length of the dash and gap.
-                        const dash_gap_length = dash_pairs.reduce((a, b) => a + b, 0);
-                        // How many dashes-and-gaps are required to cover the length of the curve.
-                        let dashes_and_gaps = arclen_line / dash_gap_length;
-
-                        // Fill the curve with as many (integer multiples of) dashes and gaps as we
-                        // can.
-                        dashes = dashes
-                            .concat(new Array(Math.floor(dashes_and_gaps)).fill(dash_pairs).flat());
-                        // It the required number of dashes and gaps wasn't exactly an integer,
-                        // which is exceedingly likely.
-                        if (dashes_and_gaps % 1 !== 0) {
-                            let deficit =
-                                arclen_line - Math.floor(dashes_and_gaps) * dash_gap_length;
-                            // While this algorithm is technically more complicated than we need,
-                            // when `dash_pairs` always has a length of 2, doing it this way allows
-                            // us to extend to more complex dash patterns in the future.
-                            for (const l of dash_pairs) {
-                                if (l <= deficit) {
-                                    dashes.push(l);
-                                    deficit -= l;
-                                } else {
-                                    break;
-                                }
-                            }
-                            // Fill up the remaining gap.
-                            dashes.push(deficit);
-                        }
-                        // We need to always end on an odd length of `dashes`, because the array
-                        // indicates an alternating sequence of dashes and gaps.
-                        if (dashes.length % 2 !== 1) {
-                            dashes.push(0);
-                        }
-
-                    } else {
-                        dashes = [arclen_line];
-                        break;
-                    }
-
-                    if (this.style.body_style === CONSTANTS.ARROW_BODY_STYLE.SQUIGGLY) {
-                        // The terminal padding, free of squiggles.
-                        dashes.push(0);
-                        dashes.push(total_width_of_heads);
-                    }
-
-                    break;
-            }
-        }
-
-        const dash_array = `0 ${arclen_to_start} ${dashes.join(" ")} ${arclen - arclen_to_end}`;
-
-        return { path, dash_array };
     }
 
     /// Returns the arc associated to a chord length.
@@ -1162,7 +708,7 @@ export class Arrow {
 
     /// Redraw the label attached to the edge. Returns the mask associated to the label.
     redraw_label(constants, tag_name) {
-        const { offset } = constants;
+        const { offset, angle } = constants;
 
         const origin = this.determine_label_position(constants).add(offset).sub(new Point(
             this.label.size.width / 2,
@@ -1180,7 +726,7 @@ export class Arrow {
                 // The label should be horizontal for most alignments, but in the direction of the
                 // arrow for `OVER`.
                 this.label.alignment === CONSTANTS.LABEL_ALIGNMENT.OVER ? "" :
-                    `rotate(${-rad_to_deg(this.angle())} ${
+                    `rotate(${-rad_to_deg(angle)} ${
                         this.label.size.width / 2} ${this.label.size.height / 2})`
             }`,
         });
@@ -1193,23 +739,15 @@ export class Arrow {
         const { edge_width } = constants;
         const geometry_options = this.kwiver_geometry_options_or_throw();
         const origin = this.origin();
+        const source_geometry = shape_geometry_args(this.source);
+        const target_geometry = shape_geometry_args(this.target);
         const bridged = kwiver_bridge_arrow_label_position_local(
             origin.source.x,
             origin.source.y,
             origin.target.x,
             origin.target.y,
-            this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
-            this.source.origin.x,
-            this.source.origin.y,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
-            this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
-            this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
-            this.target.origin.x,
-            this.target.origin.y,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
-            this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+            ...source_geometry,
+            ...target_geometry,
             geometry_options.shape === "arc",
             geometry_options.curve,
             geometry_options.radius,

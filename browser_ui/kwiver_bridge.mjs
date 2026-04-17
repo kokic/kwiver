@@ -223,7 +223,10 @@ export function kwiver_bridge_test_reset() {
 }
 
 export function kwiver_bridge_test_set_autoload(enabled) {
-  BRIDGE_TEST.disableAutoload = !Boolean(enabled);
+  if (enabled !== true && enabled !== false) {
+    return;
+  }
+  BRIDGE_TEST.disableAutoload = !enabled;
   if (BRIDGE_TEST.disableAutoload) {
     bridgeLoadGeneration += 1;
     BRIDGE.loading = null;
@@ -273,16 +276,48 @@ function asInt(value, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function finiteNumberArray(values) {
-  const normalized = [];
+function isFiniteNumber(value) {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isBoolean(value) {
+  return value === true || value === false;
+}
+
+function isFiniteInteger(value) {
+  return Number.isInteger(value);
+}
+
+function allFiniteNumbers(values) {
   for (const value of values) {
-    const number = Number(value);
-    if (!Number.isFinite(number)) {
-      return null;
+    if (!isFiniteNumber(value)) {
+      return false;
     }
-    normalized.push(number);
   }
-  return normalized;
+  return true;
+}
+
+function finiteNumberArray(values) {
+  if (!allFiniteNumbers(values)) {
+    return null;
+  }
+  return [...values];
+}
+
+function allFiniteIntegers(values) {
+  for (const value of values) {
+    if (!isFiniteInteger(value)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function finiteIntegerArray(values) {
+  if (!allFiniteIntegers(values)) {
+    return null;
+  }
+  return [...values];
 }
 
 function bridgePureFunction(name, args) {
@@ -306,9 +341,8 @@ function bridgePurePoint(name, args) {
   if (!raw || typeof raw !== "object") {
     return null;
   }
-  const x = Number(raw.x);
-  const y = Number(raw.y);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+  const { x, y } = raw;
+  if (!isFiniteNumber(x) || !isFiniteNumber(y)) {
     return null;
   }
   return { x, y };
@@ -328,19 +362,27 @@ function bridgeCurvePoint(raw) {
   if (!raw || typeof raw !== "object") {
     return null;
   }
-  const x = Number(raw.x);
-  const y = Number(raw.y);
-  const t = Number(raw.t);
-  const angle = Number(raw.angle);
+  const { x, y, t, angle } = raw;
   if (
-    !Number.isFinite(x)
-    || !Number.isFinite(y)
-    || !Number.isFinite(t)
-    || !Number.isFinite(angle)
+    !isFiniteNumber(x)
+    || !isFiniteNumber(y)
+    || !isFiniteNumber(t)
+    || !isFiniteNumber(angle)
   ) {
     return null;
   }
   return { x, y, t, angle };
+}
+
+function bridgePoint(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const { x, y } = raw;
+  if (!isFiniteNumber(x) || !isFiniteNumber(y)) {
+    return null;
+  }
+  return { x, y };
 }
 
 function bridgeCurvePoints(raw) {
@@ -364,8 +406,8 @@ function bridgeArrowHeadRenderPart(raw) {
   }
   const hasPath = raw.has_path === true;
   const d = typeof raw.d === "string" ? raw.d : null;
-  const totalWidth = Number(raw.total_width);
-  if (d === null || !Number.isFinite(totalWidth)) {
+  const { total_width: totalWidth } = raw;
+  if (d === null || !isFiniteNumber(totalWidth)) {
     return null;
   }
   return {
@@ -375,18 +417,110 @@ function bridgeArrowHeadRenderPart(raw) {
   };
 }
 
+function bridgeArrowPathRenderPlan(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const d = typeof raw.d === "string" ? raw.d : null;
+  const dashArray = raw.dash_array == null
+    ? null
+    : (typeof raw.dash_array === "string" ? raw.dash_array : undefined);
+  if (d === null || dashArray === undefined) {
+    return null;
+  }
+  return {
+    d,
+    dash_array: dashArray,
+  };
+}
+
+function bridgeArrowCircleRenderPlan(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const { cx, cy, r } = raw;
+  if (!isFiniteNumber(cx) || !isFiniteNumber(cy) || !isFiniteNumber(r)) {
+    return null;
+  }
+  return { cx, cy, r };
+}
+
+function bridgeArrowBodyDecorationRenderPlan(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const kind = typeof raw.kind === "string" ? raw.kind : null;
+  const pathD = typeof raw.path_d === "string" ? raw.path_d : null;
+  const circle = raw.circle == null ? null : bridgeArrowCircleRenderPlan(raw.circle);
+  const maskCircle = raw.mask_circle == null
+    ? null
+    : bridgeArrowCircleRenderPlan(raw.mask_circle);
+  if (kind === null || pathD === null || circle === undefined || maskCircle === undefined) {
+    return null;
+  }
+  return {
+    kind,
+    path_d: pathD,
+    circle,
+    mask_circle: maskCircle,
+  };
+}
+
 function bridgeArrowRenderPlan(raw) {
   if (!raw || typeof raw !== "object") {
     return null;
   }
+  const ok = isBoolean(raw.ok) ? raw.ok : null;
+  const edgeValid = isBoolean(raw.edge_valid) ? raw.edge_valid : null;
+  const { angle } = raw;
+  const shift = bridgePoint(raw.shift);
+  const { svg_width: svgWidth, svg_height: svgHeight } = raw;
+  const offset = bridgePoint(raw.offset);
+  const start = bridgeCurvePoint(raw.start);
+  const end = bridgeCurvePoint(raw.end);
+  const background = bridgeArrowPathRenderPlan(raw.background);
+  const edge = bridgeArrowPathRenderPlan(raw.edge);
+  const clippingPath = bridgeArrowPathRenderPlan(raw.clipping_path);
+  const decoration = bridgeArrowBodyDecorationRenderPlan(raw.decoration);
   const tail = bridgeArrowHeadRenderPart(raw.tail);
   const tailMask = bridgeArrowHeadRenderPart(raw.tail_mask);
   const head = bridgeArrowHeadRenderPart(raw.head);
   const headMask = bridgeArrowHeadRenderPart(raw.head_mask);
-  if (tail === null || tailMask === null || head === null || headMask === null) {
+  if (
+    ok === null
+    || edgeValid === null
+    || !isFiniteNumber(angle)
+    || shift === null
+    || !isFiniteNumber(svgWidth)
+    || !isFiniteNumber(svgHeight)
+    || offset === null
+    || start === null
+    || end === null
+    || background === null
+    || edge === null
+    || clippingPath === null
+    || decoration === null
+    || tail === null
+    || tailMask === null
+    || head === null
+    || headMask === null
+  ) {
     return null;
   }
   return {
+    ok,
+    edge_valid: edgeValid,
+    angle,
+    shift,
+    svg_width: svgWidth,
+    svg_height: svgHeight,
+    offset,
+    start,
+    end,
+    background,
+    edge,
+    clipping_path: clippingPath,
+    decoration,
     tail,
     tail_mask: tailMask,
     head,
@@ -413,10 +547,10 @@ function bezierGeometryArgs(originX, originY, w, h, angle, tail = []) {
 function arcGeometryArgs(originX, originY, chord, major, radius, angle, tail = []) {
   const prefix = finiteNumberArray([originX, originY, chord]);
   const suffix = finiteNumberArray([radius, angle, ...tail]);
-  if (prefix === null || suffix === null) {
+  if (prefix === null || suffix === null || !isBoolean(major)) {
     return null;
   }
-  return [...prefix, Boolean(major), ...suffix];
+  return [...prefix, major, ...suffix];
 }
 
 function roundedRectangleGeometryArgs(centreX, centreY, width, height, radius, tail = []) {
@@ -863,13 +997,13 @@ export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
 ) {
   const curveArgs = bezierGeometryArgs(originX, originY, w, h, angle);
   const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, radius);
-  if (curveArgs === null || rectArgs === null) {
+  if (curveArgs === null || rectArgs === null || !isBoolean(permitContainment)) {
     return null;
   }
   return bridgeCurvePoints(
     bridgePureFunction(
       "ffi_runtime_bezier_intersections_with_rounded_rectangle",
-      [...curveArgs, ...rectArgs, Boolean(permitContainment)],
+      [...curveArgs, ...rectArgs, permitContainment],
     ),
   );
 }
@@ -941,13 +1075,13 @@ export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
 ) {
   const curveArgs = arcGeometryArgs(originX, originY, chord, major, radius, angle);
   const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, rectRadius);
-  if (curveArgs === null || rectArgs === null) {
+  if (curveArgs === null || rectArgs === null || !isBoolean(permitContainment)) {
     return null;
   }
   return bridgeCurvePoints(
     bridgePureFunction(
       "ffi_runtime_arc_intersections_with_rounded_rectangle",
-      [...curveArgs, ...rectArgs, Boolean(permitContainment)],
+      [...curveArgs, ...rectArgs, permitContainment],
     ),
   );
 }
@@ -975,54 +1109,57 @@ export function kwiver_bridge_arrow_find_endpoints_local(
   angle,
   offset,
 ) {
-  const renderArgs = finiteNumberArray([
-    renderSourceX,
-    renderSourceY,
-    renderTargetX,
-    renderTargetY,
-    sourceOriginX,
-    sourceOriginY,
-    sourceWidth,
-    sourceHeight,
-    sourceRadius,
-    targetOriginX,
-    targetOriginY,
-    targetWidth,
-    targetHeight,
-    targetRadius,
-    curve,
-    radius,
-    angle,
-    offset,
-  ]);
-  if (renderArgs === null) {
+  if (
+    typeof sourceIsEndpoint !== "boolean"
+    || typeof targetIsEndpoint !== "boolean"
+    || typeof shapeIsArc !== "boolean"
+    || !allFiniteNumbers([
+      renderSourceX,
+      renderSourceY,
+      renderTargetX,
+      renderTargetY,
+      sourceOriginX,
+      sourceOriginY,
+      sourceWidth,
+      sourceHeight,
+      sourceRadius,
+      targetOriginX,
+      targetOriginY,
+      targetWidth,
+      targetHeight,
+      targetRadius,
+      curve,
+      radius,
+      angle,
+      offset,
+    ])
+  ) {
     return null;
   }
-  const args = [
-    renderArgs[0],
-    renderArgs[1],
-    renderArgs[2],
-    renderArgs[3],
-    Boolean(sourceIsEndpoint),
-    renderArgs[4],
-    renderArgs[5],
-    renderArgs[6],
-    renderArgs[7],
-    renderArgs[8],
-    Boolean(targetIsEndpoint),
-    renderArgs[9],
-    renderArgs[10],
-    renderArgs[11],
-    renderArgs[12],
-    renderArgs[13],
-    Boolean(shapeIsArc),
-    Math.round(renderArgs[14]),
-    Math.round(renderArgs[15]),
-    Math.round(renderArgs[16]),
-    Math.round(renderArgs[17]),
-  ];
   return bridgeArrowEndpoints(
-    bridgePureFunction("ffi_runtime_arrow_find_endpoints_local", args),
+    bridgePureFunction("ffi_runtime_arrow_find_endpoints_local", [
+      renderSourceX,
+      renderSourceY,
+      renderTargetX,
+      renderTargetY,
+      sourceIsEndpoint,
+      sourceOriginX,
+      sourceOriginY,
+      sourceWidth,
+      sourceHeight,
+      sourceRadius,
+      targetIsEndpoint,
+      targetOriginX,
+      targetOriginY,
+      targetWidth,
+      targetHeight,
+      targetRadius,
+      shapeIsArc,
+      Math.round(curve),
+      Math.round(radius),
+      Math.round(angle),
+      Math.round(offset),
+    ]),
   );
 }
 
@@ -1054,153 +1191,186 @@ export function kwiver_bridge_arrow_label_position_local(
   labelHeight,
   edgeWidth,
 ) {
-  const renderArgs = finiteNumberArray([
+  if (
+    typeof sourceIsEndpoint !== "boolean"
+    || typeof targetIsEndpoint !== "boolean"
+    || typeof shapeIsArc !== "boolean"
+    || typeof labelAlignment !== "string"
+    || !allFiniteNumbers([
+      renderSourceX,
+      renderSourceY,
+      renderTargetX,
+      renderTargetY,
+      sourceOriginX,
+      sourceOriginY,
+      sourceWidth,
+      sourceHeight,
+      sourceRadius,
+      targetOriginX,
+      targetOriginY,
+      targetWidth,
+      targetHeight,
+      targetRadius,
+      curve,
+      radius,
+      angle,
+      offset,
+      labelPosition,
+      labelWidth,
+      labelHeight,
+      edgeWidth,
+    ])
+  ) {
+    return null;
+  }
+  return bridgePurePoint("ffi_runtime_arrow_label_position_local", [
     renderSourceX,
     renderSourceY,
     renderTargetX,
     renderTargetY,
+    sourceIsEndpoint,
     sourceOriginX,
     sourceOriginY,
     sourceWidth,
     sourceHeight,
     sourceRadius,
+    targetIsEndpoint,
     targetOriginX,
     targetOriginY,
     targetWidth,
     targetHeight,
     targetRadius,
-    curve,
-    radius,
-    angle,
-    offset,
-    labelPosition,
+    shapeIsArc,
+    Math.round(curve),
+    Math.round(radius),
+    Math.round(angle),
+    Math.round(offset),
+    labelAlignment,
+    Math.round(labelPosition),
     labelWidth,
     labelHeight,
     edgeWidth,
   ]);
-  if (renderArgs === null) {
-    return null;
-  }
-  const args = [
-    renderArgs[0],
-    renderArgs[1],
-    renderArgs[2],
-    renderArgs[3],
-    Boolean(sourceIsEndpoint),
-    renderArgs[4],
-    renderArgs[5],
-    renderArgs[6],
-    renderArgs[7],
-    renderArgs[8],
-    Boolean(targetIsEndpoint),
-    renderArgs[9],
-    renderArgs[10],
-    renderArgs[11],
-    renderArgs[12],
-    renderArgs[13],
-    Boolean(shapeIsArc),
-    Math.round(renderArgs[14]),
-    Math.round(renderArgs[15]),
-    Math.round(renderArgs[16]),
-    Math.round(renderArgs[17]),
-    typeof labelAlignment === "string" ? labelAlignment : "left",
-    Math.round(renderArgs[18]),
-    renderArgs[19],
-    renderArgs[20],
-    renderArgs[21],
-  ];
-  return bridgePurePoint("ffi_runtime_arrow_label_position_local", args);
 }
 
 export function kwiver_bridge_arrow_render_plan_local(
+  renderSourceX,
+  renderSourceY,
+  renderTargetX,
+  renderTargetY,
+  sourceIsEndpoint,
+  sourceOriginX,
+  sourceOriginY,
+  sourceWidth,
+  sourceHeight,
+  sourceRadius,
+  targetIsEndpoint,
+  targetOriginX,
+  targetOriginY,
+  targetWidth,
+  targetHeight,
+  targetRadius,
   shapeIsArc,
   isLoop,
-  length,
-  curve,
-  loopAngle,
-  startX,
-  startY,
-  startT,
-  startAngle,
-  endX,
-  endY,
-  endT,
-  endAngle,
+  geometryCurve,
+  geometryRadius,
+  geometryAngle,
+  geometryOffset,
+  displayCurve,
+  displayLoopAngle,
   level,
   strokeWidth,
+  edgeWidth,
   headWidth,
   headHeight,
-  shortenStart,
-  shortenEnd,
+  shiftDistance,
   shortenTail,
   shortenHead,
-  dashPaddingStart,
-  dashPaddingEnd,
-  offsetX,
-  offsetY,
-  directionAngle,
+  bodyStyle,
+  dashStyle,
   tailsCsv,
   headsCsv,
 ) {
-  const renderArgs = finiteNumberArray([
-    length,
-    curve,
-    loopAngle,
-    startX,
-    startY,
-    startT,
-    startAngle,
-    endX,
-    endY,
-    endT,
-    endAngle,
-    level,
-    strokeWidth,
-    headWidth,
-    headHeight,
-    shortenStart,
-    shortenEnd,
-    shortenTail,
-    shortenHead,
-    dashPaddingStart,
-    dashPaddingEnd,
-    offsetX,
-    offsetY,
-    directionAngle,
-  ]);
-  if (renderArgs === null) {
+  if (
+    typeof sourceIsEndpoint !== "boolean"
+    || typeof targetIsEndpoint !== "boolean"
+    || typeof shapeIsArc !== "boolean"
+    || typeof isLoop !== "boolean"
+    || typeof bodyStyle !== "string"
+    || typeof dashStyle !== "string"
+    || typeof tailsCsv !== "string"
+    || typeof headsCsv !== "string"
+    || !allFiniteNumbers([
+      renderSourceX,
+      renderSourceY,
+      renderTargetX,
+      renderTargetY,
+      sourceOriginX,
+      sourceOriginY,
+      sourceWidth,
+      sourceHeight,
+      sourceRadius,
+      targetOriginX,
+      targetOriginY,
+      targetWidth,
+      targetHeight,
+      targetRadius,
+      geometryCurve,
+      geometryRadius,
+      geometryAngle,
+      geometryOffset,
+      displayCurve,
+      displayLoopAngle,
+      level,
+      strokeWidth,
+      edgeWidth,
+      headWidth,
+      headHeight,
+      shiftDistance,
+      shortenTail,
+      shortenHead,
+    ])
+  ) {
     return null;
   }
   return bridgeArrowRenderPlan(
     bridgePureFunction("ffi_runtime_arrow_render_plan_local", [
-      Boolean(shapeIsArc),
-      Boolean(isLoop),
-      renderArgs[0],
-      renderArgs[1],
-      renderArgs[2],
-      renderArgs[3],
-      renderArgs[4],
-      renderArgs[5],
-      renderArgs[6],
-      renderArgs[7],
-      renderArgs[8],
-      renderArgs[9],
-      renderArgs[10],
-      Math.round(renderArgs[11]),
-      renderArgs[12],
-      renderArgs[13],
-      renderArgs[14],
-      renderArgs[15],
-      renderArgs[16],
-      renderArgs[17],
-      renderArgs[18],
-      renderArgs[19],
-      renderArgs[20],
-      renderArgs[21],
-      renderArgs[22],
-      renderArgs[23],
-      typeof tailsCsv === "string" ? tailsCsv : "",
-      typeof headsCsv === "string" ? headsCsv : "",
+      renderSourceX,
+      renderSourceY,
+      renderTargetX,
+      renderTargetY,
+      sourceIsEndpoint,
+      sourceOriginX,
+      sourceOriginY,
+      sourceWidth,
+      sourceHeight,
+      sourceRadius,
+      targetIsEndpoint,
+      targetOriginX,
+      targetOriginY,
+      targetWidth,
+      targetHeight,
+      targetRadius,
+      shapeIsArc,
+      isLoop,
+      Math.round(geometryCurve),
+      Math.round(geometryRadius),
+      Math.round(geometryAngle),
+      Math.round(geometryOffset),
+      displayCurve,
+      displayLoopAngle,
+      Math.round(level),
+      strokeWidth,
+      edgeWidth,
+      headWidth,
+      headHeight,
+      shiftDistance,
+      shortenTail,
+      shortenHead,
+      bodyStyle,
+      dashStyle,
+      tailsCsv,
+      headsCsv,
     ]),
   );
 }
@@ -1279,15 +1449,7 @@ export function kwiver_bridge_all_cell_ids(origin = "ui.bridge.all_cell_ids") {
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-  const out = [];
-  for (const rawId of envelope.result) {
-    const cellId = Number(rawId);
-    if (!Number.isInteger(cellId)) {
-      return null;
-    }
-    out.push(cellId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_dependencies(
@@ -1305,15 +1467,7 @@ export function kwiver_bridge_dependencies(
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-  const out = [];
-  for (const rawId of envelope.result) {
-    const dependencyId = Number(rawId);
-    if (!Number.isInteger(dependencyId)) {
-      return null;
-    }
-    out.push(dependencyId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_connected_components(
@@ -1323,13 +1477,9 @@ export function kwiver_bridge_connected_components(
   if (!Array.isArray(roots)) {
     return null;
   }
-  const normalizedRoots = [];
-  for (const rawRoot of roots) {
-    const rootId = Number(rawRoot);
-    if (!Number.isInteger(rootId)) {
-      return null;
-    }
-    normalizedRoots.push(rootId);
+  const normalizedRoots = finiteIntegerArray(roots);
+  if (normalizedRoots === null) {
+    return null;
   }
 
   const envelope = dispatchCommandResult(
@@ -1340,16 +1490,7 @@ export function kwiver_bridge_connected_components(
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-
-  const out = [];
-  for (const rawId of envelope.result) {
-    const cellId = Number(rawId);
-    if (!Number.isInteger(cellId)) {
-      return null;
-    }
-    out.push(cellId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_transitive_dependencies(
@@ -1357,39 +1498,26 @@ export function kwiver_bridge_transitive_dependencies(
   excludeRoots = false,
   origin = "ui.bridge.transitive_dependencies",
 ) {
-  if (!Array.isArray(roots)) {
+  if (!Array.isArray(roots) || !isBoolean(excludeRoots)) {
     return null;
   }
-  const normalizedRoots = [];
-  for (const rawRoot of roots) {
-    const rootId = Number(rawRoot);
-    if (!Number.isInteger(rootId)) {
-      return null;
-    }
-    normalizedRoots.push(rootId);
+  const normalizedRoots = finiteIntegerArray(roots);
+  if (normalizedRoots === null) {
+    return null;
   }
 
   const envelope = dispatchCommandResult(
     "transitive_dependencies_json",
     {
       roots: normalizedRoots,
-      exclude_roots: Boolean(excludeRoots),
+      exclude_roots: excludeRoots,
     },
     origin,
   );
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-
-  const out = [];
-  for (const rawId of envelope.result) {
-    const cellId = Number(rawId);
-    if (!Number.isInteger(cellId)) {
-      return null;
-    }
-    out.push(cellId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_transitive_reverse_dependencies(
@@ -1399,13 +1527,9 @@ export function kwiver_bridge_transitive_reverse_dependencies(
   if (!Array.isArray(roots)) {
     return null;
   }
-  const normalizedRoots = [];
-  for (const rawRoot of roots) {
-    const rootId = Number(rawRoot);
-    if (!Number.isInteger(rootId)) {
-      return null;
-    }
-    normalizedRoots.push(rootId);
+  const normalizedRoots = finiteIntegerArray(roots);
+  if (normalizedRoots === null) {
+    return null;
   }
 
   const envelope = dispatchCommandResult(
@@ -1416,16 +1540,7 @@ export function kwiver_bridge_transitive_reverse_dependencies(
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-
-  const out = [];
-  for (const rawId of envelope.result) {
-    const cellId = Number(rawId);
-    if (!Number.isInteger(cellId)) {
-      return null;
-    }
-    out.push(cellId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_reverse_dependencies(
@@ -1443,15 +1558,7 @@ export function kwiver_bridge_reverse_dependencies(
   if (!envelope || !Array.isArray(envelope.result)) {
     return null;
   }
-  const out = [];
-  for (const rawId of envelope.result) {
-    const dependencyId = Number(rawId);
-    if (!Number.isInteger(dependencyId)) {
-      return null;
-    }
-    out.push(dependencyId);
-  }
-  return out;
+  return finiteIntegerArray(envelope.result);
 }
 export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
   return dispatchCommandResult("set_selection", selectedIds, origin);
@@ -1461,9 +1568,12 @@ export function kwiver_bridge_export_selection(
   includeDependencies = true,
   origin = "ui.bridge.selection",
 ) {
+  if (!isBoolean(includeDependencies)) {
+    return null;
+  }
   const envelope = dispatchCommandResult(
     "export_selection",
-    { include_dependencies: Boolean(includeDependencies) },
+    { include_dependencies: includeDependencies },
     origin,
   );
   if (!envelope) {
@@ -1479,14 +1589,20 @@ export function kwiver_bridge_paste_selection_json(
   startId = 1,
   origin = "ui.bridge.paste",
 ) {
-  if (typeof payload !== "string" || payload === "") {
+  if (
+    typeof payload !== "string"
+    || payload === ""
+    || !isFiniteInteger(originX)
+    || !isFiniteInteger(originY)
+    || !isFiniteInteger(startId)
+  ) {
     return null;
   }
   return dispatchMutationResult("paste_selection_json", {
     payload,
-    origin_x: asInt(originX, 0),
-    origin_y: asInt(originY, 0),
-    start_id: asInt(startId, 1),
+    origin_x: originX,
+    origin_y: originY,
+    start_id: startId,
   }, origin);
 }
 
@@ -1497,13 +1613,13 @@ export function kwiver_bridge_add_vertex_json(
   labelColour = null,
   origin = "ui.bridge.create.vertex",
 ) {
-  if (typeof label !== "string") {
+  if (typeof label !== "string" || !isFiniteInteger(x) || !isFiniteInteger(y)) {
     return null;
   }
   const input = {
     label,
-    x: asInt(x, 0),
-    y: asInt(y, 0),
+    x,
+    y,
   };
   if (
     labelColour
@@ -1558,13 +1674,13 @@ export function kwiver_bridge_move_vertex_json(
   y,
   origin = "ui.bridge.move",
 ) {
-  if (!Number.isInteger(vertexId)) {
+  if (!isFiniteInteger(vertexId) || !isFiniteInteger(x) || !isFiniteInteger(y)) {
     return null;
   }
   return dispatchMutationResult("move_vertex_json", {
     vertex_id: vertexId,
-    x: asInt(x, 0),
-    y: asInt(y, 0),
+    x,
+    y,
   }, origin);
 }
 
@@ -1626,12 +1742,12 @@ export function kwiver_bridge_remove_json(
   when,
   origin = "ui.bridge.remove",
 ) {
-  if (!Number.isInteger(cellId)) {
+  if (!isFiniteInteger(cellId) || !isFiniteInteger(when)) {
     return null;
   }
   return dispatchMutationResult("remove_json", {
     cell_id: cellId,
-    when: asInt(when, 0),
+    when,
   }, origin);
 }
 
@@ -1641,12 +1757,12 @@ export function kwiver_bridge_set_edge_offset_json(
   offset,
   origin = "ui.bridge.edge.offset",
 ) {
-  if (!Number.isInteger(edgeId)) {
+  if (!isFiniteInteger(edgeId) || !isFiniteInteger(offset)) {
     return null;
   }
   return dispatchMutationResult("set_edge_offset_json", {
     edge_id: edgeId,
-    offset: asInt(offset, 0),
+    offset,
   }, origin);
 }
 
@@ -1655,12 +1771,12 @@ export function kwiver_bridge_set_edge_curve_json(
   curve,
   origin = "ui.bridge.edge.curve",
 ) {
-  if (!Number.isInteger(edgeId)) {
+  if (!isFiniteInteger(edgeId) || !isFiniteInteger(curve)) {
     return null;
   }
   return dispatchMutationResult("set_edge_curve_json", {
     edge_id: edgeId,
-    curve: asInt(curve, 0),
+    curve,
   }, origin);
 }
 
@@ -1683,12 +1799,12 @@ export function kwiver_bridge_set_edge_label_position_json(
   labelPosition,
   origin = "ui.bridge.edge.label_position",
 ) {
-  if (!Number.isInteger(edgeId)) {
+  if (!isFiniteInteger(edgeId) || !isFiniteInteger(labelPosition)) {
     return null;
   }
   return dispatchMutationResult("set_edge_label_position_json", {
     edge_id: edgeId,
-    label_position: asInt(labelPosition, 0),
+    label_position: labelPosition,
   }, origin);
 }
 

@@ -1392,6 +1392,47 @@ function _M0TP35kokic6kwiver8geometry23ArrowHeadRenderPartPlan(param0, param1, p
   this.d = param1;
   this.total_width = param2;
 }
+function _M0TP35kokic6kwiver8geometry19ArrowPathRenderPlan(param0, param1) {
+  this.d = param0;
+  this.dash_array = param1;
+}
+function _M0TP35kokic6kwiver8geometry21ArrowCircleRenderPlan(param0, param1, param2) {
+  this.cx = param0;
+  this.cy = param1;
+  this.r = param2;
+}
+function _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan(param0, param1, param2, param3) {
+  this.kind = param0;
+  this.path_d = param1;
+  this.circle = param2;
+  this.mask_circle = param3;
+}
+function _M0DTPC16option6OptionGOsE4None() {}
+_M0DTPC16option6OptionGOsE4None.prototype.$tag = 0;
+const _M0DTPC16option6OptionGOsE4None__ = new _M0DTPC16option6OptionGOsE4None();
+function _M0DTPC16option6OptionGOsE4Some(param0) {
+  this._0 = param0;
+}
+_M0DTPC16option6OptionGOsE4Some.prototype.$tag = 1;
+function _M0TP35kokic6kwiver8geometry15ArrowRenderPlan(param0, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) {
+  this.ok = param0;
+  this.edge_valid = param1;
+  this.angle = param2;
+  this.shift = param3;
+  this.svg_width = param4;
+  this.svg_height = param5;
+  this.offset = param6;
+  this.start = param7;
+  this.end = param8;
+  this.background = param9;
+  this.edge = param10;
+  this.clipping_path = param11;
+  this.decoration = param12;
+  this.tail = param13;
+  this.tail_mask = param14;
+  this.head = param15;
+  this.head_mask = param16;
+}
 function _M0TP35kokic6kwiver8geometry22ArrowHeadRenderContext(param0, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) {
   this.curve = param0;
   this.stroke_width = param1;
@@ -1406,12 +1447,6 @@ function _M0TP35kokic6kwiver8geometry22ArrowHeadRenderContext(param0, param1, pa
   this.offset = param10;
   this.level = param11;
   this.direction_angle = param12;
-}
-function _M0TP35kokic6kwiver8geometry15ArrowRenderPlan(param0, param1, param2, param3) {
-  this.tail = param0;
-  this.tail_mask = param1;
-  this.head = param2;
-  this.head_mask = param3;
 }
 function _M0TP35kokic6kwiver8geometry10ArrowShape(param0) {
   this.data = param0;
@@ -1924,20 +1959,32 @@ const _M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6391 = new _M
 const _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6392 = new _M0TP35kokic6kwiver6engine20TikzCdExportSettings(false, false, false, false);
 const _M0MP35kokic6kwiver6engine22FletcherExportSettings7defaultN6recordS6393 = new _M0TP35kokic6kwiver6engine22FletcherExportSettings(false);
 const _M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394 = new _M0TP35kokic6kwiver6engine5Point(0, 0);
-const _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS394 = "\n";
-const _M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS395 = " ";
-const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS396 = " ";
-const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS397 = " ";
-const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS398 = " ";
-const _M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS399 = " ";
-const _M0FP35kokic6kwiver8geometry28arrow__render__head__marginsN5tupleS610 = { _0: 0, _1: 0, _2: 0 };
-const _M0MP35kokic6kwiver8geometry17ArrowLayoutConfig7defaultN6recordS611 = new _M0TP35kokic6kwiver8geometry17ArrowLayoutConfig(8, 256, 30);
-const _M0MP35kokic6kwiver8geometry21ArrowCurveModelConfig7defaultN6recordS613 = new _M0TP35kokic6kwiver8geometry21ArrowCurveModelConfig(24, 16, 8, 96, 64, 0.01);
-const _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1738 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1844 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1845 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1851 = "";
-const _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1954 = ",";
+const _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS576 = "\n";
+const _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einnerN7_2abindS582 = "\n";
+const _M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS583 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS584 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS585 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS586 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS587 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS588 = " ";
+const _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS589 = " ";
+const _M0FP35kokic6kwiver8geometry24arrow__render__curve__byN7_2abindS590 = " ";
+const _M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS591 = " ";
+const _M0FP35kokic6kwiver8geometry28arrow__render__string__arrayN7_2abindS602 = " ";
+const _M0FP35kokic6kwiver8geometry26arrow__render__dash__arrayN7_2abindS603 = " ";
+const _M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hookN7_2abindS608 = "hook";
+const _M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS658 = "\n";
+const _M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS659 = "\n";
+const _M0FP35kokic6kwiver8geometry31arrow__render__background__pathN7_2abindS697 = " ";
+const _M0FP35kokic6kwiver8geometry29arrow__render__clipping__pathN7_2abindS698 = " ";
+const _M0FP35kokic6kwiver8geometry28arrow__render__head__marginsN5tupleS873 = { _0: 0, _1: 0, _2: 0 };
+const _M0MP35kokic6kwiver8geometry17ArrowLayoutConfig7defaultN6recordS874 = new _M0TP35kokic6kwiver8geometry17ArrowLayoutConfig(8, 256, 30);
+const _M0MP35kokic6kwiver8geometry21ArrowCurveModelConfig7defaultN6recordS876 = new _M0TP35kokic6kwiver8geometry21ArrowCurveModelConfig(24, 16, 8, 96, 64, 0.01);
+const _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871 = "";
+const _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974 = ",";
 const _M0FPB4seed = _M0FPB12random__seed();
 const _M0FPB18brute__force__findN6constrS8126 = 0;
 const _M0FPB28boyer__moore__horspool__findN6constrS8125 = 0;
@@ -2013,11 +2060,11 @@ const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS
 const _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN6constrS6343 = "empty arrow option";
 const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6383 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import failed", 0, 0);
 const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6384 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import produced no quiver", 0, 0);
-const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS1981 = true;
-const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS1982 = false;
-const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS1983 = "import failed";
-const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS1984 = "import failed";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS1985 = "dispatch output parse failed";
+const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2001 = true;
+const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2002 = false;
+const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2003 = "import failed";
+const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2004 = "import failed";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2005 = "dispatch output parse failed";
 function _M0FPC15abort5abortGuE(msg) {
   $panic();
 }
@@ -27535,14 +27582,20 @@ function _M0MP35kokic6kwiver6engine3Arc24t__after__length_2einner(self, clamp) {
     return length / (self.sweep_angle * Math.abs(self.radius));
   };
 }
+function _M0FP35kokic6kwiver8geometry26arrow__render__zero__point() {
+  return _M0MP35kokic6kwiver6engine5Point3new(0, 0);
+}
+function _M0FP35kokic6kwiver8geometry33arrow__render__zero__curve__point() {
+  return _M0MP35kokic6kwiver6engine10CurvePoint3new(_M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), 0, 0);
+}
 function _M0FP35kokic6kwiver8geometry30arrow__render__arc__for__chord(chord, loop_radius) {
   const sagitta = chord >= 96 ? 1e-006 : 32 * ((96 - chord) / 32);
   const r_for_sagitta = sagitta / 2 + chord * chord / (8 * sagitta);
   const r = chord <= 64 ? 32 + (64 - chord) / 64 * (loop_radius - 32) : r_for_sagitta;
-  return _M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, chord <= 64, r, 0);
+  return _M0MP35kokic6kwiver6engine3Arc3new(_M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), chord, chord <= 64, r, 0);
 }
 function _M0FP35kokic6kwiver8geometry20arrow__render__curve(shape_is_arc, is_loop, length, curve, loop_angle) {
-  return !shape_is_arc ? new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData6Bezier(_M0MP35kokic6kwiver6engine6Bezier3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, length, curve, 0)) : is_loop ? new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData3Arc(_M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, length, true, curve, loop_angle)) : new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData3Arc(_M0FP35kokic6kwiver8geometry30arrow__render__arc__for__chord(length, curve));
+  return !shape_is_arc ? new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData6Bezier(_M0MP35kokic6kwiver6engine6Bezier3new(_M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), length, curve, 0)) : is_loop ? new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData3Arc(_M0MP35kokic6kwiver6engine3Arc3new(_M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), length, true, curve, loop_angle)) : new _M0DTP35kokic6kwiver8geometry20ArrowRenderCurveData3Arc(_M0FP35kokic6kwiver8geometry30arrow__render__arc__for__chord(length, curve));
 }
 function _M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, t) {
   if (curve.$tag === 0) {
@@ -27590,31 +27643,135 @@ function _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(cu
     return _func(length);
   }
 }
+function _M0FP35kokic6kwiver8geometry28arrow__render__curve__height(curve) {
+  if (curve.$tag === 0) {
+    const _Bezier = curve;
+    const _bezier = _Bezier._0;
+    return _bezier.h / 2;
+  } else {
+    const _Arc = curve;
+    const _arc = _Arc._0;
+    return _arc.major ? Math.abs(_arc.radius * 2 - _arc.sagitta) : Math.abs(_arc.sagitta);
+  }
+}
+function _M0FP35kokic6kwiver8geometry27arrow__render__curve__width(curve) {
+  if (curve.$tag === 0) {
+    const _Bezier = curve;
+    const _bezier = _Bezier._0;
+    return _bezier.w;
+  } else {
+    const _Arc = curve;
+    const _arc = _Arc._0;
+    return _arc.major ? Math.abs(_arc.radius) * 2 : _arc.chord;
+  }
+}
 function _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(total_width) {
   return new _M0TP35kokic6kwiver8geometry23ArrowHeadRenderPartPlan(false, "", total_width);
 }
+function _M0FP35kokic6kwiver8geometry25arrow__render__path__none() {
+  return new _M0TP35kokic6kwiver8geometry19ArrowPathRenderPlan("", undefined);
+}
+function _M0FP35kokic6kwiver8geometry33arrow__render__path__plan_2einner(d, dash_array) {
+  return new _M0TP35kokic6kwiver8geometry19ArrowPathRenderPlan(d, dash_array);
+}
+function _M0FP35kokic6kwiver8geometry27arrow__render__circle__plan(point, radius) {
+  return new _M0TP35kokic6kwiver8geometry21ArrowCircleRenderPlan(point.x, point.y, radius);
+}
+function _M0FP35kokic6kwiver8geometry31arrow__render__decoration__none() {
+  return new _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan("none", "", undefined, undefined);
+}
 function _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__part(commands, total_width) {
-  return commands.length === 0 ? _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(total_width) : new _M0TP35kokic6kwiver8geometry23ArrowHeadRenderPartPlan(true, _M0MPC15array5Array4joinGsE(commands, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS394, 0, _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS394.length)), total_width);
+  return commands.length === 0 ? _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(total_width) : new _M0TP35kokic6kwiver8geometry23ArrowHeadRenderPartPlan(true, _M0MPC15array5Array4joinGsE(commands, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS576, 0, _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS576.length)), total_width);
+}
+function _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einner(commands, dash_array) {
+  return commands.length === 0 ? _M0FP35kokic6kwiver8geometry25arrow__render__path__none() : _M0FP35kokic6kwiver8geometry33arrow__render__path__plan_2einner(_M0MPC15array5Array4joinGsE(commands, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einnerN7_2abindS582, 0, _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einnerN7_2abindS582.length)), dash_array);
+}
+function _M0FP35kokic6kwiver8geometry39arrow__render__commands__to__path__plan(commands, dash_array$46$opt) {
+  let dash_array;
+  if (dash_array$46$opt.$tag === 1) {
+    const _Some = dash_array$46$opt;
+    dash_array = _Some._0;
+  } else {
+    dash_array = undefined;
+  }
+  return _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einner(commands, dash_array);
 }
 function _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, point) {
-  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["M", _M0MPC16double6Double10to__string(point.x), _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS395, 0, _M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS395.length)));
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["M", _M0MPC16double6Double10to__string(point.x), _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS583, 0, _M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS583.length)));
 }
-function _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, point) {
+function _M0FP35kokic6kwiver8geometry23arrow__render__line__to(commands, point) {
   if (point.x === 0) {
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["v", _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS396, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS396.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["V", _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS584, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS584.length)));
     return;
   } else {
     if (point.y === 0) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["h", _M0MPC16double6Double10to__string(point.x)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS397, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS397.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["H", _M0MPC16double6Double10to__string(point.x)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS585, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS585.length)));
       return;
     } else {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["l", _M0MPC16double6Double10to__string(point.x), _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS398, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS398.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["L", _M0MPC16double6Double10to__string(point.x), _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS586, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__toN7_2abindS586.length)));
       return;
     }
   }
 }
+function _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, point) {
+  if (point.x === 0) {
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["v", _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS587, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS587.length)));
+    return;
+  } else {
+    if (point.y === 0) {
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["h", _M0MPC16double6Double10to__string(point.x)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS588, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS588.length)));
+      return;
+    } else {
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["l", _M0MPC16double6Double10to__string(point.x), _M0MPC16double6Double10to__string(point.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS589, 0, _M0FP35kokic6kwiver8geometry23arrow__render__line__byN7_2abindS589.length)));
+      return;
+    }
+  }
+}
+function _M0FP35kokic6kwiver8geometry24arrow__render__curve__by(commands, control, next) {
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["q", _M0MPC16double6Double10to__string(control.x), _M0MPC16double6Double10to__string(control.y), _M0MPC16double6Double10to__string(next.x), _M0MPC16double6Double10to__string(next.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry24arrow__render__curve__byN7_2abindS590, 0, _M0FP35kokic6kwiver8geometry24arrow__render__curve__byN7_2abindS590.length)));
+}
 function _M0FP35kokic6kwiver8geometry22arrow__render__arc__by(commands, radius, angle, large_arc, clockwise, next) {
-  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["a", _M0MPC16double6Double10to__string(Math.abs(radius.x)), _M0MPC16double6Double10to__string(Math.abs(radius.y)), _M0MPC16double6Double10to__string(angle * 180 / 3.1415926535897931), large_arc ? "1" : "0", clockwise ? "1" : "0", _M0MPC16double6Double10to__string(next.x), _M0MPC16double6Double10to__string(next.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS399, 0, _M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS399.length)));
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(commands, _M0MPC15array5Array4joinGsE(["a", _M0MPC16double6Double10to__string(Math.abs(radius.x)), _M0MPC16double6Double10to__string(Math.abs(radius.y)), _M0MPC16double6Double10to__string(angle * 180 / 3.1415926535897931), large_arc ? "1" : "0", clockwise ? "1" : "0", _M0MPC16double6Double10to__string(next.x), _M0MPC16double6Double10to__string(next.y)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS591, 0, _M0FP35kokic6kwiver8geometry22arrow__render__arc__byN7_2abindS591.length)));
+}
+function _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset) {
+  _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, offset);
+  if (curve.$tag === 0) {
+    const _Bezier = curve;
+    const _bezier = _Bezier._0;
+    _M0FP35kokic6kwiver8geometry24arrow__render__curve__by(commands, _M0MP35kokic6kwiver6engine5Point3new(_bezier.w / 2, _bezier.h), _M0MP35kokic6kwiver6engine5Point3new(_bezier.w, 0));
+    return;
+  } else {
+    const _Arc = curve;
+    const _arc = _Arc._0;
+    if (!_arc.major && Math.abs(_arc.sagitta) <= 1) {
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, _M0MP35kokic6kwiver6engine5Point3new(_arc.chord, 0));
+      return;
+    } else {
+      const radius = Math.abs(_arc.radius);
+      _M0FP35kokic6kwiver8geometry22arrow__render__arc__by(commands, _M0MP35kokic6kwiver6engine5Point3new(radius, radius), 0, _arc.major, _arc.radius >= 0, _M0MP35kokic6kwiver6engine5Point3new(_arc.chord, 0));
+      return;
+    }
+  }
+}
+function _M0FP35kokic6kwiver8geometry28arrow__render__string__array(values) {
+  const parts = [];
+  const _bind = values.length;
+  let _tmp = 0;
+  while (true) {
+    const _ = _tmp;
+    if (_ < _bind) {
+      const value = values[_];
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parts, _M0MPC16double6Double10to__string(value));
+      _tmp = _ + 1 | 0;
+      continue;
+    } else {
+      break;
+    }
+  }
+  return _M0MPC15array5Array4joinGsE(parts, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry28arrow__render__string__arrayN7_2abindS602, 0, _M0FP35kokic6kwiver8geometry28arrow__render__string__arrayN7_2abindS602.length));
+}
+function _M0FP35kokic6kwiver8geometry26arrow__render__dash__array(arclen_to_start, dashes, arclen_to_end, arclen) {
+  return _M0MPC15array5Array4joinGsE(["0", _M0MPC16double6Double10to__string(arclen_to_start), _M0FP35kokic6kwiver8geometry28arrow__render__string__array(dashes), _M0MPC16double6Double10to__string(arclen - arclen_to_end)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry26arrow__render__dash__arrayN7_2abindS603, 0, _M0FP35kokic6kwiver8geometry26arrow__render__dash__arrayN7_2abindS603.length));
 }
 function _M0FP35kokic6kwiver8geometry30arrow__render__style__contains(styles, target) {
   const _bind = styles.length;
@@ -27634,6 +27791,9 @@ function _M0FP35kokic6kwiver8geometry30arrow__render__style__contains(styles, ta
   }
   return false;
 }
+function _M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hook(styles) {
+  return styles.length === 0 ? false : _M0MPC16string6String11has__prefix(_M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(styles, 0), new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hookN7_2abindS608, 0, _M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hookN7_2abindS608.length));
+}
 function _M0FP35kokic6kwiver8geometry28arrow__render__head__margins(style, head_width) {
   switch (style) {
     case "epi": {
@@ -27652,9 +27812,28 @@ function _M0FP35kokic6kwiver8geometry28arrow__render__head__margins(style, head_
       return { _0: head_width / 2, _1: head_width / 2, _2: 0 };
     }
     default: {
-      return _M0FP35kokic6kwiver8geometry28arrow__render__head__marginsN5tupleS610;
+      return _M0FP35kokic6kwiver8geometry28arrow__render__head__marginsN5tupleS873;
     }
   }
+}
+function _M0FP35kokic6kwiver8geometry36arrow__render__adjust__dash__padding(curve, styles, endpoint, is_start, head_width, edge_width) {
+  let _tmp;
+  if (styles.length === 0) {
+    _tmp = true;
+  } else {
+    const _p = _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(styles, 0);
+    const _p$2 = "mono";
+    _tmp = !(_p === _p$2);
+  }
+  if (_tmp) {
+    return 0;
+  }
+  const arclen_to_endpoint = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, endpoint.t);
+  const head_direction = is_start ? 1 : -1;
+  const head_angle = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_endpoint + head_width * head_direction));
+  const endpoint_angle = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, endpoint.t);
+  const diff_angle = endpoint_angle - head_angle;
+  return Math.abs(edge_width * _M0FPC14math3sin(diff_angle) / 2);
 }
 function _M0FP35kokic6kwiver8geometry30arrow__render__draw__epi__like(commands, context, point, angle, start_sign, end_ind, is_mask, is_start, head_style) {
   const _bind = [{ _0: -1, _1: end_ind }, { _0: 1, _1: !end_ind }];
@@ -27832,10 +28011,311 @@ function _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, styles, end
   }
   return _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__part(commands, total_width);
 }
-function _M0FP35kokic6kwiver8geometry26arrow__render__plan__local(shape_is_arc, is_loop, length, curve, loop_angle, start, end, level, stroke_width, head_width, head_height, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, offset, direction_angle, tails, heads) {
+function _M0FP35kokic6kwiver8geometry31arrow__render__body__decoration(curve, start, end, shorten_tail, shorten_head, head_height, offset, body_style) {
+  const arclen_to_start = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, start.t);
+  const arclen_to_end = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, end.t);
+  const _p = start.t;
+  const _p$2 = _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_start + shorten_tail);
+  const start_t = _p > _p$2 ? _p : _p$2;
+  const end_t_raw = _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_end - shorten_head);
+  const end_t = end_t_raw < end.t ? end_t_raw : end.t;
+  const mid = (start_t + end_t) / 2;
+  switch (body_style) {
+    case "double proarrow": {
+      const commands = [];
+      const arclen_to_mid = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, mid);
+      const angle = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, mid);
+      const normal = angle + 1.5707963267948966;
+      const adj_seg = _M0MP35kokic6kwiver6engine5Point3new(head_height, 0);
+      const adj_seg_2 = _M0MP35kokic6kwiver6engine5Point3div(adj_seg, 2);
+      const _bind = [-2.5, 2.5];
+      const _bind$2 = _bind.length;
+      let _tmp = 0;
+      while (true) {
+        const _ = _tmp;
+        if (_ < _bind$2) {
+          const bar_offset = _bind[_];
+          const _p$3 = arclen_to_mid + bar_offset;
+          const bar_t = _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, _p$3 < arclen_to_start ? arclen_to_start : _p$3 > arclen_to_end ? arclen_to_end : _p$3);
+          const centre = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, bar_t), offset);
+          _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, _M0MP35kokic6kwiver6engine5Point3sub(centre, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg_2, normal)));
+          _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg, normal));
+          _tmp = _ + 1 | 0;
+          continue;
+        } else {
+          break;
+        }
+      }
+      return new _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan("path", _M0MPC15array5Array4joinGsE(commands, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS658, 0, _M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS658.length)), undefined, undefined);
+    }
+    case "proarrow": {
+      const commands$2 = [];
+      const arclen_to_mid$2 = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, mid);
+      const angle$2 = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, mid);
+      const normal$2 = angle$2 + 1.5707963267948966;
+      const adj_seg$2 = _M0MP35kokic6kwiver6engine5Point3new(head_height, 0);
+      const adj_seg_2$2 = _M0MP35kokic6kwiver6engine5Point3div(adj_seg$2, 2);
+      const bar_t = _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_mid$2 < arclen_to_start ? arclen_to_start : arclen_to_mid$2 > arclen_to_end ? arclen_to_end : arclen_to_mid$2);
+      const centre = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, bar_t), offset);
+      _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands$2, _M0MP35kokic6kwiver6engine5Point3sub(centre, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg_2$2, normal$2)));
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands$2, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg$2, normal$2));
+      return new _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan("path", _M0MPC15array5Array4joinGsE(commands$2, new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS659, 0, _M0FP35kokic6kwiver8geometry31arrow__render__body__decorationN7_2abindS659.length)), undefined, undefined);
+    }
+    case "bullet solid": {
+      const centre$2 = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, mid), offset);
+      return new _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan("solid-circle", "", _M0FP35kokic6kwiver8geometry27arrow__render__circle__plan(centre$2, head_height / 2), undefined);
+    }
+    case "bullet hollow": {
+      const centre$3 = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, mid), offset);
+      const circle = _M0FP35kokic6kwiver8geometry27arrow__render__circle__plan(centre$3, head_height / 2);
+      return new _M0TP35kokic6kwiver8geometry29ArrowBodyDecorationRenderPlan("hollow-circle", "", circle, circle);
+    }
+    default: {
+      return _M0FP35kokic6kwiver8geometry31arrow__render__decoration__none();
+    }
+  }
+}
+function _M0FP35kokic6kwiver8geometry25arrow__render__edge__path(curve, start, end, offset, body_style, dash_style, level, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, total_width_of_tails, total_width_of_heads) {
+  let arclen_to_start = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, start.t) + (shorten_tail + shorten_start) - dash_padding_start;
+  let arclen_to_end = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, end.t) - (shorten_head + shorten_end) + dash_padding_end;
+  let arclen = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve, 1);
+  const commands = [];
+  switch (body_style) {
+    case "line": {
+      _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+      break;
+    }
+    case "proarrow": {
+      _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+      break;
+    }
+    case "double proarrow": {
+      _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+      break;
+    }
+    case "bullet solid": {
+      _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+      break;
+    }
+    case "bullet hollow": {
+      _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+      break;
+    }
+    case "adjunction": {
+      const centre = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, 0.5), offset);
+      const angle = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, 0.5);
+      const normal = angle + 1.5707963267948966;
+      const adj_seg = _M0MP35kokic6kwiver6engine5Point3new(16, 0);
+      const adj_seg_2 = _M0MP35kokic6kwiver6engine5Point3div(adj_seg, 2);
+      _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, _M0MP35kokic6kwiver6engine5Point3sub(centre, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg_2, angle)));
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg, angle));
+      _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, _M0MP35kokic6kwiver6engine5Point3sub(_M0MP35kokic6kwiver6engine5Point3add(centre, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg_2, angle)), _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg_2, normal)));
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__by(commands, _M0MP35kokic6kwiver6engine5Point6rotate(adj_seg, normal));
+      break;
+    }
+    case "squiggly": {
+      const arclen_to_squiggle_start = arclen_to_start + total_width_of_tails + 4;
+      const squiggle_start_point = _M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_squiggle_start));
+      const arclen_to_squiggle_end = arclen_to_end - (total_width_of_heads + 4);
+      const start_point = _M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_start));
+      const end_point = _M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, arclen_to_end));
+      _M0FP35kokic6kwiver8geometry23arrow__render__move__to(commands, _M0MP35kokic6kwiver6engine5Point3add(start_point, offset));
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__to(commands, _M0MP35kokic6kwiver6engine5Point3add(squiggle_start_point, offset));
+      let path_len = _M0MP35kokic6kwiver6engine5Point6length(_M0MP35kokic6kwiver6engine5Point3sub(squiggle_start_point, start_point));
+      let prev_point = squiggle_start_point;
+      let l = arclen_to_squiggle_start;
+      let sign = -1;
+      let amplitude = 1;
+      while (true) {
+        if (l + (amplitude + 0) * 4 / 2 < arclen_to_squiggle_end) {
+          l = l + 2;
+          const t = _M0FP35kokic6kwiver8geometry38arrow__render__curve__t__after__length(curve, l);
+          const angle$2 = _M0FP35kokic6kwiver8geometry29arrow__render__curve__tangent(curve, t) + 1.5707963267948966 * sign;
+          const next_point = _M0MP35kokic6kwiver6engine5Point3add(_M0FP35kokic6kwiver8geometry27arrow__render__curve__point(curve, t), _M0MP35kokic6kwiver6engine5Point6lendir(2 * (amplitude + 0), angle$2));
+          path_len = path_len + _M0MP35kokic6kwiver6engine5Point6length(_M0MP35kokic6kwiver6engine5Point3sub(next_point, prev_point));
+          prev_point = next_point;
+          _M0FP35kokic6kwiver8geometry23arrow__render__line__to(commands, _M0MP35kokic6kwiver6engine5Point3add(next_point, offset));
+          if (amplitude === 1) {
+            sign = -sign;
+            amplitude = 0;
+          } else {
+            amplitude = 1;
+          }
+          continue;
+        } else {
+          break;
+        }
+      }
+      _M0FP35kokic6kwiver8geometry23arrow__render__line__to(commands, _M0MP35kokic6kwiver6engine5Point3add(end_point, offset));
+      path_len = path_len + _M0MP35kokic6kwiver6engine5Point6length(_M0MP35kokic6kwiver6engine5Point3sub(end_point, prev_point));
+      arclen_to_start = 0;
+      arclen_to_end = path_len + dash_padding_start;
+      arclen = path_len + dash_padding_start + dash_padding_end;
+      break;
+    }
+  }
+  if (body_style === "none" || body_style === "adjunction") {
+    return _M0FP35kokic6kwiver8geometry39arrow__render__commands__to__path__plan(commands, _M0DTPC16option6OptionGOsE4None__);
+  }
+  let arclen_line = arclen_to_end - arclen_to_start;
+  let dashes = [arclen_line];
+  const _p = "solid";
+  if (!(dash_style === _p)) {
+    switch (body_style) {
+      case "squiggly": {
+        if (level === 1) {
+          dashes = [total_width_of_tails + 4, 0];
+          arclen_line = arclen_line - (total_width_of_tails + total_width_of_heads - 4);
+        }
+        break;
+      }
+      case "line": {
+        dashes = [];
+        break;
+      }
+      case "proarrow": {
+        dashes = [];
+        break;
+      }
+      case "double proarrow": {
+        dashes = [];
+        break;
+      }
+      case "bullet solid": {
+        dashes = [];
+        break;
+      }
+      case "bullet hollow": {
+        dashes = [];
+        break;
+      }
+    }
+    if (body_style === "squiggly" && level > 1) {
+      dashes = [arclen_line];
+    } else {
+      if (body_style === "line" || (body_style === "proarrow" || (body_style === "double proarrow" || (body_style === "bullet solid" || (body_style === "bullet hollow" || body_style === "squiggly"))))) {
+        if (arclen_line > 0) {
+          let dash_pairs;
+          const _p$2 = "squiggly";
+          if (!(body_style === _p$2)) {
+            dash_pairs = dash_style === "dashed" ? [6, 6] : [2, 4];
+          } else {
+            dash_pairs = dash_style === "dashed" ? [11.313708498984761, 5.6568542494923806] : [2.8284271247461903, 1.4142135623730951];
+          }
+          let dash_gap_length = 0;
+          const _bind = dash_pairs.length;
+          let _tmp = 0;
+          while (true) {
+            const _ = _tmp;
+            if (_ < _bind) {
+              const part = dash_pairs[_];
+              dash_gap_length = dash_gap_length + part;
+              _tmp = _ + 1 | 0;
+              continue;
+            } else {
+              break;
+            }
+          }
+          const dashes_and_gaps = arclen_line / dash_gap_length;
+          const whole_pairs = _M0MPC16double6Double7to__int(_M0FPC16double5floor(dashes_and_gaps));
+          dashes = dashes;
+          let _tmp$2 = 0;
+          while (true) {
+            const _ = _tmp$2;
+            if (_ < whole_pairs) {
+              const _bind$2 = dash_pairs.length;
+              let _tmp$3 = 0;
+              while (true) {
+                const _$2 = _tmp$3;
+                if (_$2 < _bind$2) {
+                  const part = dash_pairs[_$2];
+                  _M0MPC15array5Array4pushGdE(dashes, part);
+                  _tmp$3 = _$2 + 1 | 0;
+                  continue;
+                } else {
+                  break;
+                }
+              }
+              _tmp$2 = _ + 1 | 0;
+              continue;
+            } else {
+              break;
+            }
+          }
+          if (dashes_and_gaps > whole_pairs + 0) {
+            let deficit = arclen_line - (whole_pairs + 0) * dash_gap_length;
+            const _bind$2 = dash_pairs.length;
+            let _tmp$3 = 0;
+            while (true) {
+              const _ = _tmp$3;
+              if (_ < _bind$2) {
+                const part = dash_pairs[_];
+                if (part <= deficit) {
+                  _M0MPC15array5Array4pushGdE(dashes, part);
+                  deficit = deficit - part;
+                } else {
+                  break;
+                }
+                _tmp$3 = _ + 1 | 0;
+                continue;
+              } else {
+                break;
+              }
+            }
+            _M0MPC15array5Array4pushGdE(dashes, deficit);
+          }
+          if ((dashes.length % 2 | 0) !== 1) {
+            _M0MPC15array5Array4pushGdE(dashes, 0);
+          }
+        } else {
+          dashes = [arclen_line];
+        }
+        if (body_style === "squiggly") {
+          _M0MPC15array5Array4pushGdE(dashes, 0);
+          _M0MPC15array5Array4pushGdE(dashes, total_width_of_heads);
+        }
+      }
+    }
+  }
+  return _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einner(commands, _M0FP35kokic6kwiver8geometry26arrow__render__dash__array(arclen_to_start, dashes, arclen_to_end, arclen));
+}
+function _M0FP35kokic6kwiver8geometry31arrow__render__background__path(curve, offset, arclen_to_start, arclen_to_end, arclen) {
+  const commands = [];
+  _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+  return _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einner(commands, _M0MPC15array5Array4joinGsE(["0", _M0MPC16double6Double10to__string(arclen_to_start), _M0MPC16double6Double10to__string(arclen_to_end - arclen_to_start), _M0MPC16double6Double10to__string(_M0FPC16double4ceil(arclen - arclen_to_end))], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry31arrow__render__background__pathN7_2abindS697, 0, _M0FP35kokic6kwiver8geometry31arrow__render__background__pathN7_2abindS697.length)));
+}
+function _M0FP35kokic6kwiver8geometry29arrow__render__clipping__path(curve, offset, arclen_to_start, arclen_to_end, arclen, shorten_start, shorten_end, shorten_tail, shorten_head) {
+  const commands = [];
+  _M0FP35kokic6kwiver8geometry26arrow__render__curve__path(commands, curve, offset);
+  return _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einner(commands, _M0MPC15array5Array4joinGsE([_M0MPC16double6Double10to__string(arclen_to_start + shorten_tail + shorten_start + 1), _M0MPC16double6Double10to__string(arclen_to_end - (arclen_to_start + shorten_start + shorten_tail + 2 + shorten_head + shorten_end)), _M0MPC16double6Double10to__string(arclen - arclen_to_end + shorten_head + shorten_end + 1)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver8geometry29arrow__render__clipping__pathN7_2abindS698, 0, _M0FP35kokic6kwiver8geometry29arrow__render__clipping__pathN7_2abindS698.length)));
+}
+function _M0FP35kokic6kwiver8geometry28arrow__render__plan__invalid() {
+  return new _M0TP35kokic6kwiver8geometry15ArrowRenderPlan(false, false, 0, _M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), 0, 0, _M0FP35kokic6kwiver8geometry26arrow__render__zero__point(), _M0FP35kokic6kwiver8geometry33arrow__render__zero__curve__point(), _M0FP35kokic6kwiver8geometry33arrow__render__zero__curve__point(), _M0FP35kokic6kwiver8geometry25arrow__render__path__none(), _M0FP35kokic6kwiver8geometry25arrow__render__path__none(), _M0FP35kokic6kwiver8geometry25arrow__render__path__none(), _M0FP35kokic6kwiver8geometry31arrow__render__decoration__none(), _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(0), _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(0), _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(0), _M0FP35kokic6kwiver8geometry33arrow__render__part__none_2einner(0));
+}
+function _M0FP35kokic6kwiver8geometry26arrow__render__plan__local(shape_is_arc, is_loop, length, curve, loop_angle, start, end, level, stroke_width, edge_width, head_width, head_height, shift_distance, shorten_tail, shorten_head, body_style, dash_style, direction_angle, tails, heads) {
   const curve_data = _M0FP35kokic6kwiver8geometry20arrow__render__curve(shape_is_arc, is_loop, length, curve, loop_angle);
+  const curve_width = _M0FP35kokic6kwiver8geometry27arrow__render__curve__width(curve_data);
+  const curve_height = 2 * Math.abs(_M0FP35kokic6kwiver8geometry28arrow__render__curve__height(curve_data));
+  const _p = 1.5;
+  const padding = 16 + (head_height > _p ? head_height : _p) / 2;
+  const offset = _M0MP35kokic6kwiver6engine5Point3new(padding + (curve_width - length) / 2, padding + curve_height / 2);
+  const svg_width = curve_width + padding * 2;
+  const svg_height = curve_height + padding * 2;
+  const shorten_start = _M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hook(tails) ? head_width : 0;
+  const shorten_end = _M0FP35kokic6kwiver8geometry33arrow__render__styles__have__hook(heads) ? head_width : 0;
+  const dash_padding_start = _M0FP35kokic6kwiver8geometry36arrow__render__adjust__dash__padding(curve_data, tails, start, true, head_width, edge_width);
+  const dash_padding_end = _M0FP35kokic6kwiver8geometry36arrow__render__adjust__dash__padding(curve_data, heads, end, false, head_width, edge_width);
   const context = new _M0TP35kokic6kwiver8geometry22ArrowHeadRenderContext(curve_data, stroke_width, head_width, head_height, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, offset, level, direction_angle);
-  return new _M0TP35kokic6kwiver8geometry15ArrowRenderPlan(_M0FP35kokic6kwiver8geometry20arrow__render__heads(context, tails, start, true, false), _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, tails, start, true, true), _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, heads, end, false, false), _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, heads, end, false, true));
+  const tail = _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, tails, start, true, false);
+  const tail_mask = _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, tails, start, true, true);
+  const head = _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, heads, end, false, false);
+  const head_mask = _M0FP35kokic6kwiver8geometry20arrow__render__heads(context, heads, end, false, true);
+  const decoration = _M0FP35kokic6kwiver8geometry31arrow__render__body__decoration(curve_data, start, end, shorten_tail, shorten_head, head_height, offset, body_style);
+  const arclen_to_start = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve_data, start.t);
+  const arclen_to_end = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve_data, end.t);
+  const arclen = _M0FP35kokic6kwiver8geometry33arrow__render__curve__arc__length(curve_data, 1);
+  const edge_valid = arclen_to_end - arclen_to_start - shorten_tail - shorten_head - shorten_start - shorten_end - dash_padding_start - dash_padding_end - tail.total_width - head.total_width >= 0;
+  return new _M0TP35kokic6kwiver8geometry15ArrowRenderPlan(true, edge_valid, direction_angle, _M0MP35kokic6kwiver6engine5Point6rotate(_M0MP35kokic6kwiver6engine5Point3new(0, shift_distance), direction_angle), svg_width, svg_height, offset, start, end, _M0FP35kokic6kwiver8geometry31arrow__render__background__path(curve_data, offset, arclen_to_start, arclen_to_end, arclen), edge_valid ? _M0FP35kokic6kwiver8geometry25arrow__render__edge__path(curve_data, start, end, offset, body_style, dash_style, level, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, tail.total_width, head.total_width) : _M0FP35kokic6kwiver8geometry25arrow__render__path__none(), edge_valid ? _M0FP35kokic6kwiver8geometry29arrow__render__clipping__path(curve_data, offset, arclen_to_start, arclen_to_end, arclen, shorten_start, shorten_end, shorten_tail, shorten_head) : _M0FP35kokic6kwiver8geometry25arrow__render__path__none(), decoration, tail, tail_mask, head, head_mask);
 }
 function _M0MP35kokic6kwiver8geometry10ArrowShape8endpoint(origin) {
   return new _M0TP35kokic6kwiver8geometry10ArrowShape(new _M0DTP35kokic6kwiver8geometry14ArrowShapeData8Endpoint(origin));
@@ -27867,7 +28347,7 @@ function _M0MP35kokic6kwiver8geometry10ArrowShape8contains(self, point) {
   }
 }
 function _M0MP35kokic6kwiver8geometry11ArrowLayout3new(source, target, curve_model, options) {
-  return new _M0TP35kokic6kwiver8geometry11ArrowLayout(source, target, curve_model, options, _M0MP35kokic6kwiver8geometry17ArrowLayoutConfig7defaultN6recordS611);
+  return new _M0TP35kokic6kwiver8geometry11ArrowLayout(source, target, curve_model, options, _M0MP35kokic6kwiver8geometry17ArrowLayoutConfig7defaultN6recordS874);
 }
 function _M0MP35kokic6kwiver8geometry15ArrowCurveModel11base__angle(self) {
   return _M0MP35kokic6kwiver6engine5Point5angle(_M0MP35kokic6kwiver6engine5Point3sub(self.target_origin, self.source_origin));
@@ -28172,7 +28652,7 @@ function _M0MP35kokic6kwiver8geometry11ArrowLayout30label__position__local_2einn
   return _M0MP35kokic6kwiver6engine5Point3add(centre, _M0MP35kokic6kwiver6engine5Point6lendir(label_offset, offset_angle));
 }
 function _M0MP35kokic6kwiver8geometry15ArrowCurveModel3new(source_origin, target_origin, options) {
-  return new _M0TP35kokic6kwiver8geometry15ArrowCurveModel(source_origin, target_origin, options, _M0MP35kokic6kwiver8geometry21ArrowCurveModelConfig7defaultN6recordS613);
+  return new _M0TP35kokic6kwiver8geometry15ArrowCurveModel(source_origin, target_origin, options, _M0MP35kokic6kwiver8geometry21ArrowCurveModelConfig7defaultN6recordS876);
 }
 function _M0FP35kokic6kwiver7runtime28runtime__parse__json__object(input) {
   let parsed;
@@ -28660,10 +29140,10 @@ function _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(root, ke
       const _x = _Some;
       switch (_x.$tag) {
         case 1: {
-          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS1981;
+          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2001;
         }
         case 2: {
-          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS1982;
+          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2002;
         }
         default: {
           break _L;
@@ -29323,13 +29803,13 @@ function _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__message(
         if (_x.$tag === 2) {
           const _bind$2 = _M0MPB3Map3getGsRPB4JsonE(_root, "error");
           if (_bind$2 === undefined) {
-            return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS1984;
+            return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2004;
           } else {
             const _Some$2 = _bind$2;
             const _raw_error = _Some$2;
             const _bind$3 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__error__message__from__json(_raw_error);
             if (_bind$3 === undefined) {
-              return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS1983;
+              return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2003;
             } else {
               const _Some$3 = _bind$3;
               const _message = _Some$3;
@@ -31371,7 +31851,7 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
     }
     default: {
       ok = false;
-      error = _M0MPC15array5Array4joinGsE(["unknown runtime dispatch action: ", action], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1738, 0, _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1738.length));
+      error = _M0MPC15array5Array4joinGsE(["unknown runtime dispatch action: ", action], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758, 0, _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758.length));
     }
   }
   if (ok && _M0FP35kokic6kwiver7runtime27runtime__is__import__action(action)) {
@@ -31571,7 +32051,7 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
   let protocol_error = undefined;
   const _bind = _M0FP35kokic6kwiver7runtime28runtime__parse__json__object(command_json);
   if (_bind === undefined) {
-    protocol_error = _M0MPC15array5Array4joinGsE(["malformed command envelope: expected protocol ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1851, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1851.length));
+    protocol_error = _M0MPC15array5Array4joinGsE(["malformed command envelope: expected protocol ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871.length));
   } else {
     const _Some = _bind;
     const _command_root = _Some;
@@ -31580,12 +32060,12 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
     requested_action = _M0FP35kokic6kwiver7runtime25runtime__json__string__or(_command_root, "action", requested_action);
     const _bind$2 = _M0FP35kokic6kwiver7runtime31runtime__json__optional__string(_command_root, "protocol");
     if (_bind$2 === undefined) {
-      protocol_error = _M0MPC15array5Array4joinGsE(["missing command protocol: expected ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1845, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1845.length));
+      protocol_error = _M0MPC15array5Array4joinGsE(["missing command protocol: expected ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865.length));
     } else {
       const _Some$2 = _bind$2;
       const _requested_protocol = _Some$2;
       if (!(_requested_protocol === protocol)) {
-        protocol_error = _M0MPC15array5Array4joinGsE(["command protocol mismatch: expected ", protocol, ", got ", _requested_protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1844, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1844.length));
+        protocol_error = _M0MPC15array5Array4joinGsE(["command protocol mismatch: expected ", protocol, ", got ", _requested_protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864.length));
       }
     }
   }
@@ -31603,7 +32083,7 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
   let ok = false;
   let action = requested_action;
   let result = _M0DTPB4Json4Null__;
-  let error = _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS1985;
+  let error = _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2005;
   const _bind$3 = _M0FP35kokic6kwiver7runtime28runtime__parse__json__object(dispatch_output);
   if (_bind$3 === undefined) {
   } else {
@@ -31750,7 +32230,7 @@ function _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(csv) {
   if (csv === "") {
     return tokens;
   }
-  const _it = _M0MPC16string6String5split(csv, new _M0TPC16string10StringView(_M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1954, 0, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1954.length));
+  const _it = _M0MPC16string6String5split(csv, new _M0TPC16string10StringView(_M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974, 0, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -31793,7 +32273,22 @@ function _M0FP35kokic6kwiver7runtime43ffi__runtime__arrow__label__position__loca
   const layout = _M0MP35kokic6kwiver8geometry11ArrowLayout3new(source, target, curve_model, options);
   return _M0MP35kokic6kwiver8geometry11ArrowLayout30label__position__local_2einner(layout, label_width, label_height, edge_width);
 }
-function _M0FP35kokic6kwiver7runtime40ffi__runtime__arrow__render__plan__local(shape_is_arc, is_loop, length, curve, loop_angle, start_x, start_y, start_t, start_angle, end_x, end_y, end_t, end_angle, level, stroke_width, head_width, head_height, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, offset_x, offset_y, direction_angle, tails_csv, heads_csv) {
-  return _M0FP35kokic6kwiver8geometry26arrow__render__plan__local(shape_is_arc, is_loop, length, curve, loop_angle, _M0FP35kokic6kwiver7runtime21runtime__curve__point(start_x, start_y, start_t, start_angle), _M0FP35kokic6kwiver7runtime21runtime__curve__point(end_x, end_y, end_t, end_angle), level, stroke_width, head_width, head_height, shorten_start, shorten_end, shorten_tail, shorten_head, dash_padding_start, dash_padding_end, _M0FP35kokic6kwiver7runtime14runtime__point(offset_x, offset_y), direction_angle, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(tails_csv), _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(heads_csv));
+function _M0FP35kokic6kwiver7runtime40ffi__runtime__arrow__render__plan__local(render_source_x, render_source_y, render_target_x, render_target_y, source_is_endpoint, source_origin_x, source_origin_y, source_width, source_height, source_radius, target_is_endpoint, target_origin_x, target_origin_y, target_width, target_height, target_radius, shape_is_arc, is_loop, geometry_curve, geometry_radius, geometry_angle, geometry_offset, display_curve, display_loop_angle, level, stroke_width, edge_width, head_width, head_height, shift_distance, shorten_tail, shorten_head, body_style, dash_style, tails_csv, heads_csv) {
+  const render_source = _M0FP35kokic6kwiver7runtime14runtime__point(render_source_x, render_source_y);
+  const render_target = _M0FP35kokic6kwiver7runtime14runtime__point(render_target_x, render_target_y);
+  const render_angle = _M0MP35kokic6kwiver6engine5Point5angle(_M0MP35kokic6kwiver6engine5Point3sub(render_target, render_source));
+  const source = _M0FP35kokic6kwiver7runtime21runtime__arrow__shape(source_is_endpoint, source_origin_x, source_origin_y, source_width, source_height, source_radius);
+  const target = _M0FP35kokic6kwiver7runtime21runtime__arrow__shape(target_is_endpoint, target_origin_x, target_origin_y, target_width, target_height, target_radius);
+  const options = _M0FP35kokic6kwiver7runtime23runtime__arrow__options(shape_is_arc, geometry_curve, geometry_radius, geometry_angle, geometry_offset);
+  const curve_model = _M0MP35kokic6kwiver8geometry15ArrowCurveModel3new(render_source, render_target, options);
+  const layout = _M0MP35kokic6kwiver8geometry11ArrowLayout3new(source, target, curve_model, options);
+  const endpoints = _M0MP35kokic6kwiver8geometry11ArrowLayout18clipped__endpoints(layout);
+  const ok = (source_is_endpoint || endpoints.start.t > 1e-006) && ((target_is_endpoint || endpoints.end.t < 0.999999) && endpoints.end.t >= endpoints.start.t);
+  if (!ok) {
+    return _M0FP35kokic6kwiver8geometry28arrow__render__plan__invalid();
+  }
+  const local_start = _M0FP35kokic6kwiver7runtime35runtime__arrow__local__curve__point(endpoints.start, render_source, render_angle);
+  const local_end = _M0FP35kokic6kwiver7runtime35runtime__arrow__local__curve__point(endpoints.end, render_source, render_angle);
+  return _M0FP35kokic6kwiver8geometry26arrow__render__plan__local(shape_is_arc, is_loop, _M0MP35kokic6kwiver6engine5Point6length(_M0MP35kokic6kwiver6engine5Point3sub(render_target, render_source)), display_curve, display_loop_angle, _M0FP35kokic6kwiver7runtime21runtime__curve__point(local_start.x, local_start.y, local_start.t, local_start.angle), _M0FP35kokic6kwiver7runtime21runtime__curve__point(local_end.x, local_end.y, local_end.t, local_end.angle), level, stroke_width, edge_width, head_width, head_height, shift_distance, shorten_tail, shorten_head, body_style, dash_style, render_angle, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(tails_csv), _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(heads_csv));
 }
 export { _M0FP35kokic6kwiver7runtime31ffi__runtime__command__protocol as ffi_runtime_command_protocol, _M0FP35kokic6kwiver7runtime26ffi__runtime__session__new as ffi_runtime_session_new, _M0FP35kokic6kwiver7runtime46ffi__runtime__session__dispatch__command__json as ffi_runtime_session_dispatch_command_json, _M0FP35kokic6kwiver7runtime27ffi__runtime__bezier__point as ffi_runtime_bezier_point, _M0FP35kokic6kwiver7runtime29ffi__runtime__bezier__tangent as ffi_runtime_bezier_tangent, _M0FP35kokic6kwiver7runtime33ffi__runtime__bezier__arc__length as ffi_runtime_bezier_arc_length, _M0FP35kokic6kwiver7runtime38ffi__runtime__bezier__t__after__length as ffi_runtime_bezier_t_after_length, _M0FP35kokic6kwiver7runtime28ffi__runtime__bezier__height as ffi_runtime_bezier_height, _M0FP35kokic6kwiver7runtime27ffi__runtime__bezier__width as ffi_runtime_bezier_width, _M0FP35kokic6kwiver7runtime61ffi__runtime__bezier__intersections__with__rounded__rectangle as ffi_runtime_bezier_intersections_with_rounded_rectangle, _M0FP35kokic6kwiver7runtime24ffi__runtime__arc__point as ffi_runtime_arc_point, _M0FP35kokic6kwiver7runtime26ffi__runtime__arc__tangent as ffi_runtime_arc_tangent, _M0FP35kokic6kwiver7runtime30ffi__runtime__arc__arc__length as ffi_runtime_arc_arc_length, _M0FP35kokic6kwiver7runtime35ffi__runtime__arc__t__after__length as ffi_runtime_arc_t_after_length, _M0FP35kokic6kwiver7runtime25ffi__runtime__arc__height as ffi_runtime_arc_height, _M0FP35kokic6kwiver7runtime24ffi__runtime__arc__width as ffi_runtime_arc_width, _M0FP35kokic6kwiver7runtime58ffi__runtime__arc__intersections__with__rounded__rectangle as ffi_runtime_arc_intersections_with_rounded_rectangle, _M0FP35kokic6kwiver7runtime33ffi__runtime__arc__angle__in__arc as ffi_runtime_arc_angle_in_arc, _M0FP35kokic6kwiver7runtime43ffi__runtime__arrow__find__endpoints__local as ffi_runtime_arrow_find_endpoints_local, _M0FP35kokic6kwiver7runtime43ffi__runtime__arrow__label__position__local as ffi_runtime_arrow_label_position_local, _M0FP35kokic6kwiver7runtime40ffi__runtime__arrow__render__plan__local as ffi_runtime_arrow_render_plan_local }
