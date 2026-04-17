@@ -4,11 +4,11 @@ import { Dimensions, Enum, Path, Point, rad_to_deg, clamp } from "./ds.mjs";
 import {
     kwiver_bridge_arrow_find_endpoints_local,
     kwiver_bridge_arrow_label_position_local,
+    kwiver_bridge_arrow_render_plan_local,
 } from "./kwiver_bridge.mjs";
 
-/// `Array.prototype.includes` but for multiple needles.
-function includes_any(array, ...values) {
-    return !values.every((element) => !array.includes(element));
+function heads_to_csv(heads) {
+    return Array.isArray(heads) && heads.length > 0 ? heads.join(",") : "";
 }
 
 export class QuiverSVG {
@@ -677,6 +677,40 @@ export class Arrow {
             curve, start, end, length, height, stroke_width, edge_width, head_width,
             head_height, shorten, t_after_length, dash_padding, offset,
         };
+        const bridged_head_plan = kwiver_bridge_arrow_render_plan_local(
+            this.style.shape === CONSTANTS.ARROW_SHAPE.ARC,
+            this.source === this.target,
+            length,
+            this.style.curve,
+            this.style.angle,
+            start.x,
+            start.y,
+            start.t,
+            start.angle,
+            end.x,
+            end.y,
+            end.t,
+            end.angle,
+            this.style.level,
+            stroke_width,
+            head_width,
+            head_height,
+            shorten.start,
+            shorten.end,
+            this.style.shorten.tail,
+            this.style.shorten.head,
+            dash_padding.start,
+            dash_padding.end,
+            offset.x,
+            offset.y,
+            this.angle(),
+            heads_to_csv(this.style.tails),
+            heads_to_csv(this.style.heads),
+        );
+        if (bridged_head_plan === null) {
+            this.svg.class_list.add("invalid");
+            return;
+        }
 
         // Draw the body decoration, e.g. the proarrow bar.
         let bar_offsets = [0];
@@ -778,21 +812,30 @@ export class Arrow {
 
         // We calculate the widths of the tails and heads whilst drawing them, so we have to
         // sandwich the code to draw heads and tails in between the code to draw the path.
-        const draw_heads = (heads, endpoint, is_start, is_mask) => {
-            const { path: head, total_width }
-                = this.redraw_heads(constants, heads, endpoint, is_start, is_mask);
-            if (head !== null) {
+        const draw_heads = (is_start, is_mask) => {
+            const render_plan_part = is_start
+                ? (is_mask ? bridged_head_plan.tail_mask : bridged_head_plan.tail)
+                : (is_mask ? bridged_head_plan.head_mask : bridged_head_plan.head);
+            if (render_plan_part.has_path) {
                 const element = !is_mask ? this.svg : clipping_mask;
-                element.add(head);
+                new DOM.SVGElement("path", {
+                    class: "arrow-head",
+                    d: render_plan_part.d,
+                    mask: !is_mask ? `url(#arrow${this.id}-label-clipping-mask)` : null,
+                    fill: is_mask ? "black" : "none",
+                    stroke: !is_mask ? this.style.colour : "none",
+                    "stroke-width": CONSTANTS.STROKE_WIDTH,
+                    "stroke-linecap": "round",
+                }).add_to(element);
             }
-            return total_width;
+            return render_plan_part.total_width;
         };
 
         // Clear any existing tails and heads: we're going to recreate them.
         this.svg.query_selector_all(".arrow-head").forEach((element) => element.remove());
         // Draw the tails and heads.
-        constants.total_width_of_tails = draw_heads(this.style.tails, start, true, false);
-        constants.total_width_of_heads = draw_heads(this.style.heads, end, false, false);
+        constants.total_width_of_tails = draw_heads(true, false);
+        constants.total_width_of_heads = draw_heads(false, false);
 
         // Check that the arrow length is actually nonnegative.
         if (arclen_to_end - arclen_to_start
@@ -855,8 +898,8 @@ export class Arrow {
                     + ENDPOINT_PADDING * 2 + this.style.shorten.head + shorten.end)
             } ${arclen - arclen_to_end + this.style.shorten.head + shorten.end + ENDPOINT_PADDING}`,
         }).add_to(clipping_mask);
-        draw_heads(this.style.tails, start, true, true);
-        draw_heads(this.style.heads, end, false, true);
+        draw_heads(true, true);
+        draw_heads(false, true);
 
         // It's possible that, when drawing the body, we added to the clipping mask (e.g. for the
         // hollow bullet body style). However, we may then have drawn over this in white when
@@ -1175,274 +1218,6 @@ export class Arrow {
                 (inner_dis - chord) / inner_dis * (loop_radius - semicircle_radius))
                 : r_for_sagitta;
         return new Arc(origin, chord, chord <= inner_dis, r, angle);
-    }
-
-    /// Redraw the heads or tails attached to an end of the edge.
-    /// In general, we can draw arbitrary sequences of different arrowheads and they will compose
-    /// nicely. However, we don't account for harpoons or hooks in combination with other arrowheads
-    /// (even with others of the same kind), as I cannot see how to make these look good in
-    /// combination. Thus, passing a non-singleton array containing "harpoon" or "hook" will likely
-    /// have unexpected effects, as it has not been tested (likely defaulting to just drawing a
-    /// harpoon or hook).
-    /// Returns `{ path, total_width }`.
-    redraw_heads(constants, heads, endpoint, is_start, is_mask) {
-        // Note that, throughout, we use `head` as a contraction of `arrowhead`, which can be drawn
-        // either at the tail (i.e. close to the source) or at the head of an arrow (i.e. close to
-        // the target). This is confusing. Sorry.
-
-        const {
-            curve, stroke_width, head_width, head_height, t_after_length, shorten, dash_padding,
-            offset,
-        } = constants;
-
-        // Early return if we have no arrowheads.
-        if (heads.length === 0) {
-            return { path: null, total_width: 0 };
-        }
-
-        // The following two constants are used frequently to draw things at the correct end of the
-        // edge, or with the correct orientation.
-        const start_sign = is_start ? 1 : -1;
-        // `ind`icates whether we are drawing at the end.
-        const end_ind = is_start ? 0 : 1;
-
-        // We draw all the arrowheads with a single path.
-        const path = new Path();
-        // The width of the combined arrowheads. This will be updated before the function returns.
-        let total_width = 0;
-
-        const arclen_to_endpoint = curve.arc_length(endpoint.t)
-            + (is_start ?
-                shorten.start + this.style.shorten.tail :
-                shorten.end + this.style.shorten.head
-            ) * start_sign;
-
-        if (includes_any(heads, "harpoon-top", "harpoon-bottom")) {
-            // For 1-cells, it would arguably be more aesthetically-pleasing to centre harpoons on
-            // their points (which is lower than their centre). However, unfortunately, we can't do
-            // this consistently, because it starts to look odd for higher n-cells, as their centres
-            // no longer line up, despite connecting two points in a straight line. Therefore, we
-            // make do by keeping the centres aligned with the centre of the edge.
-            const edge_bottom = stroke_width + CONSTANTS.LINE_SPACING;
-            const side_sign
-                = heads.find((head) => head.startsWith("harpoon")).endsWith("top") ? 1 : -1;
-            const t = t_after_length(arclen_to_endpoint);
-            const angle = curve.tangent(t);
-            const point = curve.point(t)
-                .add(offset)
-                .add(new Point(
-                    0,
-                    side_sign * stroke_width / 2 - side_sign * CONSTANTS.STROKE_WIDTH / 2,
-                ).rotate(angle));
-            path.move_to(point);
-            path.arc_by(
-                new Point(start_sign * head_width, edge_bottom),
-                angle,
-                false,
-                side_sign === 1 ? end_ind : 1 - end_ind,
-                new Point(start_sign * head_width, -edge_bottom * side_sign).rotate(angle),
-            );
-
-            total_width = head_width;
-
-            if (is_mask) {
-                path.line_by(
-                    Point.lendir(-start_sign * (head_width + CONSTANTS.MASK_PADDING), angle)
-                );
-                path.line_by(new Point(0, edge_bottom * side_sign).rotate(angle));
-            }
-        } else if (includes_any(heads, "hook-top", "hook-bottom")) {
-            if (is_mask) {
-                // We don't need masks for hooks, because they're simply drawn perfectly at the
-                // ends.
-                return { path: null, total_width: 0 };
-            }
-
-            const t = t_after_length(arclen_to_endpoint);
-            const base_point = curve.point(t);
-            const angle = curve.tangent(t);
-            const side_sign
-                = heads.find((head) => head.startsWith("hook")).endsWith("top") ? -1 : 1;
-            // To avoid artefacts elsewhere, we mask a little overenthusiastically (see
-            // `ENDPOINT_PADDING`). To avoid a line of transparent pixels, we adjust the tail here.
-            const MASK_ADJUSTMENT = 0.5;
-            // We draw a hook connecting to the ends of each of the n lines forming the n-cell.
-            for (let i = 0; i < this.style.level; ++i) {
-                const point = base_point
-                    .add(offset)
-                    .add(new Point(
-                        MASK_ADJUSTMENT,
-                        side_sign * stroke_width / 2
-                            - side_sign * CONSTANTS.STROKE_WIDTH / 2
-                            - side_sign * (CONSTANTS.LINE_SPACING + CONSTANTS.STROKE_WIDTH) * i,
-                    ).rotate(angle));
-                path.move_to(point);
-                path.arc_by(
-                    new Point(start_sign * head_width, head_width),
-                    // We're drawing a semicircle, so the angle is *actually* unimportant.
-                    angle,
-                    // This argument appears to be unimportant.
-                    false,
-                    side_sign === 1 ? end_ind : 1 - end_ind,
-                    new Point(0, side_sign * head_width * 2).rotate(angle),
-                );
-            }
-
-            // Hooks are drawn at the end of edges and therefore aren't considered to take up any
-            // space on the edge itself.
-            total_width = 0;
-        } else {
-            // The general case. We're going to space the arrowheads evenly along the curve: this
-            // means using arc length rather than Euclidean distance. We're going to work out where
-            // exactly to place each head: this means keeping track of the arc lengths for each.
-            // The higher the index of an element in `heads`, the farher from the endpoint it will
-            // be (both for tails and for heads).
-            const arclens_to_head = [];
-            let prev_margin = 0;
-            for (let i = 0, heads_arclen = 0; i < heads.length; ++i) {
-                // Some arrowheads compose better with others. To ensure that any combination looks
-                // good/acceptable, we have to keep track of several settings. The "left"/"right"
-                // terminology refers to the head of an arrow facing right. `margin_begin` is the
-                // margin that is applied for the very first arrowhead. This is only relevant for
-                // the "mono" style, which is not centred on an endpoint, but is offset.
-                let margin_left, margin_right, margin_begin;
-                switch (heads[i]) {
-                    case "epi":
-                    case "corner":
-                    case "corner-inverse":
-                        [margin_left, margin_right, margin_begin] = [0, head_width, 0];
-                        break;
-                    case "mono":
-                        [margin_left, margin_right, margin_begin] = [0, head_width, head_width];
-                        break;
-                    case "maps to":
-                        [margin_left, margin_right, margin_begin]
-                            = [head_width / 2, head_width / 2, 0];
-                        break;
-                }
-
-                if (i === 0) {
-                    heads_arclen += margin_begin;
-                } else {
-                    // When we have multiple heads of the same type in a row, we can collapse them
-                    // together, because each will fill the whitespace of the previous.
-                    const collapse = heads[i] === heads[i - 1] ? 2 : 1;
-                    heads_arclen +=
-                        ((prev_margin + margin_right) / collapse + CONSTANTS.HEAD_SPACING);
-                }
-
-                prev_margin = margin_left;
-                arclens_to_head.push(heads_arclen);
-
-                total_width = heads_arclen + margin_left;
-            }
-
-            // Now we draw each head. We could combine this with the previous loop, but separate
-            // out the two cases for readability.
-            for (let i = heads.length - 1; i >= 0; --i) {
-                // We only draw a mask for the arrowhead closest to the endpoint.
-                if (is_mask && i !== 0) continue;
-
-                const head_style = heads[i];
-                const arclen_to_head = arclen_to_endpoint + arclens_to_head[i] * start_sign;
-                const t = t_after_length(arclen_to_head);
-                const point = curve.point(t).add(offset);
-                let angle = curve.tangent(t);
-
-                switch (head_style) {
-                    case "mono":
-                        angle += Math.PI;
-                        // We intend to fall down into the "epi" branch: this is not an accidental
-                        // mistake.
-                    case "epi":
-                        // Draw the two halves of the head.
-                        for (const [side_sign, side_ind] of [[-1, end_ind], [1, 1 - end_ind]]) {
-                            path.move_to(point);
-                            path.arc_by(
-                                new Point(start_sign * head_width, head_height / 2),
-                                angle,
-                                false,
-                                side_ind,
-                                new Point(start_sign * head_width, side_sign * head_height / 2)
-                                    .rotate(angle),
-                            );
-                            if (is_mask) {
-                                let distance;
-                                switch (head_style) {
-                                    case "epi":
-                                        distance
-                                            = -start_sign * (head_width + CONSTANTS.MASK_PADDING);
-                                        break;
-                                    case "mono":
-                                        // We have to pad the mask for "mono" for the same reason we
-                                        // add `dash_padding`. In this case, we have to add twice as
-                                        // much, because the padding is added everywhere, even where
-                                        // it is not needed, so we need to make sure we cover it
-                                        // with the mask.
-                                        const padding
-                                            = (is_start ? dash_padding.start : dash_padding.end)
-                                                * 2;
-                                        distance = start_sign * (CONSTANTS.MASK_PADDING + padding);
-                                        break;
-                                }
-                                path.line_by(Point.lendir(distance, angle));
-                                path.line_by(
-                                    new Point(0, -side_sign * head_height / 2).rotate(angle)
-                                );
-                            }
-                        }
-                        break;
-
-                    // The corner symbol used for pullbacks and pushouts.
-                    case "corner":
-                    case "corner-inverse":
-                        const is_inverse = head_style.endsWith("-inverse");
-                        const LENGTH = 12;
-                        const base_2 = LENGTH / (2 ** 0.5);
-                        const base_point
-                            = curve.point(t_after_length(
-                                arclen_to_head + (is_inverse ? 0 : base_2 * start_sign)
-                            )).add(offset);
-
-                        // Draw the two halves of the head.
-                        for (const side_sign of [-1, 1]) {
-                            path.move_to(base_point);
-
-                            // Round the angle to the nearest 45º and adjust with respect to the
-                            // current direction.
-                            const PI_4 = Math.PI / 4;
-                            const direction = this.angle();
-                            const corner_angle
-                                = (is_inverse ? 0 : Math.PI)
-                                    + PI_4 * Math.round(4 * direction / Math.PI) - direction;
-
-                            path.line_by(Point.lendir(
-                                LENGTH,
-                                corner_angle + Math.PI * end_ind + side_sign * Math.PI / 4,
-                            ));
-                        }
-                        break;
-
-                    case "maps to":
-                        path.move_to(point.add(Point.lendir(head_height / 2, angle + Math.PI / 2)));
-                        path.line_by(Point.lendir(head_height, angle - Math.PI / 2));
-                        break;
-                }
-            }
-        }
-
-        return {
-            path: new DOM.SVGElement("path", {
-                class: "arrow-head",
-                d: `${path}`,
-                mask: !is_mask ? `url(#arrow${this.id}-label-clipping-mask)` : null,
-                fill: is_mask ? "black" : "none",
-                stroke: !is_mask ? this.style.colour : "none",
-                "stroke-width": CONSTANTS.STROKE_WIDTH,
-                "stroke-linecap": "round",
-            }),
-            total_width,
-        };
     }
 
     /// Redraw the label attached to the edge. Returns the mask associated to the label.

@@ -7,6 +7,7 @@ import {
   kwiver_bridge_all_cells,
   kwiver_bridge_arrow_find_endpoints_local,
   kwiver_bridge_arrow_label_position_local,
+  kwiver_bridge_arrow_render_plan_local,
   kwiver_bridge_arc_intersections_with_rounded_rectangle,
   kwiver_bridge_arc_angle_in_arc,
   kwiver_bridge_arc_arc_length,
@@ -722,6 +723,14 @@ function testPureGeometryWrappersUseBridgeExports() {
     ffi_runtime_arrow_label_position_local() {
       return { x: 14, y: -6 };
     },
+    ffi_runtime_arrow_render_plan_local() {
+      return {
+        tail: { has_path: true, d: "M 1 2\nl 3 4", total_width: 5 },
+        tail_mask: { has_path: false, d: "", total_width: 0 },
+        head: { has_path: true, d: "M 6 7\nh 8", total_width: 9 },
+        head_mask: { has_path: true, d: "M 10 11\nv 12", total_width: 13 },
+      };
+    },
   });
   assert.equal(installed, true);
 
@@ -791,6 +800,38 @@ function testPureGeometryWrappersUseBridgeExports() {
       22, 12, 3,
     ),
     { x: 14, y: -6 },
+  );
+  assert.deepEqual(
+    kwiver_bridge_arrow_render_plan_local(
+      false,
+      false,
+      30,
+      24,
+      0,
+      10, 11, 0.2, 0.3,
+      20, 21, 0.8, 0.9,
+      2,
+      7.5,
+      8,
+      16,
+      0,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      0.7,
+      "epi",
+      "epi,mono",
+    ),
+    {
+      tail: { has_path: true, d: "M 1 2\nl 3 4", total_width: 5 },
+      tail_mask: { has_path: false, d: "", total_width: 0 },
+      head: { has_path: true, d: "M 6 7\nh 8", total_width: 9 },
+      head_mask: { has_path: true, d: "M 10 11\nv 12", total_width: 13 },
+    },
   );
 }
 

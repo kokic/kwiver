@@ -28,6 +28,7 @@ options(
         "ffi_runtime_arc_intersections_with_rounded_rectangle",
         "ffi_runtime_arrow_find_endpoints_local",
         "ffi_runtime_arrow_label_position_local",
+        "ffi_runtime_arrow_render_plan_local",
       ],
     },
   },

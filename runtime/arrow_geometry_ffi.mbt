@@ -14,6 +14,16 @@ pub struct BrowserDemoArrowEndpointsResult {
 }
 
 ///|
+fn runtime_curve_point(
+  x : Double,
+  y : Double,
+  t : Double,
+  angle : Double,
+) -> @engine.CurvePoint {
+  @engine.CurvePoint::new(runtime_point(x, y), t, angle)
+}
+
+///|
 fn runtime_arrow_shape(
   is_endpoint : Bool,
   origin_x : Double,
@@ -85,6 +95,21 @@ fn runtime_arrow_local_curve_point(
     t: point.t,
     angle: point.angle - render_angle,
   }
+}
+
+///|
+fn runtime_arrow_style_tokens(csv : String) -> Array[String] {
+  let tokens : Array[String] = []
+  if csv == "" {
+    return tokens
+  }
+  for part in csv.split(",") {
+    let token = part.to_string()
+    if token != "" {
+      tokens.push(token)
+    }
+  }
+  tokens
 }
 
 ///|
@@ -222,4 +247,60 @@ pub fn ffi_runtime_arrow_label_position_local(
   )
   let layout = @geometry.ArrowLayout::new(source, target, curve_model, options)
   layout.label_position_local(label_width, label_height, edge_width=edge_width)
+}
+
+///|
+pub fn ffi_runtime_arrow_render_plan_local(
+  shape_is_arc : Bool,
+  is_loop : Bool,
+  length : Double,
+  curve : Double,
+  loop_angle : Double,
+  start_x : Double,
+  start_y : Double,
+  start_t : Double,
+  start_angle : Double,
+  end_x : Double,
+  end_y : Double,
+  end_t : Double,
+  end_angle : Double,
+  level : Int,
+  stroke_width : Double,
+  head_width : Double,
+  head_height : Double,
+  shorten_start : Double,
+  shorten_end : Double,
+  shorten_tail : Double,
+  shorten_head : Double,
+  dash_padding_start : Double,
+  dash_padding_end : Double,
+  offset_x : Double,
+  offset_y : Double,
+  direction_angle : Double,
+  tails_csv : String,
+  heads_csv : String,
+) -> @geometry.ArrowRenderPlan {
+  @geometry.arrow_render_plan_local(
+    shape_is_arc,
+    is_loop,
+    length,
+    curve,
+    loop_angle,
+    runtime_curve_point(start_x, start_y, start_t, start_angle),
+    runtime_curve_point(end_x, end_y, end_t, end_angle),
+    level,
+    stroke_width,
+    head_width,
+    head_height,
+    shorten_start,
+    shorten_end,
+    shorten_tail,
+    shorten_head,
+    dash_padding_start,
+    dash_padding_end,
+    runtime_point(offset_x, offset_y),
+    direction_angle,
+    runtime_arrow_style_tokens(tails_csv),
+    runtime_arrow_style_tokens(heads_csv),
+  )
 }

@@ -358,6 +358,42 @@ function bridgeCurvePoints(raw) {
   return points;
 }
 
+function bridgeArrowHeadRenderPart(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const hasPath = raw.has_path === true;
+  const d = typeof raw.d === "string" ? raw.d : null;
+  const totalWidth = Number(raw.total_width);
+  if (d === null || !Number.isFinite(totalWidth)) {
+    return null;
+  }
+  return {
+    has_path: hasPath,
+    d,
+    total_width: totalWidth,
+  };
+}
+
+function bridgeArrowRenderPlan(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const tail = bridgeArrowHeadRenderPart(raw.tail);
+  const tailMask = bridgeArrowHeadRenderPart(raw.tail_mask);
+  const head = bridgeArrowHeadRenderPart(raw.head);
+  const headMask = bridgeArrowHeadRenderPart(raw.head_mask);
+  if (tail === null || tailMask === null || head === null || headMask === null) {
+    return null;
+  }
+  return {
+    tail,
+    tail_mask: tailMask,
+    head,
+    head_mask: headMask,
+  };
+}
+
 function bridgeArrowEndpoints(raw) {
   if (!raw || typeof raw !== "object") {
     return null;
@@ -1074,6 +1110,99 @@ export function kwiver_bridge_arrow_label_position_local(
     renderArgs[21],
   ];
   return bridgePurePoint("ffi_runtime_arrow_label_position_local", args);
+}
+
+export function kwiver_bridge_arrow_render_plan_local(
+  shapeIsArc,
+  isLoop,
+  length,
+  curve,
+  loopAngle,
+  startX,
+  startY,
+  startT,
+  startAngle,
+  endX,
+  endY,
+  endT,
+  endAngle,
+  level,
+  strokeWidth,
+  headWidth,
+  headHeight,
+  shortenStart,
+  shortenEnd,
+  shortenTail,
+  shortenHead,
+  dashPaddingStart,
+  dashPaddingEnd,
+  offsetX,
+  offsetY,
+  directionAngle,
+  tailsCsv,
+  headsCsv,
+) {
+  const renderArgs = finiteNumberArray([
+    length,
+    curve,
+    loopAngle,
+    startX,
+    startY,
+    startT,
+    startAngle,
+    endX,
+    endY,
+    endT,
+    endAngle,
+    level,
+    strokeWidth,
+    headWidth,
+    headHeight,
+    shortenStart,
+    shortenEnd,
+    shortenTail,
+    shortenHead,
+    dashPaddingStart,
+    dashPaddingEnd,
+    offsetX,
+    offsetY,
+    directionAngle,
+  ]);
+  if (renderArgs === null) {
+    return null;
+  }
+  return bridgeArrowRenderPlan(
+    bridgePureFunction("ffi_runtime_arrow_render_plan_local", [
+      Boolean(shapeIsArc),
+      Boolean(isLoop),
+      renderArgs[0],
+      renderArgs[1],
+      renderArgs[2],
+      renderArgs[3],
+      renderArgs[4],
+      renderArgs[5],
+      renderArgs[6],
+      renderArgs[7],
+      renderArgs[8],
+      renderArgs[9],
+      renderArgs[10],
+      Math.round(renderArgs[11]),
+      renderArgs[12],
+      renderArgs[13],
+      renderArgs[14],
+      renderArgs[15],
+      renderArgs[16],
+      renderArgs[17],
+      renderArgs[18],
+      renderArgs[19],
+      renderArgs[20],
+      renderArgs[21],
+      renderArgs[22],
+      renderArgs[23],
+      typeof tailsCsv === "string" ? tailsCsv : "",
+      typeof headsCsv === "string" ? headsCsv : "",
+    ]),
+  );
 }
 
 export function kwiver_bridge_import_tikz_result(input, settings) {
