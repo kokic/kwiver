@@ -1775,7 +1775,7 @@ pub fn BrowserRuntime::import_tikz_cd(
   self : BrowserRuntime,
   input : String,
   default_renderer? : String = "canvas",
-) -> @engine.QuiverUiImportResult raise {
+) -> @engine.QuiverUiImportResult {
   let imported = @engine.ffi_adapter_import_tikz_cd(
     self.adapter,
     input,
@@ -1792,7 +1792,7 @@ pub fn BrowserRuntime::import_tikz_cd_json(
   self : BrowserRuntime,
   input : String,
   default_renderer? : String = "canvas",
-) -> String raise {
+) -> String {
   self.import_tikz_cd(input, default_renderer~).to_json_string()
 }
 

@@ -1367,7 +1367,7 @@ pub fn QuiverUiAdapter::import_tikz_cd_json(
   self : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
-) -> String raise {
+) -> String {
   self.import_tikz_cd(input, default_renderer~).to_json_string()
 }
 
@@ -2290,7 +2290,7 @@ pub fn ffi_adapter_import_tikz_cd(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
-) -> QuiverUiImportResult raise {
+) -> QuiverUiImportResult {
   adapter.import_tikz_cd(input, default_renderer~)
 }
 
@@ -2299,7 +2299,7 @@ pub fn ffi_adapter_import_tikz_cd_json(
   adapter : QuiverUiAdapter,
   input : String,
   default_renderer? : String = "canvas",
-) -> String raise {
+) -> String {
   adapter.import_tikz_cd_json(input, default_renderer~)
 }
 
