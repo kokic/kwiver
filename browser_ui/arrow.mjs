@@ -1,4 +1,4 @@
-import { Arc, Bezier, Curve, CurvePoint, EPSILON, RoundedRectangle } from "./curve.mjs";
+import { Arc, Bezier, CurvePoint, EPSILON } from "./curve.mjs";
 import { DOM } from "./dom.mjs";
 import { Dimensions, Enum, Path, Point, rad_to_deg, clamp } from "./ds.mjs";
 import {
@@ -233,6 +233,13 @@ export class Arrow {
         }
     }
 
+    kwiver_geometry_options_or_throw() {
+        if (this.kwiver_geometry_options === null) {
+            throw new Error("Arrow geometry options are unavailable.");
+        }
+        return this.kwiver_geometry_options;
+    }
+
     /// Returns the vector from source to target.
     vector() {
         const origin = this.origin();
@@ -269,112 +276,45 @@ export class Arrow {
     /// nontrivial endpoints.
     find_endpoints() {
         const origin = this.origin();
-        const geometry_options = this.kwiver_geometry_options;
-        const shape_needs_clipping = (shape) => {
-            return !(shape instanceof Shape.Endpoint || shape.size.is_zero());
-        };
-        if (
-            geometry_options
-            && (shape_needs_clipping(this.source) || shape_needs_clipping(this.target))
-        ) {
-            const bridged = kwiver_bridge_arrow_find_endpoints_local(
-                origin.source.x,
-                origin.source.y,
-                origin.target.x,
-                origin.target.y,
-                this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
-                this.source.origin.x,
-                this.source.origin.y,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
-                this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
-                this.target.origin.x,
-                this.target.origin.y,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
-                geometry_options.shape === "arc",
-                geometry_options.curve,
-                geometry_options.radius,
-                geometry_options.angle,
-                geometry_options.offset,
-            );
-            if (bridged?.ok === true) {
-                return [
-                    new CurvePoint(
-                        new Point(bridged.start.x, bridged.start.y),
-                        bridged.start.t,
-                        bridged.start.angle,
-                    ),
-                    new CurvePoint(
-                        new Point(bridged.end.x, bridged.end.y),
-                        bridged.end.t,
-                        bridged.end.angle,
-                    ),
-                ];
-            }
+        const geometry_options = this.kwiver_geometry_options_or_throw();
+        const bridged = kwiver_bridge_arrow_find_endpoints_local(
+            origin.source.x,
+            origin.source.y,
+            origin.target.x,
+            origin.target.y,
+            this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
+            this.source.origin.x,
+            this.source.origin.y,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
+            this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
+            this.target.origin.x,
+            this.target.origin.y,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+            geometry_options.shape === "arc",
+            geometry_options.curve,
+            geometry_options.radius,
+            geometry_options.angle,
+            geometry_options.offset,
+        );
+        if (bridged?.ok !== true) {
+            throw new Error("Arrow endpoints are unavailable.");
         }
-        /// Finds the intersection of the (Bézier or arc) curve with either the source or target.
-        /// There should be a unique intersection point, and this will be true in all but
-        /// extraordinary circumstances: namely, when the source and target are overlapping. In this
-        /// case, we pick either the earliest (if `prefer_min`) or latest intersection point
-        /// (otherwise).
-        const find_endpoint = (endpoint_shape, endpoint_origin, prefer_min) => {
-            const curve = this.curve();
-
-            // The case when the endpoint is simply a point.
-            if (endpoint_shape instanceof Shape.Endpoint || endpoint_shape.size.is_zero()) {
-                // In this case, there is a trivial intersection with either the source or target.
-                const t = prefer_min ? 0 : 1;
-                return new CurvePoint(
-                    endpoint_origin.sub(origin.source).rotate(-curve.angle),
-                    t,
-                    curve.tangent(t),
-                );
-            }
-
-            // The case when the endpoint is a rounded rectangle.
-            // The following function call may throw an error, which should be caught by the caller.
-            const intersections = curve.intersections_with_rounded_rectangle(
-                new RoundedRectangle(
-                    endpoint_origin,
-                    endpoint_shape.size,
-                    endpoint_shape.radius,
-                ),
-                false,
-            );
-            if (intersections.length === 0) {
-                // We should always have at least one intersection, as the Bézier curve spans
-                // the endpoints, so this is an error.
-                console.error(
-                    "No intersection found for Bézier curve with endpoint.",
-                    endpoint_shape,
-                    curve,
-                );
-                // Bail out.
-                throw new Error("No intersections found.");
-            }
-            // We assume for `prefer_min` that intersections are ordered in ascending order by `t`.
-            intersections.sort((a, b) => a.t - b.t);
-            // Check for Bézier curves re-entering a rectangle. We don't check this case for arcs,
-            // because there it is expected that curves will re-enter the rectangle.
-            if (this.style.shape === CONSTANTS.ARROW_SHAPE.BEZIER) {
-                if (intersections.length > 1 && Curve.point_inside_polygon(
-                        origin[prefer_min ? "target" : "source"],
-                        new RoundedRectangle(endpoint_origin, endpoint_shape.size, 0)
-                            .points(),
-                )) {
-                    // It's difficult to draw this case gracefully, so we bail out here too.
-                    throw new Error("The Bézier re-enters an endpoint rectangle.");
-                }
-            }
-            return intersections[prefer_min ? 0 : intersections.length - 1];
-        }
-
-        const start = find_endpoint(this.source, origin.source, true);
-        const end = find_endpoint(this.target, origin.target, false);
-        return [start, end];
+        return [
+            new CurvePoint(
+                new Point(bridged.start.x, bridged.start.y),
+                bridged.start.t,
+                bridged.start.angle,
+            ),
+            new CurvePoint(
+                new Point(bridged.end.x, bridged.end.y),
+                bridged.end.t,
+                bridged.end.angle,
+            ),
+        ];
     }
 
     /// Return an existing element, or create a new one if it does not exist.
@@ -1250,129 +1190,41 @@ export class Arrow {
     /// it is offset to either side, we want to find the minimum offset from the centre of the edge
     /// such that the label no longer overlaps the edge.
     determine_label_position(constants) {
-        const { edge_width, start, end } = constants;
-        const geometry_options = this.kwiver_geometry_options;
-
-        if (geometry_options !== null) {
-            const origin = this.origin();
-            const bridged = kwiver_bridge_arrow_label_position_local(
-                origin.source.x,
-                origin.source.y,
-                origin.target.x,
-                origin.target.y,
-                this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
-                this.source.origin.x,
-                this.source.origin.y,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
-                this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
-                this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
-                this.target.origin.x,
-                this.target.origin.y,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
-                this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
-                geometry_options.shape === "arc",
-                geometry_options.curve,
-                geometry_options.radius,
-                geometry_options.angle,
-                geometry_options.offset,
-                geometry_options.label_alignment,
-                geometry_options.label_position,
-                this.label.size.width,
-                this.label.size.height,
-                edge_width,
-            );
-            if (bridged !== null) {
-                return new Point(bridged.x, bridged.y);
-            }
+        const { edge_width } = constants;
+        const geometry_options = this.kwiver_geometry_options_or_throw();
+        const origin = this.origin();
+        const bridged = kwiver_bridge_arrow_label_position_local(
+            origin.source.x,
+            origin.source.y,
+            origin.target.x,
+            origin.target.y,
+            this.source instanceof Shape.Endpoint || this.source.size.is_zero(),
+            this.source.origin.x,
+            this.source.origin.y,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.size.width,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.size.height,
+            this.source instanceof Shape.Endpoint ? 0 : this.source.radius,
+            this.target instanceof Shape.Endpoint || this.target.size.is_zero(),
+            this.target.origin.x,
+            this.target.origin.y,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.size.width,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.size.height,
+            this.target instanceof Shape.Endpoint ? 0 : this.target.radius,
+            geometry_options.shape === "arc",
+            geometry_options.curve,
+            geometry_options.radius,
+            geometry_options.angle,
+            geometry_options.offset,
+            geometry_options.label_alignment,
+            geometry_options.label_position,
+            this.label.size.width,
+            this.label.size.height,
+            edge_width,
+        );
+        if (bridged === null) {
+            throw new Error("Arrow label position is unavailable.");
         }
-
-        const curve = this.curve(Point.zero());
-        const centre = curve.point(start.t + (end.t - start.t) * this.style.label_position);
-
-        // The angle we will try to push the label so that it no longer intersects the curve. This
-        // will be set by the following switch block if we do not return by the end of the block.
-        let offset_angle = 0;
-
-        // We calculate the label position for arcs differently from Bézier curves: in this case, we
-        // want to adjust the label in the direct of the normal to the centre point of the label.
-        if (this.style.shape === CONSTANTS.ARROW_SHAPE.ARC) {
-            offset_angle = curve.tangent(this.style.label_position);
-        }
-
-        // For Bézier curves, we simply adjust up or down.
-        switch (this.label.alignment) {
-            case CONSTANTS.LABEL_ALIGNMENT.CENTRE:
-            case CONSTANTS.LABEL_ALIGNMENT.OVER:
-                return centre;
-
-            case CONSTANTS.LABEL_ALIGNMENT.LEFT:
-                offset_angle -= Math.PI / 2;
-                break;
-
-            case CONSTANTS.LABEL_ALIGNMENT.RIGHT:
-                offset_angle += Math.PI / 2;
-                break;
-        }
-
-        // To offset the label bounding rectangle properly, we're going to iterately approximate its
-        // location. We first normalise the Bézier curve or arc (flat Bézier curves must be
-        // special-cased). We then find all the intersections of the bounding rectangle with the
-        // curve: we want the number of intersections to be zero. To find this distance, we do a
-        // binary search (between 0 and the height of the curve plus the label size). We also add
-        // padding to the bounding rectangle to simulate the thickness of the curve.
-
-        // Unfortunately, floating-point calculations aren't precise, so we need to add some leeway
-        // here, otherwise we sometimes encounter situations where `offset_max` isn't quite
-        // sufficient.
-        const OFFSET_ALLOWANCE = 4;
-        let offset_min = 0;
-        let offset_max = OFFSET_ALLOWANCE + Math.abs(curve.height)
-            + this.label.size.add(Point.diag(edge_width)).div(2).length();
-        // The following variable will be initialised by the following loop, which runs at least
-        // once.
-        let label_offset;
-
-        const BAIL_OUT = 1024;
-        let i = 0;
-        const angle = curve.angle;
-        while (true) {
-            // We will try offsetting at distance `label_offset` pixels next.
-            label_offset = (offset_min + offset_max) / 2;
-            const rect_centre = centre
-                .rotate(angle)
-                .add(Point.lendir(label_offset, angle + offset_angle));
-            // Compute the intersections between the offset bounding rectangle and the edge.
-            const intersections = curve
-                .intersections_with_rounded_rectangle(new RoundedRectangle(
-                    rect_centre,
-                    this.label.size.add(Point.diag(edge_width)),
-                    edge_width / 2,
-                ), true);
-
-            if (intersections.length === 0) {
-                // If we've determined the offset to a sufficiently-high precision, we can stop
-                // here, as this offset is sufficient.
-                if (offset_max - offset_min < 1) {
-                    break;
-                }
-                // Otherwise, we update the bounds to narrow down on the right offset.
-                [offset_min, offset_max] = [offset_min, label_offset];
-            } else {
-                [offset_min, offset_max] = [label_offset, offset_max];
-            }
-
-            if (++i >= BAIL_OUT) {
-                // Reaching this case is an error: we should always be able to find an offset that
-                // has no intersection. However, it's better to bail out if there's a mistake, than
-                // to cause an infinite loop.
-                console.error("Had to bail out from determining label offset.");
-                break;
-            }
-        }
-
-        return centre.add(Point.lendir(label_offset, offset_angle));
+        return new Point(bridged.x, bridged.y);
     }
 }
 
