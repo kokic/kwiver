@@ -5,3 +5,5 @@ target/
 .moonagent/
 .local/
 docs/
+
+!browser_ui/_build/js/release/build/runtime/runtime.js
