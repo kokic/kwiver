@@ -2,11 +2,12 @@ import { spawnSync } from "node:child_process";
 
 const args = new Set(process.argv.slice(2));
 const smokeOnly = args.has("--smoke-only");
+const BUILD_ARGS = ["build", "--release", "--target-dir", "browser_ui/_build"];
 
 const STEPS = smokeOnly
   ? [
       ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
-      ["moon", ["build", "--release"]],
+      ["moon", BUILD_ARGS],
       ["node", ["browser_ui/tests/kwiver_bridge_smoke.test.mjs"]],
       ["node", ["browser_ui/tests/toolbar_update_fail_fast.test.mjs"]],
       ["node", ["browser_ui/tests/runtime_smoke_non_mock.test.mjs"]],
@@ -14,7 +15,7 @@ const STEPS = smokeOnly
     ]
   : [
       ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
-      ["moon", ["build", "--release"]],
+      ["moon", BUILD_ARGS],
       ["moon", ["test", "-v"]],
       ["node", ["browser_ui/tests/kwiver_bridge_smoke.test.mjs"]],
       ["node", ["browser_ui/tests/toolbar_update_fail_fast.test.mjs"]],

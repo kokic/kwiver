@@ -29,22 +29,21 @@ Current migration priority:
 - treat release-gate polishing and additional parser work as secondary until the browser graph state has a single source of truth
 
 ```sh
-moon build --release
+moon build --release --target-dir browser_ui/_build
 miniserve ./
 ```
 
 Open `http://localhost:8080/browser_ui`.
 
-Runtime bootstrap expects MoonBit browser demo artifacts to be reachable from the server root:
+Runtime bootstrap expects the fixed release artifact to be reachable at:
 
-- release candidate: `_build/js/release/build/runtime/runtime.js`
-- debug candidate: `_build/js/debug/build/runtime/runtime.js`
+- `browser_ui/_build/js/release/build/runtime/runtime.js`
 
 Runbook notes:
 
-- serve from the `kwiver/` repository root (the same directory that contains `_build/` and `browser_ui/`)
-- if startup shows `Kwiver runtime unavailable`, verify the two candidate paths above exist under the served root
-- if needed, rebuild artifacts first (`moon build` for debug or `moon build --release` for release)
+- serve from the `kwiver/` repository root (the same directory that contains `browser_ui/`)
+- if startup shows `Kwiver runtime unavailable`, verify the fixed path above exists under the served root
+- if needed, rebuild artifacts first with `moon build --release --target-dir browser_ui/_build`
 
 Run local regressions:
 

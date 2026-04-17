@@ -1,8 +1,12 @@
+const BROWSER_UI_MOUNT_PATH = "/browser_ui";
+const RUNTIME_MODULE_BUILD_SUFFIX = "_build/js/release/build/runtime/runtime.js";
+
 const MODULE_CANDIDATE_PATHS = [
-  "../_build/js/release/build/runtime/runtime.js",
-  "../_build/js/debug/build/runtime/runtime.js",
-  "./_build/js/release/build/runtime/runtime.js",
-  "./_build/js/debug/build/runtime/runtime.js",
+  "./" + RUNTIME_MODULE_BUILD_SUFFIX,
+];
+
+const ROOT_MODULE_CANDIDATE_SUFFIXES = [
+  BROWSER_UI_MOUNT_PATH + "/" + RUNTIME_MODULE_BUILD_SUFFIX,
 ];
 
 function addModuleCandidate(target, candidate) {
@@ -28,19 +32,15 @@ function moduleCandidates() {
     const pathname = typeof location.pathname === "string" ? location.pathname : "";
 
     if (origin !== "" && origin !== "null") {
-      const rootSuffixes = [
-        "/_build/js/release/build/runtime/runtime.js",
-        "/_build/js/debug/build/runtime/runtime.js",
-      ];
-      for (const suffix of rootSuffixes) {
+      for (const suffix of ROOT_MODULE_CANDIDATE_SUFFIXES) {
         addModuleCandidate(candidates, origin + suffix);
       }
 
-      const marker = "/browser_ui/";
+      const marker = BROWSER_UI_MOUNT_PATH;
       const markerIndex = pathname.indexOf(marker);
       if (markerIndex >= 0) {
         const prefix = pathname.slice(0, markerIndex);
-        for (const suffix of rootSuffixes) {
+        for (const suffix of ROOT_MODULE_CANDIDATE_SUFFIXES) {
           addModuleCandidate(candidates, origin + prefix + suffix);
         }
       }

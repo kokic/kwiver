@@ -4,6 +4,9 @@ This directory is a direct copy of upstream `quiver/src` UI files, with a kwiver
 
 Current migration status: the bridge is not finished. Some graph semantics still exist in both upstream-style JS objects and MoonBit runtime state. The highest-priority task is to remove that duplication and leave JS with render/interaction-transient state only.
 
+Runtime autoload now targets the fixed release artifact at `browser_ui/_build/js/release/build/runtime/runtime.js`.
+Build it with `moon build --release --target-dir browser_ui/_build`.
+
 ## What Is Patched
 
 - `quiver.mjs` routes `tikz-cd` / `fletcher` / `html` export through kwiver (`runtime` runtime).

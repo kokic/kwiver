@@ -149,12 +149,12 @@ function testDispatchCarriesProtocolAndCommandId() {
 
 function testBridgeUnavailableErrorFormatting() {
   const message = kwiver_bridge_unavailable_error({
-    loaded_candidate: "http://localhost:8080/_build/js/debug/build/runtime/runtime.js",
+    loaded_candidate: "http://localhost:8080/browser_ui/_build/js/release/build/runtime/runtime.js",
     load_errors: ["mock-load-error"],
   });
   assert.equal(
     message,
-    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=http://localhost:8080/_build/js/debug/build/runtime/runtime.js, error=mock-load-error)",
+    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=http://localhost:8080/browser_ui/_build/js/release/build/runtime/runtime.js, error=mock-load-error)",
   );
   assert.equal(
     KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
