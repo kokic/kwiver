@@ -557,6 +557,72 @@ function roundedRectangleGeometryArgs(centreX, centreY, width, height, radius, t
   return finiteNumberArray([centreX, centreY, width, height, radius, ...tail]);
 }
 
+function bridgeGeometryResult(args, ffiName, bridge) {
+  return args === null ? null : bridge(ffiName, args);
+}
+
+function bridgeBezierResult(
+  bridge,
+  ffiName,
+  originX,
+  originY,
+  w,
+  h,
+  angle,
+  tail = [],
+) {
+  return bridgeGeometryResult(
+    bezierGeometryArgs(originX, originY, w, h, angle, tail),
+    ffiName,
+    bridge,
+  );
+}
+
+function bridgeArcResult(
+  bridge,
+  ffiName,
+  originX,
+  originY,
+  chord,
+  major,
+  radius,
+  angle,
+  tail = [],
+) {
+  return bridgeGeometryResult(
+    arcGeometryArgs(originX, originY, chord, major, radius, angle, tail),
+    ffiName,
+    bridge,
+  );
+}
+
+function bridgeRoundedRectangleIntersections(
+  ffiName,
+  curveArgs,
+  centreX,
+  centreY,
+  width,
+  height,
+  radius,
+  permitContainment,
+) {
+  const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, radius);
+  if (curveArgs === null || rectArgs === null || !isBoolean(permitContainment)) {
+    return null;
+  }
+  return bridgeCurvePoints(
+    bridgePureFunction(
+      ffiName,
+      [...curveArgs, ...rectArgs, permitContainment],
+    ),
+  );
+}
+
+function commandIntegerArrayResult(action, input, origin = "ui.bridge") {
+  const envelope = dispatchCommandResult(action, input, origin);
+  return Array.isArray(envelope?.result) ? finiteIntegerArray(envelope.result) : null;
+}
+
 function iterableEntries(value) {
   if (value instanceof Map) {
     return Array.from(value.entries());
@@ -953,33 +1019,79 @@ export function kwiver_bridge_reset(origin = "ui.bridge.reset") {
 }
 
 export function kwiver_bridge_bezier_point(originX, originY, w, h, angle, t) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePurePoint("ffi_runtime_bezier_point", args);
+  return bridgeBezierResult(
+    bridgePurePoint,
+    "ffi_runtime_bezier_point",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_bezier_tangent(originX, originY, w, h, angle, t) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_tangent", args);
+  return bridgeBezierResult(
+    bridgePureNumber,
+    "ffi_runtime_bezier_tangent",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_bezier_arc_length(originX, originY, w, h, angle, t) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_arc_length", args);
+  return bridgeBezierResult(
+    bridgePureNumber,
+    "ffi_runtime_bezier_arc_length",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_bezier_t_after_length(originX, originY, w, h, angle, length) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle, [length]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_t_after_length", args);
+  return bridgeBezierResult(
+    bridgePureNumber,
+    "ffi_runtime_bezier_t_after_length",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+    [length],
+  );
 }
 
 export function kwiver_bridge_bezier_height(originX, originY, w, h, angle) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle);
-  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_height", args);
+  return bridgeBezierResult(
+    bridgePureNumber,
+    "ffi_runtime_bezier_height",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+  );
 }
 
 export function kwiver_bridge_bezier_width(originX, originY, w, h, angle) {
-  const args = bezierGeometryArgs(originX, originY, w, h, angle);
-  return args === null ? null : bridgePureNumber("ffi_runtime_bezier_width", args);
+  return bridgeBezierResult(
+    bridgePureNumber,
+    "ffi_runtime_bezier_width",
+    originX,
+    originY,
+    w,
+    h,
+    angle,
+  );
 }
 
 export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
@@ -995,32 +1107,58 @@ export function kwiver_bridge_bezier_intersections_with_rounded_rectangle(
   radius,
   permitContainment,
 ) {
-  const curveArgs = bezierGeometryArgs(originX, originY, w, h, angle);
-  const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, radius);
-  if (curveArgs === null || rectArgs === null || !isBoolean(permitContainment)) {
-    return null;
-  }
-  return bridgeCurvePoints(
-    bridgePureFunction(
-      "ffi_runtime_bezier_intersections_with_rounded_rectangle",
-      [...curveArgs, ...rectArgs, permitContainment],
-    ),
+  return bridgeRoundedRectangleIntersections(
+    "ffi_runtime_bezier_intersections_with_rounded_rectangle",
+    bezierGeometryArgs(originX, originY, w, h, angle),
+    centreX,
+    centreY,
+    width,
+    height,
+    radius,
+    permitContainment,
   );
 }
 
 export function kwiver_bridge_arc_point(originX, originY, chord, major, radius, angle, t) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePurePoint("ffi_runtime_arc_point", args);
+  return bridgeArcResult(
+    bridgePurePoint,
+    "ffi_runtime_arc_point",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_arc_tangent(originX, originY, chord, major, radius, angle, t) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_arc_tangent", args);
+  return bridgeArcResult(
+    bridgePureNumber,
+    "ffi_runtime_arc_tangent",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_arc_arc_length(originX, originY, chord, major, radius, angle, t) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [t]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_arc_arc_length", args);
+  return bridgeArcResult(
+    bridgePureNumber,
+    "ffi_runtime_arc_arc_length",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+    [t],
+  );
 }
 
 export function kwiver_bridge_arc_t_after_length(
@@ -1032,18 +1170,43 @@ export function kwiver_bridge_arc_t_after_length(
   angle,
   length,
 ) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [length]);
-  return args === null ? null : bridgePureNumber("ffi_runtime_arc_t_after_length", args);
+  return bridgeArcResult(
+    bridgePureNumber,
+    "ffi_runtime_arc_t_after_length",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+    [length],
+  );
 }
 
 export function kwiver_bridge_arc_height(originX, originY, chord, major, radius, angle) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
-  return args === null ? null : bridgePureNumber("ffi_runtime_arc_height", args);
+  return bridgeArcResult(
+    bridgePureNumber,
+    "ffi_runtime_arc_height",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+  );
 }
 
 export function kwiver_bridge_arc_width(originX, originY, chord, major, radius, angle) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle);
-  return args === null ? null : bridgePureNumber("ffi_runtime_arc_width", args);
+  return bridgeArcResult(
+    bridgePureNumber,
+    "ffi_runtime_arc_width",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+  );
 }
 
 export function kwiver_bridge_arc_angle_in_arc(
@@ -1055,8 +1218,17 @@ export function kwiver_bridge_arc_angle_in_arc(
   angle,
   targetAngle,
 ) {
-  const args = arcGeometryArgs(originX, originY, chord, major, radius, angle, [targetAngle]);
-  return args === null ? null : bridgePureBoolean("ffi_runtime_arc_angle_in_arc", args);
+  return bridgeArcResult(
+    bridgePureBoolean,
+    "ffi_runtime_arc_angle_in_arc",
+    originX,
+    originY,
+    chord,
+    major,
+    radius,
+    angle,
+    [targetAngle],
+  );
 }
 
 export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
@@ -1073,16 +1245,15 @@ export function kwiver_bridge_arc_intersections_with_rounded_rectangle(
   rectRadius,
   permitContainment,
 ) {
-  const curveArgs = arcGeometryArgs(originX, originY, chord, major, radius, angle);
-  const rectArgs = roundedRectangleGeometryArgs(centreX, centreY, width, height, rectRadius);
-  if (curveArgs === null || rectArgs === null || !isBoolean(permitContainment)) {
-    return null;
-  }
-  return bridgeCurvePoints(
-    bridgePureFunction(
-      "ffi_runtime_arc_intersections_with_rounded_rectangle",
-      [...curveArgs, ...rectArgs, permitContainment],
-    ),
+  return bridgeRoundedRectangleIntersections(
+    "ffi_runtime_arc_intersections_with_rounded_rectangle",
+    arcGeometryArgs(originX, originY, chord, major, radius, angle),
+    centreX,
+    centreY,
+    width,
+    height,
+    rectRadius,
+    permitContainment,
   );
 }
 
@@ -1445,11 +1616,7 @@ export function kwiver_bridge_all_cells() {
 }
 
 export function kwiver_bridge_all_cell_ids(origin = "ui.bridge.all_cell_ids") {
-  const envelope = dispatchCommandResult("all_cell_ids_json", undefined, origin);
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
+  return commandIntegerArrayResult("all_cell_ids_json", undefined, origin);
 }
 
 export function kwiver_bridge_dependencies(
@@ -1459,15 +1626,11 @@ export function kwiver_bridge_dependencies(
   if (!Number.isInteger(cellId)) {
     return null;
   }
-  const envelope = dispatchCommandResult(
+  return commandIntegerArrayResult(
     "dependencies_of_json",
     { cell_id: cellId },
     origin,
   );
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_connected_components(
@@ -1481,16 +1644,11 @@ export function kwiver_bridge_connected_components(
   if (normalizedRoots === null) {
     return null;
   }
-
-  const envelope = dispatchCommandResult(
+  return commandIntegerArrayResult(
     "connected_components_json",
     { roots: normalizedRoots },
     origin,
   );
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_transitive_dependencies(
@@ -1505,8 +1663,7 @@ export function kwiver_bridge_transitive_dependencies(
   if (normalizedRoots === null) {
     return null;
   }
-
-  const envelope = dispatchCommandResult(
+  return commandIntegerArrayResult(
     "transitive_dependencies_json",
     {
       roots: normalizedRoots,
@@ -1514,10 +1671,6 @@ export function kwiver_bridge_transitive_dependencies(
     },
     origin,
   );
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_transitive_reverse_dependencies(
@@ -1531,16 +1684,11 @@ export function kwiver_bridge_transitive_reverse_dependencies(
   if (normalizedRoots === null) {
     return null;
   }
-
-  const envelope = dispatchCommandResult(
+  return commandIntegerArrayResult(
     "transitive_reverse_dependencies_json",
     { roots: normalizedRoots },
     origin,
   );
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
 }
 
 export function kwiver_bridge_reverse_dependencies(
@@ -1550,15 +1698,11 @@ export function kwiver_bridge_reverse_dependencies(
   if (!Number.isInteger(cellId)) {
     return null;
   }
-  const envelope = dispatchCommandResult(
+  return commandIntegerArrayResult(
     "reverse_dependencies_of_json",
     { cell_id: cellId },
     origin,
   );
-  if (!envelope || !Array.isArray(envelope.result)) {
-    return null;
-  }
-  return finiteIntegerArray(envelope.result);
 }
 export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
   return dispatchCommandResult("set_selection", selectedIds, origin);
