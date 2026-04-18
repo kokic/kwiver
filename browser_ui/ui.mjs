@@ -1923,6 +1923,12 @@ class UI {
         return envelope !== null && envelope.ok === true;
     }
 
+    kwiver_sync_runtime_selection_or_throw(origin = "ui.selection") {
+        if (!this.kwiver_sync_runtime_selection_from_ui(origin)) {
+            throw new Error("[kwiver-only] " + origin + ": selection sync failed");
+        }
+    }
+
     kwiver_runtime_selection_ids_from_envelope(envelope) {
         if (!envelope || typeof envelope !== "object") {
             return null;
@@ -1948,7 +1954,10 @@ class UI {
         return selected_ids !== null && this.kwiver_apply_runtime_selection(selected_ids);
     }
 
-    kwiver_apply_runtime_selection(selected_ids) {
+    kwiver_apply_runtime_selection(
+        selected_ids,
+        origin = "ui.selection.runtime",
+    ) {
         if (!Array.isArray(selected_ids)) {
             return false;
         }
@@ -1992,6 +2001,9 @@ class UI {
         }
 
         this.selection = next_selection_set;
+        if (!this.kwiver_sync_runtime_selection_from_ui(origin)) {
+            return false;
+        }
         this.update_focus_tooltip();
         this.panel.update(this);
         this.toolbar.update(this);
@@ -5408,6 +5420,7 @@ class UI {
             }
         }
         if (selection_changed) {
+            this.kwiver_sync_runtime_selection_or_throw("ui.selection.select");
             this.update_focus_tooltip();
             this.panel.update(this);
             this.toolbar.update(this);
@@ -5422,7 +5435,9 @@ class UI {
 
     /// Deselect a specific `cell`, or deselect all cells if `cell` is null.
     deselect(cell = null) {
+        let selection_changed = false;
         if (cell === null) {
+            selection_changed = this.selection.size > 0;
             for (cell of this.selection) {
                 cell.deselect();
             }
@@ -5433,9 +5448,13 @@ class UI {
             this.selection = new Set(this.selection);
             if (this.selection.delete(cell)) {
                 cell.deselect();
+                selection_changed = true;
             }
         }
 
+        if (selection_changed) {
+            this.kwiver_sync_runtime_selection_or_throw("ui.selection.deselect");
+        }
         this.update_focus_tooltip();
         this.panel.update(this);
         this.toolbar.update(this);
@@ -10909,7 +10928,7 @@ class Toolbar {
     }
 }
 
-export { Toolbar };
+export { Toolbar, UI };
 
 /// The colour wheel and colour picker.
 class ColourPicker {
