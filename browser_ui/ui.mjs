@@ -22,6 +22,7 @@ import {
     kwiver_bridge_ready,
     kwiver_bridge_status,
     kwiver_bridge_export_payload,
+    kwiver_bridge_preview_reconnect_plan,
     kwiver_bridge_reset,
     kwiver_bridge_export_selection,
     kwiver_bridge_add_vertex_json,
@@ -381,9 +382,15 @@ UIMode.Connect = class extends UIMode {
     /// overlap with existing parallel edges where possible.
     static suggested_edge_options(ui, source, target) {
         const runtime_by_id = ui.kwiver_runtime_cells_by_id();
+        const js_by_id = ui.kwiver_js_cells_by_id();
         const source_level = this.committed_cell_level(ui, source, runtime_by_id) ?? 0;
         const target_level = this.committed_cell_level(ui, target, runtime_by_id) ?? 0;
         const edge_options = (edge) => this.committed_edge_options(ui, edge, runtime_by_id);
+        const dependency_edges = (cell) => ui.kwiver_runtime_dependencies_by_role(
+            cell,
+            runtime_by_id,
+            js_by_id,
+        );
 
         // We attempt to guess what the intended label alignment is and what the intended edge
         // offset is, if the cells being connected form some path with existing connections.
@@ -478,8 +485,8 @@ UIMode.Connect = class extends UIMode {
                 balance += tip;
             };
 
-            const source_dependencies = ui.connect_preview.dependencies_of(source);
-            const target_dependencies = ui.connect_preview.dependencies_of(target);
+            const source_dependencies = dependency_edges(source);
+            const target_dependencies = dependency_edges(target);
             for (const [edge, relationship] of source_dependencies) {
                 const committed_options = edge_options(edge);
                 if (committed_options === null) {
@@ -545,7 +552,7 @@ UIMode.Connect = class extends UIMode {
             // We try to place new loops at a new angle, if possible, to reducing overlap with
             // existing loops.
             const angles = new Map();
-            for (const [loop,] of Array.from(ui.connect_preview.dependencies_of(source))
+            for (const [loop,] of Array.from(dependency_edges(source))
                 .filter(([edge,]) => this.committed_edge_is_loop(ui, edge, runtime_by_id)))
             {
                 const loop_options = edge_options(loop);
@@ -1401,26 +1408,10 @@ class UI {
             if (!runtime_record.source || !runtime_record.target) {
                 throw new Error("[kwiver-only] " + origin + ": runtime edge endpoints missing");
             }
-            const registered = ui.view_contains_cell(cell);
-            if (
-                registered
-                && (
-                    cell.kwiver_projection_source() !== runtime_record.source
-                    || cell.kwiver_projection_target() !== runtime_record.target
-                )
-            ) {
-                ui.connect_preview.apply_committed_endpoints(
-                    cell,
-                    runtime_record.source,
-                    runtime_record.target,
-                    true,
-                );
-            } else {
-                cell.kwiver_set_projection_endpoints(
-                    runtime_record.source,
-                    runtime_record.target,
-                );
-            }
+            cell.kwiver_set_projection_endpoints(
+                runtime_record.source,
+                runtime_record.target,
+            );
             cell.arrow.source = runtime_record.source.shape;
             cell.arrow.target = runtime_record.target.shape;
             UI.kwiver_apply_runtime_cell_level(ui, cell, runtime_record.level, origin);
@@ -1760,6 +1751,101 @@ class UI {
             return null;
         }
         return target.shape.origin.sub(source.shape.origin).angle();
+    }
+
+    kwiver_runtime_dependencies_by_role(cell, runtime_by_id = null, js_by_id = null) {
+        const cell_id = this.kwiver_cell_id(cell);
+        if (!Number.isInteger(cell_id)) {
+            return new Map();
+        }
+        const runtime_cells_by_id = runtime_by_id ?? this.kwiver_runtime_cells_by_id();
+        if (runtime_cells_by_id === null) {
+            return new Map();
+        }
+        const js_cells_by_id = js_by_id ?? this.kwiver_js_cells_by_id();
+        const dependencies = new Map();
+        for (const runtime_cell of runtime_cells_by_id.values()) {
+            if (!runtime_cell || runtime_cell.kind !== "edge") {
+                continue;
+            }
+            const edge_id = Number(runtime_cell.id);
+            const source_id = Number(runtime_cell.source_id);
+            const target_id = Number(runtime_cell.target_id);
+            if (
+                !Number.isInteger(edge_id)
+                || !Number.isInteger(source_id)
+                || !Number.isInteger(target_id)
+            ) {
+                continue;
+            }
+            const edge = js_cells_by_id.get(edge_id);
+            if (!edge?.is_edge?.()) {
+                continue;
+            }
+            if (source_id === cell_id) {
+                dependencies.set(edge, "source");
+            }
+            if (target_id === cell_id) {
+                dependencies.set(edge, "target");
+            }
+        }
+        return dependencies;
+    }
+
+    kwiver_preview_reconnect_plan(
+        edge,
+        source,
+        target,
+        origin = "ui.connect_preview.preview_plan",
+    ) {
+        const edge_id = this.kwiver_cell_id(edge);
+        const source_id = this.kwiver_cell_id(source);
+        const target_id = this.kwiver_cell_id(target);
+        if (
+            !Number.isInteger(edge_id)
+            || !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+        ) {
+            return null;
+        }
+        const raw_plan = kwiver_bridge_preview_reconnect_plan(
+            edge_id,
+            source_id,
+            target_id,
+            origin,
+        );
+        if (
+            !raw_plan
+            || Number(raw_plan.edge_id) !== edge_id
+            || !Array.isArray(raw_plan.edges)
+        ) {
+            return null;
+        }
+        const js_by_id = this.kwiver_js_cells_by_id();
+        const records_by_cell = new Map();
+        const ordered_edges = [];
+        for (const raw_edge of raw_plan.edges) {
+            const runtime_record = UI.kwiver_runtime_cell_record(raw_edge, js_by_id);
+            if (!runtime_record || runtime_record.kind !== "edge") {
+                return null;
+            }
+            const edge_cell = js_by_id.get(runtime_record.runtime_id);
+            if (!edge_cell?.is_edge?.() || records_by_cell.has(edge_cell)) {
+                return null;
+            }
+            records_by_cell.set(edge_cell, runtime_record);
+            ordered_edges.push(edge_cell);
+        }
+        if (!records_by_cell.has(edge)) {
+            return null;
+        }
+        return {
+            edge,
+            source,
+            target,
+            records_by_cell,
+            ordered_edges,
+        };
     }
 
     kwiver_runtime_connect_action(
@@ -2109,11 +2195,9 @@ class UI {
 
     view_register_cell(cell) {
         this.view_registry.add(cell, cell?.kwiver_projection_level?.());
-        this.connect_preview.register_cell(cell);
     }
 
     view_unregister_cell(cell) {
-        this.connect_preview.unregister_cell(cell);
         this.view_registry.remove(cell);
     }
 
@@ -11957,7 +12041,7 @@ export class Edge extends Cell {
         // arrow pointing not to the left of the first X, but to the centre of the middle X.
         this.phantom_shape = new Shape.Endpoint(Point.zero());
 
-        this.reconnect(ui, source, target);
+        this.kwiver_set_projection_endpoints(source, target);
 
         this.initialise(ui);
     }
@@ -12157,25 +12241,6 @@ export class Edge extends Cell {
         // We override the source and target whilst drawing, so we need to reset them.
         this.arrow.source = preview_source.shape;
         this.arrow.target = preview_target.shape;
-    }
-
-    /// Applies committed endpoints and derived level projection for runtime-backed hydration.
-    reconnect(ui, source, target) {
-        ui.connect_preview.apply_committed_endpoints(
-            this,
-            source,
-            target,
-            ui.view_contains_cell(this),
-        );
-        ui.connect_preview.update_edge_levels(
-            this,
-            (cell, level) => UI.kwiver_apply_runtime_cell_level(ui, cell, level, "ui.edge.reconnect"),
-        );
-        const dependencies_to_render = ui.connect_preview.transitive_dependencies([this]);
-        for (const cell of dependencies_to_render) {
-            cell.render(ui);
-        }
-        ui.panel.update(ui);
     }
 
 }

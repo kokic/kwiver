@@ -750,6 +750,20 @@ fn runtime_cell_data_array_json_string(
 }
 
 ///|
+fn runtime_preview_reconnect_plan_json(
+  plan : @engine.QuiverReconnectPreviewPlan,
+) -> Json {
+  let edges : Array[Json] = []
+  for edge in plan.edges {
+    edges.push(runtime_cell_data_json(@engine.CellData::from_edge(edge)))
+  }
+  Json::object({
+    "edge_id": Json::number(plan.edge_id.to_double()),
+    "edges": Json::array(edges),
+  })
+}
+
+///|
 fn runtime_edge_options_with_label_alignment(
   options : @engine.EdgeOptions,
   label_alignment : String,
@@ -1620,6 +1634,34 @@ pub fn BrowserRuntime::transitive_reverse_dependencies(
 }
 
 ///|
+pub fn BrowserRuntime::preview_reconnect_plan(
+  self : BrowserRuntime,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> @engine.QuiverReconnectPreviewPlan? {
+  @engine.ffi_adapter_preview_reconnect_plan(
+    self.adapter,
+    edge_id,
+    source_id,
+    target_id,
+  )
+}
+
+///|
+pub fn BrowserRuntime::preview_reconnect_plan_json(
+  self : BrowserRuntime,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> String {
+  match self.preview_reconnect_plan(edge_id, source_id, target_id) {
+    Some(plan) => runtime_preview_reconnect_plan_json(plan).stringify()
+    None => Json::null().stringify()
+  }
+}
+
+///|
 pub fn BrowserRuntime::connected_components(
   self : BrowserRuntime,
   roots : Array[Int],
@@ -2052,6 +2094,21 @@ pub fn BrowserRuntime::dispatch_json(
         browser_json_required_field(input, "roots"),
       )
       result = browser_int_array_json(self.transitive_reverse_dependencies(roots))
+    }
+    "preview_reconnect_plan_json" => {
+      let input = runtime_dispatch_input_object(root)
+      let edge_id : Int = @json.from_json(
+        browser_json_required_field(input, "edge_id"),
+      )
+      let source_id : Int = @json.from_json(
+        browser_json_required_field(input, "source_id"),
+      )
+      let target_id : Int = @json.from_json(
+        browser_json_required_field(input, "target_id"),
+      )
+      result = @json.parse(
+        self.preview_reconnect_plan_json(edge_id, source_id, target_id),
+      )
     }
     "connected_components_json" => {
       let input = runtime_dispatch_input_object(root)

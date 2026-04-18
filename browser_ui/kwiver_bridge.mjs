@@ -1691,6 +1691,28 @@ export function kwiver_bridge_transitive_reverse_dependencies(
   );
 }
 
+export function kwiver_bridge_preview_reconnect_plan(
+  edgeId,
+  sourceId,
+  targetId,
+  origin = "ui.bridge.preview_reconnect_plan",
+) {
+  if (
+    !Number.isInteger(edgeId)
+    || !Number.isInteger(sourceId)
+    || !Number.isInteger(targetId)
+  ) {
+    return null;
+  }
+  const envelope = dispatchCommandResult("preview_reconnect_plan_json", {
+    edge_id: edgeId,
+    source_id: sourceId,
+    target_id: targetId,
+  }, origin);
+  const result = envelope?.result;
+  return result && typeof result === "object" && Array.isArray(result.edges) ? result : null;
+}
+
 export function kwiver_bridge_reverse_dependencies(
   cellId,
   origin = "ui.bridge.reverse_dependencies",

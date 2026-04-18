@@ -1313,6 +1313,10 @@ function _M0TP35kokic6kwiver6engine16QuiverUiSnapshot(param0, param1, param2, pa
   this.edges = param3;
   this.dependencies = param4;
 }
+function _M0TP35kokic6kwiver6engine26QuiverReconnectPreviewPlan(param0, param1) {
+  this.edge_id = param0;
+  this.edges = param1;
+}
 function _M0TP35kokic6kwiver6engine20TikzCdExportMetadata(param0, param1) {
   this.tikz_incompatibilities = param0;
   this.dependencies = param1;
@@ -1700,265 +1704,265 @@ const _M0MPC14json12ParseContext16lex__number__endN7_2abindS1061 = ".";
 const _M0MPC14json12ParseContext16lex__number__endN7_2abindS1062 = "e";
 const _M0MPC14json12ParseContext16lex__number__endN7_2abindS1063 = "E";
 const _M0IPC14json8JsonPathPB4Show6outputN7_2abindS1382 = "~/";
-const _M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2674 = "[0,0]";
-const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2869 = "#q=";
-const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2870 = "?q=";
-const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2871 = "&q=";
-const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2872 = "q.uiver.app";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2875 = "\\begin{tikzcd}";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2876 = "\\end{tikzcd}";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2873 = "\\begin{tikzcd*}";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2874 = "\\end{tikzcd*}";
-const _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2877 = "#diagram({";
-const _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2878 = "diagram({";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2879 = "<iframe";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2880 = "<!--";
-const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2881 = "src=";
-const _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3085 = "&amp;";
-const _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3086 = "&";
-const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3089 = "=";
-const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3108 = "&";
-const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3092 = "=";
-const _M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3109 = "#";
-const _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3121 = "?";
-const _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3115 = "#";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3161 = "://";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3160 = "#";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3132 = "q=";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3133 = "r=";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3134 = "macro_url=";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3135 = "embed";
-const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3136 = "&";
-const _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3184 = "<!--";
-const _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3178 = "-->";
-const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3221 = "\n";
-const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3199 = "% ";
-const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3200 = "// ";
-const _M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3265 = "\n";
-const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3303 = "\n";
-const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3289 = "% ";
-const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3290 = "// ";
-const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3291 = "<!--";
-const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3292 = "src=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3319 = "q.uiver.app";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3320 = "#q=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3321 = "?q=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3322 = "&q=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3323 = "q=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3324 = "r=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3325 = "macro_url=";
-const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3326 = "embed";
+const _M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2715 = "[0,0]";
+const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2910 = "#q=";
+const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2911 = "?q=";
+const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2912 = "&q=";
+const _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2913 = "q.uiver.app";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2916 = "\\begin{tikzcd}";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2917 = "\\end{tikzcd}";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2914 = "\\begin{tikzcd*}";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2915 = "\\end{tikzcd*}";
+const _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2918 = "#diagram({";
+const _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2919 = "diagram({";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2920 = "<iframe";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2921 = "<!--";
+const _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2922 = "src=";
+const _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3126 = "&amp;";
+const _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3127 = "&";
+const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3130 = "=";
+const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3149 = "&";
+const _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3133 = "=";
+const _M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3150 = "#";
+const _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3162 = "?";
+const _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3156 = "#";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3202 = "://";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3201 = "#";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3173 = "q=";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3174 = "r=";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3175 = "macro_url=";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3176 = "embed";
+const _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3177 = "&";
+const _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3225 = "<!--";
+const _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3219 = "-->";
+const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3262 = "\n";
+const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3240 = "% ";
+const _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3241 = "// ";
+const _M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3306 = "\n";
+const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3344 = "\n";
+const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3330 = "% ";
+const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3331 = "// ";
+const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3332 = "<!--";
+const _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3333 = "src=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3360 = "q.uiver.app";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3361 = "#q=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3362 = "?q=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3363 = "&q=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3364 = "q=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3365 = "r=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3366 = "macro_url=";
+const _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3367 = "embed";
 const _M0FP35kokic6kwiver6engine31tikz__find__environment__tokensN12begin__tokenS1770 = "\\begin{tikzcd}";
 const _M0FP35kokic6kwiver6engine31tikz__find__environment__tokensN10end__tokenS1771 = "\\end{tikzcd}";
 const _M0FP35kokic6kwiver6engine31tikz__find__environment__tokensN18begin__star__tokenS1772 = "\\begin{tikzcd*}";
 const _M0FP35kokic6kwiver6engine31tikz__find__environment__tokensN16end__star__tokenS1773 = "\\end{tikzcd*}";
-const _M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3363 = "=";
-const _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3370 = "$";
-const _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3371 = "$";
-const _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3372 = "{";
-const _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3373 = "}";
-const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3377 = " ";
-const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3378 = "";
-const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3379 = "\t";
-const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3380 = "";
+const _M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3404 = "=";
+const _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3411 = "$";
+const _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3412 = "$";
+const _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3413 = "{";
+const _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3414 = "}";
+const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3418 = " ";
+const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3419 = "";
+const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3420 = "\t";
+const _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3421 = "";
 const _M0FP35kokic6kwiver6engine42tikz__take__tabularnewline__row__separatorN5tokenS1792 = "tabularnewline";
-const _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3431 = "\n";
-const _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3432 = "\n";
-const _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3435 = "\\\"";
-const _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3436 = "\"";
-const _M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3537 = "=";
-const _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3545 = "\\arrow";
-const _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3546 = "\\ar";
-const _M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3552 = "";
-const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3554 = " ";
-const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3555 = "";
-const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3556 = "\t";
-const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3557 = "";
-const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3553 = "/tikz/commutativediagrams/backgroundcolor";
-const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3558 = "'";
-const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3559 = "{";
-const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3560 = "}";
-const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3589 = "(";
-const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3590 = ")";
-const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3591 = "\\";
-const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3592 = "!";
-const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3632 = " ";
-const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3633 = "";
-const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3607 = "rgb,255:red,";
-const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3626 = ";green,";
-const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3620 = ";blue,";
-const _M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3704 = "deg";
-const _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3705 = "deg";
-const _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3726 = ".";
-const _M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3732 = "{";
-const _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3780 = "{";
-const _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3781 = "}";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3803 = " ";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3804 = "";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3805 = "\t";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3806 = "";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3797 = "-";
-const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3787 = "-";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3877 = " ";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3878 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3879 = "\t";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3880 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3817 = " ";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3818 = "\t";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3819 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3820 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3835 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3845 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3849 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3856 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3866 = "";
+const _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3472 = "\n";
+const _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3473 = "\n";
+const _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3476 = "\\\"";
+const _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3477 = "\"";
+const _M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3578 = "=";
+const _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3586 = "\\arrow";
+const _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3587 = "\\ar";
+const _M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3593 = "";
+const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3595 = " ";
+const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3596 = "";
+const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3597 = "\t";
+const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3598 = "";
+const _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3594 = "/tikz/commutativediagrams/backgroundcolor";
+const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3599 = "'";
+const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3600 = "{";
+const _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3601 = "}";
+const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3630 = "(";
+const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3631 = ")";
+const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3632 = "\\";
+const _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3633 = "!";
+const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3673 = " ";
+const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3674 = "";
+const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3648 = "rgb,255:red,";
+const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3667 = ";green,";
+const _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3661 = ";blue,";
+const _M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3745 = "deg";
+const _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3746 = "deg";
+const _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3767 = ".";
+const _M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3773 = "{";
+const _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3821 = "{";
+const _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3822 = "}";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3844 = " ";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3845 = "";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3846 = "\t";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3847 = "";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3838 = "-";
+const _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3828 = "-";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3918 = " ";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3919 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3920 = "\t";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3921 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3858 = " ";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3859 = "\t";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3860 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3861 = "";
 const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3876 = "";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3895 = "";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3896 = "";
-const _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3917 = "";
-const _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3956 = "";
-const _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3957 = "";
-const _M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS3987 = "\\textcolor";
-const _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS3988 = "\\textcolor";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4012 = "every arrow";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4013 = "every label";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4014 = "every cell";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4015 = "every matrix";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4016 = "every diagram";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4017 = "every edge";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4018 = "every row";
-const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4019 = "every column";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4030 = " ";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4031 = "";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4032 = "\t";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4033 = "";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4027 = "";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4028 = "";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4029 = "";
-const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4034 = "";
-const _M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4044 = "[";
-const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4223 = " ";
-const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4224 = "";
-const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4225 = "\t";
-const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4226 = "";
-const _M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4329 = "=";
-const _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4333 = "\\\"";
-const _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4334 = "\"";
-const _M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4491 = "";
-const _M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4496 = "[";
-const _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4524 = "p";
-const _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4712 = "";
-const _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4718 = "";
-const _M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5184 = "";
-const _M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5185 = "";
-const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5200 = "";
-const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5201 = ", ";
-const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5202 = "";
-const _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5210 = "";
-const _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5209 = "";
-const _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5211 = "";
-const _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5212 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5213 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5214 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5215 = "";
-const _M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5216 = "";
-const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5224 = "";
-const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5225 = "";
-const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5222 = ", ";
-const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5223 = "";
-const _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5231 = "";
-const _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5236 = "";
-const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5245 = "";
-const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5246 = "";
-const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5247 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5248 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5249 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5250 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5251 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5252 = "";
-const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5253 = "";
-const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5266 = "";
-const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5273 = "";
-const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5280 = "";
-const _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5287 = "";
-const _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5286 = "";
-const _M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5288 = "";
-const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5296 = "";
-const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5297 = "";
-const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5298 = "";
-const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5299 = ",";
-const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5300 = "";
-const _M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5318 = "";
-const _M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5319 = "";
-const _M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5369 = "";
-const _M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5370 = "";
-const _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5371 = "\"";
-const _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5372 = "\\\"";
-const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5374 = "\\\\";
-const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5375 = "";
-const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5376 = "";
-const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5378 = "\n";
-const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5379 = "\n\t";
-const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5380 = "";
-const _M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5381 = "";
-const _M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5382 = "";
-const _M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5387 = "";
-const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5402 = "";
-const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5397 = "";
-const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5396 = "";
-const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5412 = "";
-const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5413 = "";
-const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5411 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5438 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5462 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5463 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5455 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5456 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5484 = ", ";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5485 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5475 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5476 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5477 = ", ";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5478 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3886 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3890 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3897 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3907 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3917 = "";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3936 = "";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3937 = "";
+const _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3958 = "";
+const _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3997 = "";
+const _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3998 = "";
+const _M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS4028 = "\\textcolor";
+const _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS4029 = "\\textcolor";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4053 = "every arrow";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4054 = "every label";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4055 = "every cell";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4056 = "every matrix";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4057 = "every diagram";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4058 = "every edge";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4059 = "every row";
+const _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4060 = "every column";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4071 = " ";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4072 = "";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4073 = "\t";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4074 = "";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4068 = "";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4069 = "";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4070 = "";
+const _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4075 = "";
+const _M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4085 = "[";
+const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4264 = " ";
+const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4265 = "";
+const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4266 = "\t";
+const _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4267 = "";
+const _M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4370 = "=";
+const _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4374 = "\\\"";
+const _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4375 = "\"";
+const _M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4532 = "";
+const _M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4537 = "[";
+const _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4565 = "p";
+const _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4753 = "";
+const _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4759 = "";
+const _M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5259 = "";
+const _M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5260 = "";
+const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5275 = "";
+const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5276 = ", ";
+const _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5277 = "";
+const _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5285 = "";
+const _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5284 = "";
+const _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5286 = "";
+const _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5287 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5288 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5289 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5290 = "";
+const _M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5291 = "";
+const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5299 = "";
+const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5300 = "";
+const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5297 = ", ";
+const _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5298 = "";
+const _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5306 = "";
+const _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5311 = "";
+const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5320 = "";
+const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5321 = "";
+const _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5322 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5323 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5324 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5325 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5326 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5327 = "";
+const _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5328 = "";
+const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5341 = "";
+const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5348 = "";
+const _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5355 = "";
+const _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5362 = "";
+const _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5361 = "";
+const _M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5363 = "";
+const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5371 = "";
+const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5372 = "";
+const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5373 = "";
+const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5374 = ",";
+const _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5375 = "";
+const _M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5393 = "";
+const _M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5394 = "";
+const _M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5444 = "";
+const _M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5445 = "";
+const _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5446 = "\"";
+const _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5447 = "\\\"";
+const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5449 = "\\\\";
+const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5450 = "";
+const _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5451 = "";
+const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5453 = "\n";
+const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5454 = "\n\t";
+const _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5455 = "";
+const _M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5456 = "";
+const _M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5457 = "";
+const _M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5462 = "";
+const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5477 = "";
+const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5472 = "";
+const _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5471 = "";
+const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5487 = "";
+const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5488 = "";
+const _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5486 = "";
 const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5513 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5511 = "\n";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5512 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5509 = "";
-const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5510 = "";
-const _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5544 = ", ";
-const _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5545 = "";
-const _M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5550 = "";
-const _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5574 = "";
-const _M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5575 = "";
-const _M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5576 = "";
-const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5580 = "\n";
-const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5579 = "";
-const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5578 = "";
-const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5577 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5605 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5604 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5613 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5614 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5620 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5621 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5626 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5627 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5628 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5629 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5630 = "";
-const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5631 = "";
-const _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5667 = "";
-const _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312 = new _M0TP35kokic6kwiver6engine6Colour(0, 0, 0, 1);
-const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6385 = "black";
-const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6386 = "white";
-const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6387 = "red";
-const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6388 = "green";
-const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6389 = "blue";
-const _M0FP35kokic6kwiver6engine23tikz__edge__coord__partN5tupleS6390 = { _0: 2147483647, _1: 2147483647 };
-const _M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6391 = new _M0TP35kokic6kwiver6engine16TikzCdSepOptions(180, 180);
-const _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6392 = new _M0TP35kokic6kwiver6engine20TikzCdExportSettings(false, false, false, false);
-const _M0MP35kokic6kwiver6engine22FletcherExportSettings7defaultN6recordS6393 = new _M0TP35kokic6kwiver6engine22FletcherExportSettings(false);
-const _M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394 = new _M0TP35kokic6kwiver6engine5Point(0, 0);
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5537 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5538 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5530 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5531 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5559 = ", ";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5560 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5550 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5551 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5552 = ", ";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5553 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5588 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5586 = "\n";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5587 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5584 = "";
+const _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5585 = "";
+const _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5619 = ", ";
+const _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5620 = "";
+const _M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5625 = "";
+const _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5649 = "";
+const _M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5650 = "";
+const _M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5651 = "";
+const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5655 = "\n";
+const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5654 = "";
+const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5653 = "";
+const _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5652 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5680 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5679 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5688 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5689 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5695 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5696 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5701 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5702 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5703 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5704 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5705 = "";
+const _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5706 = "";
+const _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5742 = "";
+const _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388 = new _M0TP35kokic6kwiver6engine6Colour(0, 0, 0, 1);
+const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6461 = "black";
+const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6462 = "white";
+const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6463 = "red";
+const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6464 = "green";
+const _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6465 = "blue";
+const _M0FP35kokic6kwiver6engine23tikz__edge__coord__partN5tupleS6466 = { _0: 2147483647, _1: 2147483647 };
+const _M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6467 = new _M0TP35kokic6kwiver6engine16TikzCdSepOptions(180, 180);
+const _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6468 = new _M0TP35kokic6kwiver6engine20TikzCdExportSettings(false, false, false, false);
+const _M0MP35kokic6kwiver6engine22FletcherExportSettings7defaultN6recordS6469 = new _M0TP35kokic6kwiver6engine22FletcherExportSettings(false);
+const _M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470 = new _M0TP35kokic6kwiver6engine5Point(0, 0);
 const _M0FP35kokic6kwiver8geometry33arrow__render__commands__to__partN7_2abindS576 = "\n";
 const _M0FP35kokic6kwiver8geometry47arrow__render__commands__to__path__plan_2einnerN7_2abindS582 = "\n";
 const _M0FP35kokic6kwiver8geometry23arrow__render__move__toN7_2abindS583 = " ";
@@ -1980,91 +1984,91 @@ const _M0FP35kokic6kwiver8geometry29arrow__render__clipping__pathN7_2abindS698 =
 const _M0FP35kokic6kwiver8geometry28arrow__render__head__marginsN5tupleS873 = { _0: 0, _1: 0, _2: 0 };
 const _M0MP35kokic6kwiver8geometry17ArrowLayoutConfig7defaultN6recordS874 = new _M0TP35kokic6kwiver8geometry17ArrowLayoutConfig(8, 256, 30);
 const _M0MP35kokic6kwiver8geometry21ArrowCurveModelConfig7defaultN6recordS876 = new _M0TP35kokic6kwiver8geometry21ArrowCurveModelConfig(24, 16, 8, 96, 64, 0.01);
-const _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865 = "";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871 = "";
-const _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974 = ",";
+const _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1786 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1893 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1894 = "";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1900 = "";
+const _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS2003 = ",";
 const _M0FPB4seed = _M0FPB12random__seed();
 const _M0FPB18brute__force__findN6constrS8126 = 0;
 const _M0FPB28boyer__moore__horspool__findN6constrS8125 = 0;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6344 = 0;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6345 = 10;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6346 = 20;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6347 = 50;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6348 = 80;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6349 = 90;
-const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6350 = 1;
-const _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6351 = -1;
-const _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6352 = 1;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6353 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6354 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6355 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6356 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6357 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6358 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6359 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6360 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6361 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6362 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6363 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6364 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6365 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6366 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6367 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6368 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6369 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6370 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6371 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6372 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6373 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6374 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6375 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6376 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6377 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6378 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6379 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6380 = true;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6381 = false;
-const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6382 = true;
-const _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN6constrS6326 = 1;
-const _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitudeN6constrS6329 = 100;
-const _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6327 = 0;
-const _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6328 = 1;
-const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6323 = "adjunction";
-const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6324 = "corner";
-const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6325 = "corner-inverse";
-const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6319 = "barred";
-const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6320 = "double barred";
-const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6321 = "bullet solid";
-const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6322 = "bullet hollow";
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6313 = new _M0TP35kokic6kwiver6engine11EdgeShorten(0, 0);
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6314 = new _M0TP35kokic6kwiver6engine13EdgeAlignment(true, true);
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6315 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("none", "");
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6316 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("cell", "");
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6317 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("arrowhead", "");
-const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6318 = new _M0TP35kokic6kwiver6engine9EdgeStyle("arrow", _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6315, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6316, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6317);
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6330 = "invalid name option";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6331 = "invalid draw colour option";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6332 = "invalid text colour option";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6333 = "invalid scaling nfold value";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6334 = "invalid curve value";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6335 = "invalid between value";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6336 = "invalid shorten value";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6337 = "invalid loop distance";
-const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6338 = "invalid pos value";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6339 = "empty label suffix option";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6340 = "invalid name value in label suffix";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6341 = "invalid pos value in label suffix";
-const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6342 = "invalid text colour in label suffix";
-const _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN6constrS6343 = "empty arrow option";
-const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6383 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import failed", 0, 0);
-const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6384 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import produced no quiver", 0, 0);
-const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2001 = true;
-const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2002 = false;
-const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2003 = "import failed";
-const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2004 = "import failed";
-const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2005 = "dispatch output parse failed";
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6420 = 0;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6421 = 10;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6422 = 20;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6423 = 50;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6424 = 80;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6425 = 90;
+const _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6426 = 1;
+const _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6427 = -1;
+const _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6428 = 1;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6429 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6430 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6431 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6432 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6433 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6434 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6435 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6436 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6437 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6438 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6439 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6440 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6441 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6442 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6443 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6444 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6445 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6446 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6447 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6448 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6449 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6450 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6451 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6452 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6453 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6454 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6455 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6456 = true;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6457 = false;
+const _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6458 = true;
+const _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN6constrS6402 = 1;
+const _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitudeN6constrS6405 = 100;
+const _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6403 = 0;
+const _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6404 = 1;
+const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6399 = "adjunction";
+const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6400 = "corner";
+const _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6401 = "corner-inverse";
+const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6395 = "barred";
+const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6396 = "double barred";
+const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6397 = "bullet solid";
+const _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6398 = "bullet hollow";
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6389 = new _M0TP35kokic6kwiver6engine11EdgeShorten(0, 0);
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6390 = new _M0TP35kokic6kwiver6engine13EdgeAlignment(true, true);
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6391 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("none", "");
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6392 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("cell", "");
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6393 = new _M0TP35kokic6kwiver6engine17EdgeEndpointStyle("arrowhead", "");
+const _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6394 = new _M0TP35kokic6kwiver6engine9EdgeStyle("arrow", _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6391, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6392, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6393);
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6406 = "invalid name option";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6407 = "invalid draw colour option";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6408 = "invalid text colour option";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6409 = "invalid scaling nfold value";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6410 = "invalid curve value";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6411 = "invalid between value";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6412 = "invalid shorten value";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6413 = "invalid loop distance";
+const _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6414 = "invalid pos value";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6415 = "empty label suffix option";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6416 = "invalid name value in label suffix";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6417 = "invalid pos value in label suffix";
+const _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6418 = "invalid text colour in label suffix";
+const _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN6constrS6419 = "empty arrow option";
+const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6459 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import failed", 0, 0);
+const _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6460 = new _M0TP35kokic6kwiver6engine19QuiverUiImportError("tikz", "tikz-cd import produced no quiver", 0, 0);
+const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2030 = true;
+const _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2031 = false;
+const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2032 = "import failed";
+const _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2033 = "import failed";
+const _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2034 = "dispatch output parse failed";
 function _M0FPC15abort5abortGuE(msg) {
   $panic();
 }
@@ -10465,6 +10469,33 @@ function _M0MPC17hashmap7HashMap3getGiiE(self, key) {
     }
   }
 }
+function _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine4EdgeE(self, key) {
+  const hash = _M0IP016_24default__implPB4Hash4hashGiE(key);
+  let _tmp = 0;
+  let _tmp$2 = hash & self.capacity_mask;
+  while (true) {
+    const i = _tmp;
+    const idx = _tmp$2;
+    const _tmp$3 = self.entries;
+    $bound_check(_tmp$3, idx);
+    const _bind = _tmp$3[idx];
+    if (_bind === undefined) {
+      return undefined;
+    } else {
+      const _Some = _bind;
+      const _entry = _Some;
+      if (_entry.hash === hash && _entry.key === key) {
+        return _entry.value;
+      }
+      if (i > _entry.psl) {
+        return undefined;
+      }
+      _tmp = i + 1 | 0;
+      _tmp$2 = idx + 1 & self.capacity_mask;
+      continue;
+    }
+  }
+}
 function _M0MPC17hashmap7HashMap3getGisE(self, key) {
   const hash = _M0IP016_24default__implPB4Hash4hashGiE(key);
   let _tmp = 0;
@@ -10494,33 +10525,6 @@ function _M0MPC17hashmap7HashMap3getGisE(self, key) {
 }
 function _M0MPC17hashmap7HashMap3getGsRPC17hashmap7HashMapGsbEE(self, key) {
   const hash = _M0IP016_24default__implPB4Hash4hashGsE(key);
-  let _tmp = 0;
-  let _tmp$2 = hash & self.capacity_mask;
-  while (true) {
-    const i = _tmp;
-    const idx = _tmp$2;
-    const _tmp$3 = self.entries;
-    $bound_check(_tmp$3, idx);
-    const _bind = _tmp$3[idx];
-    if (_bind === undefined) {
-      return undefined;
-    } else {
-      const _Some = _bind;
-      const _entry = _Some;
-      if (_entry.hash === hash && _entry.key === key) {
-        return _entry.value;
-      }
-      if (i > _entry.psl) {
-        return undefined;
-      }
-      _tmp = i + 1 | 0;
-      _tmp$2 = idx + 1 & self.capacity_mask;
-      continue;
-    }
-  }
-}
-function _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine4EdgeE(self, key) {
-  const hash = _M0IP016_24default__implPB4Hash4hashGiE(key);
   let _tmp = 0;
   let _tmp$2 = hash & self.capacity_mask;
   while (true) {
@@ -15211,7 +15215,7 @@ function _M0MP35kokic6kwiver6engine8CellData2id(self) {
   }
 }
 function _M0MP35kokic6kwiver6engine11EdgeOptions9at__level(level) {
-  return new _M0TP35kokic6kwiver6engine11EdgeOptions(0, 50, 0, 0, 3, 0, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6313, level < 1 ? 1 : level, 0, _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6314, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6318);
+  return new _M0TP35kokic6kwiver6engine11EdgeOptions(0, 50, 0, 0, 3, 0, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6389, level < 1 ? 1 : level, 0, _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6390, _M0MP35kokic6kwiver6engine11EdgeOptions9at__levelN6recordS6394);
 }
 function _M0MP35kokic6kwiver6engine6Quiver10all__cells(self) {
   const cells = [];
@@ -15291,7 +15295,7 @@ function _M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__ids(self, 
     }
   }
   if (vertices.length === 0) {
-    const _bind$2 = _M0FPC28encoding4utf814encode_2einner(new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2674, 0, _M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2674.length), false);
+    const _bind$2 = _M0FPC28encoding4utf814encode_2einner(new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2715, 0, _M0MP35kokic6kwiver6engine6Quiver29base64__export__v0__with__idsN7_2abindS2715.length), false);
     return _M0FPC28encoding6base6414encode_2einner(_M0MPC15bytes5Bytes12view_2einner(_bind$2, 0, _bind$2.length), true);
   }
   let min_x = vertices[0].x;
@@ -17013,7 +17017,7 @@ function _M0FP35kokic6kwiver6engine35quiver__ui__add__vertex__from__json(input) 
   const _bind$6 = _M0FP35kokic6kwiver6engine33quiver__ui__json__optional__field(root, "label_colour");
   let label_colour;
   if (_bind$6 === undefined) {
-    label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+    label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
   } else {
     const _Some = _bind$6;
     const _raw = _Some;
@@ -17093,7 +17097,7 @@ function _M0FP35kokic6kwiver6engine33quiver__ui__add__edge__from__json(input) {
   const _bind$7 = _M0FP35kokic6kwiver6engine33quiver__ui__json__optional__field(root, "label_colour");
   let label_colour;
   if (_bind$7 === undefined) {
-    label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+    label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
   } else {
     const _Some = _bind$7;
     const _raw = _Some;
@@ -17536,18 +17540,18 @@ function _M0FP35kokic6kwiver6engine29quiver__ui__flush__from__json(input) {
   return _M0FPC14json10from__jsonGiE(_M0FP35kokic6kwiver6engine33quiver__ui__json__required__field(root, "when"), undefined);
 }
 function _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__reference(input) {
-  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2869, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2869.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2870, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2870.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2871, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2871.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2872, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2872.length))));
+  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2910, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2910.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2911, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2911.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2912, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2912.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2913, 0, _M0FP35kokic6kwiver6engine41quiver__ui__looks__like__share__referenceN7_2abindS2913.length))));
 }
 function _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikz(input) {
-  const plain_env = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2875, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2875.length)) && _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2876, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2876.length));
-  const starred_env = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2873, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2873.length)) && _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2874, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2874.length));
+  const plain_env = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2916, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2916.length)) && _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2917, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2917.length));
+  const starred_env = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2914, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2914.length)) && _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2915, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__tikzN7_2abindS2915.length));
   return plain_env || starred_env;
 }
 function _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcher(input) {
-  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2877, 0, _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2877.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2878, 0, _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2878.length));
+  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2918, 0, _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2918.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2919, 0, _M0FP35kokic6kwiver6engine33quiver__ui__looks__like__fletcherN7_2abindS2919.length));
 }
 function _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__html(input) {
-  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2879, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2879.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2880, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2880.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2881, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2881.length)));
+  return _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2920, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2920.length)) || (_M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2921, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2921.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2922, 0, _M0FP35kokic6kwiver6engine29quiver__ui__looks__like__htmlN7_2abindS2922.length)));
 }
 function _M0MP35kokic6kwiver6engine15QuiverUiAdapter5reset(self) {
   self.quiver = _M0MP35kokic6kwiver6engine6Quiver3new();
@@ -18262,7 +18266,7 @@ function _M0FP35kokic6kwiver6engine32base64__import__quiver__from__js(root) {
             return _bind$6;
           }
         } else {
-          label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+          label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
         }
         const id = i + 1 | 0;
         const _p = _M0MP35kokic6kwiver6engine6Vertex3new(id, label, x, y, label_colour);
@@ -18407,7 +18411,7 @@ function _M0FP35kokic6kwiver6engine32base64__import__quiver__from__js(root) {
             return _bind$8;
           }
         } else {
-          label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+          label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
         }
         const id = i + 1 | 0;
         const _p$3 = _M0MP35kokic6kwiver6engine4Edge3new(id, label, source_id, target_id, structural_options, label_colour);
@@ -18487,7 +18491,7 @@ function _M0MP35kokic6kwiver6engine15QuiverUiAdapter21import__base64__state(self
   return new _M0DTPC16result6ResultGsRPC15error5ErrorE2Ok(_M0MP35kokic6kwiver6engine6Quiver18export__base64__v0(self.quiver));
 }
 function _M0FP35kokic6kwiver6engine27base64__normalise__fragment(value) {
-  const amp = _M0MPC16string6String12replace__all(value, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3085, 0, _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3085.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3086, 0, _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3086.length));
+  const amp = _M0MPC16string6String12replace__all(value, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3126, 0, _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3126.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3127, 0, _M0FP35kokic6kwiver6engine27base64__normalise__fragmentN7_2abindS3127.length));
   let start = 0;
   while (true) {
     if (start < amp.length) {
@@ -18555,7 +18559,7 @@ function _M0FP35kokic6kwiver6engine29base64__parse__share__segment(segment, allo
   let macro_url$2 = macro_url;
   let renderer_raw$2 = renderer_raw;
   let embed$2 = embed;
-  if (!_M0MPC16string6String8contains(segment, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3089, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3089.length))) {
+  if (!_M0MPC16string6String8contains(segment, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3130, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3130.length))) {
     if (segment === "embed") {
       embed$2 = true;
     } else {
@@ -18565,7 +18569,7 @@ function _M0FP35kokic6kwiver6engine29base64__parse__share__segment(segment, allo
     }
     return { _0: payload$2, _1: macro_url$2, _2: renderer_raw$2, _3: embed$2 };
   }
-  const _it = _M0MPC16string6String5split(segment, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3108, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3108.length));
+  const _it = _M0MPC16string6String5split(segment, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3149, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3149.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -18581,7 +18585,7 @@ function _M0FP35kokic6kwiver6engine29base64__parse__share__segment(segment, allo
         embed$2 = true;
         continue;
       }
-      const _bind$2 = _M0MPC16string6String4find(pair, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3092, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3092.length));
+      const _bind$2 = _M0MPC16string6String4find(pair, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3133, 0, _M0FP35kokic6kwiver6engine29base64__parse__share__segmentN7_2abindS3133.length));
       if (_bind$2 === undefined) {
       } else {
         const _Some$2 = _bind$2;
@@ -18610,7 +18614,7 @@ function _M0FP35kokic6kwiver6engine29base64__parse__share__segment(segment, allo
   return { _0: payload$2, _1: macro_url$2, _2: renderer_raw$2, _3: embed$2 };
 }
 function _M0FP35kokic6kwiver6engine28base64__share__url__fragment(input) {
-  const _bind = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3109, 0, _M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3109.length));
+  const _bind = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3150, 0, _M0FP35kokic6kwiver6engine28base64__share__url__fragmentN7_2abindS3150.length));
   if (_bind === undefined) {
     return input;
   } else {
@@ -18620,13 +18624,13 @@ function _M0FP35kokic6kwiver6engine28base64__share__url__fragment(input) {
   }
 }
 function _M0FP35kokic6kwiver6engine25base64__share__url__query(input) {
-  const _bind = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3121, 0, _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3121.length));
+  const _bind = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3162, 0, _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3162.length));
   if (_bind === undefined) {
     return "";
   } else {
     const _Some = _bind;
     const _query_start = _Some;
-    const _bind$2 = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3115, 0, _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3115.length));
+    const _bind$2 = _M0MPC16string6String4find(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3156, 0, _M0FP35kokic6kwiver6engine25base64__share__url__queryN7_2abindS3156.length));
     let end;
     if (_bind$2 === undefined) {
       end = input.length;
@@ -18639,10 +18643,10 @@ function _M0FP35kokic6kwiver6engine25base64__share__url__query(input) {
   }
 }
 function _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einner(input, default_renderer) {
-  const is_url = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3161, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3161.length));
-  const has_hash = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3160, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3160.length));
+  const is_url = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3202, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3202.length));
+  const has_hash = _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3201, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3201.length));
   if (!has_hash && !is_url) {
-    const is_fragment_query = _M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3132, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3132.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3133, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3133.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3134, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3134.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3135, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3135.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3136, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3136.length)))));
+    const is_fragment_query = _M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3173, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3173.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3174, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3174.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3175, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3175.length)) || (_M0MPC16string6String11has__prefix(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3176, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3176.length)) || _M0MPC16string6String8contains(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3177, 0, _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einnerN7_2abindS3177.length)))));
     if (!is_fragment_query) {
       return new _M0TP35kokic6kwiver6engine19Base64ShareUrlParts(input, undefined, undefined, false);
     }
@@ -18733,14 +18737,14 @@ function _M0FP35kokic6kwiver6engine15base64__trimmed(line) {
   return _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(line, undefined));
 }
 function _M0FP35kokic6kwiver6engine41base64__extract__html__comment__reference(line) {
-  const _bind = _M0MPC16string6String4find(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3184, 0, _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3184.length));
+  const _bind = _M0MPC16string6String4find(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3225, 0, _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3225.length));
   if (_bind === undefined) {
     return undefined;
   } else {
     const _Some = _bind;
     const _start = _Some;
     const after = line.substring(_start + 4 | 0, line.length);
-    const _bind$2 = _M0MPC16string6String4find(after, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3178, 0, _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3178.length));
+    const _bind$2 = _M0MPC16string6String4find(after, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3219, 0, _M0FP35kokic6kwiver6engine41base64__extract__html__comment__referenceN7_2abindS3219.length));
     if (_bind$2 === undefined) {
       return undefined;
     } else {
@@ -18842,7 +18846,7 @@ function _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__reference(in
     return undefined;
   }
   let fallback = undefined;
-  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3221, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3221.length));
+  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3262, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3262.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -18858,10 +18862,10 @@ function _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__reference(in
       if (_bind$2 === undefined) {
         fallback = line;
       }
-      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3199, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3199.length))) {
+      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3240, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3240.length))) {
         return _M0FP35kokic6kwiver6engine15base64__trimmed(line.substring(2, line.length));
       }
-      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3200, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3200.length))) {
+      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3241, 0, _M0MP35kokic6kwiver6engine6Quiver33extract__base64__share__referenceN7_2abindS3241.length))) {
         return _M0FP35kokic6kwiver6engine15base64__trimmed(line.substring(3, line.length));
       }
       const _bind$3 = _M0FP35kokic6kwiver6engine41base64__extract__html__comment__reference(line);
@@ -18938,7 +18942,7 @@ function _M0FP35kokic6kwiver6engine25html__embed__extract__srcN9is__spaceS705(by
 }
 function _M0FP35kokic6kwiver6engine25html__embed__extract__src(input) {
   const single_quote = 39 & 255;
-  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3265, 0, _M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3265.length));
+  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3306, 0, _M0FP35kokic6kwiver6engine25html__embed__extract__srcN7_2abindS3306.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -19056,7 +19060,7 @@ function _M0MP35kokic6kwiver6engine15QuiverUiAdapter27import__html__embed_2einne
   return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine20QuiverUiImportResultRPC15error5ErrorE2Ok(_M0FP35kokic6kwiver6engine26quiver__ui__import__result(self.quiver, imported.macro_url, imported.renderer, imported.embed));
 }
 function _M0FP35kokic6kwiver6engine26tikz__has__wrapper__marker(input) {
-  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3303, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3303.length));
+  const _it = _M0MPC16string6String5split(input, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3344, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3344.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -19068,7 +19072,7 @@ function _M0FP35kokic6kwiver6engine26tikz__has__wrapper__marker(input) {
       if (line === "") {
         continue;
       }
-      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3289, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3289.length)) || (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3290, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3290.length)) || (_M0MPC16string6String8contains(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3291, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3291.length)) || _M0MPC16string6String8contains(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3292, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3292.length))))) {
+      if (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3330, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3330.length)) || (_M0MPC16string6String11has__prefix(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3331, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3331.length)) || (_M0MPC16string6String8contains(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3332, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3332.length)) || _M0MPC16string6String8contains(line, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3333, 0, _M0FP35kokic6kwiver6engine26tikz__has__wrapper__markerN7_2abindS3333.length))))) {
         return true;
       }
       continue;
@@ -19080,7 +19084,7 @@ function _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidate(refer
   if (reference === "") {
     return false;
   }
-  const has_share_markers = _M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3319, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3319.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3320, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3320.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3321, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3321.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3322, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3322.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3323, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3323.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3324, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3324.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3325, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3325.length)) || _M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3326, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3326.length))))))));
+  const has_share_markers = _M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3360, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3360.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3361, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3361.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3362, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3362.length)) || (_M0MPC16string6String8contains(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3363, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3363.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3364, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3364.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3365, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3365.length)) || (_M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3366, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3366.length)) || _M0MPC16string6String11has__prefix(reference, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3367, 0, _M0FP35kokic6kwiver6engine37tikz__is__share__reference__candidateN7_2abindS3367.length))))))));
   if (has_share_markers) {
     const parsed = _M0MP35kokic6kwiver6engine6Quiver33parse__base64__share__url_2einner(reference, "canvas");
     const _bind = parsed.payload;
@@ -19433,7 +19437,7 @@ function _M0FP35kokic6kwiver6engine31tikz__line__column__from__index(input, inde
   return { _0: line, _1: column };
 }
 function _M0FP35kokic6kwiver6engine24tikz__option__key__value(option) {
-  const _bind = _M0MPC16string6String4find(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3363, 0, _M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3363.length));
+  const _bind = _M0MPC16string6String4find(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3404, 0, _M0FP35kokic6kwiver6engine24tikz__option__key__valueN7_2abindS3404.length));
   if (_bind === undefined) {
     return undefined;
   } else {
@@ -19550,11 +19554,11 @@ function _M0FP35kokic6kwiver6engine27tikz__split__arrow__options(raw_options) {
 }
 function _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(input) {
   const trimmed = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(input, undefined));
-  return trimmed.length >= 2 && (_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3370, 0, _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3370.length)) && _M0MPC16string6String11has__suffix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3371, 0, _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3371.length))) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(trimmed.substring(1, trimmed.length - 1 | 0), undefined)) : trimmed;
+  return trimmed.length >= 2 && (_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3411, 0, _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3411.length)) && _M0MPC16string6String11has__suffix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3412, 0, _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapperN7_2abindS3412.length))) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(trimmed.substring(1, trimmed.length - 1 | 0), undefined)) : trimmed;
 }
 function _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(input) {
   const trimmed = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(input, undefined));
-  return trimmed.length >= 2 && (_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3372, 0, _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3372.length)) && _M0MPC16string6String11has__suffix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3373, 0, _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3373.length))) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(trimmed.substring(1, trimmed.length - 1 | 0), undefined)) : trimmed;
+  return trimmed.length >= 2 && (_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3413, 0, _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3413.length)) && _M0MPC16string6String11has__suffix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3414, 0, _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__textN7_2abindS3414.length))) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(trimmed.substring(1, trimmed.length - 1 | 0), undefined)) : trimmed;
 }
 function _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacement(options) {
   const _bind = _M0FP35kokic6kwiver6engine27tikz__split__arrow__options(options);
@@ -19571,7 +19575,7 @@ function _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacement(options
         const _x = _Some;
         const _key = _x._0;
         const _value = _x._1;
-        const key_token = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(_key)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3377, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3377.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3378, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3378.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3379, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3379.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3380, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3380.length));
+        const key_token = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(_key)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3418, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3418.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3419, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3419.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3420, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3420.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3421, 0, _M0FP35kokic6kwiver6engine35tikz__parse__ampersand__replacementN7_2abindS3421.length));
         if (key_token === "ampersandreplacement") {
           const token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(_value), undefined));
           const _p = "";
@@ -19983,7 +19987,7 @@ function _M0FP35kokic6kwiver6engine30tikz__find__unescaped__percent(line) {
 }
 function _M0FP35kokic6kwiver6engine27tikz__strip__line__comments(body) {
   const rows = [];
-  const _it = _M0MPC16string6String5split(body, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3431, 0, _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3431.length));
+  const _it = _M0MPC16string6String5split(body, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3472, 0, _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3472.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {
@@ -20003,7 +20007,7 @@ function _M0FP35kokic6kwiver6engine27tikz__strip__line__comments(body) {
       continue;
     }
   }
-  return _M0MPC15array5Array4joinGsE(rows, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3432, 0, _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3432.length));
+  return _M0MPC15array5Array4joinGsE(rows, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3473, 0, _M0FP35kokic6kwiver6engine27tikz__strip__line__commentsN7_2abindS3473.length));
 }
 function _M0FP35kokic6kwiver6engine24tikz__trim__left__length(input) {
   let start = 0;
@@ -20057,7 +20061,7 @@ function _M0FP35kokic6kwiver6engine28tikz__extract__first__quoted(value) {
     } else {
       const _Some$2 = _bind$2;
       const _end = _Some$2;
-      return _M0MPC16string6String12replace__all(value.substring(content_start, _end), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3435, 0, _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3435.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3436, 0, _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3436.length));
+      return _M0MPC16string6String12replace__all(value.substring(content_start, _end), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3476, 0, _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3476.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3477, 0, _M0FP35kokic6kwiver6engine28tikz__extract__first__quotedN7_2abindS3477.length));
     }
   }
 }
@@ -20325,7 +20329,7 @@ function _M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__option(o
     _L$2: {
       const _bind = _M0FP35kokic6kwiver6engine28tikz__extract__first__quoted(option);
       if (_bind === undefined) {
-        if (_M0MPC16string6String8contains(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3537, 0, _M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3537.length))) {
+        if (_M0MPC16string6String8contains(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3578, 0, _M0FP35kokic6kwiver6engine41tikz__extract__bare__arrow__label__optionN7_2abindS3578.length))) {
           break _L$2;
         }
       } else {
@@ -20577,7 +20581,7 @@ function _M0FP35kokic6kwiver6engine24tikz__next__arrow__match(input) {
         continue;
       }
       const rest = input.substring(i, input.length);
-      const command_len = _M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3545, 0, _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3545.length)) ? 6 : _M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3546, 0, _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3546.length)) ? 3 : 0;
+      const command_len = _M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3586, 0, _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3586.length)) ? 6 : _M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3587, 0, _M0FP35kokic6kwiver6engine24tikz__next__arrow__matchN7_2abindS3587.length)) ? 3 : 0;
       if (command_len === 0) {
         i = i + 1 | 0;
         continue;
@@ -20618,16 +20622,16 @@ function _M0FP35kokic6kwiver6engine24tikz__next__arrow__match(input) {
 function _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__style(content) {
   const token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(content)), undefined));
   if (token === "\\shortmid") {
-    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6319;
+    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6395;
   }
   if (token === "\\shortmid\\shortmid") {
-    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6320;
+    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6396;
   }
   if (token === "\\bullet") {
-    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6321;
+    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6397;
   }
   if (token === "\\circ") {
-    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6322;
+    return _M0FP35kokic6kwiver6engine36tikz__arrow__body__decoration__styleN6constrS6398;
   }
   return undefined;
 }
@@ -20652,11 +20656,11 @@ function _M0FP35kokic6kwiver6engine18tikz__ascii__lower(value) {
       break;
     }
   }
-  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3552, 0, _M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3552.length));
+  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3593, 0, _M0FP35kokic6kwiver6engine18tikz__ascii__lowerN7_2abindS3593.length));
 }
 function _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expression(value) {
-  const compact = _M0FP35kokic6kwiver6engine18tikz__ascii__lower(_M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3554, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3554.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3555, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3555.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3556, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3556.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3557, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3557.length)));
-  return _M0MPC16string6String8contains(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3553, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3553.length));
+  const compact = _M0FP35kokic6kwiver6engine18tikz__ascii__lower(_M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3595, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3595.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3596, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3596.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3597, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3597.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3598, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3598.length)));
+  return _M0MPC16string6String8contains(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3594, 0, _M0FP35kokic6kwiver6engine40tikz__is__background__colour__expressionN7_2abindS3594.length));
 }
 function _M0FP35kokic6kwiver6engine28tikz__label__suffix__options(option) {
   const suffix_options = [];
@@ -20671,14 +20675,14 @@ function _M0FP35kokic6kwiver6engine28tikz__label__suffix__options(option) {
       const _Some$2 = _bind$2;
       const _end = _Some$2;
       let suffix = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(option.substring(_end + 1 | 0, option.length), undefined));
-      if (_M0MPC16string6String11has__prefix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3558, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3558.length))) {
+      if (_M0MPC16string6String11has__prefix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3599, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3599.length))) {
         _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(suffix_options, "'");
         suffix = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(suffix.substring(1, suffix.length), undefined));
       }
       if (suffix === "") {
         return suffix_options;
       }
-      if (_M0MPC16string6String11has__prefix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3559, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3559.length)) && _M0MPC16string6String11has__suffix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3560, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3560.length))) {
+      if (_M0MPC16string6String11has__prefix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3600, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3600.length)) && _M0MPC16string6String11has__suffix(suffix, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3601, 0, _M0FP35kokic6kwiver6engine28tikz__label__suffix__optionsN7_2abindS3601.length))) {
         const inner = suffix.substring(1, suffix.length - 1 | 0);
         const _bind$3 = _M0FP35kokic6kwiver6engine27tikz__split__arrow__options(inner);
         const _bind$4 = _bind$3.length;
@@ -20704,7 +20708,7 @@ function _M0FP35kokic6kwiver6engine28tikz__label__suffix__options(option) {
 function _M0FP35kokic6kwiver6engine19tikz__named__colour(name) {
   switch (name) {
     case "black": {
-      return _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+      return _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
     }
     case "white": {
       return _M0MP35kokic6kwiver6engine6Colour3new(0, 0, 100, 1);
@@ -20746,13 +20750,13 @@ function _M0FP35kokic6kwiver6engine19tikz__named__colour(name) {
 }
 function _M0FP35kokic6kwiver6engine29tikz__normalise__colour__name(value) {
   let text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), undefined));
-  if (_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3589, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3589.length)) && (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3590, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3590.length)) && text.length >= 2)) {
+  if (_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3630, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3630.length)) && (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3631, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3631.length)) && text.length >= 2)) {
     text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(text.substring(1, text.length - 1 | 0), undefined));
   }
-  if (_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3591, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3591.length))) {
+  if (_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3632, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3632.length))) {
     text = text.substring(1, text.length);
   }
-  const _bind = _M0MPC16string6String4find(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3592, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3592.length));
+  const _bind = _M0MPC16string6String4find(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3633, 0, _M0FP35kokic6kwiver6engine29tikz__normalise__colour__nameN7_2abindS3633.length));
   if (_bind === undefined) {
   } else {
     const _Some = _bind;
@@ -20805,12 +20809,12 @@ function _M0FP35kokic6kwiver6engine20tikz__round__to__int(x) {
   return x >= 0 ? _M0MPC16double6Double7to__int(_M0FPC16double5floor(x + 0.5)) : -_M0MPC16double6Double7to__int(_M0FPC16double5floor(-x + 0.5)) | 0;
 }
 function _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colour(value) {
-  const compact = _M0MPC16string6String12replace__all(value, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3632, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3632.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3633, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3633.length));
-  if (!_M0MPC16string6String11has__prefix(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3607, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3607.length))) {
+  const compact = _M0MPC16string6String12replace__all(value, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3673, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3673.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3674, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3674.length));
+  if (!_M0MPC16string6String11has__prefix(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3648, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3648.length))) {
     return undefined;
   }
   const after_red = compact.substring(12, compact.length);
-  const _bind = _M0MPC16string6String4find(after_red, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3626, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3626.length));
+  const _bind = _M0MPC16string6String4find(after_red, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3667, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3667.length));
   if (_bind === undefined) {
     return undefined;
   } else {
@@ -20818,7 +20822,7 @@ function _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colour(value) {
     const _green_index = _Some;
     const red_text = after_red.substring(0, _green_index);
     const after_green = after_red.substring(_green_index + 7 | 0, after_red.length);
-    const _bind$2 = _M0MPC16string6String4find(after_green, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3620, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3620.length));
+    const _bind$2 = _M0MPC16string6String4find(after_green, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3661, 0, _M0FP35kokic6kwiver6engine29tikz__parse__rgb__255__colourN7_2abindS3661.length));
     if (_bind$2 === undefined) {
       return undefined;
     } else {
@@ -20935,13 +20939,13 @@ function _M0FP35kokic6kwiver6engine44tikz__parse__arrow__body__decoration__optio
 function _M0FP35kokic6kwiver6engine29tikz__decoration__style__name(content) {
   const token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(content)), undefined));
   if (token === "\\dashv") {
-    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6323;
+    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6399;
   }
   if (token === "\\lrcorner") {
-    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6324;
+    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6400;
   }
   if (token === "\\ulcorner") {
-    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6325;
+    return _M0FP35kokic6kwiver6engine29tikz__decoration__style__nameN6constrS6401;
   }
   return undefined;
 }
@@ -21080,14 +21084,14 @@ function _M0FP35kokic6kwiver6engine31tikz__parse__decoration__option(option) {
 }
 function _M0FP35kokic6kwiver6engine26tikz__parse__angle__option(value) {
   let text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), undefined));
-  if (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3704, 0, _M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3704.length))) {
+  if (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3745, 0, _M0FP35kokic6kwiver6engine26tikz__parse__angle__optionN7_2abindS3745.length))) {
     text = text.substring(0, text.length - 3 | 0);
   }
   return _M0FP35kokic6kwiver6engine27tikz__parse__signed__double(text);
 }
 function _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitude(value) {
   let text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), undefined));
-  if (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3705, 0, _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3705.length))) {
+  if (_M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3746, 0, _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN7_2abindS3746.length))) {
     text = text.substring(0, text.length - 3 | 0);
   }
   const _bind = _M0FP35kokic6kwiver6engine27tikz__parse__signed__double(text);
@@ -21099,7 +21103,7 @@ function _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitude(value) 
       return undefined;
     }
     const curve = _M0FP35kokic6kwiver6engine20tikz__round__to__int(angle_abs / 30);
-    return curve < 1 ? _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN6constrS6326 : curve;
+    return curve < 1 ? _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitudeN6constrS6402 : curve;
   } else {
     return undefined;
   }
@@ -21109,7 +21113,7 @@ function _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percent(value) {
   if (text === "") {
     return undefined;
   }
-  const _bind = _M0MPC16string6String4find(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3726, 0, _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3726.length));
+  const _bind = _M0MPC16string6String4find(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3767, 0, _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percentN7_2abindS3767.length));
   if (_bind === undefined) {
     const _bind$2 = _M0FP35kokic6kwiver6engine26tikz__parse__positive__int(text);
     if (_bind$2 === undefined) {
@@ -21174,7 +21178,7 @@ function _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percent(value) {
 }
 function _M0FP35kokic6kwiver6engine25tikz__take__braced__group(input) {
   const text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(input, undefined));
-  if (!_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3732, 0, _M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3732.length))) {
+  if (!_M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3773, 0, _M0FP35kokic6kwiver6engine25tikz__take__braced__groupN7_2abindS3773.length))) {
     return undefined;
   }
   let depth = 0;
@@ -21263,7 +21267,7 @@ function _M0FP35kokic6kwiver6engine27tikz__trim__supported__unit(value) {
 }
 function _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__option(value) {
   const text = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(value, undefined));
-  const inner = _M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3780, 0, _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3780.length)) && _M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3781, 0, _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3781.length)) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(text.substring(1, text.length - 1 | 0), undefined)) : text;
+  const inner = _M0MPC16string6String11has__prefix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3821, 0, _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3821.length)) && _M0MPC16string6String11has__suffix(text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3822, 0, _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__optionN7_2abindS3822.length)) ? _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(text.substring(1, text.length - 1 | 0), undefined)) : text;
   const tokens = _M0FP35kokic6kwiver6engine27tikz__split__arrow__options(inner);
   if (tokens.length === 0) {
     return undefined;
@@ -21327,8 +21331,8 @@ function _M0FP35kokic6kwiver6engine29tikz__parse__distance__option(value) {
 }
 function _M0FP35kokic6kwiver6engine28tikz__parse__grid__reference(value) {
   const raw = _M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value);
-  const compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(raw, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3803, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3803.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3804, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3804.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3805, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3805.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3806, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3806.length));
-  const _bind = _M0MPC16string6String4find(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3797, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3797.length));
+  const compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(raw, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3844, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3844.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3845, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3845.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3846, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3846.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3847, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3847.length));
+  const _bind = _M0MPC16string6String4find(compact, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3838, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3838.length));
   if (_bind === undefined) {
     return undefined;
   } else {
@@ -21336,7 +21340,7 @@ function _M0FP35kokic6kwiver6engine28tikz__parse__grid__reference(value) {
     const _split_at = _Some;
     const row_text = compact.substring(0, _split_at);
     const col_text = compact.substring(_split_at + 1 | 0, compact.length);
-    if (row_text === "" || (col_text === "" || _M0MPC16string6String8contains(col_text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3787, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3787.length)))) {
+    if (row_text === "" || (col_text === "" || _M0MPC16string6String8contains(col_text, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3828, 0, _M0FP35kokic6kwiver6engine28tikz__parse__grid__referenceN7_2abindS3828.length)))) {
       return undefined;
     }
     _L: {
@@ -21376,10 +21380,10 @@ function _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitude(value) {
     const _shift_value = _Some._0;
     const shift_abs = Math.abs(_shift_value);
     if (shift_abs === 0) {
-      return _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6327;
+      return _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6403;
     }
     const rounded = _M0FP35kokic6kwiver6engine20tikz__round__to__int(shift_abs);
-    return rounded < 1 ? _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6328 : rounded;
+    return rounded < 1 ? _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitudeN6constrS6404 : rounded;
   } else {
     return undefined;
   }
@@ -21395,24 +21399,24 @@ function _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitude(value) {
     const _Some = _bind;
     const _raw_value = _Some._0;
     const rounded = _M0FP35kokic6kwiver6engine20tikz__round__to__int(_raw_value);
-    return rounded < 0 ? undefined : rounded > 100 ? _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitudeN6constrS6329 : rounded;
+    return rounded < 0 ? undefined : rounded > 100 ? _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitudeN6constrS6405 : rounded;
   } else {
     return undefined;
   }
 }
 function _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__option(key, value) {
   const key_token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(key)), undefined));
-  const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3877, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3877.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3878, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3878.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3879, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3879.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3880, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3880.length));
+  const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3918, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3918.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3919, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3919.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3920, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3920.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3921, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3921.length));
   const value_token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(value)), undefined));
   if (key_token === "from" || key_token === "to") {
-    if (_M0MPC16string6String8contains(value_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3817, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3817.length)) || _M0MPC16string6String8contains(value_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3818, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3818.length))) {
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " endpoint reference"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3819, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3819.length));
+    if (_M0MPC16string6String8contains(value_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3858, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3858.length)) || _M0MPC16string6String8contains(value_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3859, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3859.length))) {
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " endpoint reference"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3860, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3860.length));
     }
     const _bind = _M0FP35kokic6kwiver6engine28tikz__parse__grid__reference(value);
     if (_bind === undefined) {
       const _bind$2 = _M0FP35kokic6kwiver6engine28tikz__parse__reference__name(value);
       if (_bind$2 === undefined) {
-        return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " endpoint reference"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3820, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3820.length));
+        return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " endpoint reference"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3861, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3861.length));
       }
     }
     return undefined;
@@ -21420,7 +21424,7 @@ function _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__option(k
   if (key_token === "name") {
     const _bind = _M0FP35kokic6kwiver6engine28tikz__parse__reference__name(value);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6330;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6406;
     }
     return undefined;
   }
@@ -21440,7 +21444,7 @@ function _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__option(k
         }
         break _L;
       }
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6331;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6407;
     }
     return undefined;
   }
@@ -21457,7 +21461,7 @@ function _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__option(k
         }
         break _L;
       }
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " colour option"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3835, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3835.length));
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " colour option"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3876, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3876.length));
     }
     return undefined;
   }
@@ -21476,83 +21480,83 @@ function _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__option(k
         }
         break _L;
       }
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6332;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6408;
     }
     return undefined;
   }
   if (key_token === "start anchor" || key_token === "end anchor") {
     if (value_token === "") {
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3845, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3845.length));
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3886, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3886.length));
     }
     return undefined;
   }
   if (key_token === "scaling nfold") {
     const _bind = _M0FP35kokic6kwiver6engine33tikz__parse__level__option__value(value_token);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6333;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6409;
     }
     return undefined;
   }
   if (key_token === "shift right" || key_token === "shift left") {
     const _bind = _M0FP35kokic6kwiver6engine29tikz__parse__shift__magnitude(value);
     if (_bind === undefined) {
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3849, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3849.length));
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3890, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3890.length));
     }
     return undefined;
   }
   if (key_token === "curve") {
     const _bind = _M0FP35kokic6kwiver6engine34tikz__parse__curve__height__option(value);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6334;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6410;
     }
     return undefined;
   }
   if (key_token === "bend left" || key_token === "bend right") {
     const _bind = _M0FP35kokic6kwiver6engine35tikz__parse__bend__curve__magnitude(value);
     if (_bind === undefined) {
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3856, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3856.length));
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " value"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3897, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3897.length));
     }
     return undefined;
   }
   if (key_token === "between") {
     const _bind = _M0FP35kokic6kwiver6engine28tikz__parse__between__option(value);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6335;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6411;
     }
     return undefined;
   }
   if (key_compact === "shorten<" || key_compact === "shorten>") {
     const _bind = _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitude(value);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6336;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6412;
     }
     return undefined;
   }
   if (key_token === "in" || key_token === "out") {
     const _bind = _M0FP35kokic6kwiver6engine26tikz__parse__angle__option(value);
     if (_bind.$tag === 0) {
-      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " loop angle"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3866, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3866.length));
+      return _M0MPC15array5Array4joinGsE(["invalid ", key_token, " loop angle"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3907, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3907.length));
     }
     return undefined;
   }
   if (key_token === "distance") {
     const _bind = _M0FP35kokic6kwiver6engine29tikz__parse__distance__option(value);
     if (_bind.$tag === 0) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6337;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6413;
     }
     return undefined;
   }
   if (key_token === "pos") {
     const _bind = _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percent(value);
     if (_bind === undefined) {
-      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6338;
+      return _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN6constrS6414;
     }
     return undefined;
   }
   if (_M0FP35kokic6kwiver6engine25tikz__is__label__modifier(key_token)) {
     return undefined;
   }
-  return _M0MPC15array5Array4joinGsE(["unknown arrow option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3876, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3876.length));
+  return _M0MPC15array5Array4joinGsE(["unknown arrow option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3917, 0, _M0FP35kokic6kwiver6engine41tikz__validate__arrow__key__value__optionN7_2abindS3917.length));
 }
 function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(option) {
   const suffixes = _M0FP35kokic6kwiver6engine28tikz__label__suffix__options(option);
@@ -21565,14 +21569,14 @@ function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(optio
       _L: {
         const suffix_trimmed = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(suffix, undefined));
         if (suffix_trimmed === "") {
-          return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6339;
+          return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6415;
         }
         const _bind$2 = _M0FP35kokic6kwiver6engine24tikz__option__key__value(suffix_trimmed);
         if (_bind$2 === undefined) {
           if (suffix_trimmed === "'" || _M0FP35kokic6kwiver6engine25tikz__is__label__modifier(suffix_trimmed)) {
             break _L;
           }
-          return _M0MPC15array5Array4joinGsE(["unknown label suffix option: ", suffix_trimmed], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3896, 0, _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3896.length));
+          return _M0MPC15array5Array4joinGsE(["unknown label suffix option: ", suffix_trimmed], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3937, 0, _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3937.length));
         } else {
           const _Some = _bind$2;
           const _x = _Some;
@@ -21583,14 +21587,14 @@ function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(optio
           if (key_token === "name") {
             const _bind$3 = _M0FP35kokic6kwiver6engine28tikz__parse__reference__name(_value);
             if (_bind$3 === undefined) {
-              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6340;
+              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6416;
             }
             break _L;
           }
           if (key_token === "pos") {
             const _bind$3 = _M0FP35kokic6kwiver6engine32tikz__parse__label__pos__percent(_value);
             if (_bind$3 === undefined) {
-              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6341;
+              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6417;
             }
             break _L;
           }
@@ -21609,7 +21613,7 @@ function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(optio
                 }
                 break _L$2;
               }
-              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6342;
+              return _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN6constrS6418;
             }
             break _L;
           }
@@ -21619,7 +21623,7 @@ function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(optio
           if (_M0FP35kokic6kwiver6engine25tikz__is__label__modifier(key_token)) {
             break _L;
           }
-          return _M0MPC15array5Array4joinGsE(["unknown label suffix option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3895, 0, _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3895.length));
+          return _M0MPC15array5Array4joinGsE(["unknown label suffix option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3936, 0, _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__optionN7_2abindS3936.length));
         }
       }
       _tmp = _ + 1 | 0;
@@ -21633,7 +21637,7 @@ function _M0FP35kokic6kwiver6engine37tikz__validate__label__suffix__option(optio
 function _M0FP35kokic6kwiver6engine29tikz__validate__arrow__option(option) {
   const trimmed = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(option, undefined));
   if (trimmed === "") {
-    return _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN6constrS6343;
+    return _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN6constrS6419;
   }
   const _bind = _M0FP35kokic6kwiver6engine31tikz__parse__decoration__option(trimmed);
   if (_bind === undefined) {
@@ -21656,7 +21660,7 @@ function _M0FP35kokic6kwiver6engine29tikz__validate__arrow__option(option) {
     if (token === "phantom" || (_M0FP35kokic6kwiver6engine26tikz__is__direction__token(token) || (_M0FP35kokic6kwiver6engine28tikz__is__arrow__flag__token(token) || _M0FP35kokic6kwiver6engine25tikz__is__label__modifier(token)))) {
       return undefined;
     }
-    return _M0MPC15array5Array4joinGsE(["unknown arrow option: ", token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3917, 0, _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3917.length));
+    return _M0MPC15array5Array4joinGsE(["unknown arrow option: ", token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3958, 0, _M0FP35kokic6kwiver6engine29tikz__validate__arrow__optionN7_2abindS3958.length));
   } else {
     const _Some = _bind$4;
     const _x = _Some;
@@ -21756,10 +21760,10 @@ function _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__options(cell) 
           }
         }
         if (bare_labels.length > 1) {
-          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown arrow option: ", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(bare_labels, 1)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3956, 0, _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3956.length)), 0, 0);
+          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown arrow option: ", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(bare_labels, 1)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3997, 0, _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3997.length)), 0, 0);
         }
         if (bare_labels.length === 1 && (has_from || has_to)) {
-          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown arrow option: ", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(bare_labels, 0)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3957, 0, _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3957.length)), 0, 0);
+          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown arrow option: ", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(bare_labels, 0)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3998, 0, _M0FP35kokic6kwiver6engine36tikz__validate__cell__arrow__optionsN7_2abindS3998.length)), 0, 0);
         }
         if (!has_to && (!has_direction && !is_loop)) {
           return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", "arrow is missing target (to=... or direction)", 0, 0);
@@ -21865,11 +21869,11 @@ function _M0FP35kokic6kwiver6engine36tikz__unwrap__trivial__braced__label(label_
   return trimmed;
 }
 function _M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__label(label_raw) {
-  return _M0MPC16string6String11has__prefix(_M0FP35kokic6kwiver6engine36tikz__unwrap__trivial__braced__label(label_raw), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS3987, 0, _M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS3987.length));
+  return _M0MPC16string6String11has__prefix(_M0FP35kokic6kwiver6engine36tikz__unwrap__trivial__braced__label(label_raw), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS4028, 0, _M0FP35kokic6kwiver6engine43tikz__looks__like__textcolor__vertex__labelN7_2abindS4028.length));
 }
 function _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__label(label_raw) {
   const trimmed = _M0FP35kokic6kwiver6engine36tikz__unwrap__trivial__braced__label(label_raw);
-  if (!_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS3988, 0, _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS3988.length))) {
+  if (!_M0MPC16string6String11has__prefix(trimmed, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS4029, 0, _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__labelN7_2abindS4029.length))) {
     return undefined;
   }
   const rest = trimmed.substring(10, trimmed.length);
@@ -21918,7 +21922,7 @@ function _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option
   if (key === "cells") {
     return true;
   }
-  if (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4012, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4012.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4013, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4013.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4014, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4014.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4015, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4015.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4016, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4016.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4017, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4017.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4018, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4018.length)) || _M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4019, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4019.length))))))))) {
+  if (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4053, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4053.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4054, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4054.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4055, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4055.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4056, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4056.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4057, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4057.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4058, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4058.length)) || (_M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4059, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4059.length)) || _M0MPC16string6String11has__prefix(key, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4060, 0, _M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__keyN7_2abindS4060.length))))))))) {
     return true;
   }
   return false;
@@ -21963,14 +21967,14 @@ function _M0FP35kokic6kwiver6engine32tikz__validate__diagram__options(options) {
           if (trimmed === "cramped" || _M0FP35kokic6kwiver6engine50tikz__is__supported__style__diagram__option__token(trimmed)) {
             break _L;
           }
-          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown tikzcd diagram option: ", trimmed], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4034, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4034.length)), 0, 0);
+          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown tikzcd diagram option: ", trimmed], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4075, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4075.length)), 0, 0);
         } else {
           const _Some = _bind$3;
           const _x = _Some;
           const _key = _x._0;
           const _value = _x._1;
           const key_token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(_key)), undefined));
-          const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4030, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4030.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4031, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4031.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4032, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4032.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4033, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4033.length));
+          const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4071, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4071.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4072, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4072.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4073, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4073.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4074, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4074.length));
           const value_token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(_value), undefined));
           if (key_compact === "ampersandreplacement") {
             if (value_token === "") {
@@ -21980,17 +21984,17 @@ function _M0FP35kokic6kwiver6engine32tikz__validate__diagram__options(options) {
           }
           if (key_token === "sep" || (key_token === "row sep" || key_token === "column sep")) {
             if (value_token === "") {
-              return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE([key_token, " must not be empty"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4027, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4027.length)), 0, 0);
+              return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE([key_token, " must not be empty"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4068, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4068.length)), 0, 0);
             }
             break _L;
           }
           if (_M0FP35kokic6kwiver6engine48tikz__is__supported__style__diagram__option__key(key_token)) {
             if (value_token === "") {
-              return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE([key_token, " must not be empty"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4028, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4028.length)), 0, 0);
+              return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE([key_token, " must not be empty"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4069, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4069.length)), 0, 0);
             }
             break _L;
           }
-          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown tikzcd diagram option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4029, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4029.length)), 0, 0);
+          return _M0FP35kokic6kwiver6engine27tikz__import__error_2einner("option", _M0MPC15array5Array4joinGsE(["unknown tikzcd diagram option: ", key_token], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4070, 0, _M0FP35kokic6kwiver6engine32tikz__validate__diagram__optionsN7_2abindS4070.length)), 0, 0);
         }
       }
       _tmp = _ + 1 | 0;
@@ -22019,7 +22023,7 @@ function _M0FP35kokic6kwiver6engine41tikz__validate__environment__and__options(i
   let rest_start = after_begin_start + after_begin_trimmed | 0;
   let rest = after_begin_trimmed === 0 ? after_begin : after_begin.substring(after_begin_trimmed, after_begin.length);
   let ampersand_replacement = undefined;
-  if (_M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4044, 0, _M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4044.length))) {
+  if (_M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4085, 0, _M0FP35kokic6kwiver6engine41tikz__validate__environment__and__optionsN7_2abindS4085.length))) {
     const options_body = rest.substring(1, rest.length);
     const _bind$3 = _M0FP35kokic6kwiver6engine30tikz__find__closing__delimiter(options_body, 91, 93);
     if (_bind$3 === undefined) {
@@ -22395,7 +22399,7 @@ function _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__option(opti
       return _M0MP35kokic6kwiver6engine11EdgeOptions11with__curve(options, -_curve | 0);
     }
   }
-  const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4223, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4223.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4224, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4224.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4225, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4225.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4226, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4226.length));
+  const key_compact = _M0MPC16string6String12replace__all(_M0MPC16string6String12replace__all(key_token, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4264, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4264.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4265, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4265.length)), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4266, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4266.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4267, 0, _M0FP35kokic6kwiver6engine38tikz__apply__arrow__key__value__optionN7_2abindS4267.length));
   if (key_compact === "shorten<") {
     const _bind = _M0FP35kokic6kwiver6engine31tikz__parse__shorten__magnitude(value_raw);
     if (_bind === undefined) {
@@ -22462,25 +22466,25 @@ function _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__option(label_opti
       return label_options;
     }
     case "at start": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6344, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6420, label_options.colour);
     }
     case "very near start": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6345, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6421, label_options.colour);
     }
     case "near start": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6346, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6422, label_options.colour);
     }
     case "midway": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6347, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6423, label_options.colour);
     }
     case "near end": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6348, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6424, label_options.colour);
     }
     case "very near end": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6349, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6425, label_options.colour);
     }
     case "at end": {
-      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6350, label_options.colour);
+      return new _M0TP35kokic6kwiver6engine22TikzParsedLabelOptions(label_options.swap, label_options.description, label_options.marking, _M0FP35kokic6kwiver6engine32tikz__apply__label__flag__optionN6constrS6426, label_options.colour);
     }
     default: {
       return label_options;
@@ -22527,10 +22531,10 @@ function _M0FP35kokic6kwiver6engine46tikz__apply__label__options__to__edge__opti
 function _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__option(loop_options, option) {
   const token = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(option)), undefined));
   if (token === "loop left") {
-    return new _M0TP35kokic6kwiver6engine21TikzParsedLoopOptions(true, _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6351, loop_options.in_angle, loop_options.out_angle, loop_options.distance_mm);
+    return new _M0TP35kokic6kwiver6engine21TikzParsedLoopOptions(true, _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6427, loop_options.in_angle, loop_options.out_angle, loop_options.distance_mm);
   }
   if (token === "loop right") {
-    return new _M0TP35kokic6kwiver6engine21TikzParsedLoopOptions(true, _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6352, loop_options.in_angle, loop_options.out_angle, loop_options.distance_mm);
+    return new _M0TP35kokic6kwiver6engine21TikzParsedLoopOptions(true, _M0FP35kokic6kwiver6engine31tikz__apply__loop__flag__optionN6constrS6428, loop_options.in_angle, loop_options.out_angle, loop_options.distance_mm);
   }
   if (token === "loop") {
     return new _M0TP35kokic6kwiver6engine21TikzParsedLoopOptions(true, loop_options.clockwise_hint, loop_options.in_angle, loop_options.out_angle, loop_options.distance_mm);
@@ -22631,94 +22635,94 @@ function _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverse(option) {
   const token = _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(option));
   switch (token) {
     case "->": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6353;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6429;
     }
     case "<-": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6354;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6430;
     }
     case "|->": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6355;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6431;
     }
     case "<-|": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6356;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6432;
     }
     case "->>": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6357;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6433;
     }
     case "<<-": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6358;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6434;
     }
     case ">->": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6359;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6435;
     }
     case "<-<": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6360;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6436;
     }
     case "Rightarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6361;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6437;
     }
     case "Leftarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6362;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6438;
     }
     case "mapsto": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6363;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6439;
     }
     case "mapsfrom": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6364;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6440;
     }
     case "Mapsto": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6365;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6441;
     }
     case "Mapsfrom": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6366;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6442;
     }
     case "hookrightarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6367;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6443;
     }
     case "hookleftarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6368;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6444;
     }
     case "rightarrowtail": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6369;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6445;
     }
     case "leftarrowtail": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6370;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6446;
     }
     case "rightarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6371;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6447;
     }
     case "leftarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6372;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6448;
     }
     case "twoheadrightarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6373;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6449;
     }
     case "twoheadleftarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6374;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6450;
     }
     case "rightharpoonup": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6375;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6451;
     }
     case "rightharpoondown": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6376;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6452;
     }
     case "leftharpoonup": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6377;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6453;
     }
     case "leftharpoondown": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6378;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6454;
     }
     case "dashrightarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6379;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6455;
     }
     case "dashleftarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6380;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6456;
     }
     case "rightsquigarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6381;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6457;
     }
     case "leftsquigarrow": {
-      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6382;
+      return _M0FP35kokic6kwiver6engine26tikz__arrow__flag__reverseN6constrS6458;
     }
     default: {
       return -1;
@@ -22733,7 +22737,7 @@ function _M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__option(option)
     const _value = _Some;
     return _value;
   }
-  if (_M0MPC16string6String8contains(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4329, 0, _M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4329.length))) {
+  if (_M0MPC16string6String8contains(option, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4370, 0, _M0FP35kokic6kwiver6engine35tikz__extract__arrow__label__optionN7_2abindS4370.length))) {
     return undefined;
   }
   const token = _M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(option));
@@ -22870,7 +22874,7 @@ function _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__label(inpu
         if (_end_quote <= (i + 1 | 0)) {
           return undefined;
         } else {
-          const label = _M0MPC16string6String12replace__all(input.substring(i + 1 | 0, _end_quote), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4333, 0, _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4333.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4334, 0, _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4334.length));
+          const label = _M0MPC16string6String12replace__all(input.substring(i + 1 | 0, _end_quote), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4374, 0, _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4374.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4375, 0, _M0FP35kokic6kwiver6engine38tikz__take__leading__positional__labelN7_2abindS4375.length));
           const normalised = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(_M0FP35kokic6kwiver6engine26tikz__strip__math__wrapper(label), undefined));
           return normalised === "" ? undefined : { _0: normalised, _1: alignment };
         }
@@ -22967,7 +22971,7 @@ function _M0FP35kokic6kwiver6engine27tikz__collect__cell__arrows(cell) {
         let parsed_options = _M0MP35kokic6kwiver6engine11EdgeOptions9at__level(1);
         let parsed_reverse = false;
         let parsed_label_options = _M0FP35kokic6kwiver6engine29tikz__label__options__default();
-        let parsed_label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312;
+        let parsed_label_colour = _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388;
         let parsed_loop_options = _M0FP35kokic6kwiver6engine28tikz__loop__options__default();
         const _bind$3 = options.length;
         let _tmp = 0;
@@ -23269,10 +23273,10 @@ function _M0FP35kokic6kwiver6engine22tikz__direction__delta(direction) {
   return { _0: dx, _1: dy };
 }
 function _M0FP35kokic6kwiver6engine15tikz__grid__key(x, y) {
-  return _M0MPC15array5Array4joinGsE(["x=", _M0MPC13int3Int18to__string_2einner(x, 10), ",y=", _M0MPC13int3Int18to__string_2einner(y, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4491, 0, _M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4491.length));
+  return _M0MPC15array5Array4joinGsE(["x=", _M0MPC13int3Int18to__string_2einner(x, 10), ",y=", _M0MPC13int3Int18to__string_2einner(y, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4532, 0, _M0FP35kokic6kwiver6engine15tikz__grid__keyN7_2abindS4532.length));
 }
 function _M0MP35kokic6kwiver6engine6Vertex10new__black(id, label, x, y) {
-  return _M0MP35kokic6kwiver6engine6Vertex3new(id, label, x, y, _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312);
+  return _M0MP35kokic6kwiver6engine6Vertex3new(id, label, x, y, _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388);
 }
 function _M0FP35kokic6kwiver6engine34tikz__ensure__implicit__vertex__at(quiver, vertex_by_key, x, y, next_id) {
   const key = _M0FP35kokic6kwiver6engine15tikz__grid__key(x, y);
@@ -23302,7 +23306,7 @@ function _M0FP35kokic6kwiver6engine32tikz__extract__environment__body(input) {
     let rest_start = after_begin_start + after_begin_trimmed | 0;
     let rest = after_begin_trimmed === 0 ? after_begin : after_begin.substring(after_begin_trimmed, after_begin.length);
     let ampersand_replacement = undefined;
-    if (_M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4496, 0, _M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4496.length))) {
+    if (_M0MPC16string6String11has__prefix(rest, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4537, 0, _M0FP35kokic6kwiver6engine32tikz__extract__environment__bodyN7_2abindS4537.length))) {
       const options_body = rest.substring(1, rest.length);
       const _bind$2 = _M0FP35kokic6kwiver6engine30tikz__find__closing__delimiter(options_body, 91, 93);
       if (_bind$2 === undefined) {
@@ -23354,7 +23358,7 @@ function _M0FP35kokic6kwiver6engine37tikz__find__phantom__anchor__edge__id(quive
 }
 function _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__name(reference_name) {
   const name = _M0IPC16string10StringViewPB4Show10to__string(_M0MPC16string6String4trim(reference_name, undefined));
-  if (name.length < 2 || !_M0MPC16string6String11has__suffix(name, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4524, 0, _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4524.length))) {
+  if (name.length < 2 || !_M0MPC16string6String11has__suffix(name, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4565, 0, _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__nameN7_2abindS4565.length))) {
     return false;
   }
   const prefix = name.substring(0, name.length - 1 | 0);
@@ -23383,7 +23387,7 @@ function _M0FP35kokic6kwiver6engine31tikz__is__phantom__helper__name(reference_n
 function _M0FP35kokic6kwiver6engine26tikz__parse__vertex__label(label_raw) {
   const _bind = _M0FP35kokic6kwiver6engine37tikz__parse__textcolor__vertex__label(label_raw);
   if (_bind === undefined) {
-    return new _M0TP35kokic6kwiver6engine21TikzParsedVertexLabel(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(label_raw), _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6312);
+    return new _M0TP35kokic6kwiver6engine21TikzParsedVertexLabel(_M0FP35kokic6kwiver6engine26tikz__unwrap__braced__text(label_raw), _M0MP35kokic6kwiver6engine6Colour5blackN6recordS6388);
   } else {
     const _Some = _bind;
     return _Some;
@@ -23836,14 +23840,14 @@ function _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimal(input) {
     } else {
       const _Some = _bind$4;
       const _reference_name = _Some;
-      return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine6QuiverRP35kokic6kwiver6engine17TikzCdImportErrorE3Err(_M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", _M0MPC15array5Array4joinGsE(["unresolved arrow endpoint reference: ", _reference_name], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4712, 0, _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4712.length)), unresolved.line, unresolved.column));
+      return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine6QuiverRP35kokic6kwiver6engine17TikzCdImportErrorE3Err(_M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", _M0MPC15array5Array4joinGsE(["unresolved arrow endpoint reference: ", _reference_name], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4753, 0, _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4753.length)), unresolved.line, unresolved.column));
     }
     const _bind$5 = unresolved.target_ref;
     if (_bind$5 === undefined) {
     } else {
       const _Some = _bind$5;
       const _reference_name = _Some;
-      return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine6QuiverRP35kokic6kwiver6engine17TikzCdImportErrorE3Err(_M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", _M0MPC15array5Array4joinGsE(["unresolved arrow endpoint reference: ", _reference_name], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4718, 0, _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4718.length)), unresolved.line, unresolved.column));
+      return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine6QuiverRP35kokic6kwiver6engine17TikzCdImportErrorE3Err(_M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", _M0MPC15array5Array4joinGsE(["unresolved arrow endpoint reference: ", _reference_name], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4759, 0, _M0MP35kokic6kwiver6engine6Quiver25import__tikz__cd__minimalN7_2abindS4759.length)), unresolved.line, unresolved.column));
     }
     return new _M0DTPC16result6ResultGRP35kokic6kwiver6engine6QuiverRP35kokic6kwiver6engine17TikzCdImportErrorE3Err(_M0FP35kokic6kwiver6engine27tikz__import__error_2einner("reference", "unresolved arrow endpoint reference", unresolved.line, unresolved.column));
   }
@@ -23943,7 +23947,7 @@ function _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einner(s
     const _bind = imported.error;
     let error;
     if (_bind === undefined) {
-      error = _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6383;
+      error = _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6459;
     } else {
       const _Some = _bind;
       const _value = _Some;
@@ -23954,7 +23958,7 @@ function _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einner(s
   const _bind = imported.quiver;
   let quiver;
   if (_bind === undefined) {
-    return _M0FP35kokic6kwiver6engine39quiver__ui__import__result__with__error(self.quiver, _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6384);
+    return _M0FP35kokic6kwiver6engine39quiver__ui__import__result__with__error(self.quiver, _M0MP35kokic6kwiver6engine15QuiverUiAdapter24import__tikz__cd_2einnerN6recordS6460);
   } else {
     const _Some = _bind;
     quiver = _Some;
@@ -25112,6 +25116,115 @@ function _M0MP35kokic6kwiver6engine6Quiver21connected__components(self, roots) {
 function _M0MP35kokic6kwiver6engine15QuiverUiAdapter21connected__components(self, roots) {
   return _M0MP35kokic6kwiver6engine6Quiver21connected__components(self.quiver, roots);
 }
+function _M0FP35kokic6kwiver6engine34quiver__preview__edge__with__shape(edge, shape) {
+  let options;
+  if (shape === 0) {
+    options = _M0MP35kokic6kwiver6engine11EdgeOptions19with__shape__bezier(edge.options);
+  } else {
+    options = _M0MP35kokic6kwiver6engine11EdgeOptions16with__shape__arc(edge.options);
+  }
+  return _M0MP35kokic6kwiver6engine4Edge3new(edge.cell.id, edge.cell.label, edge.source, edge.target, _M0MP35kokic6kwiver6engine11EdgeOptions11with__level(options, edge.cell.level), edge.cell.label_colour);
+}
+function _M0FP35kokic6kwiver6engine37quiver__preview__level__or__committed(preview_levels, quiver, cell_id) {
+  const _bind = _M0MPC17hashmap7HashMap3getGiiE(preview_levels, cell_id);
+  if (_bind === undefined) {
+    return _M0MP35kokic6kwiver6engine6Quiver32cell__level__or__default_2einner(quiver, cell_id, 0);
+  } else {
+    const _Some = _bind;
+    return _Some;
+  }
+}
+function _M0MP35kokic6kwiver6engine6Quiver24preview__reconnect__plan(self, edge_id, source_id, target_id) {
+  if (!_M0MP35kokic6kwiver6engine6Quiver14contains__cell(self, edge_id) || (!_M0MP35kokic6kwiver6engine6Quiver14contains__cell(self, source_id) || !_M0MP35kokic6kwiver6engine6Quiver14contains__cell(self, target_id))) {
+    return undefined;
+  }
+  let root_edge;
+  _L: {
+    _L$2: {
+      const _bind = _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine8CellDataE(self.cells, edge_id);
+      if (_bind === undefined) {
+        break _L$2;
+      } else {
+        const _Some = _bind;
+        const _x = _Some;
+        if (_x.$tag === 1) {
+          const _Edge = _x;
+          root_edge = _Edge._0;
+        } else {
+          break _L$2;
+        }
+      }
+      break _L;
+    }
+    return undefined;
+  }
+  const closure = _M0MP35kokic6kwiver6engine6Quiver32transitive__dependencies_2einner(self, [edge_id], false);
+  const preview_levels = _M0MPC17hashmap7HashMap11new_2einnerGiiE(8);
+  const preview_edges = _M0MPC17hashmap7HashMap11new_2einnerGiRP35kokic6kwiver6engine4EdgeE(8);
+  const _bind = closure.length;
+  let _tmp = 0;
+  while (true) {
+    const _ = _tmp;
+    if (_ < _bind) {
+      const cell_id = closure[_];
+      const _bind$2 = _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine8CellDataE(self.cells, cell_id);
+      if (_bind$2 === undefined) {
+      } else {
+        const _Some = _bind$2;
+        const _x = _Some;
+        if (_x.$tag === 1) {
+          const _Edge = _x;
+          const _edge = _Edge._0;
+          const preview_source = cell_id === edge_id ? source_id : _edge.source;
+          const preview_target = cell_id === edge_id ? target_id : _edge.target;
+          const _p = _M0FP35kokic6kwiver6engine37quiver__preview__level__or__committed(preview_levels, self, preview_source);
+          const _p$2 = _M0FP35kokic6kwiver6engine37quiver__preview__level__or__committed(preview_levels, self, preview_target);
+          const preview_level = (_p > _p$2 ? _p : _p$2) + 1 | 0;
+          let preview_edge = _M0MP35kokic6kwiver6engine4Edge11reconnected(_edge, preview_source, preview_target, preview_level);
+          if (cell_id === edge_id) {
+            preview_edge = _M0FP35kokic6kwiver6engine34quiver__preview__edge__with__shape(preview_edge, root_edge.source === root_edge.target && source_id === target_id ? 1 : 0);
+          }
+          _M0MPC17hashmap7HashMap3setGiiE(preview_levels, cell_id, preview_level);
+          _M0MPC17hashmap7HashMap3setGiRP35kokic6kwiver6engine4EdgeE(preview_edges, cell_id, preview_edge);
+        }
+      }
+      _tmp = _ + 1 | 0;
+      continue;
+    } else {
+      break;
+    }
+  }
+  const ordered = _M0MPC15array5Array4copyGiE(closure);
+  _M0MPC15array5Array8sort__byGiE(ordered, (left, right) => {
+    const left_level = _M0FP35kokic6kwiver6engine37quiver__preview__level__or__committed(preview_levels, self, left);
+    const right_level = _M0FP35kokic6kwiver6engine37quiver__preview__level__or__committed(preview_levels, self, right);
+    return left_level !== right_level ? left_level - right_level | 0 : left - right | 0;
+  });
+  const edges = [];
+  const _bind$2 = ordered.length;
+  let _tmp$2 = 0;
+  while (true) {
+    const _ = _tmp$2;
+    if (_ < _bind$2) {
+      const cell_id = ordered[_];
+      const _bind$3 = _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine4EdgeE(preview_edges, cell_id);
+      if (_bind$3 === undefined) {
+      } else {
+        const _Some = _bind$3;
+        const _edge = _Some;
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(edges, _edge);
+      }
+      _tmp$2 = _ + 1 | 0;
+      continue;
+    } else {
+      break;
+    }
+  }
+  return new _M0TP35kokic6kwiver6engine26QuiverReconnectPreviewPlan(edge_id, edges);
+}
+function _M0MP35kokic6kwiver6engine15QuiverUiAdapter24preview__reconnect__plan(self, edge_id, source_id, target_id) {
+  return _M0MP35kokic6kwiver6engine6Quiver24preview__reconnect__plan(self.quiver, edge_id, source_id, target_id);
+}
 function _M0MP35kokic6kwiver6engine15QuiverUiAdapter21export__base64__state(self) {
   return _M0MP35kokic6kwiver6engine6Quiver18export__base64__v0(self.quiver);
 }
@@ -25152,22 +25265,22 @@ function _M0FP35kokic6kwiver6engine26tikz__add__incompatibility(incompatibilitie
 }
 function _M0FP35kokic6kwiver6engine27tikz__builtin__colour__name(colour) {
   if (colour.l === 0) {
-    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6385;
+    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6461;
   }
   if (colour.l === 100) {
-    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6386;
+    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6462;
   }
   if (colour.a !== 1) {
     return undefined;
   }
   if (colour.h === 0 && (colour.s === 100 && colour.l === 50)) {
-    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6387;
+    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6463;
   }
   if (colour.h === 120 && (colour.s === 100 && colour.l === 25)) {
-    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6388;
+    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6464;
   }
   if (colour.h === 240 && (colour.s === 100 && colour.l === 50)) {
-    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6389;
+    return _M0FP35kokic6kwiver6engine27tikz__builtin__colour__nameN6constrS6465;
   }
   return undefined;
 }
@@ -25190,10 +25303,10 @@ function _M0FP35kokic6kwiver6engine18tikz__colour__spec(colour) {
   const r = _M0FP35kokic6kwiver6engine21tikz__colour__channel(colour, 0);
   const g = _M0FP35kokic6kwiver6engine21tikz__colour__channel(colour, 8);
   const b = _M0FP35kokic6kwiver6engine21tikz__colour__channel(colour, 4);
-  return _M0MPC15array5Array4joinGsE(["{rgb,255:red,", _M0MPC13int3Int18to__string_2einner(r, 10), ";green,", _M0MPC13int3Int18to__string_2einner(g, 10), ";blue,", _M0MPC13int3Int18to__string_2einner(b, 10), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5184, 0, _M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5184.length));
+  return _M0MPC15array5Array4joinGsE(["{rgb,255:red,", _M0MPC13int3Int18to__string_2einner(r, 10), ";green,", _M0MPC13int3Int18to__string_2einner(g, 10), ";blue,", _M0MPC13int3Int18to__string_2einner(b, 10), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5259, 0, _M0FP35kokic6kwiver6engine18tikz__colour__specN7_2abindS5259.length));
 }
 function _M0FP35kokic6kwiver6engine24tikz__wrap__colour__name(name, parenthesise) {
-  return parenthesise ? _M0MPC15array5Array4joinGsE(["{", name, "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5185, 0, _M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5185.length)) : name;
+  return parenthesise ? _M0MPC15array5Array4joinGsE(["{", name, "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5260, 0, _M0FP35kokic6kwiver6engine24tikz__wrap__colour__nameN7_2abindS5260.length)) : name;
 }
 function _M0FP35kokic6kwiver6engine19tikz__colour__latex(colour, definitions, parenthesise) {
   const _bind = _M0FP35kokic6kwiver6engine27tikz__builtin__colour__name(colour);
@@ -25229,13 +25342,13 @@ function _M0FP35kokic6kwiver6engine19tikz__colour__latex(colour, definitions, pa
   return _M0FP35kokic6kwiver6engine18tikz__colour__spec(colour);
 }
 function _M0FP35kokic6kwiver6engine24tikz__decoration__option(content, parameters) {
-  return parameters.length === 0 ? _M0MPC15array5Array4joinGsE(["\"", content, "\""], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5200, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5200.length)) : _M0MPC15array5Array4joinGsE(["\"", content, "\"{", _M0MPC15array5Array4joinGsE(parameters, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5201, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5201.length)), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5202, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5202.length));
+  return parameters.length === 0 ? _M0MPC15array5Array4joinGsE(["\"", content, "\""], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5275, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5275.length)) : _M0MPC15array5Array4joinGsE(["\"", content, "\"{", _M0MPC15array5Array4joinGsE(parameters, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5276, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5276.length)), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5277, 0, _M0FP35kokic6kwiver6engine24tikz__decoration__optionN7_2abindS5277.length));
 }
 function _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN14with__midpointS856(_env, parameters) {
   const has_custom_midpoint = _env._1;
   const midpoint = _env._0;
   if (has_custom_midpoint) {
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["pos=", _M0MPC16double6Double10to__string(midpoint)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5210, 0, _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5210.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["pos=", _M0MPC16double6Double10to__string(midpoint)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5285, 0, _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5285.length)));
     return;
   } else {
     return;
@@ -25246,7 +25359,7 @@ function _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN18wi
   const definitions = _env._0;
   const _p = edge.options.colour;
   if (_p.l > 0) {
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5209, 0, _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5209.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5284, 0, _M0FP35kokic6kwiver6engine38tikz__append__arrow__body__decorationsN7_2abindS5284.length)));
     return;
   } else {
     return;
@@ -25311,7 +25424,7 @@ function _M0FP35kokic6kwiver6engine20tikz__shared__colour(edge) {
 }
 function _M0FP35kokic6kwiver6engine29tikz__append__colour__options(options, edge, edge_is_empty, definitions) {
   if (_M0FP35kokic6kwiver6engine20tikz__shared__colour(edge)) {
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["color=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.cell.label_colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5211, 0, _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5211.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["color=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.cell.label_colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5286, 0, _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5286.length)));
     return false;
   } else {
     let _tmp;
@@ -25328,7 +25441,7 @@ function _M0FP35kokic6kwiver6engine29tikz__append__colour__options(options, edge
       _tmp = false;
     }
     if (_tmp) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["draw=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5212, 0, _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5212.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["draw=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5287, 0, _M0FP35kokic6kwiver6engine29tikz__append__colour__optionsN7_2abindS5287.length)));
     }
     const _p = edge.cell.label_colour;
     return _p.l > 0;
@@ -25340,14 +25453,14 @@ function _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__options(op
     const _p = edge.options.offset;
     const abs_offset = _p < 0 ? -_p | 0 : _p;
     if (abs_offset === 1) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["shift ", side], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5213, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5213.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["shift ", side], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5288, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5288.length)));
     } else {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["shift ", side, "=", _M0MPC13int3Int18to__string_2einner(abs_offset, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5214, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5214.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["shift ", side, "=", _M0MPC13int3Int18to__string_2einner(abs_offset, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5289, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5289.length)));
     }
   }
   if (edge.options.curve !== 0) {
     const curve_height_pt = (edge.options.curve + 0) * 6;
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["curve={height=", _M0MPC16double6Double10to__string(curve_height_pt), "pt}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5215, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5215.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["curve={height=", _M0MPC16double6Double10to__string(curve_height_pt), "pt}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5290, 0, _M0FP35kokic6kwiver6engine40tikz__append__shift__and__curve__optionsN7_2abindS5290.length)));
     return;
   } else {
     return;
@@ -25358,7 +25471,7 @@ function _M0FP35kokic6kwiver6engine31tikz__append__geometry__options(options, ed
   if (edge.options.shorten.source !== 0 || edge.options.shorten.target !== 0) {
     const source = (edge.options.shorten.source + 0) / 100;
     const target = ((100 - edge.options.shorten.target | 0) + 0) / 100;
-    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["between={", _M0MPC16double6Double10to__string(source), "}{", _M0MPC16double6Double10to__string(target), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5216, 0, _M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5216.length)));
+    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["between={", _M0MPC16double6Double10to__string(source), "}{", _M0MPC16double6Double10to__string(target), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5291, 0, _M0FP35kokic6kwiver6engine31tikz__append__geometry__optionsN7_2abindS5291.length)));
     return;
   } else {
     return;
@@ -25384,8 +25497,8 @@ function _M0FP35kokic6kwiver6engine33tikz__is__arrow__body__decoration(style_bod
   }
 }
 function _M0FP35kokic6kwiver6engine19tikz__label__option(content, swap, parameters) {
-  const base = swap ? _M0MPC15array5Array4joinGsE(["\"", content, "\"'"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5224, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5224.length)) : _M0MPC15array5Array4joinGsE(["\"", content, "\""], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5225, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5225.length));
-  return parameters.length === 0 ? base : _M0MPC15array5Array4joinGsE([base, "{", _M0MPC15array5Array4joinGsE(parameters, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5222, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5222.length)), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5223, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5223.length));
+  const base = swap ? _M0MPC15array5Array4joinGsE(["\"", content, "\"'"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5299, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5299.length)) : _M0MPC15array5Array4joinGsE(["\"", content, "\""], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5300, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5300.length));
+  return parameters.length === 0 ? base : _M0MPC15array5Array4joinGsE([base, "{", _M0MPC15array5Array4joinGsE(parameters, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5297, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5297.length)), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5298, 0, _M0FP35kokic6kwiver6engine19tikz__label__optionN7_2abindS5298.length));
 }
 function _M0FP35kokic6kwiver6engine28tikz__append__label__options(options, edge, label_content, explicit_label_colour, definitions) {
   const _p = "";
@@ -25414,7 +25527,7 @@ function _M0FP35kokic6kwiver6engine28tikz__append__label__options(options, edge,
       }
     }
     if (edge.options.label_position !== 50) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(label_parameters, _M0MPC15array5Array4joinGsE(["pos=", _M0MPC16double6Double10to__string((edge.options.label_position + 0) / 100)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5231, 0, _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5231.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(label_parameters, _M0MPC15array5Array4joinGsE(["pos=", _M0MPC16double6Double10to__string((edge.options.label_position + 0) / 100)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5306, 0, _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5306.length)));
     }
     if (edge.options.style.name === "arrow" && _M0FP35kokic6kwiver6engine33tikz__is__arrow__body__decoration(edge.options.style.body.name)) {
       const _bind$3 = edge.options.label_alignment;
@@ -25437,7 +25550,7 @@ function _M0FP35kokic6kwiver6engine28tikz__append__label__options(options, edge,
       _tmp = false;
     }
     if (_tmp) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(label_parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.cell.label_colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5236, 0, _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5236.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(label_parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.cell.label_colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5311, 0, _M0FP35kokic6kwiver6engine28tikz__append__label__optionsN7_2abindS5311.length)));
     }
     _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0FP35kokic6kwiver6engine19tikz__label__option(label_content, swap, label_parameters));
     return;
@@ -25471,9 +25584,9 @@ function _M0FP35kokic6kwiver6engine27tikz__append__loop__options(options, edge, 
   const out_angle = _M0FP35kokic6kwiver6engine9tikz__mod(loop_angle + angle_spread * clockwise, 360);
   const _p$2 = edge.options.radius;
   const distance = 5 + 5 * ((_p$2 < 0 ? -_p$2 | 0 : _p$2) + 0 - 1) / 2;
-  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["in=", _M0MPC16double6Double10to__string(in_angle)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5245, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5245.length)));
-  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["out=", _M0MPC16double6Double10to__string(out_angle)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5246, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5246.length)));
-  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["distance=", _M0MPC16double6Double10to__string(distance), "mm"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5247, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5247.length)));
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["in=", _M0MPC16double6Double10to__string(in_angle)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5320, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5320.length)));
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["out=", _M0MPC16double6Double10to__string(out_angle)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5321, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5321.length)));
+  _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["distance=", _M0MPC16double6Double10to__string(distance), "mm"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5322, 0, _M0FP35kokic6kwiver6engine27tikz__append__loop__optionsN7_2abindS5322.length)));
 }
 function _M0FP35kokic6kwiver6engine22tikz__edge__angle__deg(source, target) {
   return _M0FPC14math5atan2(target.y - source.y, target.x - source.x) * 180 / 3.1415926535897931;
@@ -25518,10 +25631,10 @@ function _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__options(op
       const rotate = -_M0FP35kokic6kwiver6engine20tikz__round__to__int(angle_deg) | 0;
       const parameters = ["anchor=center"];
       if (decoration_text) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5248, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5248.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5323, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5323.length)));
       }
       if (rotate !== 0) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5249, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5249.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5324, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5324.length)));
       }
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, "draw=none");
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0FP35kokic6kwiver6engine24tikz__decoration__option("\\dashv", parameters));
@@ -25531,10 +25644,10 @@ function _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__options(op
       const rotate$2 = 45 - (Math.imul(45, _M0FP35kokic6kwiver6engine20tikz__round__to__int(angle_deg / 45)) | 0) | 0;
       const parameters$2 = ["anchor=center", "pos=0.125"];
       if (decoration_text) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$2, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5250, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5250.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$2, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5325, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5325.length)));
       }
       if (rotate$2 !== 0) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$2, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate$2, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5251, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5251.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$2, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate$2, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5326, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5326.length)));
       }
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, "draw=none");
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0FP35kokic6kwiver6engine24tikz__decoration__option("\\lrcorner", parameters$2));
@@ -25544,10 +25657,10 @@ function _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__options(op
       const rotate$3 = 45 - (Math.imul(45, _M0FP35kokic6kwiver6engine20tikz__round__to__int(angle_deg / 45)) | 0) | 0;
       const parameters$3 = ["anchor=center", "pos=0.125"];
       if (decoration_text) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$3, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5252, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5252.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$3, _M0MPC15array5Array4joinGsE(["text=", _M0FP35kokic6kwiver6engine19tikz__colour__latex(edge.options.colour, definitions, false)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5327, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5327.length)));
       }
       if (rotate$3 !== 0) {
-        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$3, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate$3, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5253, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5253.length)));
+        _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parameters$3, _M0MPC15array5Array4joinGsE(["rotate=", _M0MPC13int3Int18to__string_2einner(rotate$3, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5328, 0, _M0FP35kokic6kwiver6engine40tikz__append__non__arrow__style__optionsN7_2abindS5328.length)));
       }
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, "draw=none");
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0FP35kokic6kwiver6engine24tikz__decoration__option("\\ulcorner", parameters$3));
@@ -25580,7 +25693,7 @@ function _M0FP35kokic6kwiver6engine28tikz__append__style__options(options, edge,
   } else {
     if (edge.options.level > 2) {
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, "Rightarrow");
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["scaling nfold=", _M0MPC13int3Int18to__string_2einner(edge.options.level, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5266, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5266.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["scaling nfold=", _M0MPC13int3Int18to__string_2einner(edge.options.level, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5341, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5341.length)));
     }
   }
   const _bind = edge.options.style.body.name;
@@ -25618,7 +25731,7 @@ function _M0FP35kokic6kwiver6engine28tikz__append__style__options(options, edge,
     }
     case "hook": {
       const suffix = edge.options.style.tail.side === "top" ? "" : "'";
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["hook", suffix], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5273, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5273.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["hook", suffix], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5348, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5348.length)));
       break;
     }
     case "arrowhead": {
@@ -25646,7 +25759,7 @@ function _M0FP35kokic6kwiver6engine28tikz__append__style__options(options, edge,
     }
     case "harpoon": {
       const suffix$2 = edge.options.style.head.side === "top" ? "" : "'";
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["harpoon", suffix$2], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5280, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5280.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["harpoon", suffix$2], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5355, 0, _M0FP35kokic6kwiver6engine28tikz__append__style__optionsN7_2abindS5355.length)));
       return;
     }
     default: {
@@ -25659,8 +25772,8 @@ function _M0FP35kokic6kwiver6engine14tikz__fixed__2(value) {
   const abs_value = value < 0 ? -value | 0 : value;
   const whole = abs_value / 100 | 0;
   const frac = abs_value % 100 | 0;
-  const frac_string = frac < 10 ? _M0MPC15array5Array4joinGsE(["0", _M0MPC13int3Int18to__string_2einner(frac, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5287, 0, _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5287.length)) : _M0MPC13int3Int18to__string_2einner(frac, 10);
-  return _M0MPC15array5Array4joinGsE([sign, _M0MPC13int3Int18to__string_2einner(whole, 10), ".", frac_string], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5286, 0, _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5286.length));
+  const frac_string = frac < 10 ? _M0MPC15array5Array4joinGsE(["0", _M0MPC13int3Int18to__string_2einner(frac, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5362, 0, _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5362.length)) : _M0MPC13int3Int18to__string_2einner(frac, 10);
+  return _M0MPC15array5Array4joinGsE([sign, _M0MPC13int3Int18to__string_2einner(whole, 10), ".", frac_string], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5361, 0, _M0FP35kokic6kwiver6engine14tikz__fixed__2N7_2abindS5361.length));
 }
 function _M0FP35kokic6kwiver6engine23tikz__sep__option__name(value) {
   switch (value) {
@@ -25683,7 +25796,7 @@ function _M0FP35kokic6kwiver6engine23tikz__sep__option__name(value) {
       return "huge";
     }
     default: {
-      return _M0MPC15array5Array4joinGsE([_M0FP35kokic6kwiver6engine14tikz__fixed__2(value), "em"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5288, 0, _M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5288.length));
+      return _M0MPC15array5Array4joinGsE([_M0FP35kokic6kwiver6engine14tikz__fixed__2(value), "em"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5363, 0, _M0FP35kokic6kwiver6engine23tikz__sep__option__nameN7_2abindS5363.length));
     }
   }
 }
@@ -25700,19 +25813,19 @@ function _M0FP35kokic6kwiver6engine17tikz__begin__line(settings, options_config)
   if (column_sep === row_sep) {
     const _p = "normal";
     if (!(column_sep === _p)) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["sep=", column_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5296, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5296.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["sep=", column_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5371, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5371.length)));
     }
   } else {
     const _p = "normal";
     if (!(column_sep === _p)) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["column sep=", column_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5297, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5297.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["column sep=", column_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5372, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5372.length)));
     }
     const _p$2 = "normal";
     if (!(row_sep === _p$2)) {
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["row sep=", row_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5298, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5298.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(options, _M0MPC15array5Array4joinGsE(["row sep=", row_sep], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5373, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5373.length)));
     }
   }
-  return options.length === 0 ? "\\begin{tikzcd}" : _M0MPC15array5Array4joinGsE(["\\begin{tikzcd}[", _M0MPC15array5Array4joinGsE(options, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5299, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5299.length)), "]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5300, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5300.length));
+  return options.length === 0 ? "\\begin{tikzcd}" : _M0MPC15array5Array4joinGsE(["\\begin{tikzcd}[", _M0MPC15array5Array4joinGsE(options, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5374, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5374.length)), "]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5375, 0, _M0FP35kokic6kwiver6engine17tikz__begin__lineN7_2abindS5375.length));
 }
 function _M0MP35kokic6kwiver6engine5Point3new(x, y) {
   return new _M0TP35kokic6kwiver6engine5Point(x, y);
@@ -25780,10 +25893,10 @@ function _M0FP35kokic6kwiver6engine18tikz__cell__origin(cell_id, use_phantom, ve
   }
 }
 function _M0FP35kokic6kwiver6engine27tikz__edge__reference__name(base_name, phantom) {
-  return phantom ? _M0MPC15array5Array4joinGsE([base_name, "p"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5318, 0, _M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5318.length)) : base_name;
+  return phantom ? _M0MPC15array5Array4joinGsE([base_name, "p"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5393, 0, _M0FP35kokic6kwiver6engine27tikz__edge__reference__nameN7_2abindS5393.length)) : base_name;
 }
 function _M0FP35kokic6kwiver6engine23tikz__vertex__reference(vertex, min_x, min_y) {
-  return _M0MPC15array5Array4joinGsE([_M0MPC13int3Int18to__string_2einner((vertex.y - min_y | 0) + 1 | 0, 10), "-", _M0MPC13int3Int18to__string_2einner((vertex.x - min_x | 0) + 1 | 0, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5319, 0, _M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5319.length));
+  return _M0MPC15array5Array4joinGsE([_M0MPC13int3Int18to__string_2einner((vertex.y - min_y | 0) + 1 | 0, 10), "-", _M0MPC13int3Int18to__string_2einner((vertex.x - min_x | 0) + 1 | 0, 10)], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5394, 0, _M0FP35kokic6kwiver6engine23tikz__vertex__referenceN7_2abindS5394.length));
 }
 function _M0FP35kokic6kwiver6engine21tikz__cell__reference(cell_id, min_x, min_y, phantom, vertices_by_id, edge_export_name_by_id) {
   const _bind = _M0MPC17hashmap7HashMap3getGiRP35kokic6kwiver6engine6VertexE(vertices_by_id, cell_id);
@@ -25804,7 +25917,7 @@ function _M0FP35kokic6kwiver6engine21tikz__cell__reference(cell_id, min_x, min_y
 }
 function _M0FP35kokic6kwiver6engine23tikz__edge__coord__part(vertex) {
   if (vertex === undefined) {
-    return _M0FP35kokic6kwiver6engine23tikz__edge__coord__partN5tupleS6390;
+    return _M0FP35kokic6kwiver6engine23tikz__edge__coord__partN5tupleS6466;
   } else {
     const _Some = vertex;
     const _v = _Some;
@@ -25886,7 +25999,7 @@ function _M0FP35kokic6kwiver6engine12tikz__repeat(token, count) {
       break;
     }
   }
-  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5369, 0, _M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5369.length));
+  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5444, 0, _M0FP35kokic6kwiver6engine12tikz__repeatN7_2abindS5444.length));
 }
 function _M0FP35kokic6kwiver6engine23tikz__direction__option(source, target) {
   const dx = target.x - source.x | 0;
@@ -25906,7 +26019,7 @@ function _M0FP35kokic6kwiver6engine23tikz__direction__option(source, target) {
       _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(parts, _M0FP35kokic6kwiver6engine12tikz__repeat("r", dx));
     }
   }
-  const direction = _M0MPC15array5Array4joinGsE(parts, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5370, 0, _M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5370.length));
+  const direction = _M0MPC15array5Array4joinGsE(parts, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5445, 0, _M0FP35kokic6kwiver6engine23tikz__direction__optionN7_2abindS5445.length));
   return direction === "" ? undefined : direction;
 }
 function _M0FP35kokic6kwiver6engine21tikz__edge__is__empty(edge) {
@@ -25917,7 +26030,7 @@ function _M0FP35kokic6kwiver6engine21tikz__edge__is__empty(edge) {
   return is_arrow && (no_head && (no_body && no_tail));
 }
 function _M0FP35kokic6kwiver6engine19tikz__escape__label(label) {
-  return _M0MPC16string6String12replace__all(label, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5371, 0, _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5371.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5372, 0, _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5372.length));
+  return _M0MPC16string6String12replace__all(label, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5446, 0, _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5446.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5447, 0, _M0FP35kokic6kwiver6engine19tikz__escape__labelN7_2abindS5447.length));
 }
 function _M0FP35kokic6kwiver6engine23tikz__is__simple__label(label) {
   const bytes = _M0FPC28encoding4utf814encode_2einner(new _M0TPC16string10StringView(label, 0, label.length), false);
@@ -25952,10 +26065,10 @@ function _M0FP35kokic6kwiver6engine23tikz__is__simple__label(label) {
 }
 function _M0FP35kokic6kwiver6engine19tikz__format__label(label) {
   const escaped = _M0FP35kokic6kwiver6engine19tikz__escape__label(label);
-  if (_M0MPC16string6String8contains(escaped, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5374, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5374.length))) {
-    return _M0MPC15array5Array4joinGsE(["\\begin{array}{c} ", escaped, " \\end{array}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5375, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5375.length));
+  if (_M0MPC16string6String8contains(escaped, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5449, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5449.length))) {
+    return _M0MPC15array5Array4joinGsE(["\\begin{array}{c} ", escaped, " \\end{array}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5450, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5450.length));
   }
-  return !_M0FP35kokic6kwiver6engine23tikz__is__simple__label(escaped) ? _M0MPC15array5Array4joinGsE(["{", escaped, "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5376, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5376.length)) : escaped;
+  return !_M0FP35kokic6kwiver6engine23tikz__is__simple__label(escaped) ? _M0MPC15array5Array4joinGsE(["{", escaped, "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5451, 0, _M0FP35kokic6kwiver6engine19tikz__format__labelN7_2abindS5451.length)) : escaped;
 }
 function _M0FP35kokic6kwiver6engine26tikz__edge__label__content(edge, _explicit_colour) {
   if (edge.cell.label === "") {
@@ -26017,13 +26130,13 @@ function _M0FP35kokic6kwiver6engine24tikz__finalize__metadata(incompatibilities,
   return new _M0TP35kokic6kwiver6engine20TikzCdExportMetadata(_M0FP35kokic6kwiver6engine18tikz__sorted__keys(incompatibilities), dependencies_copy);
 }
 function _M0FP35kokic6kwiver6engine19tikz__indent__lines(content) {
-  return content === "" ? "" : _M0MPC15array5Array4joinGsE(["\t", _M0MPC16string6String12replace__all(content, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5378, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5378.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5379, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5379.length))], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5380, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5380.length));
+  return content === "" ? "" : _M0MPC15array5Array4joinGsE(["\t", _M0MPC16string6String12replace__all(content, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5453, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5453.length), new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5454, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5454.length))], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5455, 0, _M0FP35kokic6kwiver6engine19tikz__indent__linesN7_2abindS5455.length));
 }
 function _M0FP35kokic6kwiver6engine24tikz__named__placeholder(name) {
-  return _M0MPC15array5Array4joinGsE(["\"\"{name=", name, ", anchor=center, inner sep=0}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5381, 0, _M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5381.length));
+  return _M0MPC15array5Array4joinGsE(["\"\"{name=", name, ", anchor=center, inner sep=0}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5456, 0, _M0FP35kokic6kwiver6engine24tikz__named__placeholderN7_2abindS5456.length));
 }
 function _M0FP35kokic6kwiver6engine20tikz__coloured__text(label, colour, definitions) {
-  return _M0MPC15array5Array4joinGsE(["\\textcolor", _M0FP35kokic6kwiver6engine19tikz__colour__latex(colour, definitions, true), "{", _M0FP35kokic6kwiver6engine19tikz__format__label(label), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5382, 0, _M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5382.length));
+  return _M0MPC15array5Array4joinGsE(["\\textcolor", _M0FP35kokic6kwiver6engine19tikz__colour__latex(colour, definitions, true), "{", _M0FP35kokic6kwiver6engine19tikz__format__label(label), "}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5457, 0, _M0FP35kokic6kwiver6engine20tikz__coloured__textN7_2abindS5457.length));
 }
 function _M0FP35kokic6kwiver6engine19tikz__vertex__label(vertex, definitions) {
   if (vertex.cell.label === "") {
@@ -26069,7 +26182,7 @@ function _M0FP35kokic6kwiver6engine34base64__percent__encode__component(value) {
       break;
     }
   }
-  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5387, 0, _M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5387.length));
+  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5462, 0, _M0FP35kokic6kwiver6engine34base64__percent__encode__componentN7_2abindS5462.length));
 }
 function _M0MP35kokic6kwiver6engine6Quiver9is__empty(self) {
   const _p = _M0MP35kokic6kwiver6engine6Quiver14all__cell__ids(self);
@@ -26091,7 +26204,7 @@ function _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(s
       } else {
         const _Some$2 = renderer;
         const _value = _Some$2;
-        renderer_part = _value === default_renderer ? "" : _M0MPC15array5Array4joinGsE(["r=", _M0FP35kokic6kwiver6engine34base64__percent__encode__component(_value), "&"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5402, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5402.length));
+        renderer_part = _value === default_renderer ? "" : _M0MPC15array5Array4joinGsE(["r=", _M0FP35kokic6kwiver6engine34base64__percent__encode__component(_value), "&"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5477, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5477.length));
       }
       let macro_part;
       if (macro_url === undefined) {
@@ -26099,21 +26212,21 @@ function _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(s
       } else {
         const _Some$2 = macro_url;
         const _value = _Some$2;
-        macro_part = _M0MPC15array5Array4joinGsE(["&macro_url=", _M0FP35kokic6kwiver6engine34base64__percent__encode__component(_value)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5397, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5397.length));
+        macro_part = _M0MPC15array5Array4joinGsE(["&macro_url=", _M0FP35kokic6kwiver6engine34base64__percent__encode__component(_value)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5472, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5472.length));
       }
-      return _M0MPC15array5Array4joinGsE([_base_url, "#", renderer_part, "q=", payload, macro_part], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5396, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5396.length));
+      return _M0MPC15array5Array4joinGsE([_base_url, "#", renderer_part, "q=", payload, macro_part], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5471, 0, _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einnerN7_2abindS5471.length));
     }
   }
 }
 function _M0FP35kokic6kwiver6engine18tikz__wrap__output(quiver, settings, options_config, tikzcd) {
-  const wrapped = settings.standalone ? _M0MPC15array5Array4joinGsE(["\\documentclass[tikz]{standalone}\n\\usepackage{quiver}\n\\begin{document}\n", tikzcd, "\n\\end{document}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5412, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5412.length)) : settings.centre_diagram ? _M0MPC15array5Array4joinGsE(["\\[", tikzcd, "\\]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5413, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5413.length)) : tikzcd;
-  return _M0MPC15array5Array4joinGsE(["% ", _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(quiver, options_config.share_base_url, options_config.macro_url, options_config.renderer, "canvas"), "\n", wrapped], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5411, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5411.length));
+  const wrapped = settings.standalone ? _M0MPC15array5Array4joinGsE(["\\documentclass[tikz]{standalone}\n\\usepackage{quiver}\n\\begin{document}\n", tikzcd, "\n\\end{document}"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5487, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5487.length)) : settings.centre_diagram ? _M0MPC15array5Array4joinGsE(["\\[", tikzcd, "\\]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5488, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5488.length)) : tikzcd;
+  return _M0MPC15array5Array4joinGsE(["% ", _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(quiver, options_config.share_base_url, options_config.macro_url, options_config.renderer, "canvas"), "\n", wrapped], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5486, 0, _M0FP35kokic6kwiver6engine18tikz__wrap__outputN7_2abindS5486.length));
 }
 function _M0MP35kokic6kwiver6engine23TikzCdExportDefinitions7default() {
   return new _M0TP35kokic6kwiver6engine23TikzCdExportDefinitions(_M0MPC17hashmap7HashMap11new_2einnerGsRP35kokic6kwiver6engine6ColourE(8));
 }
 function _M0MP35kokic6kwiver6engine19TikzCdExportOptions7default() {
-  return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(_M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6391, undefined, undefined, undefined);
+  return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(_M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6467, undefined, undefined, undefined);
 }
 function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(self, settings, options, definitions) {
   const vertices_by_id = _M0MPC17hashmap7HashMap11new_2einnerGiRP35kokic6kwiver6engine6VertexE(8);
@@ -26171,7 +26284,7 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
   const tikz_incompatibilities = _M0MPC17hashmap7HashMap11new_2einnerGsbE(8);
   const dependencies = _M0MPC17hashmap7HashMap11new_2einnerGsRP35kokic6kwiver6engine6ColourE(8);
   if (!has_vertex) {
-    const empty = _M0MPC15array5Array4joinGsE([begin_line, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5438, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5438.length));
+    const empty = _M0MPC15array5Array4joinGsE([begin_line, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5513, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5513.length));
     return new _M0TP35kokic6kwiver6engine18TikzCdExportResult(_M0FP35kokic6kwiver6engine18tikz__wrap__output(self, settings, options, empty), _M0FP35kokic6kwiver6engine24tikz__finalize__metadata(tikz_incompatibilities, dependencies));
   }
   _M0MPC15array5Array8sort__byGRP35kokic6kwiver6engine4EdgeE(edges, (a, b) => _M0FP35kokic6kwiver6engine20tikz__compare__edges(vertices_by_id, edges_by_id, a, b));
@@ -26264,8 +26377,8 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
                   const _target = _Some$4;
                   const _bind$8 = _M0FP35kokic6kwiver6engine23tikz__direction__option(_source, _target);
                   if (_bind$8 === undefined) {
-                    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5455, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5455.length)));
-                    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5456, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5456.length)));
+                    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5530, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5530.length)));
+                    _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5531, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5531.length)));
                   } else {
                     const _Some$5 = _bind$8;
                     const _direction = _Some$5;
@@ -26275,8 +26388,8 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
               }
               break _L;
             }
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5462, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5462.length)));
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5463, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5463.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5537, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5537.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5538, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5538.length)));
           }
           const edge_is_empty = _M0FP35kokic6kwiver6engine21tikz__edge__is__empty(edge);
           const shared_colour = _M0FP35kokic6kwiver6engine20tikz__shared__colour(edge);
@@ -26316,7 +26429,7 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
               _M0FP35kokic6kwiver6engine26tikz__add__incompatibility(tikz_incompatibilities, "double arrows or higher with harpoon heads");
             }
           }
-          const arrow = _M0MPC15array5Array4joinGsE(["\\arrow[", _M0MPC15array5Array4joinGsE(arrow_options, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5484, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5484.length)), "]"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5485, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5485.length));
+          const arrow = _M0MPC15array5Array4joinGsE(["\\arrow[", _M0MPC15array5Array4joinGsE(arrow_options, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5559, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5559.length)), "]"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5560, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5560.length));
           _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_lines, arrow);
           if (_M0MPC17hashmap7HashMap8containsGibE(phantom_referenced_edges, edge.cell.id)) {
             const _bind$8 = _M0MPC17hashmap7HashMap3getGisE(edge_export_name_by_id, edge.cell.id);
@@ -26327,12 +26440,12 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
               const phantom_options = [];
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, _M0FP35kokic6kwiver6engine24tikz__named__placeholder(_M0FP35kokic6kwiver6engine27tikz__edge__reference__name(_edge_name, true)));
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, "phantom");
-              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5475, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5475.length)));
-              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5476, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5476.length)));
+              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, _M0MPC15array5Array4joinGsE(["from=", _source_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5550, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5550.length)));
+              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, _M0MPC15array5Array4joinGsE(["to=", _target_ref], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5551, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5551.length)));
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, "start anchor=center");
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(phantom_options, "end anchor=center");
               _M0FP35kokic6kwiver6engine40tikz__append__phantom__geometry__options(phantom_options, edge);
-              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_lines, _M0MPC15array5Array4joinGsE(["\\arrow[", _M0MPC15array5Array4joinGsE(phantom_options, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5477, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5477.length)), "]"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5478, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5478.length)));
+              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(arrow_lines, _M0MPC15array5Array4joinGsE(["\\arrow[", _M0MPC15array5Array4joinGsE(phantom_options, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5552, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5552.length)), "]"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5553, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5553.length)));
             }
           }
         }
@@ -26420,10 +26533,10 @@ function _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einner(sel
       break;
     }
   }
-  const matrix_body = _M0MPC15array5Array4joinGsE(matrix_parts, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5513, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5513.length));
-  const body = arrow_lines.length === 0 ? matrix_body : _M0MPC15array5Array4joinGsE([matrix_body, "\n", _M0MPC15array5Array4joinGsE(arrow_lines, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5511, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5511.length))], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5512, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5512.length));
+  const matrix_body = _M0MPC15array5Array4joinGsE(matrix_parts, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5588, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5588.length));
+  const body = arrow_lines.length === 0 ? matrix_body : _M0MPC15array5Array4joinGsE([matrix_body, "\n", _M0MPC15array5Array4joinGsE(arrow_lines, new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5586, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5586.length))], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5587, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5587.length));
   const indented_body = _M0FP35kokic6kwiver6engine19tikz__indent__lines(body);
-  const tikzcd = indented_body === "" ? _M0MPC15array5Array4joinGsE([begin_line, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5509, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5509.length)) : _M0MPC15array5Array4joinGsE([begin_line, "\n", indented_body, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5510, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5510.length));
+  const tikzcd = indented_body === "" ? _M0MPC15array5Array4joinGsE([begin_line, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5584, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5584.length)) : _M0MPC15array5Array4joinGsE([begin_line, "\n", indented_body, "\n\\end{tikzcd}"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5585, 0, _M0MP35kokic6kwiver6engine6Quiver32export__tikz__cd__result_2einnerN7_2abindS5585.length));
   return new _M0TP35kokic6kwiver6engine18TikzCdExportResult(_M0FP35kokic6kwiver6engine18tikz__wrap__output(self, settings, options, tikzcd), _M0FP35kokic6kwiver6engine24tikz__finalize__metadata(tikz_incompatibilities, dependencies));
 }
 function _M0MP35kokic6kwiver6engine15QuiverUiAdapter24export__tikz__cd_2einner(self, settings, options, definitions) {
@@ -26456,7 +26569,7 @@ function _M0FP35kokic6kwiver6engine19fletcher__arg__list(args) {
       break;
     }
   }
-  return effective.length === 0 ? "" : _M0MPC15array5Array4joinGsE([", ", _M0MPC15array5Array4joinGsE(effective, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5544, 0, _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5544.length))], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5545, 0, _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5545.length));
+  return effective.length === 0 ? "" : _M0MPC15array5Array4joinGsE([", ", _M0MPC15array5Array4joinGsE(effective, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5619, 0, _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5619.length))], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5620, 0, _M0FP35kokic6kwiver6engine19fletcher__arg__listN7_2abindS5620.length));
 }
 function _M0FP35kokic6kwiver6engine16fletcher__repeat(token, count) {
   if (count <= 0) {
@@ -26474,7 +26587,7 @@ function _M0FP35kokic6kwiver6engine16fletcher__repeat(token, count) {
       break;
     }
   }
-  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5550, 0, _M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5550.length));
+  return _M0MPC15array5Array4joinGsE(out, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5625, 0, _M0FP35kokic6kwiver6engine16fletcher__repeatN7_2abindS5625.length));
 }
 function _M0FP35kokic6kwiver6engine22fletcher__arrow__marks(edge) {
   const _p = edge.options.style.name;
@@ -26577,19 +26690,19 @@ function _M0FP35kokic6kwiver6engine24fletcher__round__to__int(x) {
 function _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(colour) {
   const saturation = _M0FP35kokic6kwiver6engine24fletcher__round__to__int((colour.s + 0) * 2.55);
   const lightness = _M0FP35kokic6kwiver6engine24fletcher__round__to__int((colour.l + 0) * 2.55);
-  return _M0MPC15array5Array4joinGsE(["color.hsl(", _M0MPC13int3Int18to__string_2einner(colour.h, 10), "deg, ", _M0MPC13int3Int18to__string_2einner(saturation, 10), ", ", _M0MPC13int3Int18to__string_2einner(lightness, 10), ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5574, 0, _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5574.length));
+  return _M0MPC15array5Array4joinGsE(["color.hsl(", _M0MPC13int3Int18to__string_2einner(colour.h, 10), "deg, ", _M0MPC13int3Int18to__string_2einner(saturation, 10), ", ", _M0MPC13int3Int18to__string_2einner(lightness, 10), ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5649, 0, _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hslN7_2abindS5649.length));
 }
 function _M0FP35kokic6kwiver6engine16fletcher__coords(vertex) {
-  return _M0MPC15array5Array4joinGsE(["(", _M0MPC13int3Int18to__string_2einner(vertex.x, 10), ", ", _M0MPC13int3Int18to__string_2einner(vertex.y, 10), ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5575, 0, _M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5575.length));
+  return _M0MPC15array5Array4joinGsE(["(", _M0MPC13int3Int18to__string_2einner(vertex.x, 10), ", ", _M0MPC13int3Int18to__string_2einner(vertex.y, 10), ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5650, 0, _M0FP35kokic6kwiver6engine16fletcher__coordsN7_2abindS5650.length));
 }
 function _M0FP35kokic6kwiver6engine23fletcher__format__label(label) {
-  return label === "" ? "" : _M0MPC15array5Array4joinGsE(["[$", label, "$]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5576, 0, _M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5576.length));
+  return label === "" ? "" : _M0MPC15array5Array4joinGsE(["[$", label, "$]"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5651, 0, _M0FP35kokic6kwiver6engine23fletcher__format__labelN7_2abindS5651.length));
 }
 function _M0FP35kokic6kwiver6engine22fletcher__wrap__output(quiver, settings, options, lines) {
-  const body = _M0MPC15array5Array4joinGsE(lines, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5580, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5580.length));
-  const diagram = body === "" ? "diagram({\n})" : _M0MPC15array5Array4joinGsE(["diagram({\n", body, "\n})"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5579, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5579.length));
-  const wrapped = settings.centre_diagram ? _M0MPC15array5Array4joinGsE(["align(center, ", diagram, ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5578, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5578.length)) : diagram;
-  return _M0MPC15array5Array4joinGsE(["// ", _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(quiver, options.share_base_url, options.macro_url, options.renderer, "canvas"), "\n#", wrapped], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5577, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5577.length));
+  const body = _M0MPC15array5Array4joinGsE(lines, new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5655, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5655.length));
+  const diagram = body === "" ? "diagram({\n})" : _M0MPC15array5Array4joinGsE(["diagram({\n", body, "\n})"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5654, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5654.length));
+  const wrapped = settings.centre_diagram ? _M0MPC15array5Array4joinGsE(["align(center, ", diagram, ")"], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5653, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5653.length)) : diagram;
+  return _M0MPC15array5Array4joinGsE(["// ", _M0MP35kokic6kwiver6engine6Quiver34export__base64__share__url_2einner(quiver, options.share_base_url, options.macro_url, options.renderer, "canvas"), "\n#", wrapped], new _M0TPC16string10StringView(_M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5652, 0, _M0FP35kokic6kwiver6engine22fletcher__wrap__outputN7_2abindS5652.length));
 }
 function _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einner(self, settings, options) {
   const vertices = [];
@@ -26637,11 +26750,11 @@ function _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einner(self, setti
         _tmp$3 = false;
       }
       if (_tmp$3) {
-        label_arg = _M0MPC15array5Array4joinGsE(["text(", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(vertex.cell.label_colour), ")", _M0FP35kokic6kwiver6engine23fletcher__format__label(vertex.cell.label)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5605, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5605.length));
+        label_arg = _M0MPC15array5Array4joinGsE(["text(", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(vertex.cell.label_colour), ")", _M0FP35kokic6kwiver6engine23fletcher__format__label(vertex.cell.label)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5680, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5680.length));
       } else {
         label_arg = _M0FP35kokic6kwiver6engine23fletcher__format__label(vertex.cell.label);
       }
-      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(lines, _M0MPC15array5Array4joinGsE(["\tnode(", _M0FP35kokic6kwiver6engine16fletcher__coords(vertex), _M0FP35kokic6kwiver6engine19fletcher__arg__list([label_arg]), ")"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5604, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5604.length)));
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(lines, _M0MPC15array5Array4joinGsE(["\tnode(", _M0FP35kokic6kwiver6engine16fletcher__coords(vertex), _M0FP35kokic6kwiver6engine19fletcher__arg__list([label_arg]), ")"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5679, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5679.length)));
       _tmp$2 = _ + 1 | 0;
       continue;
     } else {
@@ -26695,20 +26808,20 @@ function _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einner(self, setti
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, "label-fill: false");
               _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, "label-angle: right");
             }
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["label-side: ", label_side], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5613, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5613.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["label-side: ", label_side], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5688, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5688.length)));
             if (edge.options.label_position !== 50) {
-              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["label-pos: ", _M0MPC16double6Double10to__string((edge.options.label_position + 0) / 100)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5614, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5614.length)));
+              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["label-pos: ", _M0MPC16double6Double10to__string((edge.options.label_position + 0) / 100)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5689, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5689.length)));
             }
           }
           if (edge.options.offset !== 0 && (edge.source !== edge.target && edge.options.curve === 0)) {
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["shift: ", _M0MPC16double6Double10to__string(-(edge.options.offset + 0) / 20)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5620, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5620.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["shift: ", _M0MPC16double6Double10to__string(-(edge.options.offset + 0) / 20)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5695, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5695.length)));
           }
           const _bind$7 = _M0FP35kokic6kwiver6engine22fletcher__arrow__marks(edge);
           const _arrow_marks = _bind$7._0;
           const _arrow_args = _bind$7._1;
           const _p$3 = "-";
           if (!(_arrow_marks === _p$3)) {
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["\"", _arrow_marks, "\""], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5621, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5621.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["\"", _arrow_marks, "\""], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5696, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5696.length)));
             const _bind$8 = _arrow_args.length;
             let _tmp$4 = 0;
             while (true) {
@@ -26733,25 +26846,25 @@ function _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einner(self, setti
             _tmp$4 = false;
           }
           if (_tmp$4) {
-            _M0MPC15array5Array3setGsE(args, 0, _M0MPC15array5Array4joinGsE(["text(", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(edge.cell.label_colour), ")", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(args, 0)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5626, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5626.length)));
+            _M0MPC15array5Array3setGsE(args, 0, _M0MPC15array5Array4joinGsE(["text(", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(edge.cell.label_colour), ")", _M0MPC15array5Array2atGUdRP35kokic6kwiver6engine5PointEE(args, 0)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5701, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5701.length)));
           }
           const _p$6 = edge.options.colour;
           if (_p$6.l > 0) {
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["stroke: ", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(edge.options.colour)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5627, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5627.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["stroke: ", _M0FP35kokic6kwiver6engine32fletcher__colour__to__typst__hsl(edge.options.colour)], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5702, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5702.length)));
           }
           if (edge.source === edge.target) {
             const _p$7 = edge.options.radius;
             const _tmp$5 = _p$7 > 0 ? 1 : _p$7 < 0 ? -1 : 0;
             const _p$8 = edge.options.radius;
             const loop_bend = _tmp$5 * (((_p$8 < 0 ? -_p$8 | 0 : _p$8) + 0 - 1) * 20 / 4 + 130);
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["bend: ", _M0MPC16double6Double10to__string(loop_bend), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5628, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5628.length)));
-            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["loop-angle: ", _M0MPC13int3Int18to__string_2einner(90 - edge.options.angle | 0, 10), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5629, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5629.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["bend: ", _M0MPC16double6Double10to__string(loop_bend), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5703, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5703.length)));
+            _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["loop-angle: ", _M0MPC13int3Int18to__string_2einner(90 - edge.options.angle | 0, 10), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5704, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5704.length)));
           } else {
             if (edge.options.curve !== 0) {
-              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["bend: ", _M0MPC16double6Double10to__string(-(edge.options.curve + 0) * 90 / 5), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5630, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5630.length)));
+              _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(args, _M0MPC15array5Array4joinGsE(["bend: ", _M0MPC16double6Double10to__string(-(edge.options.curve + 0) * 90 / 5), "deg"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5705, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5705.length)));
             }
           }
-          _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(lines, _M0MPC15array5Array4joinGsE(["\tedge(", _M0FP35kokic6kwiver6engine16fletcher__coords(_source), ", ", _M0FP35kokic6kwiver6engine16fletcher__coords(_target), _M0FP35kokic6kwiver6engine19fletcher__arg__list(args), ")"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5631, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5631.length)));
+          _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(lines, _M0MPC15array5Array4joinGsE(["\tedge(", _M0FP35kokic6kwiver6engine16fletcher__coords(_source), ", ", _M0FP35kokic6kwiver6engine16fletcher__coords(_target), _M0FP35kokic6kwiver6engine19fletcher__arg__list(args), ")"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5706, 0, _M0MP35kokic6kwiver6engine6Quiver24export__fletcher_2einnerN7_2abindS5706.length)));
         }
       }
       _tmp$3 = _ + 1 | 0;
@@ -26796,7 +26909,7 @@ function _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einner(self, se
       break _L;
     }
   }
-  return _M0MPC15array5Array4joinGsE(["<!-- ", url, " -->\n<iframe class=\"quiver-embed\" src=\"", src, "\" width=\"", _M0MPC13int3Int18to__string_2einner(width, 10), "\" height=\"", _M0MPC13int3Int18to__string_2einner(height, 10), "\" style=\"border-radius: 8px; border: none;\"></iframe>"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5667, 0, _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5667.length));
+  return _M0MPC15array5Array4joinGsE(["<!-- ", url, " -->\n<iframe class=\"quiver-embed\" src=\"", src, "\" width=\"", _M0MPC13int3Int18to__string_2einner(width, 10), "\" height=\"", _M0MPC13int3Int18to__string_2einner(height, 10), "\" style=\"border-radius: 8px; border: none;\"></iframe>"], new _M0TPC16string10StringView(_M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5742, 0, _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einnerN7_2abindS5742.length));
 }
 function _M0MP35kokic6kwiver6engine15QuiverUiAdapter27export__html__embed_2einner(self, settings, options) {
   return _M0MP35kokic6kwiver6engine6Quiver27export__html__embed_2einner(self.quiver, settings, options);
@@ -26906,6 +27019,9 @@ function _M0FP35kokic6kwiver6engine47ffi__adapter__transitive__reverse__dependen
 function _M0FP35kokic6kwiver6engine35ffi__adapter__connected__components(adapter, roots) {
   return _M0MP35kokic6kwiver6engine15QuiverUiAdapter21connected__components(adapter, roots);
 }
+function _M0FP35kokic6kwiver6engine38ffi__adapter__preview__reconnect__plan(adapter, edge_id, source_id, target_id) {
+  return _M0MP35kokic6kwiver6engine15QuiverUiAdapter24preview__reconnect__plan(adapter, edge_id, source_id, target_id);
+}
 function _M0FP35kokic6kwiver6engine28ffi__adapter__export__base64(adapter) {
   return _M0MP35kokic6kwiver6engine15QuiverUiAdapter21export__base64__state(adapter);
 }
@@ -26918,7 +27034,7 @@ function _M0FP35kokic6kwiver6engine38ffi__adapter__export__tikz__cd_2einner(adap
 function _M0FP35kokic6kwiver6engine30ffi__adapter__export__tikz__cd(adapter, settings$46$opt, options$46$opt, definitions$46$opt) {
   let settings;
   if (settings$46$opt === undefined) {
-    settings = _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6392;
+    settings = _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6468;
   } else {
     const _Some = settings$46$opt;
     settings = _Some;
@@ -26980,7 +27096,7 @@ function _M0MP35kokic6kwiver6engine19TikzCdExportOptions18with__row__sep__em(sel
   return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(_M0MP35kokic6kwiver6engine16TikzCdSepOptions13with__row__em(self.sep, value), self.share_base_url, self.macro_url, self.renderer);
 }
 function _M0MP35kokic6kwiver6engine19TikzCdExportOptions13with__sep__em(self, value) {
-  return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(_M0MP35kokic6kwiver6engine16TikzCdSepOptions8with__em(_M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6391, value), self.share_base_url, self.macro_url, self.renderer);
+  return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(_M0MP35kokic6kwiver6engine16TikzCdSepOptions8with__em(_M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6467, value), self.share_base_url, self.macro_url, self.renderer);
 }
 function _M0MP35kokic6kwiver6engine19TikzCdExportOptions22with__share__base__url(self, base_url) {
   return new _M0TP35kokic6kwiver6engine19TikzCdExportOptions(self.sep, base_url, self.macro_url, self.renderer);
@@ -28360,7 +28476,7 @@ function _M0MP35kokic6kwiver8geometry15ArrowCurveModel26arc__for__chord__at__ang
   const sagitta = chord >= outer_dis ? 1e-006 : semicircle_radius * ((outer_dis - chord) / boundary_dis);
   const r_for_sagitta = sagitta / 2 + chord * chord / (8 * sagitta);
   const r = chord <= inner_dis ? semicircle_radius + (inner_dis - chord) / inner_dis * (loop_radius - semicircle_radius) : r_for_sagitta;
-  return _M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, chord <= inner_dis, r, angle);
+  return _M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470, chord, chord <= inner_dis, r, angle);
 }
 function _M0MP35kokic6kwiver8geometry15ArrowCurveModel15arc__for__chord(self, chord, loop_radius) {
   return _M0MP35kokic6kwiver8geometry15ArrowCurveModel26arc__for__chord__at__angle(self, chord, loop_radius, 0);
@@ -28387,14 +28503,14 @@ function _M0MP35kokic6kwiver8geometry15ArrowCurveModel11curve__data(self) {
   const chord = _M0MP35kokic6kwiver8geometry15ArrowCurveModel13chord__length(self);
   const _bind = self.options.shape;
   if (_bind === 0) {
-    return new _M0DTP35kokic6kwiver8geometry19ArrowCurveModelData6Bezier(_M0MP35kokic6kwiver6engine6Bezier3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, (self.options.curve + 0) * self.config.curve_height * 2, 0));
+    return new _M0DTP35kokic6kwiver8geometry19ArrowCurveModelData6Bezier(_M0MP35kokic6kwiver6engine6Bezier3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470, chord, (self.options.curve + 0) * self.config.curve_height * 2, 0));
   } else {
     const loop_radius = _M0MP35kokic6kwiver8geometry15ArrowCurveModel20loop__radius__pixels(self);
     const _p = self.source_origin;
     const _p$2 = self.target_origin;
     if (_p.x === _p$2.x && _p.y === _p$2.y) {
       const _p$3 = self.options.angle + 0;
-      return new _M0DTP35kokic6kwiver8geometry19ArrowCurveModelData3Arc(_M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, true, loop_radius, _p$3 * 3.1415926535897931 / 180));
+      return new _M0DTP35kokic6kwiver8geometry19ArrowCurveModelData3Arc(_M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470, chord, true, loop_radius, _p$3 * 3.1415926535897931 / 180));
     } else {
       return new _M0DTP35kokic6kwiver8geometry19ArrowCurveModelData3Arc(_M0MP35kokic6kwiver8geometry15ArrowCurveModel15arc__for__chord(self, chord, loop_radius));
     }
@@ -28573,13 +28689,13 @@ function _M0MP35kokic6kwiver8geometry15ArrowCurveModel48display__intersections__
   const angle = _M0MP35kokic6kwiver8geometry15ArrowCurveModel14display__angle(self);
   const _bind = self.options.shape;
   if (_bind === 0) {
-    return _M0MP35kokic6kwiver6engine6Bezier39intersections__with__rounded__rectangle(_M0MP35kokic6kwiver6engine6Bezier3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, (self.options.curve + 0) * self.config.curve_height * 2, angle), rect, permit_containment);
+    return _M0MP35kokic6kwiver6engine6Bezier39intersections__with__rounded__rectangle(_M0MP35kokic6kwiver6engine6Bezier3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470, chord, (self.options.curve + 0) * self.config.curve_height * 2, angle), rect, permit_containment);
   } else {
     const loop_radius = _M0MP35kokic6kwiver8geometry15ArrowCurveModel20loop__radius__pixels(self);
     const _p = self.source_origin;
     const _p$2 = self.target_origin;
     if (_p.x === _p$2.x && _p.y === _p$2.y) {
-      return _M0MP35kokic6kwiver6engine3Arc39intersections__with__rounded__rectangle(_M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6394, chord, true, loop_radius, angle), rect, permit_containment);
+      return _M0MP35kokic6kwiver6engine3Arc39intersections__with__rounded__rectangle(_M0MP35kokic6kwiver6engine3Arc3new(_M0MP35kokic6kwiver6engine5Point4zeroN6recordS6470, chord, true, loop_radius, angle), rect, permit_containment);
     } else {
       return _M0MP35kokic6kwiver6engine3Arc39intersections__with__rounded__rectangle(_M0MP35kokic6kwiver8geometry15ArrowCurveModel26arc__for__chord__at__angle(self, chord, loop_radius, angle), rect, permit_containment);
     }
@@ -29140,10 +29256,10 @@ function _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(root, ke
       const _x = _Some;
       switch (_x.$tag) {
         case 1: {
-          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2001;
+          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2030;
         }
         case 2: {
-          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2002;
+          return _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__boolN6constrS2031;
         }
         default: {
           break _L;
@@ -29232,7 +29348,7 @@ function _M0FP35kokic6kwiver7runtime49runtime__dispatch__fletcher__options__from
 }
 function _M0FP35kokic6kwiver7runtime50runtime__dispatch__fletcher__settings__from__input(input) {
   const settings_input = _M0FP35kokic6kwiver7runtime42runtime__dispatch__object__field__or__self(input, "settings");
-  const defaults = _M0MP35kokic6kwiver6engine22FletcherExportSettings7defaultN6recordS6393;
+  const defaults = _M0MP35kokic6kwiver6engine22FletcherExportSettings7defaultN6recordS6469;
   return _M0MP35kokic6kwiver6engine22FletcherExportSettings29with__centre__diagram_2einner(defaults, _M0FP35kokic6kwiver7runtime37runtime__dispatch__bool__from__object(settings_input, "centre_diagram", defaults.centre_diagram));
 }
 function _M0FP35kokic6kwiver7runtime45runtime__dispatch__html__options__from__input(input) {
@@ -29629,7 +29745,7 @@ function _M0FP35kokic6kwiver7runtime45runtime__dispatch__tikz__options__from__in
       case 6: {
         const _Object = _x;
         const _sep_input = _Object._0;
-        let sep = _M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6391;
+        let sep = _M0MP35kokic6kwiver6engine16TikzCdSepOptions7defaultN6recordS6467;
         let has_sep_override = false;
         const _bind$5 = _M0FP35kokic6kwiver7runtime35runtime__dispatch__optional__double(_sep_input, "em");
         let _bind$6;
@@ -29753,7 +29869,7 @@ function _M0FP35kokic6kwiver7runtime45runtime__dispatch__tikz__options__from__in
 }
 function _M0FP35kokic6kwiver7runtime46runtime__dispatch__tikz__settings__from__input(input) {
   const settings_input = _M0FP35kokic6kwiver7runtime42runtime__dispatch__object__field__or__self(input, "settings");
-  const defaults = _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6392;
+  const defaults = _M0MP35kokic6kwiver6engine20TikzCdExportSettings7defaultN6recordS6468;
   return _M0MP35kokic6kwiver6engine20TikzCdExportSettings24with__standalone_2einner(_M0MP35kokic6kwiver6engine20TikzCdExportSettings21with__cramped_2einner(_M0MP35kokic6kwiver6engine20TikzCdExportSettings36with__ampersand__replacement_2einner(_M0MP35kokic6kwiver6engine20TikzCdExportSettings29with__centre__diagram_2einner(defaults, _M0FP35kokic6kwiver7runtime37runtime__dispatch__bool__from__object(settings_input, "centre_diagram", defaults.centre_diagram)), _M0FP35kokic6kwiver7runtime37runtime__dispatch__bool__from__object(settings_input, "ampersand_replacement", defaults.ampersand_replacement)), _M0FP35kokic6kwiver7runtime37runtime__dispatch__bool__from__object(settings_input, "cramped", defaults.cramped)), _M0FP35kokic6kwiver7runtime37runtime__dispatch__bool__from__object(settings_input, "standalone", defaults.standalone));
 }
 function _M0FP35kokic6kwiver7runtime45runtime__dispatch__error__message__from__json(value) {
@@ -29803,13 +29919,13 @@ function _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__message(
         if (_x.$tag === 2) {
           const _bind$2 = _M0MPB3Map3getGsRPB4JsonE(_root, "error");
           if (_bind$2 === undefined) {
-            return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2004;
+            return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2033;
           } else {
             const _Some$2 = _bind$2;
             const _raw_error = _Some$2;
             const _bind$3 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__error__message__from__json(_raw_error);
             if (_bind$3 === undefined) {
-              return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2003;
+              return _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__messageN6constrS2032;
             } else {
               const _Some$3 = _bind$3;
               const _message = _Some$3;
@@ -30751,6 +30867,41 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime26patch__edge__options__json
   const _bind$4 = [_tmp, { _0: "payload", _1: new _M0DTPB4Json6String(_p$2) }];
   const _p$3 = _M0MPB3Map11from__arrayGsRPB4JsonE(new _M0TPB9ArrayViewGUsRPB4JsonEE(_bind$4, 0, 2));
   return new _M0DTPC16result6ResultGsRPC15error5ErrorE2Ok(_M0MPC14json4Json17stringify_2einner(new _M0DTPB4Json6Object(_p$3), false, 0, undefined));
+}
+function _M0FP35kokic6kwiver7runtime39runtime__preview__reconnect__plan__json(plan) {
+  const edges = [];
+  const _bind = plan.edges;
+  const _bind$2 = _bind.length;
+  let _tmp = 0;
+  while (true) {
+    const _ = _tmp;
+    if (_ < _bind$2) {
+      const edge = _bind[_];
+      _M0MPC15array5Array4pushGRP35kokic6kwiver6engine5PointE(edges, _M0FP35kokic6kwiver7runtime25runtime__cell__data__json(new _M0DTP35kokic6kwiver6engine8CellData4Edge(edge)));
+      _tmp = _ + 1 | 0;
+      continue;
+    } else {
+      break;
+    }
+  }
+  const _p = plan.edge_id + 0;
+  const _p$2 = undefined;
+  const _bind$3 = [{ _0: "edge_id", _1: new _M0DTPB4Json6Number(_p, _p$2) }, { _0: "edges", _1: new _M0DTPB4Json5Array(edges) }];
+  const _p$3 = _M0MPB3Map11from__arrayGsRPB4JsonE(new _M0TPB9ArrayViewGUsRPB4JsonEE(_bind$3, 0, 2));
+  return new _M0DTPB4Json6Object(_p$3);
+}
+function _M0MP35kokic6kwiver7runtime14BrowserRuntime24preview__reconnect__plan(self, edge_id, source_id, target_id) {
+  return _M0FP35kokic6kwiver6engine38ffi__adapter__preview__reconnect__plan(self.adapter, edge_id, source_id, target_id);
+}
+function _M0MP35kokic6kwiver7runtime14BrowserRuntime30preview__reconnect__plan__json(self, edge_id, source_id, target_id) {
+  const _bind = _M0MP35kokic6kwiver7runtime14BrowserRuntime24preview__reconnect__plan(self, edge_id, source_id, target_id);
+  if (_bind === undefined) {
+    return _M0MPC14json4Json17stringify_2einner(_M0DTPB4Json4Null__, false, 0, undefined);
+  } else {
+    const _Some = _bind;
+    const _plan = _Some;
+    return _M0MPC14json4Json17stringify_2einner(_M0FP35kokic6kwiver7runtime39runtime__preview__reconnect__plan__json(_plan), false, 0, undefined);
+  }
 }
 function _M0MP35kokic6kwiver7runtime14BrowserRuntime21reconnect__edge__json(self, input_json) {
   return _M0FP35kokic6kwiver6engine35ffi__adapter__reconnect__edge__json(self.adapter, input_json);
@@ -31751,7 +31902,7 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
       result = _M0FP35kokic6kwiver7runtime25browser__int__array__json(_M0MP35kokic6kwiver7runtime14BrowserRuntime33transitive__reverse__dependencies(self, roots$2));
       break;
     }
-    case "connected_components_json": {
+    case "preview_reconnect_plan_json": {
       const _bind$110 = _M0FP35kokic6kwiver7runtime32runtime__dispatch__input__object(root);
       let input$6;
       if (_bind$110.$tag === 1) {
@@ -31760,37 +31911,31 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
       } else {
         return _bind$110;
       }
-      const _bind$111 = _M0FPC14json10from__jsonGRPB5ArrayGiEE(_M0FP35kokic6kwiver7runtime30browser__json__required__field(input$6, "roots"), undefined);
-      let roots$3;
+      const _bind$111 = _M0FPC14json10from__jsonGiE(_M0FP35kokic6kwiver7runtime30browser__json__required__field(input$6, "edge_id"), undefined);
+      let edge_id;
       if (_bind$111.$tag === 1) {
         const _ok = _bind$111;
-        roots$3 = _ok._0;
+        edge_id = _ok._0;
       } else {
         return _bind$111;
       }
-      result = _M0FP35kokic6kwiver7runtime25browser__int__array__json(_M0MP35kokic6kwiver7runtime14BrowserRuntime21connected__components(self, roots$3));
-      break;
-    }
-    case "render_tikz_json": {
-      const input$7 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
-      const settings = _M0FP35kokic6kwiver7runtime46runtime__dispatch__tikz__settings__from__input(input$7);
-      const _bind$112 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__tikz__options__from__input(input$7);
-      let options;
+      const _bind$112 = _M0FPC14json10from__jsonGiE(_M0FP35kokic6kwiver7runtime30browser__json__required__field(input$6, "source_id"), undefined);
+      let source_id;
       if (_bind$112.$tag === 1) {
         const _ok = _bind$112;
-        options = _ok._0;
+        source_id = _ok._0;
       } else {
         return _bind$112;
       }
-      const _bind$113 = _M0FP35kokic6kwiver7runtime49runtime__dispatch__tikz__definitions__from__input(input$7);
-      let definitions;
+      const _bind$113 = _M0FPC14json10from__jsonGiE(_M0FP35kokic6kwiver7runtime30browser__json__required__field(input$6, "target_id"), undefined);
+      let target_id;
       if (_bind$113.$tag === 1) {
         const _ok = _bind$113;
-        definitions = _ok._0;
+        target_id = _ok._0;
       } else {
         return _bind$113;
       }
-      const _bind$114 = _M0MP35kokic6kwiver7runtime14BrowserRuntime26render__tikz__json_2einner(self, settings, options, definitions);
+      const _bind$114 = _M0MP35kokic6kwiver7runtime14BrowserRuntime30preview__reconnect__plan__json(self, edge_id, source_id, target_id);
       const _bind$115 = _M0FPC14json13parse_2einner(new _M0TPC16string10StringView(_bind$114, 0, _bind$114.length), 1024);
       let _tmp$31;
       if (_bind$115.$tag === 1) {
@@ -31802,24 +31947,75 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
       result = _tmp$31;
       break;
     }
-    case "render_fletcher": {
+    case "connected_components_json": {
+      const _bind$116 = _M0FP35kokic6kwiver7runtime32runtime__dispatch__input__object(root);
+      let input$7;
+      if (_bind$116.$tag === 1) {
+        const _ok = _bind$116;
+        input$7 = _ok._0;
+      } else {
+        return _bind$116;
+      }
+      const _bind$117 = _M0FPC14json10from__jsonGRPB5ArrayGiEE(_M0FP35kokic6kwiver7runtime30browser__json__required__field(input$7, "roots"), undefined);
+      let roots$3;
+      if (_bind$117.$tag === 1) {
+        const _ok = _bind$117;
+        roots$3 = _ok._0;
+      } else {
+        return _bind$117;
+      }
+      result = _M0FP35kokic6kwiver7runtime25browser__int__array__json(_M0MP35kokic6kwiver7runtime14BrowserRuntime21connected__components(self, roots$3));
+      break;
+    }
+    case "render_tikz_json": {
       const input$8 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
-      const settings$2 = _M0FP35kokic6kwiver7runtime50runtime__dispatch__fletcher__settings__from__input(input$8);
-      const options$2 = _M0FP35kokic6kwiver7runtime49runtime__dispatch__fletcher__options__from__input(input$8);
+      const settings = _M0FP35kokic6kwiver7runtime46runtime__dispatch__tikz__settings__from__input(input$8);
+      const _bind$118 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__tikz__options__from__input(input$8);
+      let options;
+      if (_bind$118.$tag === 1) {
+        const _ok = _bind$118;
+        options = _ok._0;
+      } else {
+        return _bind$118;
+      }
+      const _bind$119 = _M0FP35kokic6kwiver7runtime49runtime__dispatch__tikz__definitions__from__input(input$8);
+      let definitions;
+      if (_bind$119.$tag === 1) {
+        const _ok = _bind$119;
+        definitions = _ok._0;
+      } else {
+        return _bind$119;
+      }
+      const _bind$120 = _M0MP35kokic6kwiver7runtime14BrowserRuntime26render__tikz__json_2einner(self, settings, options, definitions);
+      const _bind$121 = _M0FPC14json13parse_2einner(new _M0TPC16string10StringView(_bind$120, 0, _bind$120.length), 1024);
+      let _tmp$32;
+      if (_bind$121.$tag === 1) {
+        const _ok = _bind$121;
+        _tmp$32 = _ok._0;
+      } else {
+        return _bind$121;
+      }
+      result = _tmp$32;
+      break;
+    }
+    case "render_fletcher": {
+      const input$9 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
+      const settings$2 = _M0FP35kokic6kwiver7runtime50runtime__dispatch__fletcher__settings__from__input(input$9);
+      const options$2 = _M0FP35kokic6kwiver7runtime49runtime__dispatch__fletcher__options__from__input(input$9);
       const _p$3 = _M0MP35kokic6kwiver7runtime14BrowserRuntime24render__fletcher_2einner(self, settings$2, options$2);
       result = new _M0DTPB4Json6String(_p$3);
       break;
     }
     case "render_html_embed": {
-      const input$9 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
-      const options$3 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__html__options__from__input(input$9);
-      const _bind$116 = _M0FP35kokic6kwiver7runtime46runtime__dispatch__html__settings__from__input(input$9, options$3);
+      const input$10 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
+      const options$3 = _M0FP35kokic6kwiver7runtime45runtime__dispatch__html__options__from__input(input$10);
+      const _bind$122 = _M0FP35kokic6kwiver7runtime46runtime__dispatch__html__settings__from__input(input$10, options$3);
       let settings$3;
-      if (_bind$116.$tag === 1) {
-        const _ok = _bind$116;
+      if (_bind$122.$tag === 1) {
+        const _ok = _bind$122;
         settings$3 = _ok._0;
       } else {
-        return _bind$116;
+        return _bind$122;
       }
       const _p$4 = _M0MP35kokic6kwiver7runtime14BrowserRuntime27render__html__embed_2einner(self, settings$3, options$3);
       result = new _M0DTPB4Json6String(_p$4);
@@ -31836,14 +32032,14 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
       break;
     }
     case "export_selection": {
-      const input$10 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
-      const _bind$117 = _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(input$10, "include_dependencies");
+      const input$11 = _M0FP35kokic6kwiver7runtime43runtime__dispatch__input__object__or__empty(root);
+      const _bind$123 = _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(input$11, "include_dependencies");
       let include_dependencies;
-      if (_bind$117 === -1) {
-        const _bind$118 = _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(root, "include_dependencies");
-        include_dependencies = _bind$118 === -1 ? true : _bind$118;
+      if (_bind$123 === -1) {
+        const _bind$124 = _M0FP35kokic6kwiver7runtime33runtime__dispatch__optional__bool(root, "include_dependencies");
+        include_dependencies = _bind$124 === -1 ? true : _bind$124;
       } else {
-        include_dependencies = _bind$117;
+        include_dependencies = _bind$123;
       }
       const _p$7 = _M0MP35kokic6kwiver7runtime14BrowserRuntime25export__selection_2einner(self, include_dependencies);
       result = new _M0DTPB4Json6String(_p$7);
@@ -31851,37 +32047,37 @@ function _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__json(self, actio
     }
     default: {
       ok = false;
-      error = _M0MPC15array5Array4joinGsE(["unknown runtime dispatch action: ", action], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758, 0, _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1758.length));
+      error = _M0MPC15array5Array4joinGsE(["unknown runtime dispatch action: ", action], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1786, 0, _M0MP35kokic6kwiver7runtime14BrowserRuntime14dispatch__jsonN7_2abindS1786.length));
     }
   }
   if (ok && _M0FP35kokic6kwiver7runtime27runtime__is__import__action(action)) {
-    const _bind$118 = _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__message(result);
-    if (_bind$118 === undefined) {
+    const _bind$124 = _M0FP35kokic6kwiver7runtime41runtime__import__result__failure__message(result);
+    if (_bind$124 === undefined) {
     } else {
-      const _Some = _bind$118;
+      const _Some = _bind$124;
       const _message = _Some;
       ok = false;
       error = _message;
     }
   }
   const _p$8 = ok;
-  const _tmp$32 = { _0: "ok", _1: _p$8 ? _M0DTPB4Json4True__ : _M0DTPB4Json5False__ };
-  const _tmp$33 = { _0: "action", _1: new _M0DTPB4Json6String(action) };
-  const _tmp$34 = { _0: "result", _1: result };
+  const _tmp$33 = { _0: "ok", _1: _p$8 ? _M0DTPB4Json4True__ : _M0DTPB4Json5False__ };
+  const _tmp$34 = { _0: "action", _1: new _M0DTPB4Json6String(action) };
+  const _tmp$35 = { _0: "result", _1: result };
   const _p$9 = _M0MP35kokic6kwiver7runtime14BrowserRuntime15export__payload(self);
-  const _tmp$35 = { _0: "payload", _1: new _M0DTPB4Json6String(_p$9) };
-  const _tmp$36 = { _0: "selection", _1: _M0FP35kokic6kwiver7runtime25browser__int__array__json(_M0MP35kokic6kwiver7runtime14BrowserRuntime9selection(self)) };
-  const _bind$118 = error;
-  let _tmp$37;
-  if (_bind$118 === undefined) {
-    _tmp$37 = _M0DTPB4Json4Null__;
+  const _tmp$36 = { _0: "payload", _1: new _M0DTPB4Json6String(_p$9) };
+  const _tmp$37 = { _0: "selection", _1: _M0FP35kokic6kwiver7runtime25browser__int__array__json(_M0MP35kokic6kwiver7runtime14BrowserRuntime9selection(self)) };
+  const _bind$124 = error;
+  let _tmp$38;
+  if (_bind$124 === undefined) {
+    _tmp$38 = _M0DTPB4Json4Null__;
   } else {
-    const _Some = _bind$118;
+    const _Some = _bind$124;
     const _message = _Some;
-    _tmp$37 = new _M0DTPB4Json6String(_message);
+    _tmp$38 = new _M0DTPB4Json6String(_message);
   }
-  const _bind$119 = [_tmp$32, _tmp$33, _tmp$34, _tmp$35, _tmp$36, { _0: "error", _1: _tmp$37 }];
-  const _p$10 = _M0MPB3Map11from__arrayGsRPB4JsonE(new _M0TPB9ArrayViewGUsRPB4JsonEE(_bind$119, 0, 6));
+  const _bind$125 = [_tmp$33, _tmp$34, _tmp$35, _tmp$36, _tmp$37, { _0: "error", _1: _tmp$38 }];
+  const _p$10 = _M0MPB3Map11from__arrayGsRPB4JsonE(new _M0TPB9ArrayViewGUsRPB4JsonEE(_bind$125, 0, 6));
   return new _M0DTPC16result6ResultGsRPC15error5ErrorE2Ok(_M0MPC14json4Json17stringify_2einner(new _M0DTPB4Json6Object(_p$10), false, 0, undefined));
 }
 function _M0MP35kokic6kwiver7runtime14BrowserRuntime20dispatch__json__safe(self, action_json) {
@@ -32051,7 +32247,7 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
   let protocol_error = undefined;
   const _bind = _M0FP35kokic6kwiver7runtime28runtime__parse__json__object(command_json);
   if (_bind === undefined) {
-    protocol_error = _M0MPC15array5Array4joinGsE(["malformed command envelope: expected protocol ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1871.length));
+    protocol_error = _M0MPC15array5Array4joinGsE(["malformed command envelope: expected protocol ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1900, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1900.length));
   } else {
     const _Some = _bind;
     const _command_root = _Some;
@@ -32060,12 +32256,12 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
     requested_action = _M0FP35kokic6kwiver7runtime25runtime__json__string__or(_command_root, "action", requested_action);
     const _bind$2 = _M0FP35kokic6kwiver7runtime31runtime__json__optional__string(_command_root, "protocol");
     if (_bind$2 === undefined) {
-      protocol_error = _M0MPC15array5Array4joinGsE(["missing command protocol: expected ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1865.length));
+      protocol_error = _M0MPC15array5Array4joinGsE(["missing command protocol: expected ", protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1894, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1894.length));
     } else {
       const _Some$2 = _bind$2;
       const _requested_protocol = _Some$2;
       if (!(_requested_protocol === protocol)) {
-        protocol_error = _M0MPC15array5Array4joinGsE(["command protocol mismatch: expected ", protocol, ", got ", _requested_protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1864.length));
+        protocol_error = _M0MPC15array5Array4joinGsE(["command protocol mismatch: expected ", protocol, ", got ", _requested_protocol], new _M0TPC16string10StringView(_M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1893, 0, _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN7_2abindS1893.length));
       }
     }
   }
@@ -32083,7 +32279,7 @@ function _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jso
   let ok = false;
   let action = requested_action;
   let result = _M0DTPB4Json4Null__;
-  let error = _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2005;
+  let error = _M0MP35kokic6kwiver7runtime18BrowserDemoSession23dispatch__command__jsonN6constrS2034;
   const _bind$3 = _M0FP35kokic6kwiver7runtime28runtime__parse__json__object(dispatch_output);
   if (_bind$3 === undefined) {
   } else {
@@ -32230,7 +32426,7 @@ function _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokens(csv) {
   if (csv === "") {
     return tokens;
   }
-  const _it = _M0MPC16string6String5split(csv, new _M0TPC16string10StringView(_M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974, 0, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS1974.length));
+  const _it = _M0MPC16string6String5split(csv, new _M0TPC16string10StringView(_M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS2003, 0, _M0FP35kokic6kwiver7runtime29runtime__arrow__style__tokensN7_2abindS2003.length));
   while (true) {
     const _bind = _M0MPB4Iter4nextGRPC16string10StringViewE(_it);
     if (_bind === undefined) {

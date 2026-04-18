@@ -235,6 +235,7 @@ function testQueryAndSelectionPaths(bridge) {
     kwiver_bridge_dependencies,
     kwiver_bridge_export_selection,
     kwiver_bridge_paste_selection_json,
+    kwiver_bridge_preview_reconnect_plan,
     kwiver_bridge_reset,
     kwiver_bridge_set_selection,
     kwiver_bridge_transitive_dependencies,
@@ -274,6 +275,21 @@ function testQueryAndSelectionPaths(bridge) {
   );
   assertIntegerIdList(transitive, "query_selection transitive_dependencies");
   assert.equal(transitive.includes(1), true, "query_selection transitive_dependencies: expected root id");
+
+  const previewPlan = kwiver_bridge_preview_reconnect_plan(
+    3,
+    2,
+    1,
+    "ui.test.non_mock.query_selection.preview_reconnect_plan",
+  );
+  assert.equal(typeof previewPlan, "object");
+  assert.equal(previewPlan?.edge_id, 3);
+  assert.equal(Array.isArray(previewPlan?.edges), true);
+  assert.equal(
+    previewPlan.edges.some((edge) => Number(edge?.id) === 3),
+    true,
+    "query_selection preview_reconnect_plan: expected root edge record",
+  );
 
   const setSelectionEnvelope = kwiver_bridge_set_selection(
     [1, 3],

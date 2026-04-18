@@ -2157,6 +2157,16 @@ pub fn QuiverUiAdapter::connected_components(
 }
 
 ///|
+pub fn QuiverUiAdapter::preview_reconnect_plan(
+  self : QuiverUiAdapter,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> QuiverReconnectPreviewPlan? {
+  self.quiver.preview_reconnect_plan(edge_id, source_id, target_id)
+}
+
+///|
 pub fn QuiverUiAdapter::export_base64_state(self : QuiverUiAdapter) -> String {
   self.quiver.export_base64_v0()
 }
@@ -2678,6 +2688,16 @@ pub fn ffi_adapter_connected_components(
   roots : Array[Int],
 ) -> Array[Int] {
   adapter.connected_components(roots)
+}
+
+///|
+pub fn ffi_adapter_preview_reconnect_plan(
+  adapter : QuiverUiAdapter,
+  edge_id : Int,
+  source_id : Int,
+  target_id : Int,
+) -> QuiverReconnectPreviewPlan? {
+  adapter.preview_reconnect_plan(edge_id, source_id, target_id)
 }
 
 ///|
