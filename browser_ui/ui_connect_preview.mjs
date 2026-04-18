@@ -12,12 +12,11 @@ class ConnectPreview {
     }
 
     committed_level_of(cell, runtime_by_id = null) {
-        if (cell?.is_vertex?.() || cell?.is_edge?.()) {
-            const runtime_level = this.ui?.kwiver_runtime_cell_level?.(cell, runtime_by_id);
-            return Number.isInteger(runtime_level) ? runtime_level : null;
+        if (!cell?.is_vertex?.() && !cell?.is_edge?.()) {
+            return null;
         }
-        const level = Number(cell?.kwiver_projection_level?.());
-        return Number.isInteger(level) ? level : null;
+        const runtime_level = this.ui?.kwiver_runtime_cell_level?.(cell, runtime_by_id);
+        return Number.isInteger(runtime_level) ? runtime_level : null;
     }
 
     committed_edge_options(edge, runtime_by_id = null) {

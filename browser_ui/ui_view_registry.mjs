@@ -16,13 +16,13 @@ class ViewRegistry {
         return Number.isInteger(level) ? level : null;
     }
 
-    projection_level_of(cell) {
-        const level = Number(cell?.kwiver_projection_level?.());
+    render_level_of(cell) {
+        const level = Number(cell?.kwiver_render_level?.());
         return Number.isInteger(level) ? level : null;
     }
 
     add(cell, level = null) {
-        const resolved_level = Number.isInteger(level) ? level : this.projection_level_of(cell);
+        const resolved_level = Number.isInteger(level) ? level : this.render_level_of(cell);
         if (!Number.isInteger(resolved_level)) {
             return;
         }
