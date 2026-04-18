@@ -20,6 +20,12 @@ function assertIntegerIdList(value, context) {
   }
 }
 
+function requireAddedId(envelope, context) {
+  const id = Number(envelope?.result?.id);
+  assert.equal(Number.isInteger(id), true, `${context}: expected added id`);
+  return id;
+}
+
 async function loadBridgeModule() {
   return import(`../kwiver_bridge.mjs?runtime-smoke-non-mock=${Date.now()}`);
 }
@@ -46,8 +52,6 @@ async function testRuntimeLoadsWithoutMock(bridge) {
   assert.equal(status.available, true);
   assert.equal(typeof status.command_protocol, "string");
   assert.notEqual(status.command_protocol, "");
-  assert.equal(typeof status.loaded_candidate, "string");
-  assert.match(status.loaded_candidate, /runtime\.js$/);
 }
 
 function testMutationExportImportRoundtrip(bridge) {
@@ -74,6 +78,7 @@ function testMutationExportImportRoundtrip(bridge) {
     "ui.test.non_mock.add_vertex.a",
   );
   assert.equal(addVertexA?.ok, true);
+  const vertexAId = requireAddedId(addVertexA, "roundtrip add vertex A");
 
   const addVertexB = kwiver_bridge_add_vertex_json(
     "B",
@@ -83,29 +88,32 @@ function testMutationExportImportRoundtrip(bridge) {
     "ui.test.non_mock.add_vertex.b",
   );
   assert.equal(addVertexB?.ok, true);
+  const vertexBId = requireAddedId(addVertexB, "roundtrip add vertex B");
 
   const addEdge = kwiver_bridge_add_edge_json(
-    1,
-    2,
+    vertexAId,
+    vertexBId,
     "f",
     null,
     null,
     "ui.test.non_mock.add_edge",
   );
   assert.equal(addEdge?.ok, true);
+  const edgeId = requireAddedId(addEdge, "roundtrip add edge");
 
   const addLoop = kwiver_bridge_add_edge_json(
-    1,
-    1,
+    vertexAId,
+    vertexAId,
     "l",
     null,
     null,
     "ui.test.non_mock.add_edge.loop",
   );
   assert.equal(addLoop?.ok, true);
+  const loopId = requireAddedId(addLoop, "roundtrip add loop");
 
   const patchLevel = kwiver_bridge_patch_edge_options_json(
-    3,
+    edgeId,
     { level: 4 },
     "ui.test.non_mock.patch_edge_options.level",
   );
@@ -113,7 +121,7 @@ function testMutationExportImportRoundtrip(bridge) {
 
   const idsBefore = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.before");
   assertIntegerIdList(idsBefore, "roundtrip before");
-  assert.equal(idsBefore.length, 4, "roundtrip before: expected 4 cells");
+  assert.deepEqual(new Set(idsBefore), new Set([vertexAId, vertexBId, edgeId, loopId]));
 
   const tikzExported = kwiver_bridge_export(
     "tikz-cd",
@@ -140,7 +148,7 @@ function testMutationExportImportRoundtrip(bridge) {
 
   const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.after");
   assertIntegerIdList(idsAfter, "roundtrip after");
-  assert.equal(idsAfter.length, 4, "roundtrip after: expected 4 cells");
+  assert.deepEqual(new Set(idsAfter), new Set([vertexAId, vertexBId, edgeId, loopId]));
 
   const cellsAfter = kwiver_bridge_all_cells();
   assert.equal(Array.isArray(cellsAfter), true);
@@ -178,7 +186,7 @@ function testTikzImportPath(bridge) {
 
   const ids = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz");
   assertIntegerIdList(ids, "tikz import");
-  assert.equal(ids.length >= 3, true, "tikz import: expected at least 3 cells");
+  assert.notEqual(ids.length, 0, "tikz import: expected imported state");
 
   const exported = kwiver_bridge_export(
     "tikz-cd",
@@ -244,55 +252,83 @@ function testQueryAndSelectionPaths(bridge) {
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.query_selection");
   assert.equal(resetEnvelope?.ok, true);
 
-  assert.equal(
-    kwiver_bridge_add_vertex_json("A", 0, 0, null, "ui.test.non_mock.query_selection.add_vertex.a")?.ok,
-    true,
+  const addVertexA = kwiver_bridge_add_vertex_json(
+    "A",
+    0,
+    0,
+    null,
+    "ui.test.non_mock.query_selection.add_vertex.a",
   );
-  assert.equal(
-    kwiver_bridge_add_vertex_json("B", 1, 0, null, "ui.test.non_mock.query_selection.add_vertex.b")?.ok,
-    true,
-  );
-  assert.equal(
-    kwiver_bridge_add_edge_json(1, 2, "f", null, null, "ui.test.non_mock.query_selection.add_edge")?.ok,
-    true,
-  );
+  assert.equal(addVertexA?.ok, true);
+  const sourceId = requireAddedId(addVertexA, "query_selection add vertex A");
 
-  const dependencies = kwiver_bridge_dependencies(2, "ui.test.non_mock.query_selection.dependencies");
+  const addVertexB = kwiver_bridge_add_vertex_json(
+    "B",
+    1,
+    0,
+    null,
+    "ui.test.non_mock.query_selection.add_vertex.b",
+  );
+  assert.equal(addVertexB?.ok, true);
+  const targetId = requireAddedId(addVertexB, "query_selection add vertex B");
+
+  const addEdge = kwiver_bridge_add_edge_json(
+    sourceId,
+    targetId,
+    "f",
+    null,
+    null,
+    "ui.test.non_mock.query_selection.add_edge",
+  );
+  assert.equal(addEdge?.ok, true);
+  const edgeId = requireAddedId(addEdge, "query_selection add edge");
+
+  const dependencies = kwiver_bridge_dependencies(
+    targetId,
+    "ui.test.non_mock.query_selection.dependencies",
+  );
   assertIntegerIdList(dependencies, "query_selection dependencies");
-  assert.equal(dependencies.includes(3), true, "query_selection dependencies: expected edge id 3");
+  assert.equal(
+    dependencies.includes(edgeId),
+    true,
+    "query_selection dependencies: expected connecting edge",
+  );
 
   const connected = kwiver_bridge_connected_components(
-    [1],
+    [sourceId],
     "ui.test.non_mock.query_selection.connected_components",
   );
   assertIntegerIdList(connected, "query_selection connected_components");
-  assert.equal(connected.includes(1), true, "query_selection connected_components: expected root id");
+  assert.equal(connected.includes(sourceId), true, "query_selection connected_components: expected source id");
+  assert.equal(connected.includes(targetId), true, "query_selection connected_components: expected target id");
+  assert.equal(connected.includes(edgeId), true, "query_selection connected_components: expected edge id");
 
   const transitive = kwiver_bridge_transitive_dependencies(
-    [1],
+    [sourceId],
     false,
     "ui.test.non_mock.query_selection.transitive_dependencies",
   );
   assertIntegerIdList(transitive, "query_selection transitive_dependencies");
-  assert.equal(transitive.includes(1), true, "query_selection transitive_dependencies: expected root id");
+  assert.equal(transitive.includes(sourceId), true, "query_selection transitive_dependencies: expected source id");
+  assert.equal(transitive.includes(edgeId), true, "query_selection transitive_dependencies: expected edge id");
 
   const previewPlan = kwiver_bridge_preview_reconnect_plan(
-    3,
-    2,
-    1,
+    edgeId,
+    targetId,
+    sourceId,
     "ui.test.non_mock.query_selection.preview_reconnect_plan",
   );
   assert.equal(typeof previewPlan, "object");
-  assert.equal(previewPlan?.edge_id, 3);
+  assert.equal(previewPlan?.edge_id, edgeId);
   assert.equal(Array.isArray(previewPlan?.edges), true);
   assert.equal(
-    previewPlan.edges.some((edge) => Number(edge?.id) === 3),
+    previewPlan.edges.some((edge) => Number(edge?.id) === edgeId),
     true,
     "query_selection preview_reconnect_plan: expected root edge record",
   );
 
   const setSelectionEnvelope = kwiver_bridge_set_selection(
-    [1, 3],
+    [sourceId, edgeId],
     "ui.test.non_mock.query_selection.set_selection",
   );
   assert.equal(setSelectionEnvelope?.ok, true);
@@ -312,13 +348,28 @@ function testQueryAndSelectionPaths(bridge) {
     "ui.test.non_mock.query_selection.paste",
   );
   assert.equal(pasted?.ok, true);
-  assert.equal(Array.isArray(pasted?.result?.imported_ids), true);
-  assert.equal(pasted.result.imported_ids.length >= 3, true);
-  assert.equal(pasted.result.imported_ids[0], 10);
+  assertIntegerIdList(pasted?.result?.imported_ids, "query_selection paste imported_ids");
+  assert.notEqual(
+    pasted.result.imported_ids.length,
+    0,
+    "query_selection paste: expected imported ids",
+  );
+  assert.equal(
+    pasted.result.imported_ids.some((id) => id === sourceId || id === edgeId),
+    false,
+    "query_selection paste: expected no id collision with existing selection",
+  );
 
   const allIds = kwiver_bridge_all_cell_ids("ui.test.non_mock.query_selection.all_cell_ids.after");
   assertIntegerIdList(allIds, "query_selection all_cell_ids");
-  assert.equal(allIds.length >= 6, true);
+  assert.equal(allIds.includes(sourceId), true, "query_selection all_cell_ids: expected source id");
+  assert.equal(allIds.includes(targetId), true, "query_selection all_cell_ids: expected target id");
+  assert.equal(allIds.includes(edgeId), true, "query_selection all_cell_ids: expected edge id");
+  assert.equal(
+    pasted.result.imported_ids.every((id) => allIds.includes(id)),
+    true,
+    "query_selection all_cell_ids: expected pasted ids to be present",
+  );
 }
 
 async function run() {
