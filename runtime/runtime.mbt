@@ -1605,6 +1605,22 @@ pub fn BrowserRuntime::selection_summary_json(
 }
 
 ///|
+pub fn BrowserRuntime::selection_panel_state_json(
+  self : BrowserRuntime,
+  selected_ids : Array[Int],
+) -> String {
+  @engine.ffi_adapter_selection_panel_state_json(self.adapter, selected_ids)
+}
+
+///|
+pub fn BrowserRuntime::selection_toolbar_state_json(
+  self : BrowserRuntime,
+  selected_ids : Array[Int],
+) -> String {
+  @engine.ffi_adapter_selection_toolbar_state_json(self.adapter, selected_ids)
+}
+
+///|
 pub fn BrowserRuntime::dependencies_of(
   self : BrowserRuntime,
   cell_id : Int,
@@ -1665,6 +1681,38 @@ pub fn BrowserRuntime::preview_reconnect_plan_json(
 ) -> String {
   match self.preview_reconnect_plan(edge_id, source_id, target_id) {
     Some(plan) => runtime_preview_reconnect_plan_json(plan).stringify()
+    None => Json::null().stringify()
+  }
+}
+
+///|
+pub fn BrowserRuntime::suggest_edge_options(
+  self : BrowserRuntime,
+  source_id : Int,
+  target_id : Int,
+  default_label_alignment? : String = "left",
+) -> @engine.EdgeOptions? {
+  @engine.ffi_adapter_suggest_edge_options(
+    self.adapter,
+    source_id,
+    target_id,
+    default_label_alignment~,
+  )
+}
+
+///|
+pub fn BrowserRuntime::suggest_edge_options_json(
+  self : BrowserRuntime,
+  source_id : Int,
+  target_id : Int,
+  default_label_alignment? : String = "left",
+) -> String {
+  match self.suggest_edge_options(
+    source_id,
+    target_id,
+    default_label_alignment~,
+  ) {
+    Some(options) => runtime_edge_options_json(options).stringify()
     None => Json::null().stringify()
   }
 }
@@ -2075,6 +2123,20 @@ pub fn BrowserRuntime::dispatch_json(
       )
       result = @json.parse(self.selection_summary_json(roots))
     }
+    "selection_panel_state_json" => {
+      let input = runtime_dispatch_input_object(root)
+      let selected_ids : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "selected_ids"),
+      )
+      result = @json.parse(self.selection_panel_state_json(selected_ids))
+    }
+    "selection_toolbar_state_json" => {
+      let input = runtime_dispatch_input_object(root)
+      let selected_ids : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "selected_ids"),
+      )
+      result = @json.parse(self.selection_toolbar_state_json(selected_ids))
+    }
     "dependencies_of_json" => {
       let input = runtime_dispatch_input_object(root)
       let cell_id : Int = @json.from_json(
@@ -2123,6 +2185,29 @@ pub fn BrowserRuntime::dispatch_json(
       )
       result = @json.parse(
         self.preview_reconnect_plan_json(edge_id, source_id, target_id),
+      )
+    }
+    "suggest_edge_options_json" => {
+      let input = runtime_dispatch_input_object(root)
+      let source_id : Int = @json.from_json(
+        browser_json_required_field(input, "source_id"),
+      )
+      let target_id : Int = @json.from_json(
+        browser_json_required_field(input, "target_id"),
+      )
+      let default_label_alignment = match runtime_dispatch_optional_string(
+        input,
+        "default_label_alignment",
+      ) {
+        Some(value) => value
+        None => "left"
+      }
+      result = @json.parse(
+        self.suggest_edge_options_json(
+          source_id,
+          target_id,
+          default_label_alignment~,
+        ),
       )
     }
     "connected_components_json" => {

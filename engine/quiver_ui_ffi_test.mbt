@@ -44,6 +44,35 @@ test "ui ffi adapter add_edge canonicalises self-loop shape to arc" {
 }
 
 ///|
+test "ui ffi adapter suggests edge options from committed graph semantics" {
+  let adapter = ffi_adapter_new()
+  let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
+  let target_id = ffi_adapter_add_vertex(adapter, "B", 1, 0)
+  let edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+
+  match ffi_adapter_suggest_edge_options(adapter, source_id, target_id) {
+    Some(options) => {
+      inspect(options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(options.offset, content="-3")
+      inspect(options.curve, content="0")
+      inspect(options.level, content="1")
+      inspect(options.shorten.source, content="0")
+      inspect(options.shorten.target, content="0")
+    }
+    None => abort("expected suggested edge options for parallel edge")
+  }
+
+  match ffi_adapter_suggest_edge_options(adapter, edge_id, target_id) {
+    Some(options) => {
+      inspect(options.level, content="2")
+      inspect(options.shorten.source, content="20")
+      inspect(options.shorten.target, content="0")
+    }
+    None => abort("expected suggested edge options for higher edge")
+  }
+}
+
+///|
 test "ui ffi adapter export tikz json wrapper includes metadata contract" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
@@ -1079,6 +1108,10 @@ test "ui ffi adapter snapshot exposes js-friendly model data" {
   inspect(edge.id, content="3")
   inspect(edge.source_id, content="1")
   inspect(edge.target_id, content="2")
+  inspect(edge.source_projection.kind, content="vertex")
+  inspect(edge.source_projection.has_vertex_endpoint, content="false")
+  inspect(edge.target_projection.kind, content="vertex")
+  inspect(edge.target_projection.has_vertex_endpoint, content="false")
   inspect(edge.label, content="f")
   inspect(edge.label_colour.h, content="240")
   inspect(edge.options.label_alignment, content="over")
@@ -1100,11 +1133,17 @@ test "ui ffi adapter snapshot exposes js-friendly model data" {
   inspect(edge.options.style.head.side, content="bottom")
 
   inspect(snapshot.dependencies[0].cell_id, content="1")
-  inspect(snapshot.dependencies[0].dependencies, content="[3]")
-  inspect(snapshot.dependencies[0].reverse_dependencies, content="[]")
+  inspect(snapshot.dependencies[0].dependencies.length(), content="1")
+  inspect(snapshot.dependencies[0].dependencies[0].cell_id, content="3")
+  inspect(snapshot.dependencies[0].dependencies[0].role, content="source")
+  inspect(snapshot.dependencies[0].reverse_dependencies.length(), content="0")
   inspect(snapshot.dependencies[2].cell_id, content="3")
-  inspect(snapshot.dependencies[2].dependencies, content="[]")
-  inspect(snapshot.dependencies[2].reverse_dependencies, content="[1, 2]")
+  inspect(snapshot.dependencies[2].dependencies.length(), content="0")
+  inspect(snapshot.dependencies[2].reverse_dependencies.length(), content="2")
+  inspect(snapshot.dependencies[2].reverse_dependencies[0].cell_id, content="1")
+  inspect(snapshot.dependencies[2].reverse_dependencies[0].role, content="source")
+  inspect(snapshot.dependencies[2].reverse_dependencies[1].cell_id, content="2")
+  inspect(snapshot.dependencies[2].reverse_dependencies[1].role, content="target")
 }
 
 ///|
@@ -1151,6 +1190,17 @@ test "ui ffi adapter snapshot_json returns stable plain json shape" {
   inspect(edge0_source, content="1")
   inspect(edge0_target, content="2")
   inspect(edge0_label, content="f")
+  let edge0_source_projection : Map[String, Json] = @json.from_json(
+    test_json_get(edges[0], "source_projection"),
+  )
+  let edge0_source_projection_kind : String = @json.from_json(
+    test_json_get(edge0_source_projection, "kind"),
+  )
+  let edge0_source_projection_has_vertex_endpoint : Bool = @json.from_json(
+    test_json_get(edge0_source_projection, "has_vertex_endpoint"),
+  )
+  inspect(edge0_source_projection_kind, content="vertex")
+  inspect(edge0_source_projection_has_vertex_endpoint, content="false")
 
   let edge_options : Map[String, Json] = @json.from_json(
     test_json_get(edges[0], "options"),
@@ -1183,18 +1233,32 @@ test "ui ffi adapter snapshot_json returns stable plain json shape" {
     test_json_get(root, "dependencies"),
   )
   inspect(dependencies.length(), content="3")
-  let deps0 : Array[Int] = @json.from_json(
+  let deps0 : Array[Map[String, Json]] = @json.from_json(
     test_json_get(dependencies[0], "dependencies"),
   )
-  let rev_deps2 : Array[Int] = @json.from_json(
+  let rev_deps2 : Array[Map[String, Json]] = @json.from_json(
     test_json_get(dependencies[2], "reverse_dependencies"),
   )
-  inspect(
-    deps0,
-    content="[3]",
+  inspect(deps0.length(), content="1")
+  let deps0_cell_id : Int = @json.from_json(test_json_get(deps0[0], "cell_id"))
+  let deps0_role : String = @json.from_json(test_json_get(deps0[0], "role"))
+  inspect(deps0_cell_id, content="3")
+  inspect(deps0_role, content="source")
+  inspect(rev_deps2.length(), content="2")
+  let rev_deps2_0_cell_id : Int = @json.from_json(
+    test_json_get(rev_deps2[0], "cell_id"),
   )
-  inspect(
-    rev_deps2,
-    content="[1, 2]",
+  let rev_deps2_0_role : String = @json.from_json(
+    test_json_get(rev_deps2[0], "role"),
   )
+  let rev_deps2_1_cell_id : Int = @json.from_json(
+    test_json_get(rev_deps2[1], "cell_id"),
+  )
+  let rev_deps2_1_role : String = @json.from_json(
+    test_json_get(rev_deps2[1], "role"),
+  )
+  inspect(rev_deps2_0_cell_id, content="1")
+  inspect(rev_deps2_0_role, content="source")
+  inspect(rev_deps2_1_cell_id, content="2")
+  inspect(rev_deps2_1_role, content="target")
 }

@@ -36,7 +36,10 @@ import {
   kwiver_bridge_reverse_edge_json,
   kwiver_bridge_reset,
   kwiver_bridge_ready,
+  kwiver_bridge_selection_panel_state,
   kwiver_bridge_selection_summary,
+  kwiver_bridge_selection_toolbar_state,
+  kwiver_bridge_suggest_edge_options,
   kwiver_bridge_set_edge_curve_json,
   kwiver_bridge_set_edge_label_alignment_json,
   kwiver_bridge_set_edge_label_position_json,
@@ -183,13 +186,30 @@ function installRecordingMock(recorder = null) {
                   label_colour: { h: 0, s: 0, l: 0, a: 1 },
                   source_id: 1,
                   target_id: 2,
+                  source_projection: { kind: "vertex", has_vertex_endpoint: false },
+                  target_projection: { kind: "vertex", has_vertex_endpoint: false },
                   options: { shape: "bezier" },
                 },
               ],
               dependencies: [
-                { cell_id: 1, dependencies: [], reverse_dependencies: [3] },
-                { cell_id: 2, dependencies: [3], reverse_dependencies: [] },
-                { cell_id: 3, dependencies: [1, 2], reverse_dependencies: [2] },
+                {
+                  cell_id: 1,
+                  dependencies: [{ cell_id: 3, role: "source" }],
+                  reverse_dependencies: [],
+                },
+                {
+                  cell_id: 2,
+                  dependencies: [{ cell_id: 3, role: "target" }],
+                  reverse_dependencies: [],
+                },
+                {
+                  cell_id: 3,
+                  dependencies: [],
+                  reverse_dependencies: [
+                    { cell_id: 1, role: "source" },
+                    { cell_id: 2, role: "target" },
+                  ],
+                },
               ],
             },
           };
@@ -206,6 +226,62 @@ function installRecordingMock(recorder = null) {
               transitive_reverse_dependency_ids: [1, 2, 3],
             },
           };
+        case "selection_panel_state_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: {
+              selection_size: Array.isArray(command.input?.selected_ids)
+                ? command.input.selected_ids.length
+                : 0,
+              has_selection: true,
+              has_selected_edges: true,
+              has_selected_nonloop_edges: true,
+              has_selected_loop_edges: false,
+              label: "f",
+              label_colour: { h: 240, s: 100, l: 50, a: 1 },
+              edge_angle: 0,
+              label_alignment: "right",
+              label_position: 80,
+              offset: 11,
+              curve: -3,
+              radius: null,
+              angle: null,
+              length: { source: 6, target: 4 },
+              level: 1,
+              edge_type: "arrow",
+              edge_colour: { h: 120, s: 100, l: 25, a: 1 },
+              tail_type: "top-hook",
+              body_type: "solid",
+              head_type: "bottom-harpoon",
+              all_edges_are_arrows: true,
+              corners: 0,
+              inverse_corners: 0,
+              endpoint_positioning_source_visible: false,
+              endpoint_positioning_source_checked: true,
+              endpoint_positioning_target_visible: true,
+              endpoint_positioning_target_checked: false,
+            },
+          };
+        case "selection_toolbar_state_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: {
+              all_cells_count: 3,
+              selected_count: Array.isArray(command.input?.selected_ids)
+                ? command.input.selected_ids.length
+                : 0,
+              has_selection: true,
+              has_any_cells: true,
+              has_vertices: true,
+              can_select_all: true,
+              can_expand_connected: true,
+              can_deselect_all: true,
+              can_delete: true,
+              can_transform: true,
+            },
+          };
         case "preview_reconnect_plan_json":
           return {
             ok: true,
@@ -213,6 +289,32 @@ function installRecordingMock(recorder = null) {
             result: {
               edge_id: 3,
               edges: [{ kind: "edge", id: 3 }],
+            },
+          };
+        case "suggest_edge_options_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: {
+              label_alignment: command.input?.default_label_alignment ?? "left",
+              label_position: 50,
+              offset: -3,
+              curve: 0,
+              radius: 3,
+              angle: 0,
+              shorten_source: 0,
+              shorten_target: 0,
+              level: 1,
+              shape: "bezier",
+              colour: { h: 0, s: 0, l: 0, a: 1 },
+              edge_alignment_source: true,
+              edge_alignment_target: true,
+              style: {
+                name: "arrow",
+                tail: { name: "none", side: "" },
+                body: { name: "cell", side: "" },
+                head: { name: "arrowhead", side: "" },
+              },
             },
           };
         case "export_selection":
@@ -305,6 +407,13 @@ function testInteractionWrappersDispatchRuntimeCommands() {
   );
   assert.equal(Array.isArray(cells), true);
   assert.equal(cells?.length, 3);
+  assert.equal(snapshot?.edges?.[0]?.source_projection?.kind, "vertex");
+  assert.equal(snapshot?.edges?.[0]?.target_projection?.kind, "vertex");
+  assert.deepEqual(snapshot?.dependencies?.[0]?.dependencies, [{ cell_id: 3, role: "source" }]);
+  assert.deepEqual(snapshot?.dependencies?.[2]?.reverse_dependencies, [
+    { cell_id: 1, role: "source" },
+    { cell_id: 2, role: "target" },
+  ]);
 
   const selectionSummary = requireSelectionSummary(
     kwiver_bridge_selection_summary([1], "ui.test.selection_summary"),
@@ -315,6 +424,26 @@ function testInteractionWrappersDispatchRuntimeCommands() {
   assert.deepEqual(selectionSummary.transitive_dependency_ids_excluding_roots, [3]);
   assert.deepEqual(selectionSummary.transitive_reverse_dependency_ids, [1, 2, 3]);
 
+  const selectionPanelState = kwiver_bridge_selection_panel_state(
+    [3],
+    "ui.test.selection_panel_state",
+  );
+  assert.equal(selectionPanelState?.selection_size, 1);
+  assert.equal(selectionPanelState?.has_selected_edges, true);
+  assert.equal(selectionPanelState?.label, "f");
+  assert.deepEqual(selectionPanelState?.length, { source: 6, target: 4 });
+  assert.equal(selectionPanelState?.head_type, "bottom-harpoon");
+  assert.equal(selectionPanelState?.endpoint_positioning_target_checked, false);
+
+  const selectionToolbarState = kwiver_bridge_selection_toolbar_state(
+    [1],
+    "ui.test.selection_toolbar_state",
+  );
+  assert.equal(selectionToolbarState?.all_cells_count, 3);
+  assert.equal(selectionToolbarState?.selected_count, 1);
+  assert.equal(selectionToolbarState?.can_select_all, true);
+  assert.equal(selectionToolbarState?.can_expand_connected, true);
+
   const previewPlan = kwiver_bridge_preview_reconnect_plan(
     3,
     2,
@@ -323,6 +452,16 @@ function testInteractionWrappersDispatchRuntimeCommands() {
   );
   assert.equal(previewPlan?.edge_id, 3);
   assert.equal(Array.isArray(previewPlan?.edges), true);
+
+  const suggestedOptions = kwiver_bridge_suggest_edge_options(
+    1,
+    2,
+    "right",
+    "ui.test.suggest_edge_options",
+  );
+  assert.equal(suggestedOptions?.label_alignment, "right");
+  assert.equal(suggestedOptions?.offset, -3);
+  assert.equal(suggestedOptions?.shape, "bezier");
 
   const setSelectionEnvelope = kwiver_bridge_set_selection([1, 2], "ui.test.selection");
   assert.equal(setSelectionEnvelope?.ok, true);
@@ -804,6 +943,58 @@ function testQueryWrappersRejectMalformedResults() {
               transitive_reverse_dependency_ids: [6],
             },
           };
+        case "selection_panel_state_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: {
+              selection_size: 1,
+              has_selection: true,
+              has_selected_edges: true,
+              has_selected_nonloop_edges: true,
+              has_selected_loop_edges: false,
+              label: "f",
+              label_colour: { h: "bad" },
+              edge_angle: 0,
+              label_alignment: "right",
+              label_position: 80,
+              offset: 11,
+              curve: -3,
+              radius: null,
+              angle: null,
+              length: { source: 6, target: "bad" },
+              level: 1,
+              edge_type: "arrow",
+              edge_colour: { h: 120, s: 100, l: 25, a: 1 },
+              tail_type: "top-hook",
+              body_type: "solid",
+              head_type: "bottom-harpoon",
+              all_edges_are_arrows: true,
+              corners: 0,
+              inverse_corners: 0,
+              endpoint_positioning_source_visible: false,
+              endpoint_positioning_source_checked: true,
+              endpoint_positioning_target_visible: true,
+              endpoint_positioning_target_checked: false,
+            },
+          };
+        case "selection_toolbar_state_json":
+          return {
+            ok: true,
+            protocol: COMMAND_PROTOCOL,
+            result: {
+              all_cells_count: 3,
+              selected_count: 1,
+              has_selection: true,
+              has_any_cells: "bad",
+              has_vertices: true,
+              can_select_all: true,
+              can_expand_connected: true,
+              can_deselect_all: true,
+              can_delete: true,
+              can_transform: true,
+            },
+          };
         default:
           return {
             ok: true,
@@ -830,6 +1021,18 @@ function testQueryWrappersRejectMalformedResults() {
   );
   assert.equal(summary, null);
 
+  const panelState = kwiver_bridge_selection_panel_state(
+    [3],
+    "ui.test.bad.selection_panel_state",
+  );
+  assert.equal(panelState, null);
+
+  const toolbarState = kwiver_bridge_selection_toolbar_state(
+    [1],
+    "ui.test.bad.selection_toolbar_state",
+  );
+  assert.equal(toolbarState, null);
+
   const preview = kwiver_bridge_preview_reconnect_plan(
     3,
     2,
@@ -837,6 +1040,14 @@ function testQueryWrappersRejectMalformedResults() {
     "ui.test.bad.preview_reconnect_plan",
   );
   assert.equal(preview, null);
+
+  const suggested = kwiver_bridge_suggest_edge_options(
+    1,
+    2,
+    "left",
+    "ui.test.bad.suggest_edge_options",
+  );
+  assert.equal(suggested, null);
 }
 
 const TEST_CASES = [

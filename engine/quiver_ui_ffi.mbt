@@ -138,6 +138,18 @@ pub struct QuiverUiEdgeOptionsData {
 }
 
 ///|
+pub struct QuiverUiEdgeEndpointProjectionData {
+  kind : String
+  has_vertex_endpoint : Bool
+}
+
+///|
+pub struct QuiverUiDependencyLinkData {
+  cell_id : Int
+  role : String
+}
+
+///|
 pub struct QuiverUiVertexData {
   id : Int
   level : Int
@@ -155,14 +167,16 @@ pub struct QuiverUiEdgeData {
   label_colour : QuiverUiColourData
   source_id : Int
   target_id : Int
+  source_projection : QuiverUiEdgeEndpointProjectionData
+  target_projection : QuiverUiEdgeEndpointProjectionData
   options : QuiverUiEdgeOptionsData
 }
 
 ///|
 pub struct QuiverUiCellDependenciesData {
   cell_id : Int
-  dependencies : Array[Int]
-  reverse_dependencies : Array[Int]
+  dependencies : Array[QuiverUiDependencyLinkData]
+  reverse_dependencies : Array[QuiverUiDependencyLinkData]
 }
 
 ///|
@@ -296,31 +310,100 @@ fn quiver_ui_sorted_id_remap(remap : Map[Int, Int]) -> Array[QuiverUiIdRemap] {
 }
 
 ///|
-fn quiver_ui_order_dependency_ids(
+fn quiver_ui_dependency_role_name(role : DependencyRole) -> String {
+  match role {
+    DependencyRole::Source => "source"
+    DependencyRole::Target => "target"
+  }
+}
+
+///|
+fn quiver_ui_order_dependency_links(
   quiver : Quiver,
   dependencies : @hashmap.HashMap[Int, DependencyRole],
-) -> Array[Int] {
-  let ordered : Array[Int] = []
+) -> Array[QuiverUiDependencyLinkData] {
+  let ordered : Array[QuiverUiDependencyLinkData] = []
   for cell_id in quiver.all_cell_ids() {
-    if dependencies.contains(cell_id) {
-      ordered.push(cell_id)
+    match dependencies.get(cell_id) {
+      Some(role) => ordered.push({
+        cell_id,
+        role: quiver_ui_dependency_role_name(role),
+      })
+      None => ()
     }
   }
   ordered
 }
 
 ///|
-fn quiver_ui_order_reverse_dependency_ids(
+fn quiver_ui_order_reverse_dependency_links(
   quiver : Quiver,
+  cell_id : Int,
   reverse_dependencies : @hashmap.HashMap[Int, Bool],
-) -> Array[Int] {
-  let ordered : Array[Int] = []
-  for cell_id in quiver.all_cell_ids() {
-    if reverse_dependencies.contains(cell_id) {
-      ordered.push(cell_id)
+) -> Array[QuiverUiDependencyLinkData] {
+  let ordered : Array[QuiverUiDependencyLinkData] = []
+  for reverse_dependency_id in quiver.all_cell_ids() {
+    if reverse_dependencies.contains(reverse_dependency_id) {
+      let role = match quiver.dependencies_of(reverse_dependency_id).get(cell_id) {
+        Some(role) => role
+        None => abort("missing reverse dependency role")
+      }
+      ordered.push({
+        cell_id: reverse_dependency_id,
+        role: quiver_ui_dependency_role_name(role),
+      })
     }
   }
   ordered
+}
+
+///|
+fn quiver_ui_dependency_link_ids(
+  links : Array[QuiverUiDependencyLinkData],
+) -> Array[Int] {
+  let ids : Array[Int] = []
+  for link in links {
+    ids.push(link.cell_id)
+  }
+  ids
+}
+
+///|
+fn quiver_ui_cell_kind_name(cell : CellData) -> String {
+  match cell {
+    CellData::Vertex(_) => "vertex"
+    CellData::Edge(_) => "edge"
+  }
+}
+
+///|
+fn quiver_ui_edge_has_vertex_endpoint(quiver : Quiver, edge : Edge) -> Bool {
+  let source_is_vertex = match quiver.cells.get(edge.source) {
+    Some(CellData::Vertex(_)) => true
+    _ => false
+  }
+  let target_is_vertex = match quiver.cells.get(edge.target) {
+    Some(CellData::Vertex(_)) => true
+    _ => false
+  }
+  source_is_vertex || target_is_vertex
+}
+
+///|
+fn quiver_ui_edge_endpoint_projection_data(
+  quiver : Quiver,
+  cell_id : Int,
+) -> QuiverUiEdgeEndpointProjectionData {
+  match quiver.cells.get(cell_id) {
+    Some(cell) => {
+      let has_vertex_endpoint = match cell {
+        CellData::Edge(edge) => quiver_ui_edge_has_vertex_endpoint(quiver, edge)
+        _ => false
+      }
+      { kind: quiver_ui_cell_kind_name(cell), has_vertex_endpoint }
+    }
+    None => abort("missing edge endpoint cell")
+  }
 }
 
 ///|
@@ -396,7 +479,7 @@ fn quiver_ui_vertex_data(vertex : Vertex) -> QuiverUiVertexData {
 }
 
 ///|
-fn quiver_ui_edge_data(edge : Edge) -> QuiverUiEdgeData {
+fn quiver_ui_edge_data(quiver : Quiver, edge : Edge) -> QuiverUiEdgeData {
   {
     id: edge.cell.id,
     level: edge.cell.level,
@@ -404,6 +487,8 @@ fn quiver_ui_edge_data(edge : Edge) -> QuiverUiEdgeData {
     label_colour: quiver_ui_colour_data(edge.cell.label_colour),
     source_id: edge.source,
     target_id: edge.target,
+    source_projection: quiver_ui_edge_endpoint_projection_data(quiver, edge.source),
+    target_projection: quiver_ui_edge_endpoint_projection_data(quiver, edge.target),
     options: quiver_ui_edge_options_data(edge.options),
   }
 }
@@ -415,9 +500,10 @@ fn quiver_ui_cell_dependencies_data(
 ) -> QuiverUiCellDependenciesData {
   {
     cell_id,
-    dependencies: quiver_ui_order_dependency_ids(quiver, quiver.dependencies_of(cell_id)),
-    reverse_dependencies: quiver_ui_order_reverse_dependency_ids(
+    dependencies: quiver_ui_order_dependency_links(quiver, quiver.dependencies_of(cell_id)),
+    reverse_dependencies: quiver_ui_order_reverse_dependency_links(
       quiver,
+      cell_id,
       quiver.reverse_dependencies_of(cell_id),
     ),
   }
@@ -481,6 +567,35 @@ fn quiver_ui_edge_options_json(data : QuiverUiEdgeOptionsData) -> Json {
 }
 
 ///|
+fn quiver_ui_edge_endpoint_projection_json(
+  data : QuiverUiEdgeEndpointProjectionData,
+) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("kind", Json::string(data.kind))
+  out.set("has_vertex_endpoint", Json::boolean(data.has_vertex_endpoint))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_dependency_link_json(data : QuiverUiDependencyLinkData) -> Json {
+  let out : Map[String, Json] = Map::new()
+  out.set("cell_id", Json::number(data.cell_id.to_double()))
+  out.set("role", Json::string(data.role))
+  Json::object(out)
+}
+
+///|
+fn quiver_ui_dependency_link_array_json(
+  values : Array[QuiverUiDependencyLinkData],
+) -> Json {
+  let out : Array[Json] = []
+  for value in values {
+    out.push(quiver_ui_dependency_link_json(value))
+  }
+  Json::array(out)
+}
+
+///|
 fn quiver_ui_vertex_json(data : QuiverUiVertexData) -> Json {
   let out : Map[String, Json] = Map::new()
   out.set("id", Json::number(data.id.to_double()))
@@ -501,6 +616,14 @@ fn quiver_ui_edge_json(data : QuiverUiEdgeData) -> Json {
   out.set("label_colour", quiver_ui_colour_json(data.label_colour))
   out.set("source_id", Json::number(data.source_id.to_double()))
   out.set("target_id", Json::number(data.target_id.to_double()))
+  out.set(
+    "source_projection",
+    quiver_ui_edge_endpoint_projection_json(data.source_projection),
+  )
+  out.set(
+    "target_projection",
+    quiver_ui_edge_endpoint_projection_json(data.target_projection),
+  )
   out.set("options", quiver_ui_edge_options_json(data.options))
   Json::object(out)
 }
@@ -509,10 +632,10 @@ fn quiver_ui_edge_json(data : QuiverUiEdgeData) -> Json {
 fn quiver_ui_dependencies_json(data : QuiverUiCellDependenciesData) -> Json {
   let out : Map[String, Json] = Map::new()
   out.set("cell_id", Json::number(data.cell_id.to_double()))
-  out.set("dependencies", quiver_ui_int_array_json(data.dependencies))
+  out.set("dependencies", quiver_ui_dependency_link_array_json(data.dependencies))
   out.set(
     "reverse_dependencies",
-    quiver_ui_int_array_json(data.reverse_dependencies),
+    quiver_ui_dependency_link_array_json(data.reverse_dependencies),
   )
   Json::object(out)
 }
@@ -766,8 +889,9 @@ fn quiver_ui_colour_from_json(raw : Json) -> Colour raise {
 }
 
 ///|
-fn quiver_ui_label_alignment_from_json(raw : Json) -> LabelAlignment raise {
-  let value : String = @json.from_json(raw)
+fn quiver_ui_label_alignment_from_string(
+  value : String,
+) -> LabelAlignment {
   if value == "left" {
     return LabelAlignment::Left
   }
@@ -781,6 +905,12 @@ fn quiver_ui_label_alignment_from_json(raw : Json) -> LabelAlignment raise {
     return LabelAlignment::Over
   }
   abort("invalid label_alignment in mutation batch json: " + value)
+}
+
+///|
+fn quiver_ui_label_alignment_from_json(raw : Json) -> LabelAlignment raise {
+  let value : String = @json.from_json(raw)
+  quiver_ui_label_alignment_from_string(value)
 }
 
 ///|
@@ -2095,7 +2225,7 @@ pub fn QuiverUiAdapter::snapshot(self : QuiverUiAdapter) -> QuiverUiSnapshot {
     dependencies.push(quiver_ui_cell_dependencies_data(self.quiver, cell_id))
     match self.quiver.cells.get(cell_id) {
       Some(CellData::Vertex(vertex)) => vertices.push(quiver_ui_vertex_data(vertex))
-      Some(CellData::Edge(edge)) => edges.push(quiver_ui_edge_data(edge))
+      Some(CellData::Edge(edge)) => edges.push(quiver_ui_edge_data(self.quiver, edge))
       None => ()
     }
   }
@@ -2117,7 +2247,9 @@ pub fn QuiverUiAdapter::dependencies_of(
   self : QuiverUiAdapter,
   cell_id : Int,
 ) -> Array[Int] {
-  quiver_ui_order_dependency_ids(self.quiver, self.quiver.dependencies_of(cell_id))
+  quiver_ui_dependency_link_ids(
+    quiver_ui_order_dependency_links(self.quiver, self.quiver.dependencies_of(cell_id)),
+  )
 }
 
 ///|
@@ -2125,9 +2257,12 @@ pub fn QuiverUiAdapter::reverse_dependencies_of(
   self : QuiverUiAdapter,
   cell_id : Int,
 ) -> Array[Int] {
-  quiver_ui_order_reverse_dependency_ids(
-    self.quiver,
-    self.quiver.reverse_dependencies_of(cell_id),
+  quiver_ui_dependency_link_ids(
+    quiver_ui_order_reverse_dependency_links(
+      self.quiver,
+      cell_id,
+      self.quiver.reverse_dependencies_of(cell_id),
+    ),
   )
 }
 
@@ -2164,6 +2299,21 @@ pub fn QuiverUiAdapter::preview_reconnect_plan(
   target_id : Int,
 ) -> QuiverReconnectPreviewPlan? {
   self.quiver.preview_reconnect_plan(edge_id, source_id, target_id)
+}
+
+///|
+pub fn QuiverUiAdapter::suggest_edge_options(
+  self : QuiverUiAdapter,
+  source_id : Int,
+  target_id : Int,
+  default_label_alignment? : String = "left",
+) -> EdgeOptions? {
+  let alignment = quiver_ui_label_alignment_from_string(default_label_alignment)
+  self.quiver.suggest_edge_options(
+    source_id,
+    target_id,
+    default_label_alignment=alignment,
+  )
 }
 
 ///|
@@ -2698,6 +2848,20 @@ pub fn ffi_adapter_preview_reconnect_plan(
   target_id : Int,
 ) -> QuiverReconnectPreviewPlan? {
   adapter.preview_reconnect_plan(edge_id, source_id, target_id)
+}
+
+///|
+pub fn ffi_adapter_suggest_edge_options(
+  adapter : QuiverUiAdapter,
+  source_id : Int,
+  target_id : Int,
+  default_label_alignment? : String = "left",
+) -> EdgeOptions? {
+  adapter.suggest_edge_options(
+    source_id,
+    target_id,
+    default_label_alignment~,
+  )
 }
 
 ///|

@@ -33,6 +33,7 @@ import {
     kwiver_bridge_reconnect_edge_json,
     kwiver_bridge_remove_json,
     kwiver_bridge_reverse_edge_json,
+    kwiver_bridge_selection_panel_state,
     kwiver_bridge_set_edge_curve_json,
     kwiver_bridge_set_edge_label_alignment_json,
     kwiver_bridge_set_edge_label_position_json,
@@ -41,7 +42,9 @@ import {
     kwiver_bridge_set_label_json,
     kwiver_bridge_set_selection,
     kwiver_bridge_selection_summary,
+    kwiver_bridge_selection_toolbar_state,
     kwiver_bridge_snapshot,
+    kwiver_bridge_suggest_edge_options,
 } from "./kwiver_bridge.mjs";
 /// Various parameters.
 Object.assign(CONSTANTS, {
@@ -74,8 +77,6 @@ Object.assign(CONSTANTS, {
     VIEW_PADDING: 128,
     /// How long the user has to hold down on a touchscreen to trigger panning.
     LONG_PRESS_DURATION: 800,
-    /// How much to shorten edges connected to edges by (in %), by default.
-    EDGE_EDGE_PADDING: 20,
     /// Default dimensions (in pixels) of an HTML embedded diagram, which may be overridden by the
     /// user.
     DEFAULT_EMBED_SIZE: {
@@ -187,11 +188,10 @@ UIMode.Connect = class extends UIMode {
         return ui.kwiver_runtime_edge_is_loop(edge, runtime_by_id) === true;
     }
 
-    static committed_edge_options(ui, edge, runtime_by_id = null) {
-        if (!edge?.is_edge?.()) {
-            return null;
-        }
-        return ui.kwiver_runtime_edge_options(edge, runtime_by_id);
+    static selected_label_alignment(ui) {
+        const selected_alignment
+            = ui.panel.element.query_selector('input[name="label_alignment"]:checked');
+        return selected_alignment !== null ? selected_alignment.element.value : "left";
     }
 
     release(ui) {
@@ -252,11 +252,15 @@ UIMode.Connect = class extends UIMode {
 
             this.arrow.style = UI.arrow_style_for_options(
                 this.arrow,
-                Edge.default_options(Object.assign({
+                Edge.default_options(Object.assign(
+                    {},
+                    UIMode.Connect.suggested_edge_options(ui, this.source, target),
+                    {
                     level,
                     shape: this.loop && (this.target === null || this.source === this.target)
                         ? "arc" : "bezier",
-                }, UIMode.Connect.suggested_edge_options(ui, this.source, target))),
+                    },
+                )),
             );
 
             this.arrow.redraw();
@@ -379,215 +383,24 @@ UIMode.Connect = class extends UIMode {
     /// Returns the suggested default options for an edge, e.g. automatically offsetting to reducing
     /// overlap with existing parallel edges where possible.
     static suggested_edge_options(ui, source, target) {
-        const runtime_by_id = ui.kwiver_runtime_cells_by_id();
-        const js_by_id = ui.kwiver_js_cells_by_id();
-        const source_level = this.committed_cell_level(ui, source, runtime_by_id) ?? 0;
-        const target_level = this.committed_cell_level(ui, target, runtime_by_id) ?? 0;
-        const edge_options = (edge) => this.committed_edge_options(ui, edge, runtime_by_id);
-        const dependency_edges = (cell) => ui.kwiver_runtime_dependencies_by_role(
-            cell,
-            runtime_by_id,
-            js_by_id,
-        );
-
-        // We attempt to guess what the intended label alignment is and what the intended edge
-        // offset is, if the cells being connected form some path with existing connections.
-        // Otherwise we revert to the currently-selected label alignment in the panel and the
-        // default offset (0).
-        const options = {
-            // By default, 2-cells and above have a little padding for aesthetic purposes.
-            shorten: {
-                source: source_level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
-                target: target_level === 0 ? 0 : CONSTANTS.EDGE_EDGE_PADDING,
-            },
-            // We will guess the label alignment below, but in case there's no selected label
-            // alignment, we default to "left".
-            label_alignment: "left",
-            // The default settings for the other options are fine.
-        };
-        const selected_alignment
-            = ui.panel.element.query_selector('input[name="label_alignment"]:checked');
-        if (selected_alignment !== null) {
-            // If multiple edges are selected and not all selected edges have the same label
-            // alignment, there will be no checked input.
-            options.label_alignment = selected_alignment.element.value;
-        }
-
-        // The following heuristics are only sensible for non-loops, and for which the target is a
-        // cell (rather than the pointer).
-        if (target instanceof Cell && source !== target) {
-            // If *every* existing connection to source and target has a consistent label alignment,
-            // then `align` will be a singleton, in which case we use that element as the alignment.
-            // If it has `left` and `right` in equal measure (regardless of `centre`), then
-            // we will pick `centre`. Otherwise we keep the default. And similarly for `offset` and
-            // `curve`.
-            const align = new Map();
-            const offset = new Map();
-            const curve = new Map();
-            // In our offset heuristic below, where we attempt to avoid overlap, we only
-            // wish to consider offset for edges that are not curved.
-            const offset_only = new Map();
-            // We only want to pick `centre` when the source and target are equally constraining
-            // (otherwise we end up picking `centre` far too often). So we check that they're both
-            // being considered equally. This means `centre` is chosen only rarely, but often in
-            // the situations you want it. (This has no analogue in `offset` or `curve`.)
-            let balance = 0;
-
-            const flip = (options) => {
-                return {
-                    label_alignment: {
-                        left: "right",
-                        centre: "centre",
-                        over: "over",
-                        right: "left",
-                    }[options.label_alignment],
-                    offset: -options.offset,
-                    curve: -options.curve,
-                };
-            };
-
-            const conserve = (options, parallel) => {
-                return {
-                    label_alignment: options.label_alignment,
-                    // We ignore the offsets and curves of edges that don't share a source and
-                    // target with the new edge, i.e. we only modify the offset and curve of
-                    // parallel edges.
-                    offset: parallel ? options.offset : null,
-                    curve: parallel ? options.curve : null,
-                };
-            };
-
-            const consider = (options, tip) => {
-                if (!align.has(options.label_alignment)) {
-                    align.set(options.label_alignment, 0);
+        const default_label_alignment = this.selected_label_alignment(ui);
+        if (source?.is_vertex?.() || source?.is_edge?.()) {
+            if (target?.is_vertex?.() || target?.is_edge?.()) {
+                const suggested = ui.kwiver_runtime_suggest_edge_options(
+                    source,
+                    target,
+                    default_label_alignment,
+                    "ui.connect.suggested_edge_options",
+                );
+                if (suggested === null) {
+                    throw new Error(
+                        "[kwiver-only] ui.connect.suggested_edge_options: runtime suggestion unavailable",
+                    );
                 }
-                align.set(options.label_alignment, align.get(options.label_alignment) + 1);
-                if (options.offset !== null) {
-                    if (!offset.has(options.offset)) {
-                        offset.set(options.offset, 0);
-                    }
-                    offset.set(options.offset, offset.get(options.offset) + 1);
-                }
-                if (options.offset !== null && (options.curve === null || options.curve === 0)) {
-                    if (!offset_only.has(options.offset)) {
-                        offset_only.set(options.offset, 0);
-                    }
-                    offset_only.set(options.offset, offset_only.get(options.offset) + 1);
-                }
-                if (options.curve !== null) {
-                    if (!curve.has(options.curve)) {
-                        curve.set(options.curve, 0);
-                    }
-                    curve.set(options.curve, curve.get(options.curve) + 1);
-                }
-                balance += tip;
-            };
-
-            const source_dependencies = dependency_edges(source);
-            const target_dependencies = dependency_edges(target);
-            for (const [edge, relationship] of source_dependencies) {
-                const committed_options = edge_options(edge);
-                if (committed_options === null) {
-                    continue;
-                }
-                // We consider each edge whose source or target is the source of the new edge.
-                consider(conserve({
-                    // If the source of the edge is the same as the source of the new edge, we want
-                    // to invert the offset/curve/etc., so that the new edge will not overlap the
-                    // new one.
-                    source: flip(committed_options),
-                    target: committed_options,
-                }[relationship], target_dependencies.has(edge)), -1);
-            }
-            for (const [edge, relationship] of target_dependencies) {
-                const committed_options = edge_options(edge);
-                if (committed_options === null) {
-                    continue;
-                }
-                // We consider each edge whose source or target is the target of the new edge.
-                consider(conserve({
-                    source: committed_options,
-                    // If the target of the edge is the same as the target of the new edge, we want
-                    // to invert the offset/curve/etc., so that the new edge will not overlap the
-                    // new one.
-                    target: flip(committed_options),
-                }[relationship], source_dependencies.has(edge)), 1);
-            }
-
-            if (align.size === 1) {
-                options.label_alignment = align.keys().next().value;
-            } else if (align.size > 0
-                    && align.get("left") === align.get("right") && balance === 0) {
-                options.label_alignment = "centre";
-            }
-
-            if (offset.size === 1) {
-                options.offset = offset.keys().next().value;
-            }
-            if (curve.size === 1) {
-                options.curve = curve.keys().next().value;
-            }
-
-            // If there was not precisely one parallel edge that had a non-zero offset, then we try
-            // to offset the new edge to reduce overlap with existing edges.
-            if (!options.hasOwnProperty("offset") || options.offset === 0) {
-                // We try to offset somewhat symmetrically, and with decent spacing. It seems most
-                // convenient to hardcode the following values, as the pattern is not particularly
-                // uniform.
-                const offset_attempts = [0, -3, 3, -5, 5, -1, 1, -2, 2, -4, 4];
-                while (offset_attempts.length > 0) {
-                    const attempt = offset_attempts.shift();
-                    // We need to negate because the offsets in `offset` are negated, because they
-                    // record offset candidates, rather than offsets that are present.
-                    if (!offset_only.has(-attempt)) {
-                        options.offset = attempt;
-                        break;
-                    }
-                }
+                return suggested;
             }
         }
-        if (source === target) {
-            // We try to place new loops at a new angle, if possible, to reducing overlap with
-            // existing loops.
-            const angles = new Map();
-            for (const [loop,] of Array.from(dependency_edges(source))
-                .filter(([edge,]) => this.committed_edge_is_loop(ui, edge, runtime_by_id)))
-            {
-                const loop_options = edge_options(loop);
-                if (loop_options === null) {
-                    continue;
-                }
-                const angle = mod(
-                    loop_options.angle + 180 - (loop_options.radius < -1 ? 180 : 0), 360) - 180;
-                angles.set(angle, Math.abs(loop_options.radius));
-                // Both -180 and 180 are possible angle values for symmetry, but they should count
-                // as the same angle.
-                if (Math.abs(angle) === 180) {
-                    angles.set(-angle, Math.abs(loop_options.radius));
-                }
-            }
-            let found_space = false;
-            // First, attempt to find an angle at which there exists no loop.
-            for (let angle = 0; angle < 360; angle += 45) {
-                const attempt_angle = mod(180 - angle, 360) - 180;
-                if (!angles.has(attempt_angle)) {
-                    options.angle = attempt_angle;
-                    found_space = true;
-                    break;
-                }
-            }
-            if (!found_space) {
-                // Next, attempt to find an angle at which there is no loop of the default radius.
-                for (let angle = 0; angle < 360; angle += 45) {
-                    const attempt_angle = mod(180 - angle, 360) - 180;
-                    if (angles.get(attempt_angle) !== 3) {
-                        options.angle = attempt_angle;
-                        break;
-                    }
-                }
-            }
-        }
-        return options;
+        return { label_alignment: default_label_alignment };
     }
 
     /// Connects the source and target. Note that this does *not* check whether the source and
@@ -1243,6 +1056,172 @@ class UI {
                 === UI.kwiver_edge_style_side(js_style.head?.side);
     }
 
+    static kwiver_runtime_endpoint_projection(runtime_projection) {
+        if (!runtime_projection || typeof runtime_projection !== "object") {
+            return null;
+        }
+        const kind = runtime_projection.kind;
+        const has_vertex_endpoint = runtime_projection.has_vertex_endpoint;
+        if (
+            (kind !== "vertex" && kind !== "edge")
+            || typeof has_vertex_endpoint !== "boolean"
+        ) {
+            return null;
+        }
+        return {
+            kind,
+            has_vertex_endpoint,
+        };
+    }
+
+    static kwiver_runtime_selection_panel_state(runtime_state) {
+        if (!runtime_state || typeof runtime_state !== "object") {
+            return null;
+        }
+        const selection_size = Number(runtime_state.selection_size);
+        const label = runtime_state.label === null
+            ? null
+            : (typeof runtime_state.label === "string" ? runtime_state.label : null);
+        const label_colour = runtime_state.label_colour === null
+            ? null
+            : UI.kwiver_colour_from_runtime(runtime_state.label_colour);
+        const edge_angle = runtime_state.edge_angle === null
+            ? null
+            : Number(runtime_state.edge_angle);
+        const label_alignment = runtime_state.label_alignment === null
+            ? null
+            : (typeof runtime_state.label_alignment === "string"
+                ? runtime_state.label_alignment
+                : null);
+        const label_position = runtime_state.label_position === null
+            ? null
+            : Number(runtime_state.label_position);
+        const offset = runtime_state.offset === null ? null : Number(runtime_state.offset);
+        const curve = runtime_state.curve === null ? null : Number(runtime_state.curve);
+        const radius = runtime_state.radius === null ? null : Number(runtime_state.radius);
+        const angle = runtime_state.angle === null ? null : Number(runtime_state.angle);
+        const length = runtime_state.length === null
+            ? null
+            : {
+                source: Number(runtime_state.length?.source),
+                target: Number(runtime_state.length?.target),
+            };
+        const level = runtime_state.level === null ? null : Number(runtime_state.level);
+        const edge_type = runtime_state.edge_type === null
+            ? null
+            : (typeof runtime_state.edge_type === "string" ? runtime_state.edge_type : null);
+        const edge_colour = runtime_state.edge_colour === null
+            ? null
+            : UI.kwiver_colour_from_runtime(runtime_state.edge_colour);
+        const tail_type = runtime_state.tail_type === null
+            ? null
+            : (typeof runtime_state.tail_type === "string" ? runtime_state.tail_type : null);
+        const body_type = runtime_state.body_type === null
+            ? null
+            : (typeof runtime_state.body_type === "string" ? runtime_state.body_type : null);
+        const head_type = runtime_state.head_type === null
+            ? null
+            : (typeof runtime_state.head_type === "string" ? runtime_state.head_type : null);
+        if (
+            !Number.isInteger(selection_size)
+            || typeof runtime_state.has_selection !== "boolean"
+            || typeof runtime_state.has_selected_edges !== "boolean"
+            || typeof runtime_state.has_selected_nonloop_edges !== "boolean"
+            || typeof runtime_state.has_selected_loop_edges !== "boolean"
+            || (runtime_state.label !== null && label === null)
+            || (runtime_state.label_colour !== null && label_colour === null)
+            || (runtime_state.edge_angle !== null && !Number.isFinite(edge_angle))
+            || (runtime_state.label_alignment !== null && label_alignment === null)
+            || (runtime_state.label_position !== null && !Number.isInteger(label_position))
+            || (runtime_state.offset !== null && !Number.isInteger(offset))
+            || (runtime_state.curve !== null && !Number.isInteger(curve))
+            || (runtime_state.radius !== null && !Number.isInteger(radius))
+            || (runtime_state.angle !== null && !Number.isInteger(angle))
+            || (runtime_state.length !== null && (
+                !Number.isInteger(length?.source) || !Number.isInteger(length?.target)
+            ))
+            || (runtime_state.level !== null && !Number.isInteger(level))
+            || (runtime_state.edge_type !== null && edge_type === null)
+            || (runtime_state.edge_colour !== null && edge_colour === null)
+            || (runtime_state.tail_type !== null && tail_type === null)
+            || (runtime_state.body_type !== null && body_type === null)
+            || (runtime_state.head_type !== null && head_type === null)
+            || typeof runtime_state.all_edges_are_arrows !== "boolean"
+            || !Number.isInteger(Number(runtime_state.corners))
+            || !Number.isInteger(Number(runtime_state.inverse_corners))
+            || typeof runtime_state.endpoint_positioning_source_visible !== "boolean"
+            || typeof runtime_state.endpoint_positioning_source_checked !== "boolean"
+            || typeof runtime_state.endpoint_positioning_target_visible !== "boolean"
+            || typeof runtime_state.endpoint_positioning_target_checked !== "boolean"
+        ) {
+            return null;
+        }
+        return {
+            selection_size,
+            has_selection: runtime_state.has_selection,
+            has_selected_edges: runtime_state.has_selected_edges,
+            has_selected_nonloop_edges: runtime_state.has_selected_nonloop_edges,
+            has_selected_loop_edges: runtime_state.has_selected_loop_edges,
+            label,
+            label_colour,
+            edge_angle,
+            label_alignment,
+            label_position,
+            offset,
+            curve,
+            radius,
+            angle,
+            length,
+            level,
+            edge_type,
+            edge_colour,
+            tail_type,
+            body_type,
+            head_type,
+            all_edges_are_arrows: runtime_state.all_edges_are_arrows,
+            corners: Number(runtime_state.corners),
+            inverse_corners: Number(runtime_state.inverse_corners),
+            endpoint_positioning_source_visible: runtime_state.endpoint_positioning_source_visible,
+            endpoint_positioning_source_checked: runtime_state.endpoint_positioning_source_checked,
+            endpoint_positioning_target_visible: runtime_state.endpoint_positioning_target_visible,
+            endpoint_positioning_target_checked: runtime_state.endpoint_positioning_target_checked,
+        };
+    }
+
+    static kwiver_runtime_selection_toolbar_state(runtime_state) {
+        if (!runtime_state || typeof runtime_state !== "object") {
+            return null;
+        }
+        const all_cells_count = Number(runtime_state.all_cells_count);
+        const selected_count = Number(runtime_state.selected_count);
+        if (
+            !Number.isInteger(all_cells_count)
+            || !Number.isInteger(selected_count)
+            || typeof runtime_state.has_selection !== "boolean"
+            || typeof runtime_state.has_any_cells !== "boolean"
+            || typeof runtime_state.has_vertices !== "boolean"
+            || typeof runtime_state.can_select_all !== "boolean"
+            || typeof runtime_state.can_expand_connected !== "boolean"
+            || typeof runtime_state.can_deselect_all !== "boolean"
+            || typeof runtime_state.can_delete !== "boolean"
+            || typeof runtime_state.can_transform !== "boolean"
+        ) {
+            return null;
+        }
+        return {
+            all_cells_count,
+            selected_count,
+            has_selection: runtime_state.has_selection,
+            has_any_cells: runtime_state.has_any_cells,
+            has_vertices: runtime_state.has_vertices,
+            can_select_all: runtime_state.can_select_all,
+            can_expand_connected: runtime_state.can_expand_connected,
+            can_deselect_all: runtime_state.can_deselect_all,
+            can_delete: runtime_state.can_delete,
+            can_transform: runtime_state.can_transform,
+        };
+    }
+
     static kwiver_runtime_cell_record(runtime_cell, js_by_id = null) {
         if (!runtime_cell || typeof runtime_cell !== "object") {
             return null;
@@ -1280,10 +1259,18 @@ class UI {
         if (runtime_cell.kind === "edge") {
             const source_id = Number(runtime_cell.source_id);
             const target_id = Number(runtime_cell.target_id);
+            const source_projection = UI.kwiver_runtime_endpoint_projection(
+                runtime_cell.source_projection,
+            );
+            const target_projection = UI.kwiver_runtime_endpoint_projection(
+                runtime_cell.target_projection,
+            );
             const options = UI.kwiver_edge_options_from_runtime(runtime_cell.options);
             if (
                 !Number.isInteger(source_id)
                 || !Number.isInteger(target_id)
+                || source_projection === null
+                || target_projection === null
                 || options === null
             ) {
                 return null;
@@ -1296,6 +1283,8 @@ class UI {
                 label_colour,
                 source_id,
                 target_id,
+                source_projection,
+                target_projection,
                 source: js_by_id?.get(source_id) ?? null,
                 target: js_by_id?.get(target_id) ?? null,
                 options,
@@ -1467,6 +1456,54 @@ class UI {
         return summary && typeof summary === "object"
             ? summary
             : null;
+    }
+
+    kwiver_runtime_selection_panel_state(
+        selected_ids = null,
+        origin = "ui.runtime.selection_panel_state",
+    ) {
+        const requested_ids = selected_ids ?? this.kwiver_selected_ids();
+        if (!Array.isArray(requested_ids)) {
+            return null;
+        }
+        return UI.kwiver_runtime_selection_panel_state(
+            kwiver_bridge_selection_panel_state(requested_ids, origin),
+        );
+    }
+
+    kwiver_require_runtime_selection_panel_state(
+        selected_ids = null,
+        origin = "ui.runtime.selection_panel_state",
+    ) {
+        const state = this.kwiver_runtime_selection_panel_state(selected_ids, origin);
+        if (state === null) {
+            throw new Error("[kwiver-only] " + origin + ": selection panel state unavailable");
+        }
+        return state;
+    }
+
+    kwiver_runtime_selection_toolbar_state(
+        selected_ids = null,
+        origin = "ui.runtime.selection_toolbar_state",
+    ) {
+        const requested_ids = selected_ids ?? this.kwiver_selected_ids();
+        if (!Array.isArray(requested_ids)) {
+            return null;
+        }
+        return UI.kwiver_runtime_selection_toolbar_state(
+            kwiver_bridge_selection_toolbar_state(requested_ids, origin),
+        );
+    }
+
+    kwiver_require_runtime_selection_toolbar_state(
+        selected_ids = null,
+        origin = "ui.runtime.selection_toolbar_state",
+    ) {
+        const state = this.kwiver_runtime_selection_toolbar_state(selected_ids, origin);
+        if (state === null) {
+            throw new Error("[kwiver-only] " + origin + ": selection toolbar state unavailable");
+        }
+        return state;
     }
 
     kwiver_import_runtime_cells(
@@ -1695,6 +1732,23 @@ class UI {
             : null;
     }
 
+    kwiver_runtime_edge_endpoint_projection(edge, end, runtime_by_id = null) {
+        if (end !== "source" && end !== "target") {
+            return null;
+        }
+        const runtime_edge = this.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
+        return UI.kwiver_runtime_endpoint_projection(runtime_edge?.[`${end}_projection`]);
+    }
+
+    kwiver_runtime_edge_endpoint_projects_vertex(edge, end, runtime_by_id = null) {
+        const projection = this.kwiver_runtime_edge_endpoint_projection(
+            edge,
+            end,
+            runtime_by_id,
+        );
+        return projection?.kind === "edge" && projection?.has_vertex_endpoint === true;
+    }
+
     kwiver_runtime_edge_endpoint_cell(
         edge,
         end,
@@ -1738,43 +1792,28 @@ class UI {
         return target.shape.origin.sub(source.shape.origin).angle();
     }
 
-    kwiver_runtime_dependencies_by_role(cell, runtime_by_id = null, js_by_id = null) {
-        const cell_id = this.kwiver_cell_id(cell);
-        if (!Number.isInteger(cell_id)) {
-            return new Map();
+    kwiver_runtime_suggest_edge_options(
+        source,
+        target,
+        default_label_alignment = "left",
+        origin = "ui.connect.suggested_edge_options",
+    ) {
+        const source_id = this.kwiver_cell_id(source);
+        const target_id = this.kwiver_cell_id(target);
+        if (
+            !Number.isInteger(source_id)
+            || !Number.isInteger(target_id)
+            || typeof default_label_alignment !== "string"
+        ) {
+            return null;
         }
-        const runtime_cells_by_id = runtime_by_id ?? this.kwiver_runtime_cells_by_id();
-        if (runtime_cells_by_id === null) {
-            return new Map();
-        }
-        const js_cells_by_id = js_by_id ?? this.kwiver_js_cells_by_id();
-        const dependencies = new Map();
-        for (const runtime_cell of runtime_cells_by_id.values()) {
-            if (!runtime_cell || runtime_cell.kind !== "edge") {
-                continue;
-            }
-            const edge_id = Number(runtime_cell.id);
-            const source_id = Number(runtime_cell.source_id);
-            const target_id = Number(runtime_cell.target_id);
-            if (
-                !Number.isInteger(edge_id)
-                || !Number.isInteger(source_id)
-                || !Number.isInteger(target_id)
-            ) {
-                continue;
-            }
-            const edge = js_cells_by_id.get(edge_id);
-            if (!edge?.is_edge?.()) {
-                continue;
-            }
-            if (source_id === cell_id) {
-                dependencies.set(edge, "source");
-            }
-            if (target_id === cell_id) {
-                dependencies.set(edge, "target");
-            }
-        }
-        return dependencies;
+        const runtime_options = kwiver_bridge_suggest_edge_options(
+            source_id,
+            target_id,
+            default_label_alignment,
+            origin,
+        );
+        return UI.kwiver_edge_options_from_runtime(runtime_options);
     }
 
     kwiver_preview_reconnect_plan(
@@ -9785,81 +9824,22 @@ class Panel {
     /// Update the panel state (i.e. enable/disable fields as relevant).
     update(ui) {
         const label_alignments = this.element.query_selector_all('input[name="label_alignment"]');
-        const runtime_by_id = ui.selection.size > 0 ? ui.kwiver_runtime_cells_by_id() : null;
-        const js_by_id = ui.selection.size > 0 ? ui.kwiver_js_cells_by_id() : null;
-        if (ui.selection.size > 0 && runtime_by_id === null) {
-            throw new Error("[kwiver-only] ui.panel.update: runtime snapshot unavailable");
-        }
-
-        const runtime_cell = (cell) => {
-            const snapshot = ui.kwiver_runtime_cell_snapshot(cell, runtime_by_id);
-            if (snapshot === null) {
-                throw new Error("[kwiver-only] ui.panel.update: runtime cell snapshot invalid");
-            }
-            return snapshot;
-        };
-
-        const runtime_label_colour = (cell) => {
-            const colour = ui.kwiver_runtime_cell_label_colour(cell, runtime_by_id);
-            if (colour === null) {
-                throw new Error("[kwiver-only] ui.panel.update: runtime label colour invalid");
-            }
-            return colour;
-        };
-
-        const runtime_edge_options = (edge) => {
-            const options = ui.kwiver_runtime_edge_options(edge, runtime_by_id);
-            if (options === null) {
-                throw new Error("[kwiver-only] ui.panel.update: runtime edge options invalid");
-            }
-            return options;
-        };
-
-        const runtime_edge_snapshot = (edge) => {
-            const snapshot = ui.kwiver_runtime_edge_snapshot(edge, runtime_by_id);
-            if (snapshot === null) {
-                throw new Error("[kwiver-only] ui.panel.update: runtime edge snapshot invalid");
-            }
-            return snapshot;
-        };
-
-        const runtime_edge_is_loop = (edge) => {
-            const snapshot = runtime_edge_snapshot(edge);
-            return Number(snapshot.source_id) === Number(snapshot.target_id);
-        };
-
-        const runtime_edge_has_vertex_endpoint = (runtime_edge_cell) => {
-            if (!runtime_edge_cell || runtime_edge_cell.kind !== "edge") {
-                return false;
-            }
-            const source = runtime_by_id?.get(Number(runtime_edge_cell.source_id));
-            const target = runtime_by_id?.get(Number(runtime_edge_cell.target_id));
-            return source?.kind === "vertex" || target?.kind === "vertex";
-        };
-
-        const runtime_edge_angle = (edge) => {
-            const angle = ui.kwiver_runtime_edge_angle(edge, runtime_by_id, js_by_id);
-            if (angle === null) {
-                throw new Error("[kwiver-only] ui.panel.update: runtime edge angle invalid");
-            }
-            return angle;
-        };
+        const selection_state = ui.kwiver_require_runtime_selection_panel_state(
+            null,
+            "ui.panel.update",
+        );
 
         // Multiple selection is always permitted, so the following code must provide sensible
         // behaviour for both single and multiple selections (including empty selections).
-        const selection_contains_edge = ui.selection_contains_edge();
+        const selection_contains_edge = selection_state.has_selected_edges;
 
         // Some elements of the panel are visible only when non-loop edges, or loop edges are
         // selected. If we haven't selected any edges (e.g. if we've just deselected everything by
         // clicking on the canvas, but haven't yet released the pointer), then we keep the state as
         // it is to avoid any un-aesthetic size changes while the panel disappears.
         if (selection_contains_edge) {
-            const selection_contains_nonloop = Array.from(ui.selection).some((cell) => {
-                return cell.is_edge() && !runtime_edge_is_loop(cell);
-            });
-            const selection_contains_loop = Array.from(ui.selection).some((cell) => {
-                return cell.is_edge() && runtime_edge_is_loop(cell);
-            });
+            const selection_contains_nonloop = selection_state.has_selected_nonloop_edges;
+            const selection_contains_loop = selection_state.has_selected_loop_edges;
             // Disable transitions, so that slider thumbs do not appear to move when the are
             // revealed.
             if ((selection_contains_nonloop && !this.element.class_list.contains("nonloop"))
@@ -9897,7 +9877,7 @@ class Panel {
                         thumb.set_value(values[i]);
                     });
                 }
-                if (ui.selection.size === 0) {
+                if (!selection_state.has_selection) {
                     ui.element.query_selector(".label-input-container .colour-indicator")
                         .set_style({
                             background: Colour.black().css(),
@@ -9913,10 +9893,10 @@ class Panel {
                 element.class_list.toggle("disabled", !selection_contains_edge);
             });
             ui.element.query_selector(".label-input-container .colour-indicator")
-                .class_list.toggle("disabled", ui.selection.size === 0);
+                .class_list.toggle("disabled", !selection_state.has_selection);
 
             // Enable the label input if at least one cell has been selected.
-            this.label_input.element.disabled = ui.selection.size === 0;
+            this.label_input.element.disabled = !selection_state.has_selection;
             if (this.label_input.element.disabled
                     && document.activeElement === this.label_input.element
             ) {
@@ -9929,95 +9909,27 @@ class Panel {
             // there are multiple potential values, so we (in the case of radio buttons)
             // uncheck all such inputs or set them to an empty string (in the case of text
             // inputs).
-            const values = new Map();
-            let all_edges_are_arrows = selection_contains_edge;
-
-            const consider = (name, value) => {
-                const values_equal = (a, b) => {
-                    if (typeof a === "object" && typeof b === "object") {
-                        // This is good enough for our purposes. So far, the only object value is
-                        // that for `length`.
-                        return JSON.stringify(a) === JSON.stringify(b);
-                    } else {
-                        return a === b;
-                    }
-                }
-                if (values.has(name) && !values_equal(values.get(name), value)) {
-                    values.set(name, null);
-                } else {
-                    values.set(name, value);
-                }
-            };
-
-            let [corners, inverse_corners] = [0, 0];
-
-            // Collect the consistent and varying input values.
-            for (const cell of ui.selection) {
-                // Options applying to all cells. Technically, these are no longer under the
-                // jurisdiction of `Panel` (though they were at one point). However, since we want
-                // to use the same logic for these options as edge-specific options, it's convenient
-                // to include them here.
-                const runtime_snapshot = runtime_cell(cell);
-                consider("{label}", typeof runtime_snapshot.label === "string" ? runtime_snapshot.label : "");
-                consider("{label_colour}", runtime_label_colour(cell));
-
-                // Edge-specific options.
-                if (cell.is_edge()) {
-                    const edge_runtime_options = runtime_edge_options(cell);
-                    consider("label_alignment", edge_runtime_options.label_alignment);
-                    // The label alignment buttons are rotated to reflect the direction of the arrow
-                    // when all arrows have the same direction (at least to the nearest multiple of
-                    // 90°). Otherwise, rotation defaults to 0°.
-                    consider("{edge_angle}", runtime_edge_angle(cell));
-                    consider("{label_position}", edge_runtime_options.label_position);
-                    consider("{offset}", edge_runtime_options.offset);
-                    if (!runtime_edge_is_loop(cell)) {
-                        consider("{curve}", edge_runtime_options.curve);
-                    }
-                    if (runtime_edge_is_loop(cell)) {
-                        consider("{radius}", edge_runtime_options.radius);
-                        consider("{angle}", edge_runtime_options.angle);
-                    }
-                    consider("{length}", edge_runtime_options.shorten);
-                    consider("{level}", edge_runtime_options.level);
-                    consider("edge-type", edge_runtime_options.style.name);
-                    consider("{colour}", edge_runtime_options.colour);
-
-                    // Arrow-specific options.
-                    if (edge_runtime_options.style.name === "arrow") {
-                        for (const component of ["tail", "body", "head"]) {
-                            let value;
-                            // The following makes the assumption that the distinguished names
-                            // `cell`, `hook` and `harpoon` are unique, even between different
-                            // components.
-                            switch (edge_runtime_options.style[component].name) {
-                                case "cell":
-                                    value = "solid";
-                                    break;
-                                case "hook":
-                                case "harpoon":
-                                    value = `${
-                                        edge_runtime_options.style[component].side
-                                    }-${edge_runtime_options.style[component].name}`;
-                                    break;
-                                default:
-                                    value = edge_runtime_options.style[component].name;
-                                    break;
-                            }
-
-                            consider(`${component}-type`, value);
-                        }
-                    } else {
-                        all_edges_are_arrows = false;
-                        if (edge_runtime_options.style.name === "corner") {
-                            ++corners;
-                        }
-                        if (edge_runtime_options.style.name === "corner-inverse") {
-                            ++inverse_corners;
-                        }
-                    }
-                }
-            }
+            const values = new Map([
+                ["{label}", selection_state.label],
+                ["{label_colour}", selection_state.label_colour],
+                ["{edge_angle}", selection_state.edge_angle],
+                ["label_alignment", selection_state.label_alignment],
+                ["{label_position}", selection_state.label_position],
+                ["{offset}", selection_state.offset],
+                ["{curve}", selection_state.curve],
+                ["{radius}", selection_state.radius],
+                ["{angle}", selection_state.angle],
+                ["{length}", selection_state.length],
+                ["{level}", selection_state.level],
+                ["edge-type", selection_state.edge_type],
+                ["{colour}", selection_state.edge_colour],
+                ["tail-type", selection_state.tail_type],
+                ["body-type", selection_state.body_type],
+                ["head-type", selection_state.head_type],
+            ]);
+            const all_edges_are_arrows = selection_state.all_edges_are_arrows;
+            const corners = selection_state.corners;
+            const inverse_corners = selection_state.inverse_corners;
 
             const get_input = (name, value) => {
                 return this.element.query_selector(`input[name="${name}"][value="${value}"]`);
@@ -10156,40 +10068,19 @@ class Panel {
             // For now, the only cells whose shapes are not points are vertices. So we only need to
             // display this option for arrows that point to arrows that have a vertex as their
             // source or target.
-            let ep_source_checked = null, ep_target_checked = null;
-            for (const cell of ui.selection) {
-                if (cell.is_edge()) {
-                    const runtime_edge = runtime_edge_snapshot(cell);
-                    const runtime_options = runtime_edge_options(cell);
-                    const runtime_source = runtime_by_id?.get(Number(runtime_edge.source_id));
-                    const runtime_target = runtime_by_id?.get(Number(runtime_edge.target_id));
-                    if (runtime_source?.kind === "edge"
-                        && runtime_edge_has_vertex_endpoint(runtime_source)) {
-                        if (ep_source_checked === null) {
-                            ep_source_checked = true;
-                        }
-                        ep_source_checked = ep_source_checked &&
-                            runtime_options.edge_alignment.source;
-                    }
-                    if (runtime_target?.kind === "edge"
-                        && runtime_edge_has_vertex_endpoint(runtime_target)) {
-                        if (ep_target_checked === null) {
-                            ep_target_checked = true;
-                        }
-                        ep_target_checked = ep_target_checked &&
-                            runtime_options.edge_alignment.target;
-                    }
-                }
-            }
+            const ep_source_visible = selection_state.endpoint_positioning_source_visible;
+            const ep_target_visible = selection_state.endpoint_positioning_target_visible;
             const endpoint_positioning = this.element.query_selector("#endpoint-positioning");
             endpoint_positioning.class_list.toggle("hidden",
-                ep_source_checked === null && ep_target_checked === null);
+                !ep_source_visible && !ep_target_visible);
             const ep_source = endpoint_positioning.query_selector('label:first-of-type');
-            ep_source.class_list.toggle("hidden", ep_source_checked === null);
-            ep_source.query_selector('input[type="checkbox"]').element.checked = ep_source_checked;
+            ep_source.class_list.toggle("hidden", !ep_source_visible);
+            ep_source.query_selector('input[type="checkbox"]').element.checked =
+                ep_source_visible && selection_state.endpoint_positioning_source_checked;
             const ep_target = endpoint_positioning.query_selector('label:last-of-type');
-            ep_target.class_list.toggle("hidden", ep_target_checked === null);
-            ep_target.query_selector('input[type="checkbox"]').element.checked = ep_target_checked;
+            ep_target.class_list.toggle("hidden", !ep_target_visible);
+            ep_target.query_selector('input[type="checkbox"]').element.checked =
+                ep_target_visible && selection_state.endpoint_positioning_target_checked;
 
             // Enable all inputs in the global section of the panel.
             this.global.query_selector_all(`input[type="text"]`).forEach((input) => {
@@ -10986,43 +10877,27 @@ class Toolbar {
         };
 
         const default_pan = [UIMode.Default, UIMode.Pan];
-        const runtime_all_cell_ids = ui.kwiver_require_runtime_all_cell_ids(
-            "ui.toolbar.all_cell_ids",
+        const selection_state = ui.kwiver_require_runtime_selection_toolbar_state(
+            null,
+            "ui.toolbar",
         );
-        const selected_ids = ui.kwiver_require_selected_ids("ui.toolbar");
-
-        const runtime_connected_ids = selected_ids.length > 0
-            ? ui.kwiver_require_runtime_connected_component_ids(
-                selected_ids,
-                "ui.toolbar.connected_components",
-            )
-            : [];
-
-        const all_cells_count = runtime_all_cell_ids.length;
-        let can_expand_connected = false;
-        if (selected_ids.length > 0) {
-            const connected_set = new Set(runtime_connected_ids);
-            can_expand_connected = selected_ids.length !== runtime_connected_ids.length
-                || selected_ids.some((cell_id) => !connected_set.has(cell_id));
-        }
 
         enable_if("undo", ui.in_mode(UIMode.KeyMove, ...default_pan) && ui.history.present !== 0);
         enable_if("redo", ui.in_mode(UIMode.KeyMove, ...default_pan)
             && ui.history.present < ui.history.actions.length);
         enable_if("select-all",
-            ui.in_mode(...default_pan) && ui.selection.size < all_cells_count);
+            ui.in_mode(...default_pan) && selection_state.can_select_all);
         enable_if("select-connected",
-            ui.in_mode(...default_pan) && ui.selection.size > 0
-            && can_expand_connected
+            ui.in_mode(...default_pan) && selection_state.can_expand_connected
         );
-        enable_if("deselect-all", ui.in_mode(...default_pan) && ui.selection.size > 0);
-        enable_if("delete", ui.in_mode(...default_pan) && ui.selection.size > 0);
-        enable_if("transform", ui.in_mode(...default_pan) && all_cells_count > 0);
+        enable_if("deselect-all", ui.in_mode(...default_pan) && selection_state.can_deselect_all);
+        enable_if("delete", ui.in_mode(...default_pan) && selection_state.can_delete);
+        enable_if("transform", ui.in_mode(...default_pan) && selection_state.can_transform);
         enable_if("centre-view",
             ui.element.query_selector(".focus-point.focused")
             // Technically the first condition below is subsumed by the latter, but we keep it to
             // mirror the conditions in `centre_view`.
-            || ui.selection.size > 0 || ui.view_vertices().length > 0
+            || selection_state.has_selection || ui.view_vertices().length > 0
         );
         enable_if("zoom-in", ui.scale < CONSTANTS.MAX_ZOOM);
         enable_if("zoom-out", ui.scale > CONSTANTS.MIN_ZOOM);

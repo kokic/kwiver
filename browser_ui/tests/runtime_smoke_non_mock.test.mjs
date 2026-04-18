@@ -38,11 +38,23 @@ function requireSelectionSummary(summary, context) {
   return summary;
 }
 
+function assertDependencyLinks(value, context) {
+  assert.equal(Array.isArray(value), true, `${context}: expected dependency link array`);
+  for (const link of value) {
+    assert.equal(Number.isInteger(link?.cell_id), true, `${context}: non-integer dependency id`);
+    assert.equal(
+      link?.role === "source" || link?.role === "target",
+      true,
+      `${context}: invalid dependency role`,
+    );
+  }
+}
+
 function snapshotDependencies(snapshot, cellId, context) {
   const entry = snapshot?.dependencies?.find((dependency) => dependency?.cell_id === cellId) ?? null;
   assert.equal(entry !== null, true, `${context}: expected dependency entry`);
-  assertIntegerIdList(entry?.dependencies, `${context}: dependencies`);
-  assertIntegerIdList(entry?.reverse_dependencies, `${context}: reverse_dependencies`);
+  assertDependencyLinks(entry?.dependencies, `${context}: dependencies`);
+  assertDependencyLinks(entry?.reverse_dependencies, `${context}: reverse_dependencies`);
   return entry;
 }
 
@@ -283,9 +295,12 @@ function testQueryAndSelectionPaths(bridge) {
     kwiver_bridge_paste_selection_json,
     kwiver_bridge_preview_reconnect_plan,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_panel_state,
     kwiver_bridge_selection_summary,
+    kwiver_bridge_selection_toolbar_state,
     kwiver_bridge_set_selection,
     kwiver_bridge_snapshot,
+    kwiver_bridge_suggest_edge_options,
   } = bridge;
 
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.query_selection");
@@ -331,11 +346,29 @@ function testQueryAndSelectionPaths(bridge) {
     targetId,
     "query_selection dependencies",
   ).dependencies;
+  const edgeDependencies = snapshotDependencies(
+    dependencySnapshot,
+    edgeId,
+    "query_selection edge dependencies",
+  ).reverse_dependencies;
   assert.equal(
-    dependencies.includes(edgeId),
+    dependencies.some((link) => link.cell_id === edgeId && link.role === "target"),
     true,
     "query_selection dependencies: expected connecting edge",
   );
+  assert.equal(
+    edgeDependencies.some((link) => link.cell_id === sourceId && link.role === "source"),
+    true,
+    "query_selection edge dependencies: expected source role",
+  );
+  assert.equal(
+    edgeDependencies.some((link) => link.cell_id === targetId && link.role === "target"),
+    true,
+    "query_selection edge dependencies: expected target role",
+  );
+  const runtimeEdge = dependencySnapshot.edges.find((edge) => edge?.id === edgeId) ?? null;
+  assert.equal(runtimeEdge?.source_projection?.kind, "vertex");
+  assert.equal(runtimeEdge?.target_projection?.kind, "vertex");
 
   const summary = requireSelectionSummary(
     kwiver_bridge_selection_summary(
@@ -355,6 +388,36 @@ function testQueryAndSelectionPaths(bridge) {
   assert.equal(transitive.includes(sourceId), true, "query_selection transitive_dependencies: expected source id");
   assert.equal(transitive.includes(edgeId), true, "query_selection transitive_dependencies: expected edge id");
 
+  const panelState = kwiver_bridge_selection_panel_state(
+    [edgeId],
+    "ui.test.non_mock.query_selection.selection_panel_state",
+  );
+  assert.equal(panelState && typeof panelState === "object", true);
+  assert.equal(panelState?.selection_size, 1);
+  assert.equal(panelState?.has_selected_edges, true);
+  assert.equal(panelState?.has_selected_nonloop_edges, true);
+  assert.equal(panelState?.has_selected_loop_edges, false);
+  assert.equal(panelState?.label, "f");
+  assert.equal(panelState?.edge_type, "arrow");
+  assert.equal(panelState?.all_edges_are_arrows, true);
+  assert.equal(typeof panelState?.edge_angle, "number");
+
+  const toolbarState = kwiver_bridge_selection_toolbar_state(
+    [sourceId],
+    "ui.test.non_mock.query_selection.selection_toolbar_state",
+  );
+  assert.equal(toolbarState && typeof toolbarState === "object", true);
+  assert.equal(toolbarState?.all_cells_count, 3);
+  assert.equal(toolbarState?.selected_count, 1);
+  assert.equal(toolbarState?.has_selection, true);
+  assert.equal(toolbarState?.has_any_cells, true);
+  assert.equal(toolbarState?.has_vertices, true);
+  assert.equal(toolbarState?.can_select_all, true);
+  assert.equal(toolbarState?.can_expand_connected, true);
+  assert.equal(toolbarState?.can_deselect_all, true);
+  assert.equal(toolbarState?.can_delete, true);
+  assert.equal(toolbarState?.can_transform, true);
+
   const previewPlan = kwiver_bridge_preview_reconnect_plan(
     edgeId,
     targetId,
@@ -368,6 +431,24 @@ function testQueryAndSelectionPaths(bridge) {
     previewPlan.edges.some((edge) => Number(edge?.id) === edgeId),
     true,
     "query_selection preview_reconnect_plan: expected root edge record",
+  );
+
+  const suggestedOptions = kwiver_bridge_suggest_edge_options(
+    sourceId,
+    targetId,
+    "left",
+    "ui.test.non_mock.query_selection.suggest_edge_options",
+  );
+  assert.equal(suggestedOptions && typeof suggestedOptions === "object", true);
+  assert.equal(
+    suggestedOptions?.label_alignment,
+    "right",
+    "query_selection suggest_edge_options: expected flipped label alignment",
+  );
+  assert.equal(
+    suggestedOptions?.offset,
+    -3,
+    "query_selection suggest_edge_options: expected non-overlapping parallel offset",
   );
 
   const setSelectionEnvelope = kwiver_bridge_set_selection(

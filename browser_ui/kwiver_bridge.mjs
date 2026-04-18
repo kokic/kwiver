@@ -649,10 +649,14 @@ function bridgeRuntimeCellRecord(raw, kind = null) {
   if (recordKind === "edge") {
     const sourceId = raw.source_id;
     const targetId = raw.target_id;
+    const sourceProjection = bridgeEdgeEndpointProjection(raw.source_projection);
+    const targetProjection = bridgeEdgeEndpointProjection(raw.target_projection);
     const options = raw.options;
     if (
       !isFiniteInteger(sourceId)
       || !isFiniteInteger(targetId)
+      || sourceProjection === null
+      || targetProjection === null
       || !options
       || typeof options !== "object"
       || Array.isArray(options)
@@ -667,6 +671,8 @@ function bridgeRuntimeCellRecord(raw, kind = null) {
       label_colour: labelColour,
       source_id: sourceId,
       target_id: targetId,
+      source_projection: sourceProjection,
+      target_projection: targetProjection,
       options,
     };
   }
@@ -674,23 +680,73 @@ function bridgeRuntimeCellRecord(raw, kind = null) {
   return null;
 }
 
+function bridgeEdgeEndpointProjection(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const kind = raw.kind;
+  const hasVertexEndpoint = raw.has_vertex_endpoint;
+  if (
+    (kind !== "vertex" && kind !== "edge")
+    || !isBoolean(hasVertexEndpoint)
+  ) {
+    return null;
+  }
+  return {
+    kind,
+    has_vertex_endpoint: hasVertexEndpoint,
+  };
+}
+
+function bridgeSnapshotDependencyLink(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const cellId = raw.cell_id;
+  const role = raw.role;
+  if (
+    !isFiniteInteger(cellId)
+    || (role !== "source" && role !== "target")
+  ) {
+    return null;
+  }
+  return {
+    cell_id: cellId,
+    role,
+  };
+}
+
 function bridgeSnapshotDependency(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return null;
   }
   const cellId = raw.cell_id;
-  const dependencies = Array.isArray(raw.dependencies)
-    ? finiteIntegerArray(raw.dependencies)
-    : null;
-  const reverseDependencies = Array.isArray(raw.reverse_dependencies)
-    ? finiteIntegerArray(raw.reverse_dependencies)
+  const rawDependencies = Array.isArray(raw.dependencies) ? raw.dependencies : null;
+  const rawReverseDependencies = Array.isArray(raw.reverse_dependencies)
+    ? raw.reverse_dependencies
     : null;
   if (
     !isFiniteInteger(cellId)
-    || dependencies === null
-    || reverseDependencies === null
+    || rawDependencies === null
+    || rawReverseDependencies === null
   ) {
     return null;
+  }
+  const dependencies = [];
+  for (const dependency of rawDependencies) {
+    const parsed = bridgeSnapshotDependencyLink(dependency);
+    if (parsed === null) {
+      return null;
+    }
+    dependencies.push(parsed);
+  }
+  const reverseDependencies = [];
+  for (const dependency of rawReverseDependencies) {
+    const parsed = bridgeSnapshotDependencyLink(dependency);
+    if (parsed === null) {
+      return null;
+    }
+    reverseDependencies.push(parsed);
   }
   return {
     cell_id: cellId,
@@ -793,6 +849,176 @@ function bridgeSelectionSummary(raw) {
     transitive_dependency_ids: transitiveDependencyIds,
     transitive_dependency_ids_excluding_roots: transitiveDependencyIdsExcludingRoots,
     transitive_reverse_dependency_ids: transitiveReverseDependencyIds,
+  };
+}
+
+function nullableFiniteInteger(value) {
+  return value === null ? null : (isFiniteInteger(value) ? value : null);
+}
+
+function nullableFiniteNumber(value) {
+  return value === null ? null : (isFiniteNumber(value) ? value : null);
+}
+
+function nullableString(value) {
+  return value === null ? null : (typeof value === "string" ? value : null);
+}
+
+function nullableColour(value) {
+  return value === null
+    ? null
+    : (value && typeof value === "object" && !Array.isArray(value) ? value : null);
+}
+
+function nullableEdgeShorten(value) {
+  if (value === null) {
+    return null;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const source = value.source;
+  const target = value.target;
+  return isFiniteInteger(source) && isFiniteInteger(target)
+    ? { source, target }
+    : null;
+}
+
+function bridgeSelectionPanelState(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const selectionSize = raw.selection_size;
+  const hasSelection = raw.has_selection;
+  const hasSelectedEdges = raw.has_selected_edges;
+  const hasSelectedNonloopEdges = raw.has_selected_nonloop_edges;
+  const hasSelectedLoopEdges = raw.has_selected_loop_edges;
+  const label = nullableString(raw.label);
+  const labelColour = nullableColour(raw.label_colour);
+  const edgeAngle = nullableFiniteNumber(raw.edge_angle);
+  const labelAlignment = nullableString(raw.label_alignment);
+  const labelPosition = nullableFiniteInteger(raw.label_position);
+  const offset = nullableFiniteInteger(raw.offset);
+  const curve = nullableFiniteInteger(raw.curve);
+  const radius = nullableFiniteInteger(raw.radius);
+  const angle = nullableFiniteInteger(raw.angle);
+  const length = nullableEdgeShorten(raw.length);
+  const level = nullableFiniteInteger(raw.level);
+  const edgeType = nullableString(raw.edge_type);
+  const edgeColour = nullableColour(raw.edge_colour);
+  const tailType = nullableString(raw.tail_type);
+  const bodyType = nullableString(raw.body_type);
+  const headType = nullableString(raw.head_type);
+  const allEdgesAreArrows = raw.all_edges_are_arrows;
+  const corners = raw.corners;
+  const inverseCorners = raw.inverse_corners;
+  const endpointPositioningSourceVisible = raw.endpoint_positioning_source_visible;
+  const endpointPositioningSourceChecked = raw.endpoint_positioning_source_checked;
+  const endpointPositioningTargetVisible = raw.endpoint_positioning_target_visible;
+  const endpointPositioningTargetChecked = raw.endpoint_positioning_target_checked;
+  if (
+    !isFiniteInteger(selectionSize)
+    || !isBoolean(hasSelection)
+    || !isBoolean(hasSelectedEdges)
+    || !isBoolean(hasSelectedNonloopEdges)
+    || !isBoolean(hasSelectedLoopEdges)
+    || (raw.label !== null && label === null)
+    || (raw.label_colour !== null && labelColour === null)
+    || (raw.edge_angle !== null && edgeAngle === null)
+    || (raw.label_alignment !== null && labelAlignment === null)
+    || (raw.label_position !== null && labelPosition === null)
+    || (raw.offset !== null && offset === null)
+    || (raw.curve !== null && curve === null)
+    || (raw.radius !== null && radius === null)
+    || (raw.angle !== null && angle === null)
+    || (raw.length !== null && length === null)
+    || (raw.level !== null && level === null)
+    || (raw.edge_type !== null && edgeType === null)
+    || (raw.edge_colour !== null && edgeColour === null)
+    || (raw.tail_type !== null && tailType === null)
+    || (raw.body_type !== null && bodyType === null)
+    || (raw.head_type !== null && headType === null)
+    || !isBoolean(allEdgesAreArrows)
+    || !isFiniteInteger(corners)
+    || !isFiniteInteger(inverseCorners)
+    || !isBoolean(endpointPositioningSourceVisible)
+    || !isBoolean(endpointPositioningSourceChecked)
+    || !isBoolean(endpointPositioningTargetVisible)
+    || !isBoolean(endpointPositioningTargetChecked)
+  ) {
+    return null;
+  }
+  return {
+    selection_size: selectionSize,
+    has_selection: hasSelection,
+    has_selected_edges: hasSelectedEdges,
+    has_selected_nonloop_edges: hasSelectedNonloopEdges,
+    has_selected_loop_edges: hasSelectedLoopEdges,
+    label,
+    label_colour: labelColour,
+    edge_angle: edgeAngle,
+    label_alignment: labelAlignment,
+    label_position: labelPosition,
+    offset,
+    curve,
+    radius,
+    angle,
+    length,
+    level,
+    edge_type: edgeType,
+    edge_colour: edgeColour,
+    tail_type: tailType,
+    body_type: bodyType,
+    head_type: headType,
+    all_edges_are_arrows: allEdgesAreArrows,
+    corners,
+    inverse_corners: inverseCorners,
+    endpoint_positioning_source_visible: endpointPositioningSourceVisible,
+    endpoint_positioning_source_checked: endpointPositioningSourceChecked,
+    endpoint_positioning_target_visible: endpointPositioningTargetVisible,
+    endpoint_positioning_target_checked: endpointPositioningTargetChecked,
+  };
+}
+
+function bridgeSelectionToolbarState(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const allCellsCount = raw.all_cells_count;
+  const selectedCount = raw.selected_count;
+  const hasSelection = raw.has_selection;
+  const hasAnyCells = raw.has_any_cells;
+  const hasVertices = raw.has_vertices;
+  const canSelectAll = raw.can_select_all;
+  const canExpandConnected = raw.can_expand_connected;
+  const canDeselectAll = raw.can_deselect_all;
+  const canDelete = raw.can_delete;
+  const canTransform = raw.can_transform;
+  if (
+    !isFiniteInteger(allCellsCount)
+    || !isFiniteInteger(selectedCount)
+    || !isBoolean(hasSelection)
+    || !isBoolean(hasAnyCells)
+    || !isBoolean(hasVertices)
+    || !isBoolean(canSelectAll)
+    || !isBoolean(canExpandConnected)
+    || !isBoolean(canDeselectAll)
+    || !isBoolean(canDelete)
+    || !isBoolean(canTransform)
+  ) {
+    return null;
+  }
+  return {
+    all_cells_count: allCellsCount,
+    selected_count: selectedCount,
+    has_selection: hasSelection,
+    has_any_cells: hasAnyCells,
+    has_vertices: hasVertices,
+    can_select_all: canSelectAll,
+    can_expand_connected: canExpandConnected,
+    can_deselect_all: canDeselectAll,
+    can_delete: canDelete,
+    can_transform: canTransform,
   };
 }
 
@@ -1858,6 +2084,44 @@ export function kwiver_bridge_selection_summary(
   return bridgeSelectionSummary(envelope?.result);
 }
 
+export function kwiver_bridge_selection_panel_state(
+  selectedIds = [],
+  origin = "ui.bridge.selection_panel_state",
+) {
+  if (!Array.isArray(selectedIds)) {
+    return null;
+  }
+  const normalizedSelectedIds = finiteIntegerArray(selectedIds);
+  if (normalizedSelectedIds === null) {
+    return null;
+  }
+  const envelope = dispatchCommandResult(
+    "selection_panel_state_json",
+    { selected_ids: normalizedSelectedIds },
+    origin,
+  );
+  return bridgeSelectionPanelState(envelope?.result);
+}
+
+export function kwiver_bridge_selection_toolbar_state(
+  selectedIds = [],
+  origin = "ui.bridge.selection_toolbar_state",
+) {
+  if (!Array.isArray(selectedIds)) {
+    return null;
+  }
+  const normalizedSelectedIds = finiteIntegerArray(selectedIds);
+  if (normalizedSelectedIds === null) {
+    return null;
+  }
+  const envelope = dispatchCommandResult(
+    "selection_toolbar_state_json",
+    { selected_ids: normalizedSelectedIds },
+    origin,
+  );
+  return bridgeSelectionToolbarState(envelope?.result);
+}
+
 export function kwiver_bridge_preview_reconnect_plan(
   edgeId,
   sourceId,
@@ -1878,6 +2142,28 @@ export function kwiver_bridge_preview_reconnect_plan(
   }, origin);
   const result = envelope?.result;
   return result && typeof result === "object" && Array.isArray(result.edges) ? result : null;
+}
+
+export function kwiver_bridge_suggest_edge_options(
+  sourceId,
+  targetId,
+  defaultLabelAlignment = "left",
+  origin = "ui.bridge.suggest_edge_options",
+) {
+  if (
+    !Number.isInteger(sourceId)
+    || !Number.isInteger(targetId)
+    || typeof defaultLabelAlignment !== "string"
+  ) {
+    return null;
+  }
+  const envelope = dispatchCommandResult("suggest_edge_options_json", {
+    source_id: sourceId,
+    target_id: targetId,
+    default_label_alignment: defaultLabelAlignment,
+  }, origin);
+  const result = envelope?.result;
+  return result && typeof result === "object" && !Array.isArray(result) ? result : null;
 }
 
 export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
