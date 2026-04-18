@@ -1554,6 +1554,7 @@ class UI {
                         runtime_record.label,
                         runtime_record.position,
                         runtime_record.label_colour,
+                        runtime_id,
                     );
                 } else if (runtime_record.kind === "edge") {
                     if (!runtime_record.source || !runtime_record.target) {
@@ -2414,8 +2415,8 @@ class UI {
             runtime_record.label,
             runtime_record.position,
             runtime_record.label_colour,
+            runtime_record.runtime_id,
         );
-        vertex.kwiver_id = runtime_record.runtime_id;
         this.kwiver_assert_runtime_cell_match(vertex, origin);
         return vertex;
     }
@@ -9771,13 +9772,18 @@ class Panel {
 
                 // 1-cells take account of the dimensions of the cell label to be drawn snugly,
                 // so if the label is resized, the edges need to be redrawn.
-                const edges_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
-                    [cell],
-                    true,
-                    "ui.label.resize.dependencies",
-                );
-                for (const edge of edges_to_render) {
-                    edge.render(ui);
+                // During first construction a vertex may not yet be fully runtime-linked. In that
+                // window there cannot be any dependent edges to rerender yet, so we can safely
+                // skip the dependency query until the runtime id exists.
+                if (Number.isInteger(cell.kwiver_id)) {
+                    const edges_to_render = ui.kwiver_require_runtime_transitive_dependency_cells(
+                        [cell],
+                        true,
+                        "ui.label.resize.dependencies",
+                    );
+                    for (const edge of edges_to_render) {
+                        edge.render(ui);
+                    }
                 }
 
                 // If the cell is empty, we highlight it to make it easier to spot.
@@ -11753,8 +11759,9 @@ Cell.NEXT_ID = 0;
 
 /// 0-cells, or vertices. This is primarily specialised in its set up of HTML elements.
 export class Vertex extends Cell {
-    constructor(ui, label, position, label_colour = Colour.black()) {
+    constructor(ui, label, position, label_colour = Colour.black(), kwiver_id = null) {
         super(0, label, label_colour);
+        this.kwiver_id = Number.isInteger(kwiver_id) ? kwiver_id : null;
 
         this.position = position;
         // The shape data is going to be overwritten immediately, so really this information is
