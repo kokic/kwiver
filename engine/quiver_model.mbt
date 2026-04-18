@@ -86,6 +86,8 @@ pub fn Quiver::remove(self : Quiver, cell_id : Int, when : Int) -> Array[Int] {
   let removed : @hashmap.HashMap[Int, Bool] = @hashmap.new()
   let removal_queue : Array[Int] = [cell_id]
   let mut index = 0
+  // `dependencies` stores the forward dependent closure. Walking it here
+  // tombstones every cell that must disappear with the requested root.
   while index < removal_queue.length() {
     let current = removal_queue[index]
     index = index + 1
@@ -115,6 +117,8 @@ pub fn Quiver::flush(self : Quiver, when : Int) -> Unit {
     }
   })
 
+  // Physical deletion is deferred until `flush`, so this pass can remove the
+  // tombstone and scrub both adjacency maps in one place.
   for cell_id in to_flush {
     self.dependencies.remove(cell_id)
     match self.reverse_dependencies.get(cell_id) {
@@ -328,7 +332,8 @@ pub fn Quiver::connect(
     @hashmap.new()
   })
 
-  // Clear old reverse dependencies for reconnection.
+  // The edge owns back-references to its current endpoints. Reconnecting must
+  // clear those old links before rebuilding adjacency.
   let old_reverse = Array::from_iter(reverse_deps.keys())
   for cell_id in old_reverse {
     match self.dependencies.get(cell_id) {
@@ -357,7 +362,8 @@ pub fn Quiver::connect(
     _ => ()
   }
 
-  // Recompute levels for the edge and all transitively dependent edges.
+  // Edge levels are derived from the deepest prerequisite. Recompute the moved
+  // edge and every edge that depends on it so topological ordering stays valid.
   let closure = self.transitive_dependencies([edge_id])
   for cell_id in closure {
     match self.cells.get(cell_id) {

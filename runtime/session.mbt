@@ -201,6 +201,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
   self : BrowserDemoSession,
   command_json : String,
 ) -> String {
+  // Session responses are stateful envelopes around the stateless runtime
+  // dispatch API, so snapshot before/after state up front.
   let before_payload = self.payload()
   let before_selection = self.selection()
   let before_cell_ids = self.all_cell_ids()
@@ -211,6 +213,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
   let mut requested_action = "unknown"
   let mut protocol_error : String? = None
 
+  // Validate the outer command envelope here so malformed requests still
+  // produce the same session-shaped error payload as runtime failures.
   match runtime_parse_json_object(command_json) {
     Some(command_root) => {
       origin = runtime_json_optional_string(command_root, "origin")
@@ -282,6 +286,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
     !runtime_int_arrays_equal(before_selection, after_selection) ||
     !runtime_int_arrays_equal(before_cell_ids, after_cell_ids)
 
+  // Read-only commands still get a full envelope, but only material state
+  // changes should create undo/redo checkpoints.
   let undo_checkpoint = if changed {
     Some(before_payload)
   } else {

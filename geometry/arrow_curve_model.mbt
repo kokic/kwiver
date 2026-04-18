@@ -152,6 +152,8 @@ fn ArrowCurveModel::arc_for_chord_at_angle(
   let inner_dis = self.config.arc_inner_dis
   let semicircle_radius = inner_dis / 2.0
   let boundary_dis = outer_dis - inner_dis
+  // Short chords behave like loop-style arcs; long chords gradually flatten
+  // into the wide bridging arc used between distinct vertices.
   let sagitta = if chord >= outer_dis {
     EPSILON
   } else {

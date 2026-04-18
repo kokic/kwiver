@@ -136,6 +136,8 @@ fn ArrowLayout::binary_boundary(
     self.config.boundary_iterations
   }
 
+  // Coarse sampling finds a bracket where the curve leaves the shape; binary
+  // search refines that last-inside/first-outside transition.
   let mut i = 0
   while i < iterations {
     let mid = (left + right) / 2.0
@@ -179,6 +181,8 @@ fn ArrowLayout::endpoint_for_shape(
         self.config.boundary_samples
       }
 
+      // Search from the relevant endpoint inward. The curve can intersect the
+      // shape multiple times, but layout needs the boundary closest to that end.
       if source_side {
         let mut prev_t = 0.0
         let mut prev_inside = shape.contains(self.curve_model.point(prev_t))
@@ -311,6 +315,8 @@ pub fn ArrowLayout::label_position_local(
   let mut label_offset = 0.0
   let angle = self.curve_model.display_angle()
 
+  // Move the label along the local normal until its padded rounded box no
+  // longer intersects the rendered curve, matching the browser collision rule.
   let bail_out = 1024
   let mut i = 0
   while true {
