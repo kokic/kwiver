@@ -32,6 +32,7 @@ import {
     kwiver_bridge_paste_selection_json,
     kwiver_bridge_reconnect_edge_json,
     kwiver_bridge_remove_json,
+    kwiver_bridge_flush_json,
     kwiver_bridge_reverse_edge_json,
     kwiver_bridge_selection_panel_state,
     kwiver_bridge_set_edge_curve_json,
@@ -2747,6 +2748,11 @@ class UI {
             last_envelope = envelope;
         }
         return last_envelope;
+    }
+
+    kwiver_history_flush(when, origin = "ui.history.flush") {
+        const envelope = kwiver_bridge_flush_json(when, origin);
+        return envelope !== null && envelope.ok === true;
     }
 
     kwiver_history_connect(action, to) {
@@ -6195,6 +6201,9 @@ class History {
 
         this.states.push(state);
         this.collapse = null;
+        if (!ui.kwiver_history_flush(this.present, "ui.history.add")) {
+            throw new Error("[kwiver-only] ui.history.add: flush failed");
+        }
 
         // Update the history toolbar buttons (e.g. enabling Redo).
         ui.toolbar.update(ui);
@@ -6267,6 +6276,9 @@ class History {
         this.permanentise();
         this.states.splice(this.present + 1, 1);
         this.actions.splice(this.present, 1);
+        if (!ui.kwiver_history_flush(this.present, "ui.history.pop")) {
+            throw new Error("[kwiver-only] ui.history.pop: flush failed");
+        }
     }
 
     /// Trigger an action. Returns whether the panel should be updated after the action.
@@ -6609,7 +6621,10 @@ class History {
                         break;
                     }
 
-                    const delete_envelope = ui.kwiver_history_delete(action.cells, this.present);
+                    const delete_envelope = ui.kwiver_history_delete(
+                        action.cells,
+                        this.present + 1,
+                    );
                     if (delete_envelope === null) {
                         kwiver_fail("history.delete", "dispatch failed");
                     }
@@ -10928,7 +10943,7 @@ class Toolbar {
     }
 }
 
-export { Toolbar, UI };
+export { Toolbar, UI, History };
 
 /// The colour wheel and colour picker.
 class ColourPicker {

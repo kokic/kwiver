@@ -2357,6 +2357,16 @@ export function kwiver_bridge_remove_json(
   }, origin);
 }
 
+export function kwiver_bridge_flush_json(
+  when,
+  origin = "ui.bridge.flush",
+) {
+  if (!isFiniteInteger(when)) {
+    return null;
+  }
+  return dispatchMutationResult("flush_json", { when }, origin);
+}
+
 
 export function kwiver_bridge_set_edge_offset_json(
   edgeId,

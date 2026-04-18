@@ -203,6 +203,53 @@ function testMutationExportImportRoundtrip(bridge) {
   assert.equal(loop?.options?.shape, "arc", "roundtrip after: expected loop arc shape");
 }
 
+function testFlushReusesDeletedIds(bridge) {
+  const {
+    kwiver_bridge_add_vertex_json,
+    kwiver_bridge_flush_json,
+    kwiver_bridge_remove_json,
+    kwiver_bridge_reset,
+  } = bridge;
+
+  const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.flush_reuse");
+  assert.equal(resetEnvelope?.ok, true);
+
+  const addVertex = kwiver_bridge_add_vertex_json(
+    "A",
+    0,
+    0,
+    null,
+    "ui.test.non_mock.flush_reuse.add_vertex.initial",
+  );
+  assert.equal(addVertex?.ok, true);
+  const firstId = requireAddedId(addVertex, "flush reuse add vertex");
+  assert.equal(firstId, 1);
+
+  const removeEnvelope = kwiver_bridge_remove_json(
+    firstId,
+    1,
+    "ui.test.non_mock.flush_reuse.remove",
+  );
+  assert.equal(removeEnvelope?.ok, true);
+
+  const flushEnvelope = kwiver_bridge_flush_json(
+    1,
+    "ui.test.non_mock.flush_reuse.flush",
+  );
+  assert.equal(flushEnvelope?.ok, true);
+
+  const addReused = kwiver_bridge_add_vertex_json(
+    "B",
+    1,
+    0,
+    null,
+    "ui.test.non_mock.flush_reuse.add_vertex.reused",
+  );
+  assert.equal(addReused?.ok, true);
+  const reusedId = requireAddedId(addReused, "flush reuse add vertex reused");
+  assert.equal(reusedId, 1, "flush reuse: expected deleted id to be reusable after flush");
+}
+
 function testTikzImportPath(bridge) {
   const {
     kwiver_bridge_export,
@@ -506,6 +553,7 @@ async function run() {
   const testCases = [
     ["runtime non-mock: bridge loads runtime artifact", () => testRuntimeLoadsWithoutMock(bridge)],
     ["runtime non-mock: mutation/export/import payload roundtrip", () => testMutationExportImportRoundtrip(bridge)],
+    ["runtime non-mock: flush reuses deleted ids", () => testFlushReusesDeletedIds(bridge)],
     ["runtime non-mock: tikz import command path", () => testTikzImportPath(bridge)],
     ["runtime non-mock: tikz import fail-fast path", () => testTikzImportFailFastPath(bridge)],
     ["runtime non-mock: query and selection command paths", () => testQueryAndSelectionPaths(bridge)],
