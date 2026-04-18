@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 
 import {
-  kwiver_bridge_all_cell_ids,
   kwiver_bridge_add_edge_json,
   kwiver_bridge_add_vertex_json,
-  kwiver_bridge_all_cells,
   kwiver_bridge_arrow_find_endpoints_local,
   kwiver_bridge_arrow_label_position_local,
   kwiver_bridge_arrow_render_plan_local,
@@ -23,8 +21,7 @@ import {
   kwiver_bridge_bezier_t_after_length,
   kwiver_bridge_bezier_tangent,
   kwiver_bridge_bezier_width,
-  kwiver_bridge_connected_components,
-  kwiver_bridge_dependencies,
+  kwiver_bridge_cell_records_for_ids,
   kwiver_bridge_export,
   kwiver_bridge_export_selection,
   kwiver_bridge_flip_edge_json,
@@ -37,9 +34,9 @@ import {
   kwiver_bridge_reconnect_edge_json,
   kwiver_bridge_remove_json,
   kwiver_bridge_reverse_edge_json,
-  kwiver_bridge_reverse_dependencies,
   kwiver_bridge_reset,
   kwiver_bridge_ready,
+  kwiver_bridge_selection_summary,
   kwiver_bridge_set_edge_curve_json,
   kwiver_bridge_set_edge_label_alignment_json,
   kwiver_bridge_set_edge_label_position_json,
@@ -47,8 +44,7 @@ import {
   kwiver_bridge_set_label_colour_json,
   kwiver_bridge_set_label_json,
   kwiver_bridge_set_selection,
-  kwiver_bridge_transitive_dependencies,
-  kwiver_bridge_transitive_reverse_dependencies,
+  kwiver_bridge_snapshot,
   kwiver_bridge_status,
   kwiver_bridge_test_install_mock_api,
   kwiver_bridge_test_reset,
@@ -154,41 +150,61 @@ function installRecordingMock(recorder = null) {
         recorder.push(command);
       }
       switch (command.action) {
-        case "all_cells_json":
+        case "snapshot_json":
           return {
             ok: true,
             protocol: COMMAND_PROTOCOL,
-            result: [{ id: 1, kind: "vertex" }],
+            result: {
+              payload: "payload-snapshot",
+              cell_ids: [1, 2, 3],
+              vertices: [
+                {
+                  id: 1,
+                  level: 0,
+                  label: "A",
+                  label_colour: { h: 0, s: 0, l: 0, a: 1 },
+                  x: 0,
+                  y: 0,
+                },
+                {
+                  id: 2,
+                  level: 0,
+                  label: "B",
+                  label_colour: { h: 0, s: 0, l: 0, a: 1 },
+                  x: 1,
+                  y: 0,
+                },
+              ],
+              edges: [
+                {
+                  id: 3,
+                  level: 1,
+                  label: "f",
+                  label_colour: { h: 0, s: 0, l: 0, a: 1 },
+                  source_id: 1,
+                  target_id: 2,
+                  options: { shape: "bezier" },
+                },
+              ],
+              dependencies: [
+                { cell_id: 1, dependencies: [], reverse_dependencies: [3] },
+                { cell_id: 2, dependencies: [3], reverse_dependencies: [] },
+                { cell_id: 3, dependencies: [1, 2], reverse_dependencies: [2] },
+              ],
+            },
           };
-        case "all_cell_ids_json":
+        case "selection_summary_json":
           return {
             ok: true,
             protocol: COMMAND_PROTOCOL,
-            result: [1, 2, 3],
-          };
-        case "connected_components_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [1, 2],
-          };
-        case "dependencies_of_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [6, 7],
-          };
-        case "transitive_dependencies_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [2, 3, 4],
-          };
-        case "transitive_reverse_dependencies_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [1, 2, 3],
+            result: {
+              roots: Array.isArray(command.input?.roots) ? command.input.roots : [],
+              all_cell_ids: [1, 2, 3],
+              connected_component_ids: [1, 2, 3],
+              transitive_dependency_ids: [1, 3],
+              transitive_dependency_ids_excluding_roots: [3],
+              transitive_reverse_dependency_ids: [1, 2, 3],
+            },
           };
         case "preview_reconnect_plan_json":
           return {
@@ -198,12 +214,6 @@ function installRecordingMock(recorder = null) {
               edge_id: 3,
               edges: [{ kind: "edge", id: 3 }],
             },
-          };
-        case "reverse_dependencies_of_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [9, 8],
           };
         case "export_selection":
           return {
@@ -269,40 +279,41 @@ function assertSelectionEnvelope(envelope) {
   assert.equal(Array.isArray(envelopeSelection(envelope)), true);
 }
 
+function requireSnapshot(snapshot, context) {
+  assert.equal(snapshot && typeof snapshot === "object", true, `${context}: expected snapshot`);
+  assert.deepEqual(snapshot?.cell_ids, [1, 2, 3]);
+  return snapshot;
+}
+
+function requireSelectionSummary(summary, context) {
+  assert.equal(summary && typeof summary === "object", true, `${context}: expected selection summary`);
+  assert.deepEqual(summary?.all_cell_ids, [1, 2, 3]);
+  return summary;
+}
+
 function testInteractionWrappersDispatchRuntimeCommands() {
   installRecordingMock();
 
-  const cells = kwiver_bridge_all_cells();
+  const snapshot = requireSnapshot(
+    kwiver_bridge_snapshot("ui.test.snapshot"),
+    "bridge snapshot",
+  );
+  const cells = kwiver_bridge_cell_records_for_ids(
+    [1, 2, 3],
+    "ui.test.cell_records",
+    snapshot,
+  );
   assert.equal(Array.isArray(cells), true);
-  assert.equal(cells?.length, 1);
+  assert.equal(cells?.length, 3);
 
-  const cellIds = kwiver_bridge_all_cell_ids("ui.test.all_cell_ids");
-  assert.deepEqual(cellIds, [1, 2, 3]);
-
-  const connectedIds = kwiver_bridge_connected_components([1], "ui.test.connected_components");
-  assert.deepEqual(connectedIds, [1, 2]);
-
-  const dependenciesIds = kwiver_bridge_dependencies(5, "ui.test.dependencies");
-  assert.deepEqual(dependenciesIds, [6, 7]);
-
-  const transitiveIds = kwiver_bridge_transitive_dependencies(
-    [1, 2],
-    true,
-    "ui.test.transitive_dependencies",
+  const selectionSummary = requireSelectionSummary(
+    kwiver_bridge_selection_summary([1], "ui.test.selection_summary"),
+    "bridge selection summary",
   );
-  assert.deepEqual(transitiveIds, [2, 3, 4]);
-
-  const reverseIds = kwiver_bridge_transitive_reverse_dependencies(
-    [4],
-    "ui.test.transitive_reverse_dependencies",
-  );
-  assert.deepEqual(reverseIds, [1, 2, 3]);
-
-  const reverseDependencyIds = kwiver_bridge_reverse_dependencies(
-    7,
-    "ui.test.reverse_dependencies",
-  );
-  assert.deepEqual(reverseDependencyIds, [9, 8]);
+  assert.deepEqual(selectionSummary.connected_component_ids, [1, 2, 3]);
+  assert.deepEqual(selectionSummary.transitive_dependency_ids, [1, 3]);
+  assert.deepEqual(selectionSummary.transitive_dependency_ids_excluding_roots, [3]);
+  assert.deepEqual(selectionSummary.transitive_reverse_dependency_ids, [1, 2, 3]);
 
   const previewPlan = kwiver_bridge_preview_reconnect_plan(
     3,
@@ -768,41 +779,30 @@ function testQueryWrappersRejectMalformedResults() {
   const installed = kwiver_bridge_test_install_mock_api(
     mockApiFromResponder((command) => {
       switch (command.action) {
-        case "all_cell_ids_json":
+        case "snapshot_json":
           return {
             ok: true,
             protocol: COMMAND_PROTOCOL,
-            result: [1, "x"],
+            result: {
+              payload: "payload",
+              cell_ids: [1, "x"],
+              vertices: [],
+              edges: [],
+              dependencies: [],
+            },
           };
-        case "connected_components_json":
+        case "selection_summary_json":
           return {
             ok: true,
             protocol: COMMAND_PROTOCOL,
-            result: [2, {}],
-          };
-        case "dependencies_of_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: { ids: [3] },
-          };
-        case "transitive_dependencies_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [4, "bad"],
-          };
-        case "transitive_reverse_dependencies_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [5, {}],
-          };
-        case "reverse_dependencies_of_json":
-          return {
-            ok: true,
-            protocol: COMMAND_PROTOCOL,
-            result: [6, {}],
+            result: {
+              roots: [1],
+              all_cell_ids: [1],
+              connected_component_ids: [2, {}],
+              transitive_dependency_ids: [4, "bad"],
+              transitive_dependency_ids_excluding_roots: [5],
+              transitive_reverse_dependency_ids: [6],
+            },
           };
         default:
           return {
@@ -815,30 +815,20 @@ function testQueryWrappersRejectMalformedResults() {
   );
   assert.equal(installed, true);
 
-  const allCellIds = kwiver_bridge_all_cell_ids("ui.test.bad.all_cell_ids");
-  assert.equal(allCellIds, null);
+  const snapshot = kwiver_bridge_snapshot("ui.test.bad.snapshot");
+  assert.equal(snapshot, null);
 
-  const connected = kwiver_bridge_connected_components([1], "ui.test.bad.connected_components");
-  assert.equal(connected, null);
-
-  const dependencies = kwiver_bridge_dependencies(9, "ui.test.bad.dependencies");
-  assert.equal(dependencies, null);
-
-  const transitive = kwiver_bridge_transitive_dependencies(
+  const cellRecords = kwiver_bridge_cell_records_for_ids(
     [1],
-    false,
-    "ui.test.bad.transitive_dependencies",
+    "ui.test.bad.cell_records",
   );
-  assert.equal(transitive, null);
+  assert.equal(cellRecords, null);
 
-  const transitiveReverse = kwiver_bridge_transitive_reverse_dependencies(
+  const summary = kwiver_bridge_selection_summary(
     [1],
-    "ui.test.bad.transitive_reverse_dependencies",
+    "ui.test.bad.selection_summary",
   );
-  assert.equal(transitiveReverse, null);
-
-  const reverse = kwiver_bridge_reverse_dependencies(9, "ui.test.bad.reverse_dependencies");
-  assert.equal(reverse, null);
+  assert.equal(summary, null);
 
   const preview = kwiver_bridge_preview_reconnect_plan(
     3,
@@ -875,7 +865,7 @@ const TEST_CASES = [
     testInteractionWrappersDispatchRuntimeCommands,
   ],
   [
-    "bridge smoke: query wrappers reject malformed runtime results",
+    "bridge smoke: snapshot and selection adapters reject malformed runtime results",
     testQueryWrappersRejectMalformedResults,
   ],
   [

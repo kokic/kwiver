@@ -63,6 +63,7 @@ options(
         "ffi_adapter_all_cell_ids",
         "ffi_adapter_snapshot",
         "ffi_adapter_snapshot_json",
+        "ffi_adapter_selection_summary_json",
         "ffi_adapter_dependencies_of",
         "ffi_adapter_reverse_dependencies_of",
         "ffi_adapter_transitive_dependencies",

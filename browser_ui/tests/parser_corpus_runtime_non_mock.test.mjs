@@ -21,6 +21,12 @@ function assertIntegerIdList(value, context) {
   }
 }
 
+function requireSelectionSummary(summary, context) {
+  assert.equal(summary && typeof summary === "object", true, `${context}: expected selection summary`);
+  assertIntegerIdList(summary?.all_cell_ids, `${context}: all_cell_ids`);
+  return summary;
+}
+
 async function loadBridgeModule() {
   return import(`../kwiver_bridge.mjs?runtime-parser-corpus-non-mock=${Date.now()}`);
 }
@@ -44,36 +50,51 @@ async function ensureRuntimeReady(bridge) {
 
 function assertCaseImports(bridge, parserCase) {
   const {
-    kwiver_bridge_all_cell_ids,
     kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
   } = bridge;
 
   const originBase = `ui.test.non_mock.parser_corpus.import.${parserCase.id}`;
   assert.equal(kwiver_bridge_reset(`${originBase}.reset`)?.ok, true);
-  assert.deepEqual(kwiver_bridge_all_cell_ids(`${originBase}.ids.before`), []);
+  assert.deepEqual(
+    requireSelectionSummary(
+      kwiver_bridge_selection_summary([], `${originBase}.selection_summary.before`),
+      `${parserCase.title}: before`,
+    ).all_cell_ids,
+    [],
+  );
 
   const result = kwiver_bridge_import_tikz_result(parserCase.snippet, defaultSettings());
   assert.equal(result?.ok, true, `${parserCase.title}: expected successful import result`);
   assert.equal(typeof result?.payload, "string", `${parserCase.title}: expected payload`);
   assert.notEqual(result?.payload, "", `${parserCase.title}: expected non-empty payload`);
 
-  const idsAfter = kwiver_bridge_all_cell_ids(`${originBase}.ids.after`);
+  const idsAfter = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], `${originBase}.selection_summary.after`),
+    `${parserCase.title}: after`,
+  ).all_cell_ids;
   assertIntegerIdList(idsAfter, parserCase.title);
   assert.notEqual(idsAfter.length, 0, `${parserCase.title}: expected imported state`);
 }
 
 function assertCaseFailFast(bridge, parserCase) {
   const {
-    kwiver_bridge_all_cell_ids,
     kwiver_bridge_export_payload,
     kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
   } = bridge;
 
   const originBase = `ui.test.non_mock.parser_corpus.fail_fast.${parserCase.id}`;
   assert.equal(kwiver_bridge_reset(`${originBase}.reset`)?.ok, true);
-  assert.deepEqual(kwiver_bridge_all_cell_ids(`${originBase}.ids.before`), []);
+  assert.deepEqual(
+    requireSelectionSummary(
+      kwiver_bridge_selection_summary([], `${originBase}.selection_summary.before`),
+      `${parserCase.title}: before`,
+    ).all_cell_ids,
+    [],
+  );
 
   const result = kwiver_bridge_import_tikz_result(parserCase.snippet, defaultSettings());
   assert.equal(result?.ok, false, `${parserCase.title}: expected fail-fast result`);
@@ -84,7 +105,10 @@ function assertCaseFailFast(bridge, parserCase) {
     `${parserCase.title}: payload should match unchanged state`,
   );
 
-  const idsAfter = kwiver_bridge_all_cell_ids(`${originBase}.ids.after`);
+  const idsAfter = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], `${originBase}.selection_summary.after`),
+    `${parserCase.title}: after`,
+  ).all_cell_ids;
   assert.deepEqual(idsAfter, [], `${parserCase.title}: state should remain empty`);
 }
 

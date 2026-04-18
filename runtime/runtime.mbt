@@ -1597,6 +1597,14 @@ pub fn BrowserRuntime::snapshot_json(self : BrowserRuntime) -> String {
 }
 
 ///|
+pub fn BrowserRuntime::selection_summary_json(
+  self : BrowserRuntime,
+  roots : Array[Int],
+) -> String {
+  @engine.ffi_adapter_selection_summary_json(self.adapter, roots)
+}
+
+///|
 pub fn BrowserRuntime::dependencies_of(
   self : BrowserRuntime,
   cell_id : Int,
@@ -2060,6 +2068,13 @@ pub fn BrowserRuntime::dispatch_json(
     "snapshot_json" => result = @json.parse(self.snapshot_json())
     "all_cells_json" => result = @json.parse(runtime_cell_data_array_json_string(self.all_cells()))
     "all_cell_ids_json" => result = @json.parse(browser_int_array_json_string(self.all_cell_ids()))
+    "selection_summary_json" => {
+      let input = runtime_dispatch_input_object(root)
+      let roots : Array[Int] = @json.from_json(
+        browser_json_required_field(input, "roots"),
+      )
+      result = @json.parse(self.selection_summary_json(roots))
+    }
     "dependencies_of_json" => {
       let input = runtime_dispatch_input_object(root)
       let cell_id : Int = @json.from_json(

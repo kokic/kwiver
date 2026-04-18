@@ -2,9 +2,10 @@ import { delay } from "./dom.mjs";
 import { DiagnosticError, DiagnosticRange } from "./diagnostics.mjs";
 import { Point } from "./ds.mjs";
 import {
-    kwiver_bridge_all_cells,
+    kwiver_bridge_cell_records_for_ids,
     kwiver_bridge_export,
     kwiver_bridge_import_tikz_result,
+    kwiver_bridge_snapshot,
 } from "./kwiver_bridge.mjs";
 
 function tikzImportKindTitle(kind) {
@@ -104,7 +105,17 @@ export class Quiver {
                 }
 
                 if (bridged.ok === true) {
-                    const runtime_cells = kwiver_bridge_all_cells();
+                    const runtime_snapshot = kwiver_bridge_snapshot("quiver.import.tikz-cd.snapshot");
+                    const runtime_cells = runtime_snapshot === null
+                        ? null
+                        : kwiver_bridge_cell_records_for_ids(
+                            runtime_snapshot.cell_ids,
+                            "quiver.import.tikz-cd.cell_records",
+                            runtime_snapshot,
+                        );
+                    if (!Array.isArray(runtime_cells)) {
+                        throw new Error("kwiver MoonBit bridge unavailable for tikz-cd import snapshot");
+                    }
                     ui.kwiver_import_runtime_cells(
                         runtime_cells,
                         "quiver.import.tikz-cd",

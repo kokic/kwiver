@@ -15,9 +15,7 @@ import {
     kwiver_bridge_unavailable_error,
 } from "./bridge_startup.mjs";
 import {
-    kwiver_bridge_all_cell_ids,
-    kwiver_bridge_all_cells,
-    kwiver_bridge_connected_components,
+    kwiver_bridge_cell_records_for_ids,
     kwiver_bridge_import_payload_json,
     kwiver_bridge_ready,
     kwiver_bridge_status,
@@ -42,8 +40,8 @@ import {
     kwiver_bridge_set_label_colour_json,
     kwiver_bridge_set_label_json,
     kwiver_bridge_set_selection,
-    kwiver_bridge_transitive_dependencies,
-    kwiver_bridge_transitive_reverse_dependencies,
+    kwiver_bridge_selection_summary,
+    kwiver_bridge_snapshot,
 } from "./kwiver_bridge.mjs";
 /// Various parameters.
 Object.assign(CONSTANTS, {
@@ -1451,45 +1449,24 @@ class UI {
         return cell;
     }
 
-    kwiver_runtime_cells_for_ids(
-        runtime_ids,
-        runtime_cells = null,
-        origin = "ui.runtime.cells_for_ids",
+    kwiver_runtime_snapshot(origin = "ui.runtime.snapshot") {
+        const runtime_snapshot = kwiver_bridge_snapshot(origin);
+        return runtime_snapshot && typeof runtime_snapshot === "object"
+            ? runtime_snapshot
+            : null;
+    }
+
+    kwiver_runtime_selection_summary(
+        roots = [],
+        origin = "ui.runtime.selection_summary",
     ) {
-        if (!Array.isArray(runtime_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": runtime ids unavailable");
+        if (!Array.isArray(roots)) {
+            return null;
         }
-
-        const runtime_snapshot = runtime_cells ?? kwiver_bridge_all_cells();
-        if (!Array.isArray(runtime_snapshot)) {
-            throw new Error("[kwiver-only] " + origin + ": runtime snapshot unavailable");
-        }
-
-        const runtime_by_id = new Map();
-        for (const runtime_cell of runtime_snapshot) {
-            const runtime_id = Number(runtime_cell?.id);
-            if (!Number.isInteger(runtime_id) || runtime_by_id.has(runtime_id)) {
-                throw new Error("[kwiver-only] " + origin + ": invalid runtime id");
-            }
-            runtime_by_id.set(runtime_id, runtime_cell);
-        }
-
-        const selected = [];
-        const selected_ids = new Set();
-        for (const raw_id of runtime_ids) {
-            const runtime_id = Number(raw_id);
-            if (!Number.isInteger(runtime_id) || selected_ids.has(runtime_id)) {
-                throw new Error("[kwiver-only] " + origin + ": invalid requested runtime id");
-            }
-            const runtime_cell = runtime_by_id.get(runtime_id);
-            if (!runtime_cell) {
-                throw new Error("[kwiver-only] " + origin + ": requested runtime cell missing");
-            }
-            selected_ids.add(runtime_id);
-            selected.push(runtime_cell);
-        }
-
-        return selected;
+        const summary = kwiver_bridge_selection_summary(roots, origin);
+        return summary && typeof summary === "object"
+            ? summary
+            : null;
     }
 
     kwiver_import_runtime_cells(
@@ -1623,7 +1600,15 @@ class UI {
     }
 
     kwiver_runtime_cells_by_id() {
-        const runtime_cells = kwiver_bridge_all_cells();
+        const runtime_snapshot = this.kwiver_runtime_snapshot("ui.runtime.cells_by_id.snapshot");
+        if (runtime_snapshot === null) {
+            return null;
+        }
+        const runtime_cells = kwiver_bridge_cell_records_for_ids(
+            runtime_snapshot.cell_ids,
+            "ui.runtime.cells_by_id.records",
+            runtime_snapshot,
+        );
         if (!Array.isArray(runtime_cells)) {
             return null;
         }
@@ -2026,8 +2011,8 @@ class UI {
     }
 
     kwiver_runtime_all_cell_ids(origin = "ui.runtime.all_cell_ids") {
-        const runtime_ids = kwiver_bridge_all_cell_ids(origin);
-        return Array.isArray(runtime_ids) ? runtime_ids : null;
+        const summary = this.kwiver_runtime_selection_summary([], origin);
+        return Array.isArray(summary?.all_cell_ids) ? summary.all_cell_ids : null;
     }
 
     kwiver_runtime_connected_component_ids(
@@ -2037,8 +2022,10 @@ class UI {
         if (!Array.isArray(roots)) {
             return null;
         }
-        const runtime_ids = kwiver_bridge_connected_components(roots, origin);
-        return Array.isArray(runtime_ids) ? runtime_ids : null;
+        const summary = this.kwiver_runtime_selection_summary(roots, origin);
+        return Array.isArray(summary?.connected_component_ids)
+            ? summary.connected_component_ids
+            : null;
     }
 
     kwiver_runtime_transitive_dependency_ids(
@@ -2049,11 +2036,10 @@ class UI {
         if (!Array.isArray(roots)) {
             return null;
         }
-        const runtime_ids = kwiver_bridge_transitive_dependencies(
-            roots,
-            exclude_roots,
-            origin,
-        );
+        const summary = this.kwiver_runtime_selection_summary(roots, origin);
+        const runtime_ids = exclude_roots
+            ? summary?.transitive_dependency_ids_excluding_roots
+            : summary?.transitive_dependency_ids;
         return Array.isArray(runtime_ids) ? runtime_ids : null;
     }
 
@@ -2064,10 +2050,8 @@ class UI {
         if (!Array.isArray(roots)) {
             return null;
         }
-        const runtime_ids = kwiver_bridge_transitive_reverse_dependencies(
-            roots,
-            origin,
-        );
+        const summary = this.kwiver_runtime_selection_summary(roots, origin);
+        const runtime_ids = summary?.transitive_reverse_dependency_ids;
         return Array.isArray(runtime_ids) ? runtime_ids : null;
     }
 
@@ -2112,7 +2096,7 @@ class UI {
     kwiver_require_runtime_all_cell_ids(origin = "ui.runtime.all_cell_ids") {
         const all_ids = this.kwiver_runtime_all_cell_ids(origin);
         if (!Array.isArray(all_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": all_cell_ids_json failed");
+            throw new Error("[kwiver-only] " + origin + ": selection summary unavailable");
         }
         return all_ids;
     }
@@ -2126,7 +2110,7 @@ class UI {
             origin,
         );
         if (!Array.isArray(connected_ids)) {
-            throw new Error("[kwiver-only] " + origin + ": connected_components_json failed");
+            throw new Error("[kwiver-only] " + origin + ": selection summary unavailable");
         }
         return connected_ids;
     }
@@ -2150,7 +2134,7 @@ class UI {
             origin,
         );
         if (!(dependencies instanceof Set)) {
-            throw new Error("[kwiver-only] " + origin + ": transitive_dependencies_json failed");
+            throw new Error("[kwiver-only] " + origin + ": selection summary unavailable");
         }
         return dependencies;
     }
@@ -3255,13 +3239,15 @@ class UI {
             throw new Error("[kwiver-only] ui.clipboard.paste: dispatch failed");
         }
 
-        const runtime_cells_after_paste = kwiver_bridge_all_cells();
+        const imported_ids = Array.isArray(pasted.result?.imported_ids)
+            ? pasted.result.imported_ids
+            : null;
+        const runtime_cells_after_paste = kwiver_bridge_cell_records_for_ids(
+            imported_ids,
+            "ui.clipboard.paste.cell_records",
+        );
         const cells = this.kwiver_import_runtime_cells(
-            this.kwiver_runtime_cells_for_ids(
-                pasted.result?.imported_ids,
-                runtime_cells_after_paste,
-                "ui.clipboard.paste.runtime_ids",
-            ),
+            runtime_cells_after_paste,
             "ui.clipboard.paste",
             false,
         );
@@ -12383,7 +12369,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     throw new Error("[kwiver-only] ui.bootstrap.query: import_payload failed");
                 }
 
-                const runtime_cells_after_import = kwiver_bridge_all_cells();
+                const runtime_snapshot = kwiver_bridge_snapshot("ui.bootstrap.query.snapshot");
+                const runtime_cells_after_import = runtime_snapshot === null
+                    ? null
+                    : kwiver_bridge_cell_records_for_ids(
+                        runtime_snapshot.cell_ids,
+                        "ui.bootstrap.query.cell_records",
+                        runtime_snapshot,
+                    );
                 ui.kwiver_import_runtime_cells(
                     runtime_cells_after_import,
                     "ui.bootstrap.query",

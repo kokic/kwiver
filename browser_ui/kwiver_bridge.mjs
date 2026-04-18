@@ -618,9 +618,215 @@ function bridgeRoundedRectangleIntersections(
   );
 }
 
-function commandIntegerArrayResult(action, input, origin = "ui.bridge") {
-  const envelope = dispatchCommandResult(action, input, origin);
-  return Array.isArray(envelope?.result) ? finiteIntegerArray(envelope.result) : null;
+function bridgeRuntimeCellRecord(raw, kind = null) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const recordKind = kind ?? (typeof raw.kind === "string" ? raw.kind : null);
+  const id = raw.id;
+  const level = raw.level;
+  const label = raw.label;
+  const labelColour = raw.label_colour;
+  if (
+    !isFiniteInteger(id)
+    || !isFiniteInteger(level)
+    || typeof label !== "string"
+    || !labelColour
+    || typeof labelColour !== "object"
+    || Array.isArray(labelColour)
+  ) {
+    return null;
+  }
+
+  if (recordKind === "vertex") {
+    const { x, y } = raw;
+    if (!isFiniteInteger(x) || !isFiniteInteger(y)) {
+      return null;
+    }
+    return { kind: "vertex", id, level, label, label_colour: labelColour, x, y };
+  }
+
+  if (recordKind === "edge") {
+    const sourceId = raw.source_id;
+    const targetId = raw.target_id;
+    const options = raw.options;
+    if (
+      !isFiniteInteger(sourceId)
+      || !isFiniteInteger(targetId)
+      || !options
+      || typeof options !== "object"
+      || Array.isArray(options)
+    ) {
+      return null;
+    }
+    return {
+      kind: "edge",
+      id,
+      level,
+      label,
+      label_colour: labelColour,
+      source_id: sourceId,
+      target_id: targetId,
+      options,
+    };
+  }
+
+  return null;
+}
+
+function bridgeSnapshotDependency(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const cellId = raw.cell_id;
+  const dependencies = Array.isArray(raw.dependencies)
+    ? finiteIntegerArray(raw.dependencies)
+    : null;
+  const reverseDependencies = Array.isArray(raw.reverse_dependencies)
+    ? finiteIntegerArray(raw.reverse_dependencies)
+    : null;
+  if (
+    !isFiniteInteger(cellId)
+    || dependencies === null
+    || reverseDependencies === null
+  ) {
+    return null;
+  }
+  return {
+    cell_id: cellId,
+    dependencies,
+    reverse_dependencies: reverseDependencies,
+  };
+}
+
+function bridgeSnapshot(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const payload = typeof raw.payload === "string" ? raw.payload : null;
+  const cellIds = Array.isArray(raw.cell_ids) ? finiteIntegerArray(raw.cell_ids) : null;
+  const rawVertices = Array.isArray(raw.vertices) ? raw.vertices : null;
+  const rawEdges = Array.isArray(raw.edges) ? raw.edges : null;
+  const rawDependencies = Array.isArray(raw.dependencies) ? raw.dependencies : null;
+  if (
+    payload === null
+    || cellIds === null
+    || rawVertices === null
+    || rawEdges === null
+    || rawDependencies === null
+  ) {
+    return null;
+  }
+
+  const vertices = [];
+  for (const vertex of rawVertices) {
+    const record = bridgeRuntimeCellRecord(vertex, "vertex");
+    if (record === null) {
+      return null;
+    }
+    vertices.push(record);
+  }
+
+  const edges = [];
+  for (const edge of rawEdges) {
+    const record = bridgeRuntimeCellRecord(edge, "edge");
+    if (record === null) {
+      return null;
+    }
+    edges.push(record);
+  }
+
+  const dependencies = [];
+  for (const dependency of rawDependencies) {
+    const parsed = bridgeSnapshotDependency(dependency);
+    if (parsed === null) {
+      return null;
+    }
+    dependencies.push(parsed);
+  }
+
+  return {
+    payload,
+    cell_ids: cellIds,
+    vertices,
+    edges,
+    dependencies,
+  };
+}
+
+function bridgeSelectionSummary(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const roots = Array.isArray(raw.roots) ? finiteIntegerArray(raw.roots) : null;
+  const allCellIds = Array.isArray(raw.all_cell_ids)
+    ? finiteIntegerArray(raw.all_cell_ids)
+    : null;
+  const connectedComponentIds = Array.isArray(raw.connected_component_ids)
+    ? finiteIntegerArray(raw.connected_component_ids)
+    : null;
+  const transitiveDependencyIds = Array.isArray(raw.transitive_dependency_ids)
+    ? finiteIntegerArray(raw.transitive_dependency_ids)
+    : null;
+  const transitiveDependencyIdsExcludingRoots = Array.isArray(
+    raw.transitive_dependency_ids_excluding_roots,
+  )
+    ? finiteIntegerArray(raw.transitive_dependency_ids_excluding_roots)
+    : null;
+  const transitiveReverseDependencyIds = Array.isArray(raw.transitive_reverse_dependency_ids)
+    ? finiteIntegerArray(raw.transitive_reverse_dependency_ids)
+    : null;
+  if (
+    roots === null
+    || allCellIds === null
+    || connectedComponentIds === null
+    || transitiveDependencyIds === null
+    || transitiveDependencyIdsExcludingRoots === null
+    || transitiveReverseDependencyIds === null
+  ) {
+    return null;
+  }
+  return {
+    roots,
+    all_cell_ids: allCellIds,
+    connected_component_ids: connectedComponentIds,
+    transitive_dependency_ids: transitiveDependencyIds,
+    transitive_dependency_ids_excluding_roots: transitiveDependencyIdsExcludingRoots,
+    transitive_reverse_dependency_ids: transitiveReverseDependencyIds,
+  };
+}
+
+function snapshotCellRecordMap(snapshot) {
+  const recordsById = new Map();
+  for (const record of [...snapshot.vertices, ...snapshot.edges]) {
+    if (!isFiniteInteger(record.id) || recordsById.has(record.id)) {
+      return null;
+    }
+    recordsById.set(record.id, record);
+  }
+  return recordsById;
+}
+
+function snapshotCellRecordsForIds(snapshot, cellIds) {
+  const recordsById = snapshotCellRecordMap(snapshot);
+  if (recordsById === null) {
+    return null;
+  }
+
+  const selected = [];
+  const selectedIds = new Set();
+  for (const cellId of cellIds) {
+    if (!isFiniteInteger(cellId) || selectedIds.has(cellId)) {
+      return null;
+    }
+    const record = recordsById.get(cellId);
+    if (!record) {
+      return null;
+    }
+    selectedIds.add(cellId);
+    selected.push(record);
+  }
+  return selected;
 }
 
 function iterableEntries(value) {
@@ -1607,75 +1813,35 @@ export function kwiver_bridge_import_payload_json(
   };
 }
 
-export function kwiver_bridge_all_cells() {
-  const envelope = dispatchCommandResult("all_cells_json", undefined, "ui.bridge.all_cells");
-  if (!envelope) {
-    return null;
-  }
-  return Array.isArray(envelope.result) ? envelope.result : null;
+export function kwiver_bridge_snapshot(origin = "ui.bridge.snapshot") {
+  const envelope = dispatchCommandResult("snapshot_json", undefined, origin);
+  return bridgeSnapshot(envelope?.result);
 }
 
-export function kwiver_bridge_all_cell_ids(origin = "ui.bridge.all_cell_ids") {
-  return commandIntegerArrayResult("all_cell_ids_json", undefined, origin);
-}
-
-export function kwiver_bridge_dependencies(
-  cellId,
-  origin = "ui.bridge.dependencies",
+export function kwiver_bridge_cell_records_for_ids(
+  cellIds,
+  origin = "ui.bridge.cell_records_for_ids",
+  snapshot = null,
 ) {
-  if (!Number.isInteger(cellId)) {
+  if (!Array.isArray(cellIds)) {
     return null;
   }
-  return commandIntegerArrayResult(
-    "dependencies_of_json",
-    { cell_id: cellId },
-    origin,
-  );
+  const normalizedCellIds = finiteIntegerArray(cellIds);
+  if (normalizedCellIds === null) {
+    return null;
+  }
+  const runtimeSnapshot = snapshot === null
+    ? kwiver_bridge_snapshot(origin + ".snapshot")
+    : bridgeSnapshot(snapshot);
+  if (runtimeSnapshot === null) {
+    return null;
+  }
+  return snapshotCellRecordsForIds(runtimeSnapshot, normalizedCellIds);
 }
 
-export function kwiver_bridge_connected_components(
-  roots,
-  origin = "ui.bridge.connected_components",
-) {
-  if (!Array.isArray(roots)) {
-    return null;
-  }
-  const normalizedRoots = finiteIntegerArray(roots);
-  if (normalizedRoots === null) {
-    return null;
-  }
-  return commandIntegerArrayResult(
-    "connected_components_json",
-    { roots: normalizedRoots },
-    origin,
-  );
-}
-
-export function kwiver_bridge_transitive_dependencies(
-  roots,
-  excludeRoots = false,
-  origin = "ui.bridge.transitive_dependencies",
-) {
-  if (!Array.isArray(roots) || !isBoolean(excludeRoots)) {
-    return null;
-  }
-  const normalizedRoots = finiteIntegerArray(roots);
-  if (normalizedRoots === null) {
-    return null;
-  }
-  return commandIntegerArrayResult(
-    "transitive_dependencies_json",
-    {
-      roots: normalizedRoots,
-      exclude_roots: excludeRoots,
-    },
-    origin,
-  );
-}
-
-export function kwiver_bridge_transitive_reverse_dependencies(
-  roots,
-  origin = "ui.bridge.transitive_reverse_dependencies",
+export function kwiver_bridge_selection_summary(
+  roots = [],
+  origin = "ui.bridge.selection_summary",
 ) {
   if (!Array.isArray(roots)) {
     return null;
@@ -1684,11 +1850,12 @@ export function kwiver_bridge_transitive_reverse_dependencies(
   if (normalizedRoots === null) {
     return null;
   }
-  return commandIntegerArrayResult(
-    "transitive_reverse_dependencies_json",
+  const envelope = dispatchCommandResult(
+    "selection_summary_json",
     { roots: normalizedRoots },
     origin,
   );
+  return bridgeSelectionSummary(envelope?.result);
 }
 
 export function kwiver_bridge_preview_reconnect_plan(
@@ -1713,19 +1880,6 @@ export function kwiver_bridge_preview_reconnect_plan(
   return result && typeof result === "object" && Array.isArray(result.edges) ? result : null;
 }
 
-export function kwiver_bridge_reverse_dependencies(
-  cellId,
-  origin = "ui.bridge.reverse_dependencies",
-) {
-  if (!Number.isInteger(cellId)) {
-    return null;
-  }
-  return commandIntegerArrayResult(
-    "reverse_dependencies_of_json",
-    { cell_id: cellId },
-    origin,
-  );
-}
 export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.selection") {
   return dispatchCommandResult("set_selection", selectedIds, origin);
 }

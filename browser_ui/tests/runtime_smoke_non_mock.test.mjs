@@ -26,6 +26,26 @@ function requireAddedId(envelope, context) {
   return id;
 }
 
+function requireSnapshot(snapshot, context) {
+  assert.equal(snapshot && typeof snapshot === "object", true, `${context}: expected snapshot`);
+  assertIntegerIdList(snapshot?.cell_ids, `${context}: cell_ids`);
+  return snapshot;
+}
+
+function requireSelectionSummary(summary, context) {
+  assert.equal(summary && typeof summary === "object", true, `${context}: expected selection summary`);
+  assertIntegerIdList(summary?.all_cell_ids, `${context}: all_cell_ids`);
+  return summary;
+}
+
+function snapshotDependencies(snapshot, cellId, context) {
+  const entry = snapshot?.dependencies?.find((dependency) => dependency?.cell_id === cellId) ?? null;
+  assert.equal(entry !== null, true, `${context}: expected dependency entry`);
+  assertIntegerIdList(entry?.dependencies, `${context}: dependencies`);
+  assertIntegerIdList(entry?.reverse_dependencies, `${context}: reverse_dependencies`);
+  return entry;
+}
+
 async function loadBridgeModule() {
   return import(`../kwiver_bridge.mjs?runtime-smoke-non-mock=${Date.now()}`);
 }
@@ -58,13 +78,14 @@ function testMutationExportImportRoundtrip(bridge) {
   const {
     kwiver_bridge_add_edge_json,
     kwiver_bridge_add_vertex_json,
-    kwiver_bridge_all_cells,
-    kwiver_bridge_all_cell_ids,
+    kwiver_bridge_cell_records_for_ids,
     kwiver_bridge_export,
     kwiver_bridge_export_payload,
     kwiver_bridge_import_payload_json,
     kwiver_bridge_patch_edge_options_json,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
+    kwiver_bridge_snapshot,
   } = bridge;
 
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.initial");
@@ -119,7 +140,10 @@ function testMutationExportImportRoundtrip(bridge) {
   );
   assert.equal(patchLevel?.ok, true);
 
-  const idsBefore = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.before");
+  const idsBefore = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], "ui.test.non_mock.selection_summary.before"),
+    "roundtrip before",
+  ).all_cell_ids;
   assertIntegerIdList(idsBefore, "roundtrip before");
   assert.deepEqual(new Set(idsBefore), new Set([vertexAId, vertexBId, edgeId, loopId]));
 
@@ -146,11 +170,19 @@ function testMutationExportImportRoundtrip(bridge) {
   assert.equal(typeof imported?.payload, "string");
   assert.notEqual(imported.payload, "");
 
-  const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.after");
+  const runtimeSnapshot = requireSnapshot(
+    kwiver_bridge_snapshot("ui.test.non_mock.snapshot.after"),
+    "roundtrip after",
+  );
+  const idsAfter = runtimeSnapshot.cell_ids;
   assertIntegerIdList(idsAfter, "roundtrip after");
   assert.deepEqual(new Set(idsAfter), new Set([vertexAId, vertexBId, edgeId, loopId]));
 
-  const cellsAfter = kwiver_bridge_all_cells();
+  const cellsAfter = kwiver_bridge_cell_records_for_ids(
+    idsAfter,
+    "ui.test.non_mock.cell_records.after",
+    runtimeSnapshot,
+  );
   assert.equal(Array.isArray(cellsAfter), true);
   const lifted = cellsAfter.find((cell) => cell?.kind === "edge" && cell?.label === "f");
   const loop = cellsAfter.find((cell) => cell?.kind === "edge" && cell?.label === "l");
@@ -161,10 +193,10 @@ function testMutationExportImportRoundtrip(bridge) {
 
 function testTikzImportPath(bridge) {
   const {
-    kwiver_bridge_all_cell_ids,
     kwiver_bridge_export,
     kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
   } = bridge;
 
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.tikz");
@@ -184,7 +216,10 @@ function testTikzImportPath(bridge) {
   assert.equal(typeof imported?.payload, "string");
   assert.notEqual(imported?.payload, "");
 
-  const ids = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz");
+  const ids = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], "ui.test.non_mock.selection_summary.tikz"),
+    "tikz import",
+  ).all_cell_ids;
   assertIntegerIdList(ids, "tikz import");
   assert.notEqual(ids.length, 0, "tikz import: expected imported state");
 
@@ -200,16 +235,19 @@ function testTikzImportPath(bridge) {
 
 function testTikzImportFailFastPath(bridge) {
   const {
-    kwiver_bridge_all_cell_ids,
     kwiver_bridge_export_payload,
     kwiver_bridge_import_tikz_result,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
   } = bridge;
 
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.tikz_fail_fast");
   assert.equal(resetEnvelope?.ok, true);
 
-  const idsBefore = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz_fail_fast.before");
+  const idsBefore = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], "ui.test.non_mock.selection_summary.tikz_fail_fast.before"),
+    "tikz fail fast before",
+  ).all_cell_ids;
   assert.deepEqual(idsBefore, []);
 
   const invalidTikz = [
@@ -230,7 +268,10 @@ function testTikzImportFailFastPath(bridge) {
     kwiver_bridge_export_payload("ui.test.non_mock.export_payload.tikz_fail_fast"),
   );
 
-  const idsAfter = kwiver_bridge_all_cell_ids("ui.test.non_mock.all_cell_ids.tikz_fail_fast.after");
+  const idsAfter = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], "ui.test.non_mock.selection_summary.tikz_fail_fast.after"),
+    "tikz fail fast after",
+  ).all_cell_ids;
   assert.deepEqual(idsAfter, []);
 }
 
@@ -238,15 +279,13 @@ function testQueryAndSelectionPaths(bridge) {
   const {
     kwiver_bridge_add_edge_json,
     kwiver_bridge_add_vertex_json,
-    kwiver_bridge_all_cell_ids,
-    kwiver_bridge_connected_components,
-    kwiver_bridge_dependencies,
     kwiver_bridge_export_selection,
     kwiver_bridge_paste_selection_json,
     kwiver_bridge_preview_reconnect_plan,
     kwiver_bridge_reset,
+    kwiver_bridge_selection_summary,
     kwiver_bridge_set_selection,
-    kwiver_bridge_transitive_dependencies,
+    kwiver_bridge_snapshot,
   } = bridge;
 
   const resetEnvelope = kwiver_bridge_reset("ui.test.non_mock.reset.query_selection");
@@ -283,31 +322,35 @@ function testQueryAndSelectionPaths(bridge) {
   assert.equal(addEdge?.ok, true);
   const edgeId = requireAddedId(addEdge, "query_selection add edge");
 
-  const dependencies = kwiver_bridge_dependencies(
-    targetId,
-    "ui.test.non_mock.query_selection.dependencies",
+  const dependencySnapshot = requireSnapshot(
+    kwiver_bridge_snapshot("ui.test.non_mock.query_selection.snapshot.dependencies"),
+    "query_selection dependencies",
   );
-  assertIntegerIdList(dependencies, "query_selection dependencies");
+  const dependencies = snapshotDependencies(
+    dependencySnapshot,
+    targetId,
+    "query_selection dependencies",
+  ).dependencies;
   assert.equal(
     dependencies.includes(edgeId),
     true,
     "query_selection dependencies: expected connecting edge",
   );
 
-  const connected = kwiver_bridge_connected_components(
-    [sourceId],
-    "ui.test.non_mock.query_selection.connected_components",
+  const summary = requireSelectionSummary(
+    kwiver_bridge_selection_summary(
+      [sourceId],
+      "ui.test.non_mock.query_selection.selection_summary",
+    ),
+    "query_selection selection_summary",
   );
+  const connected = summary.connected_component_ids;
   assertIntegerIdList(connected, "query_selection connected_components");
   assert.equal(connected.includes(sourceId), true, "query_selection connected_components: expected source id");
   assert.equal(connected.includes(targetId), true, "query_selection connected_components: expected target id");
   assert.equal(connected.includes(edgeId), true, "query_selection connected_components: expected edge id");
 
-  const transitive = kwiver_bridge_transitive_dependencies(
-    [sourceId],
-    false,
-    "ui.test.non_mock.query_selection.transitive_dependencies",
-  );
+  const transitive = summary.transitive_dependency_ids;
   assertIntegerIdList(transitive, "query_selection transitive_dependencies");
   assert.equal(transitive.includes(sourceId), true, "query_selection transitive_dependencies: expected source id");
   assert.equal(transitive.includes(edgeId), true, "query_selection transitive_dependencies: expected edge id");
@@ -360,7 +403,10 @@ function testQueryAndSelectionPaths(bridge) {
     "query_selection paste: expected no id collision with existing selection",
   );
 
-  const allIds = kwiver_bridge_all_cell_ids("ui.test.non_mock.query_selection.all_cell_ids.after");
+  const allIds = requireSelectionSummary(
+    kwiver_bridge_selection_summary([], "ui.test.non_mock.query_selection.selection_summary.after"),
+    "query_selection all_cell_ids",
+  ).all_cell_ids;
   assertIntegerIdList(allIds, "query_selection all_cell_ids");
   assert.equal(allIds.includes(sourceId), true, "query_selection all_cell_ids: expected source id");
   assert.equal(allIds.includes(targetId), true, "query_selection all_cell_ids: expected target id");
