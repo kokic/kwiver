@@ -43,7 +43,7 @@ This document describes the architecture as implemented in the repository today,
 | `runtime/` | Browser-oriented facade over `engine` and `geometry`; command dispatch, session envelopes, JSON contracts |
 | `browser_ui/` | Product UI shell, runtime bridge, DOM rendering, interaction handling, smoke tests |
 | `scripts/` | Local regression orchestration and parser corpus synchronization |
-| `docs/` | Boundary notes and migration checkpoints for the browser/runtime split |
+| `docs/` | Developer guides, maintenance procedures, and browser/runtime boundary notes |
 
 The root package is intentionally minimal; implementation lives in subpackages.
 

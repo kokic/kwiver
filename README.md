@@ -3,7 +3,7 @@
 > ⚠️ Disclaimer: This is an unofficial, community-driven port of [quiver](https://github.com/varkor/quiver). 
 > It is not affiliated with, maintained by, or endorsed by varkor or the original quiver project. 
 
-An reimplementation of the quiver commutative diagram editor.
+A reimplementation of the quiver commutative diagram editor.
 
 ## Acknowledgments
 
@@ -11,9 +11,22 @@ This project was inspired by and owes much to [quiver](https://github.com/varkor
 
 We gratefully acknowledge the original design, file format, and user experience that made this reimplementation possible.
 
-## Browser UI (`browser_ui`)
+## Repository Layout
 
-The product UI is `browser_ui/`, backed by MoonBit runtime/state APIs from the `runtime` package build output.
+| Path | Responsibility |
+| --- | --- |
+| `engine/` | Canonical diagram model, import/export, selection queries, browser-facing adapter APIs |
+| `geometry/` | Pure arrow geometry, clipping, label placement, render plans |
+| `runtime/` | Browser runtime/session layer and JS-facing command protocol |
+| `browser_ui/` | Browser UI shell, runtime bridge, smoke tests, static assets |
+| `scripts/` | Local regression helpers and parser corpus maintenance scripts |
+| `docs/` | Development, maintenance, and boundary documentation |
+
+The project architecture is described in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Quick Start
+
+The browser UI in `browser_ui/` autoloads the MoonBit release runtime artifact from `browser_ui/_build/js/release/build/runtime/runtime.js`.
 
 ```sh
 moon build --release --target-dir browser_ui/_build
@@ -22,25 +35,20 @@ miniserve ./browser_ui --port 8081
 
 Open `http://localhost:8081/`.
 
-## Tokei
+Any static file server works as long as it serves `browser_ui/` without rewriting paths. `miniserve` is just the documented default.
+
+## Development Docs
+
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): local setup, command reference, package boundaries, and contributor workflows
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): release process, generated artifacts, and maintainer checklists
+- [docs/js-ffi-boundary.md](docs/js-ffi-boundary.md): rules for what belongs in MoonBit vs. browser-side JS
+
+## Verification
+
+Common local verification entrypoints:
 
 ```sh
-> tokei -e *_test.mbt -e *.mjs -e *.js
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Language              Files        Lines         Code     Comments       Blanks
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- CSS                       2         3210         2560          193          457
- JSON                      3         1084         1084            0            0
- Markdown                  3          591            0          407          184
- MoonBit                  26        20805        18409         1010         1386
- SVG                      28           39           39            0            0
- TeX                       3          728          476          125          127
-─────────────────────────────────────────────────────────────────────────────────
- HTML                      1           55           49            6            0
- |- JavaScript             1           57           34           15            8
- (Total)                              112           83           21            8
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Total                    66        26569        22651         1756         2162
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+moon test -v
+node scripts/local_regression.mjs
+node scripts/local_regression.mjs --smoke-only
 ```
