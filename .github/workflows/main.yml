@@ -28,7 +28,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: browser_ui
+          path: webui
 
   deploy:
     needs: build

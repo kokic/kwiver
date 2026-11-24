@@ -5,4 +5,4 @@ target/
 .moonagent/
 .local/
 
-!browser_ui/_build/js/release/build/runtime/runtime.js
+!webui/_build/js/release/build/runtime/runtime.js

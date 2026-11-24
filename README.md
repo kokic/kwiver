@@ -13,16 +13,16 @@ We gratefully acknowledge the original design, file format, and user experience 
 
 ## Quick Start
 
-The browser UI in `browser_ui/` autoloads the MoonBit release runtime artifact from `browser_ui/_build/js/release/build/runtime/runtime.js`.
+The browser UI in `webui/` autoloads the MoonBit release runtime artifact from `webui/_build/js/release/build/runtime/runtime.js`.
 
 ```sh
-moon build --release --target-dir browser_ui/_build
-miniserve ./browser_ui --port 8081
+moon build --release --target-dir webui/_build
+miniserve ./webui --port 8081
 ```
 
 Open `http://localhost:8081/`.
 
-Any static file server works as long as it serves `browser_ui/` without rewriting paths. `miniserve` is just the documented default.
+Any static file server works as long as it serves `webui/` without rewriting paths. `miniserve` is just the documented default.
 
 ## Verification
 

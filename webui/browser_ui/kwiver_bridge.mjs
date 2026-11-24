@@ -1,4 +1,4 @@
-const BROWSER_UI_MOUNT_PATH = "/browser_ui";
+const webui_MOUNT_PATH = "/webui";
 const RUNTIME_MODULE_BUILD_SUFFIX = "_build/js/release/build/runtime/runtime.js";
 
 const MODULE_CANDIDATE_PATHS = [
@@ -6,7 +6,7 @@ const MODULE_CANDIDATE_PATHS = [
 ];
 
 const ROOT_MODULE_CANDIDATE_SUFFIXES = [
-  BROWSER_UI_MOUNT_PATH + "/" + RUNTIME_MODULE_BUILD_SUFFIX,
+  webui_MOUNT_PATH + "/" + RUNTIME_MODULE_BUILD_SUFFIX,
 ];
 
 function addModuleCandidate(target, candidate) {
@@ -36,7 +36,7 @@ function moduleCandidates() {
         addModuleCandidate(candidates, origin + suffix);
       }
 
-      const marker = BROWSER_UI_MOUNT_PATH;
+      const marker = webui_MOUNT_PATH;
       const markerIndex = pathname.indexOf(marker);
       if (markerIndex >= 0) {
         const prefix = pathname.slice(0, markerIndex);
