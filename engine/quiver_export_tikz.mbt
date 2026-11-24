@@ -292,7 +292,7 @@ pub fn TikzCdExportOptions::without_renderer(
 
 ///|
 pub fn TikzCdExportDefinitions::default() -> TikzCdExportDefinitions {
-  { colours: @hashmap.new(), }
+  { colours: @hashmap.HashMap([]), }
 }
 
 ///|
@@ -1255,7 +1255,7 @@ fn tikz_add_dependency(
   package_name : String,
   reason : String,
 ) -> Unit {
-  let reasons = dependencies.get_or_init(package_name, () => @hashmap.new())
+  let reasons = dependencies.get_or_init(package_name, () => @hashmap.HashMap([]))
   reasons.set(reason, true)
 }
 
@@ -1275,9 +1275,9 @@ fn tikz_finalize_metadata(
   let dependencies_copy : @hashmap.HashMap[
     String,
     @hashmap.HashMap[String, Bool],
-  ] = @hashmap.new()
+  ] = @hashmap.HashMap([])
   dependencies.each((package_name, reasons_set) => {
-    let reasons_copy : @hashmap.HashMap[String, Bool] = @hashmap.new()
+    let reasons_copy : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
     reasons_set.each((reason, _) => reasons_copy.set(reason, true))
     dependencies_copy.set(package_name, reasons_copy)
   })
@@ -1295,8 +1295,8 @@ pub fn Quiver::export_tikz_cd_result(
   options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
   definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
-  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.new()
-  let edges_by_id : @hashmap.HashMap[Int32, Edge] = @hashmap.new()
+  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.HashMap([])
+  let edges_by_id : @hashmap.HashMap[Int32, Edge] = @hashmap.HashMap([])
   let edges : Array[Edge] = []
 
   let mut has_vertex = false
@@ -1330,8 +1330,13 @@ pub fn Quiver::export_tikz_cd_result(
   }
 
   let begin_line = tikz_begin_line(settings, options)
-  let tikz_incompatibilities : @hashmap.HashMap[String, Bool] = @hashmap.new()
-  let dependencies : @hashmap.HashMap[String, @hashmap.HashMap[String, Bool]] = @hashmap.new()
+  let tikz_incompatibilities : @hashmap.HashMap[String, Bool] = @hashmap.HashMap(
+    [],
+  )
+  let dependencies : @hashmap.HashMap[
+    String,
+    @hashmap.HashMap[String, Bool],
+  ] = @hashmap.HashMap([])
   if !has_vertex {
     let empty = [begin_line, "\n\\end{tikzcd}"].join("")
     return {
@@ -1342,8 +1347,10 @@ pub fn Quiver::export_tikz_cd_result(
 
   edges.sort_by((a, b) => tikz_compare_edges(vertices_by_id, edges_by_id, a, b))
 
-  let referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
-  let phantom_referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
+  let phantom_referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap(
+    [],
+  )
   for edge in edges {
     if edges_by_id.contains(edge.source) {
       referenced_edges.set(edge.source, true)
@@ -1359,7 +1366,9 @@ pub fn Quiver::export_tikz_cd_result(
     }
   }
 
-  let edge_export_name_by_id : @hashmap.HashMap[Int32, String] = @hashmap.new()
+  let edge_export_name_by_id : @hashmap.HashMap[Int32, String] = @hashmap.HashMap(
+    [],
+  )
   let mut edge_name_index = 0
   for edge in edges {
     if referenced_edges.contains(edge.cell.id) {
@@ -1521,7 +1530,9 @@ pub fn Quiver::export_tikz_cd_result(
   }
 
   let ampersand = if settings.ampersand_replacement { "\\&" } else { "&" }
-  let rows_by_y : @hashmap.HashMap[Int32, Array[(Int32, Vertex)]] = @hashmap.new()
+  let rows_by_y : @hashmap.HashMap[Int32, Array[(Int32, Vertex)]] = @hashmap.HashMap(
+    [],
+  )
   let row_indices : Array[Int32] = []
   vertices_by_id.each((_, vertex) => {
     if !rows_by_y.contains(vertex.y) {

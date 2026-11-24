@@ -3215,18 +3215,21 @@ fn tikz_is_share_reference_candidate(reference : String) -> Bool {
   if has_share_markers {
     let parsed = Quiver::parse_base64_share_url(reference)
     match parsed.payload {
-      Some(payload) => {
-        let payload_result : Result[Quiver, Error] = try? Quiver::import_base64_v0(
-          payload,
-        )
-        return payload_result is Ok(_)
-      }
+      Some(payload) =>
+        return try Quiver::import_base64_v0(payload) catch {
+          _ => false
+        } noraise {
+          _ => true
+        }
       None => return false
     }
   }
 
-  let parsed : Result[Quiver, Error] = try? Quiver::import_base64_v0(reference)
-  parsed is Ok(_)
+  try Quiver::import_base64_v0(reference) catch {
+    _ => false
+  } noraise {
+    _ => true
+  }
 }
 
 ///|
@@ -3941,7 +3944,7 @@ fn Quiver::import_tikz_cd_minimal(
   let body_without_comments = tikz_strip_line_comments(environment.body)
   let rows = tikz_split_rows_with_offsets(body_without_comments)
   let quiver = Quiver::new()
-  let vertex_by_key : Map[String, Int32] = Map::new()
+  let vertex_by_key : Map[String, Int32] = Map([])
   let pending_arrows : Array[TikzPendingArrow] = []
   let mut next_id = 1
 
@@ -4071,7 +4074,7 @@ fn Quiver::import_tikz_cd_minimal(
     }
   }
 
-  let named_cell_ids : Map[String, TikzNamedCellRef] = Map::new()
+  let named_cell_ids : Map[String, TikzNamedCellRef] = Map([])
   let mut pending_round = pending_arrows.copy()
   let mut made_progress = true
   while pending_round.length() > 0 && made_progress {
@@ -4346,57 +4349,38 @@ pub fn Quiver::try_import_tikz_cd_result(
 
     // Prefer wrapper import when a share reference is detected, but keep
     // handwritten diagrams robust when the wrapper marker is malformed.
-    let imported : Result[Base64ShareImportResult, Error] = try? Quiver::import_base64_share_text(
-      input,
-      default_renderer~,
-    )
-    match imported {
-      Ok(result) =>
-        tikz_try_import_success(
-          result.quiver,
-          result.macro_url,
-          result.renderer,
-          result.embed,
-        )
-      Err(_) => {
+    try Quiver::import_base64_share_text(input, default_renderer~) catch {
+      _ =>
         match Quiver::import_tikz_cd_minimal(input) {
-          Ok(quiver) =>
-            tikz_try_import_success(
-              quiver,
-              None,
-              None,
-              false,
-            )
+          Ok(quiver) => tikz_try_import_success(quiver, None, None, false)
           Err(import_error) => {
-            {
-              ok: false,
-              quiver: None,
-              macro_url: None,
-              renderer: None,
-              embed: false,
-              error: Some(import_error),
-            }
+            ok: false,
+            quiver: None,
+            macro_url: None,
+            renderer: None,
+            embed: false,
+            error: Some(import_error),
           }
         }
-      }
-    }
-  } else {
-    let imported : Result[Base64ShareImportResult, Error] = try? Quiver::import_base64_share_text(
-      input,
-      default_renderer~,
-    )
-    match imported {
-      Ok(result) =>
+    } noraise {
+      result =>
         tikz_try_import_success(
           result.quiver,
           result.macro_url,
           result.renderer,
           result.embed,
         )
-      Err(error) =>
-        tikz_try_import_failure(
-          "share",
-          error.to_string(),
+    }
+  } else {
+    try Quiver::import_base64_share_text(input, default_renderer~) catch {
+      error => tikz_try_import_failure("share", error.to_string())
+    } noraise {
+      result =>
+        tikz_try_import_success(
+          result.quiver,
+          result.macro_url,
+          result.renderer,
+          result.embed,
         )
     }
   }

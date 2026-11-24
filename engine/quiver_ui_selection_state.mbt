@@ -50,7 +50,7 @@ fn quiver_ui_unique_existing_ids(
   selected_ids : Array[Int32],
 ) -> Array[Int32] {
   let unique_ids : Array[Int32] = []
-  let seen : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let seen : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   for cell_id in selected_ids {
     if quiver.contains_cell(cell_id) && !seen.contains(cell_id) {
       seen.set(cell_id, true)
@@ -227,7 +227,7 @@ fn quiver_ui_option_colour_json(value : QuiverUiColourData?) -> Json {
 
 ///|
 fn quiver_ui_edge_shorten_json(value : EdgeShorten) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("source", Json::number(value.source.to_double()))
   out.set("target", Json::number(value.target.to_double()))
   Json::object(out)
@@ -245,7 +245,7 @@ fn quiver_ui_option_edge_shorten_json(value : EdgeShorten?) -> Json {
 fn quiver_ui_selection_panel_state_json(
   state : QuiverUiSelectionPanelState,
 ) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("selection_size", Json::number(state.selection_size.to_double()))
   out.set("has_selection", Json::boolean(state.has_selection))
   out.set("has_selected_edges", Json::boolean(state.has_selected_edges))
@@ -302,7 +302,7 @@ fn quiver_ui_selection_panel_state_json(
 fn quiver_ui_selection_toolbar_state_json(
   state : QuiverUiSelectionToolbarState,
 ) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("all_cells_count", Json::number(state.all_cells_count.to_double()))
   out.set("selected_count", Json::number(state.selected_count.to_double()))
   out.set("has_selection", Json::boolean(state.has_selection))
@@ -362,7 +362,7 @@ pub fn QuiverUiAdapter::selection_panel_state(
   let mut endpoint_positioning_source_checked = true
   let mut endpoint_positioning_target_visible = false
   let mut endpoint_positioning_target_checked = true
-  let origin_cache : @hashmap.HashMap[Int32, Point] = @hashmap.new()
+  let origin_cache : @hashmap.HashMap[Int32, Point] = @hashmap.HashMap([])
   for cell_id in selected_ids {
     match self.quiver.cells.get(cell_id) {
       Some(CellData::Vertex(vertex)) => {

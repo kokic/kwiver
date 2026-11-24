@@ -105,7 +105,7 @@ fn runtime_arrow_style_tokens(csv : String) -> Array[String] {
     return tokens
   }
   for part in csv.split(",") {
-    let token = part.to_string()
+    let token = part.to_owned()
     if token != "" {
       tokens.push(token)
     }

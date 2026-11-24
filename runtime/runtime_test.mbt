@@ -11,30 +11,30 @@ fn runtime_dispatch_test_json_get(
 
 ///|
 test "browser runtime dispatch_json_safe handles add_vertex action" {
-  let runtime = ffi_runtime_new()
-  let output = ffi_runtime_dispatch_json_safe(
+  let runtime = @runtime.ffi_runtime_new()
+  let output = @runtime.ffi_runtime_dispatch_json_safe(
     runtime, "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 
   let ok : Bool = @json.from_json(runtime_dispatch_test_json_get(root, "ok"))
   inspect(ok, content="true")
-  inspect(
+  @test.assert_eq(
     runtime_dispatch_test_json_get(root, "action"),
-    content="String(\"add_vertex_json\")",
+    Json::string("add_vertex_json"),
   )
 }
 
 ///|
 test "browser runtime dispatch_json_safe wraps malformed json as error envelope" {
-  let runtime = ffi_runtime_new()
-  let output = ffi_runtime_dispatch_json_safe(runtime, "{")
+  let runtime = @runtime.ffi_runtime_new()
+  let output = @runtime.ffi_runtime_dispatch_json_safe(runtime, "{")
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 
   let ok : Bool = @json.from_json(runtime_dispatch_test_json_get(root, "ok"))
   inspect(ok, content="false")
-  inspect(
+  @test.assert_eq(
     runtime_dispatch_test_json_get(root, "action"),
-    content="String(\"unknown\")",
+    Json::string("unknown"),
   )
 }

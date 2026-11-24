@@ -13,48 +13,42 @@ fn runtime_test_json_optional_string(
 ) -> String? {
   match root.get(key) {
     Some(Json::Null) => None
-    Some(raw) => {
-      let parsed : Result[String, Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(value) => Some(value)
-        Err(_) => None
-      }
-    }
+    Some(raw) => try Some(@json.from_json(raw)) catch { _ => None }
     None => None
   }
 }
 
 ///|
 test "browser demo command envelope dispatches runtime action" {
-  inspect(ffi_runtime_command_protocol(), content="kwiver.command.v1")
+  @test.assert_eq(@runtime.ffi_runtime_command_protocol(), "kwiver.command.v1")
 
-  let session = ffi_runtime_session_new()
-  let output = ffi_runtime_session_dispatch_command_json(
+  let session = @runtime.ffi_runtime_session_new()
+  let output = @runtime.ffi_runtime_session_dispatch_command_json(
     session, "{\"protocol\":\"kwiver.command.v1\",\"action\":\"add_vertex_json\",\"origin\":\"test\",\"command_id\":\"cmd-1\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 
   let ok : Bool = @json.from_json(runtime_test_json_get(root, "ok"))
   inspect(ok, content="true")
-  inspect(
+  @test.assert_eq(
     runtime_test_json_get(root, "action"),
-    content="String(\"add_vertex_json\")",
+    Json::string("add_vertex_json"),
   )
-  inspect(
+  @test.assert_eq(
     runtime_test_json_get(root, "protocol"),
-    content="String(\"kwiver.command.v1\")",
+    Json::string("kwiver.command.v1"),
   )
-  inspect(runtime_test_json_get(root, "origin"), content="String(\"test\")")
-  inspect(
+  @test.assert_eq(runtime_test_json_get(root, "origin"), Json::string("test"))
+  @test.assert_eq(
     runtime_test_json_get(root, "command_id"),
-    content="String(\"cmd-1\")",
+    Json::string("cmd-1"),
   )
 }
 
 ///|
 test "browser demo command envelope rejects protocol mismatch" {
-  let session = ffi_runtime_session_new()
-  let output = ffi_runtime_session_dispatch_command_json(
+  let session = @runtime.ffi_runtime_session_new()
+  let output = @runtime.ffi_runtime_session_dispatch_command_json(
     session, "{\"protocol\":\"kwiver.command.v2\",\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))

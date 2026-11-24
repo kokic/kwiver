@@ -419,7 +419,7 @@ pub fn Quiver::parse_base64_share_url(
 
 ///|
 fn base64_id_set(ids : Array[Int32]) -> @hashmap.HashMap[Int32, Bool] {
-  let out : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let out : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   for id in ids {
     out.set(id, true)
   }
@@ -489,7 +489,7 @@ fn Quiver::base64_export_v0_with_ids(
       ) +
       1
     let defaults = EdgeOptions::at_level(options.level)
-    let delta : Map[String, Json] = Map::new()
+    let delta : Map[String, Json] = Map([])
 
     if options.label_position != defaults.label_position {
       delta.set("label_position", json_int(options.label_position))
@@ -512,7 +512,7 @@ fn Quiver::base64_export_v0_with_ids(
 
     if options.shorten.source != defaults.shorten.source ||
       options.shorten.target != defaults.shorten.target {
-      let shorten_delta : Map[String, Json] = Map::new()
+      let shorten_delta : Map[String, Json] = Map([])
       if options.shorten.source != defaults.shorten.source {
         shorten_delta.set("source", json_int(options.shorten.source))
       }
@@ -530,7 +530,7 @@ fn Quiver::base64_export_v0_with_ids(
 
     if options.edge_alignment.source != defaults.edge_alignment.source ||
       options.edge_alignment.target != defaults.edge_alignment.target {
-      let alignment_delta : Map[String, Json] = Map::new()
+      let alignment_delta : Map[String, Json] = Map([])
       if options.edge_alignment.source != defaults.edge_alignment.source {
         alignment_delta.set(
           "source",
@@ -548,12 +548,12 @@ fn Quiver::base64_export_v0_with_ids(
       }
     }
 
-    let style_delta : Map[String, Json] = Map::new()
+    let style_delta : Map[String, Json] = Map([])
     if options.style.name != defaults.style.name {
       style_delta.set("name", Json::string(options.style.name))
     }
 
-    let tail_delta : Map[String, Json] = Map::new()
+    let tail_delta : Map[String, Json] = Map([])
     if options.style.tail.name != defaults.style.tail.name {
       tail_delta.set("name", Json::string(options.style.tail.name))
     }
@@ -564,7 +564,7 @@ fn Quiver::base64_export_v0_with_ids(
       style_delta.set("tail", Json::object(tail_delta))
     }
 
-    let body_delta : Map[String, Json] = Map::new()
+    let body_delta : Map[String, Json] = Map([])
     if options.style.body.name != defaults.style.body.name {
       body_delta.set("name", Json::string(options.style.body.name))
     }
@@ -575,7 +575,7 @@ fn Quiver::base64_export_v0_with_ids(
       style_delta.set("body", Json::object(body_delta))
     }
 
-    let head_delta : Map[String, Json] = Map::new()
+    let head_delta : Map[String, Json] = Map([])
     if options.style.head.name != defaults.style.head.name {
       head_delta.set("name", Json::string(options.style.head.name))
     }
@@ -610,7 +610,7 @@ fn Quiver::base64_export_v0_with_ids(
   }
 
   let encoded_cells : Array[Json] = []
-  let indices : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
+  let indices : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
 
   for vertex in vertices {
     let cell : Array[Json] = [
@@ -1077,11 +1077,11 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       let options_map : Map[String, Json] = if cell.length() >= 5 {
         match cell.unsafe_get(4) {
           Json::Object(map) => map
-          Json::Null => Map::new()
+          Json::Null => Map([])
           _ => abort("expected object in quiver encoding")
         }
       } else {
-        Map::new()
+        Map([])
       }
 
       let mut options = EdgeOptions::at_level(structural_level)
@@ -1209,10 +1209,10 @@ pub fn Quiver::import_base64_v0_selection_result(
   }
 
   if vertices.is_empty() {
-    return { imported_ids: [], id_remap: Map::new(), }
+    return { imported_ids: [], id_remap: Map([]), }
   }
 
-  let id_remap : Map[Int32, Int32] = Map::new()
+  let id_remap : Map[Int32, Int32] = Map([])
   let imported_ids : Array[Int32] = []
 
   for vertex in vertices {

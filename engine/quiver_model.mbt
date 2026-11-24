@@ -20,10 +20,10 @@ pub struct Quiver {
 pub fn Quiver::new() -> Quiver {
   {
     cells_by_level: [],
-    cells: @hashmap.new(),
-    dependencies: @hashmap.new(),
-    reverse_dependencies: @hashmap.new(),
-    deleted: @hashmap.new(),
+    cells: @hashmap.HashMap([]),
+    dependencies: @hashmap.HashMap([]),
+    reverse_dependencies: @hashmap.HashMap([]),
+    deleted: @hashmap.HashMap([]),
   }
 }
 
@@ -31,7 +31,7 @@ pub fn Quiver::new() -> Quiver {
 fn Quiver::ensure_level(self : Quiver, level : Int32) -> Unit {
   let target = if level < 0 { 0 } else { level }
   while self.cells_by_level.length() <= target {
-    self.cells_by_level.push(@hashmap.new())
+    self.cells_by_level.push(@hashmap.HashMap([]))
   }
 }
 
@@ -79,8 +79,8 @@ pub fn Quiver::add(self : Quiver, cell : CellData) -> Unit {
   let level = cell.level()
   self.cells.set(cell_id, cell)
   if !self.deleted.contains(cell_id) {
-    self.dependencies.set(cell_id, @hashmap.new())
-    self.reverse_dependencies.set(cell_id, @hashmap.new())
+    self.dependencies.set(cell_id, @hashmap.HashMap([]))
+    self.reverse_dependencies.set(cell_id, @hashmap.HashMap([]))
   } else {
     self.deleted.remove(cell_id)
   }
@@ -94,7 +94,7 @@ pub fn Quiver::remove(
   cell_id : Int32,
   when : Int32,
 ) -> Array[Int32] {
-  let removed : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let removed : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   let removal_queue : Array[Int32] = [cell_id]
   let mut index = 0
   // `dependencies` stores the forward dependent closure. Walking it here
@@ -195,7 +195,7 @@ pub fn Quiver::dependencies_of(
   self : Quiver,
   cell_id : Int32,
 ) -> @hashmap.HashMap[Int32, DependencyRole] {
-  let filtered : @hashmap.HashMap[Int32, DependencyRole] = @hashmap.new()
+  let filtered : @hashmap.HashMap[Int32, DependencyRole] = @hashmap.HashMap([])
   match self.dependencies.get(cell_id) {
     Some(deps) =>
       deps.each((dependency, relationship) => {
@@ -213,7 +213,7 @@ pub fn Quiver::reverse_dependencies_of(
   self : Quiver,
   cell_id : Int32,
 ) -> @hashmap.HashMap[Int32, Bool] {
-  let filtered : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let filtered : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   match self.reverse_dependencies.get(cell_id) {
     Some(deps) =>
       deps.each((dependency, _) => {
@@ -232,7 +232,7 @@ pub fn Quiver::transitive_dependencies(
   roots : Array[Int32],
   exclude_roots~ : Bool = false,
 ) -> Array[Int32] {
-  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   let queue : Array[Int32] = []
   for cell_id in roots {
     if !closure.contains(cell_id) {
@@ -266,7 +266,7 @@ pub fn Quiver::transitive_reverse_dependencies(
   self : Quiver,
   roots : Array[Int32],
 ) -> Array[Int32] {
-  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   let queue : Array[Int32] = []
   for cell_id in roots {
     if !closure.contains(cell_id) {
@@ -295,7 +295,7 @@ pub fn Quiver::connected_components(
   self : Quiver,
   roots : Array[Int32],
 ) -> Array[Int32] {
-  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.HashMap([])
   let queue : Array[Int32] = []
 
   for cell_id in roots {
@@ -340,7 +340,7 @@ pub fn Quiver::connect(
   edge_id : Int32,
 ) -> Unit {
   let reverse_deps = self.reverse_dependencies.get_or_init(edge_id, () => {
-    @hashmap.new()
+    @hashmap.HashMap([])
   })
 
   // The edge owns back-references to its current endpoints. Reconnecting must
@@ -354,10 +354,10 @@ pub fn Quiver::connect(
   }
   reverse_deps.clear()
 
-  let source_deps = self.dependencies.get_or_init(source, () => @hashmap.new())
+  let source_deps = self.dependencies.get_or_init(source, () => @hashmap.HashMap([]))
   source_deps.set(edge_id, DependencyRole::Source)
 
-  let target_deps = self.dependencies.get_or_init(target, () => @hashmap.new())
+  let target_deps = self.dependencies.get_or_init(target, () => @hashmap.HashMap([]))
   target_deps.set(edge_id, DependencyRole::Target)
 
   reverse_deps.set(source, true)

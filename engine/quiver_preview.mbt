@@ -205,8 +205,8 @@ pub fn Quiver::preview_reconnect_plan(
     _ => return None
   }
   let closure = self.transitive_dependencies([edge_id])
-  let preview_levels : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
-  let preview_edges : @hashmap.HashMap[Int32, Edge] = @hashmap.new()
+  let preview_levels : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
+  let preview_edges : @hashmap.HashMap[Int32, Edge] = @hashmap.HashMap([])
 
   for cell_id in closure {
     match self.cells.get(cell_id) {
@@ -305,7 +305,7 @@ pub fn Quiver::suggest_edge_options(
   if source_id == target_id {
     options = options.with_shape_arc()
 
-    let angles : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
+    let angles : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
     self
     .dependencies_of(source_id)
     .each((edge_id, _) => {
@@ -356,10 +356,10 @@ pub fn Quiver::suggest_edge_options(
     return Some(options)
   }
 
-  let align : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
-  let offset : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
-  let curve : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
-  let offset_only : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
+  let align : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
+  let offset : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
+  let curve : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
+  let offset_only : @hashmap.HashMap[Int32, Int32] = @hashmap.HashMap([])
   let mut balance = 0
 
   let source_dependencies = self.dependencies_of(source_id)

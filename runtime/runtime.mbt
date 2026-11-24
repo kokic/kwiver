@@ -107,7 +107,7 @@ fn runtime_dispatch_input_object_or_empty(
 ) -> Map[String, Json] {
   match root.get("input") {
     Some(Json::Object(input)) => input
-    _ => Map::new()
+    _ => Map([])
   }
 }
 
@@ -243,9 +243,11 @@ fn runtime_is_import_action(action : String) -> Bool {
 
 ///|
 fn runtime_dispatch_action_hint(action_json : String) -> String {
-  let parsed : Result[Json, Error] = try? @json.parse(action_json)
+  let parsed = try @json.parse(action_json) catch {
+    _ => return "unknown"
+  }
   match parsed {
-    Ok(Json::Object(root)) =>
+    Json::Object(root) =>
       match root.get("action") {
         Some(Json::String(action)) => action
         _ =>
@@ -2291,10 +2293,8 @@ pub fn BrowserRuntime::dispatch_json_safe(
   self : BrowserRuntime,
   action_json : String,
 ) -> String {
-  let dispatched : Result[String, Error] = try? self.dispatch_json(action_json)
-  match dispatched {
-    Ok(result) => result
-    Err(error) =>
+  try self.dispatch_json(action_json) catch {
+    error =>
       runtime_dispatch_safe_error_json(
         runtime_dispatch_action_hint(action_json),
         error.to_string(),
@@ -2309,10 +2309,8 @@ pub fn BrowserRuntime::dispatch_many_json_safe(
   self : BrowserRuntime,
   batch_json : String,
 ) -> String {
-  let dispatched : Result[String, Error] = try? self.dispatch_many_json(batch_json)
-  match dispatched {
-    Ok(result) => result
-    Err(error) =>
+  try self.dispatch_many_json(batch_json) catch {
+    error =>
       runtime_dispatch_many_safe_error_json(
         error.to_string(),
         self.export_payload(),

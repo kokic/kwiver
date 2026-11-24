@@ -10,7 +10,7 @@ pub struct QuiverUiSelectionSummary {
 
 ///|
 fn quiver_ui_selection_summary_json(summary : QuiverUiSelectionSummary) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("roots", quiver_ui_int_array_json(summary.roots))
   out.set("all_cell_ids", quiver_ui_int_array_json(summary.all_cell_ids))
   out.set(

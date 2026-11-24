@@ -532,7 +532,7 @@ fn quiver_ui_int_array_json(values : Array[Int32]) -> Json {
 
 ///|
 fn quiver_ui_colour_json(data : QuiverUiColourData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("h", Json::number(data.h.to_double()))
   out.set("s", Json::number(data.s.to_double()))
   out.set("l", Json::number(data.l.to_double()))
@@ -542,7 +542,7 @@ fn quiver_ui_colour_json(data : QuiverUiColourData) -> Json {
 
 ///|
 fn quiver_ui_endpoint_style_json(data : QuiverUiEdgeEndpointStyleData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("name", Json::string(data.name))
   out.set("side", Json::string(data.side))
   Json::object(out)
@@ -550,7 +550,7 @@ fn quiver_ui_endpoint_style_json(data : QuiverUiEdgeEndpointStyleData) -> Json {
 
 ///|
 fn quiver_ui_edge_style_json(data : QuiverUiEdgeStyleData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("name", Json::string(data.name))
   out.set("tail", quiver_ui_endpoint_style_json(data.tail))
   out.set("body", quiver_ui_endpoint_style_json(data.body))
@@ -560,7 +560,7 @@ fn quiver_ui_edge_style_json(data : QuiverUiEdgeStyleData) -> Json {
 
 ///|
 fn quiver_ui_edge_options_json(data : QuiverUiEdgeOptionsData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("label_alignment", Json::string(data.label_alignment))
   out.set("label_position", Json::number(data.label_position.to_double()))
   out.set("offset", Json::number(data.offset.to_double()))
@@ -582,7 +582,7 @@ fn quiver_ui_edge_options_json(data : QuiverUiEdgeOptionsData) -> Json {
 fn quiver_ui_edge_endpoint_projection_json(
   data : QuiverUiEdgeEndpointProjectionData,
 ) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("kind", Json::string(data.kind))
   out.set("has_vertex_endpoint", Json::boolean(data.has_vertex_endpoint))
   Json::object(out)
@@ -590,7 +590,7 @@ fn quiver_ui_edge_endpoint_projection_json(
 
 ///|
 fn quiver_ui_dependency_link_json(data : QuiverUiDependencyLinkData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("cell_id", Json::number(data.cell_id.to_double()))
   out.set("role", Json::string(data.role))
   Json::object(out)
@@ -609,7 +609,7 @@ fn quiver_ui_dependency_link_array_json(
 
 ///|
 fn quiver_ui_vertex_json(data : QuiverUiVertexData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("id", Json::number(data.id.to_double()))
   out.set("level", Json::number(data.level.to_double()))
   out.set("label", Json::string(data.label))
@@ -621,7 +621,7 @@ fn quiver_ui_vertex_json(data : QuiverUiVertexData) -> Json {
 
 ///|
 fn quiver_ui_edge_json(data : QuiverUiEdgeData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("id", Json::number(data.id.to_double()))
   out.set("level", Json::number(data.level.to_double()))
   out.set("label", Json::string(data.label))
@@ -642,7 +642,7 @@ fn quiver_ui_edge_json(data : QuiverUiEdgeData) -> Json {
 
 ///|
 fn quiver_ui_dependencies_json(data : QuiverUiCellDependenciesData) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("cell_id", Json::number(data.cell_id.to_double()))
   out.set(
     "dependencies",
@@ -672,7 +672,7 @@ fn quiver_ui_snapshot_json(snapshot : QuiverUiSnapshot) -> Json {
     dependencies.push(quiver_ui_dependencies_json(dependency))
   }
 
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("payload", Json::string(snapshot.payload))
   out.set("cell_ids", quiver_ui_int_array_json(snapshot.cell_ids))
   out.set("vertices", Json::array(vertices))
@@ -693,7 +693,7 @@ fn quiver_ui_option_string_json(value : String?) -> Json {
 fn quiver_ui_option_import_error_json(value : QuiverUiImportError?) -> Json {
   match value {
     Some(error) => {
-      let out : Map[String, Json] = Map::new()
+      let out : Map[String, Json] = Map([])
       out.set("kind", Json::string(error.kind))
       out.set("message", Json::string(error.message))
       out.set("line", Json::number(error.line.to_double()))
@@ -706,7 +706,7 @@ fn quiver_ui_option_import_error_json(value : QuiverUiImportError?) -> Json {
 
 ///|
 fn quiver_ui_id_remap_json(data : QuiverUiIdRemap) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("old_id", Json::number(data.old_id.to_double()))
   out.set("new_id", Json::number(data.new_id.to_double()))
   Json::object(out)
@@ -714,7 +714,7 @@ fn quiver_ui_id_remap_json(data : QuiverUiIdRemap) -> Json {
 
 ///|
 fn quiver_ui_import_result_json(result : QuiverUiImportResult) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("ok", Json::boolean(result.ok))
   out.set("payload", Json::string(result.payload))
   out.set("macro_url", quiver_ui_option_string_json(result.macro_url))
@@ -733,7 +733,7 @@ fn quiver_ui_selection_import_result_json(
     remap.push(quiver_ui_id_remap_json(entry))
   }
 
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("payload", Json::string(result.payload))
   out.set("imported_ids", quiver_ui_int_array_json(result.imported_ids))
   out.set("id_remap", Json::array(remap))
@@ -767,11 +767,11 @@ fn quiver_ui_tikz_dependencies_json(
   dependencies.each((package_name, _) => package_names.push(package_name))
   package_names.sort()
 
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   for package_name in package_names {
     match dependencies.get(package_name) {
       Some(reasons_set) => {
-        let reasons_json : Map[String, Json] = Map::new()
+        let reasons_json : Map[String, Json] = Map([])
         for reason in quiver_ui_sorted_string_keys(reasons_set) {
           reasons_json.set(reason, Json::boolean(true))
         }
@@ -785,7 +785,7 @@ fn quiver_ui_tikz_dependencies_json(
 
 ///|
 fn quiver_ui_tikz_export_result_json(result : TikzCdExportResult) -> Json {
-  let metadata : Map[String, Json] = Map::new()
+  let metadata : Map[String, Json] = Map([])
   metadata.set(
     "tikz_incompatibilities",
     quiver_ui_string_array_json(result.metadata.tikz_incompatibilities),
@@ -795,7 +795,7 @@ fn quiver_ui_tikz_export_result_json(result : TikzCdExportResult) -> Json {
     quiver_ui_tikz_dependencies_json(result.metadata.dependencies),
   )
 
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("data", Json::string(result.data))
   out.set("metadata", Json::object(metadata))
   Json::object(out)
@@ -814,7 +814,7 @@ fn quiver_ui_bool_array_json(values : Array[Bool]) -> Json {
 fn quiver_ui_mutation_batch_result_json(
   result : QuiverUiMutationBatchResult,
 ) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("payload", Json::string(result.payload))
   out.set("label_results", quiver_ui_bool_array_json(result.label_results))
   out.set(
@@ -838,7 +838,7 @@ fn quiver_ui_mutation_batch_result_json(
 
 ///|
 fn quiver_ui_add_result_json(result : QuiverUiAddResult) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("id", Json::number(result.id.to_double()))
   out.set("payload", Json::string(result.payload))
   Json::object(out)
@@ -846,7 +846,7 @@ fn quiver_ui_add_result_json(result : QuiverUiAddResult) -> Json {
 
 ///|
 fn quiver_ui_remove_result_json(result : QuiverUiRemoveResult) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("removed_ids", quiver_ui_int_array_json(result.removed_ids))
   out.set("payload", Json::string(result.payload))
   Json::object(out)
@@ -854,14 +854,14 @@ fn quiver_ui_remove_result_json(result : QuiverUiRemoveResult) -> Json {
 
 ///|
 fn quiver_ui_payload_result_json(payload : String) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("payload", Json::string(payload))
   Json::object(out)
 }
 
 ///|
 fn quiver_ui_ok_payload_result_json(ok : Bool, payload : String) -> Json {
-  let out : Map[String, Json] = Map::new()
+  let out : Map[String, Json] = Map([])
   out.set("ok", Json::boolean(ok))
   out.set("payload", Json::string(payload))
   Json::object(out)

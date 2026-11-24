@@ -1,8 +1,10 @@
 ///|
 fn runtime_parse_json_object(input : String) -> Map[String, Json]? {
-  let parsed : Result[Json, Error] = try? @json.parse(input)
+  let parsed = try @json.parse(input) catch {
+    _ => return None
+  }
   match parsed {
-    Ok(Json::Object(root)) => Some(root)
+    Json::Object(root) => Some(root)
     _ => None
   }
 }
@@ -14,13 +16,7 @@ fn runtime_json_string_or(
   fallback : String,
 ) -> String {
   match root.get(key) {
-    Some(raw) => {
-      let parsed : Result[String, Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(value) => value
-        Err(_) => fallback
-      }
-    }
+    Some(raw) => try @json.from_json(raw) catch { _ => fallback }
     None => fallback
   }
 }
@@ -32,13 +28,7 @@ fn runtime_json_optional_string(
 ) -> String? {
   match root.get(key) {
     Some(Json::Null) => None
-    Some(raw) => {
-      let parsed : Result[String, Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(value) => Some(value)
-        Err(_) => None
-      }
-    }
+    Some(raw) => try Some(@json.from_json(raw)) catch { _ => None }
     None => None
   }
 }
@@ -50,13 +40,7 @@ fn runtime_json_bool_or(
   fallback : Bool,
 ) -> Bool {
   match root.get(key) {
-    Some(raw) => {
-      let parsed : Result[Bool, Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(value) => value
-        Err(_) => fallback
-      }
-    }
+    Some(raw) => try @json.from_json(raw) catch { _ => fallback }
     None => fallback
   }
 }
@@ -153,13 +137,7 @@ fn BrowserDemoSession::query_result(
 ///|
 fn BrowserDemoSession::payload(self : BrowserDemoSession) -> String {
   match self.query_result("export_payload") {
-    Some(raw) => {
-      let parsed : Result[String, Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(payload) => payload
-        Err(_) => ""
-      }
-    }
+    Some(raw) => try @json.from_json(raw) catch { _ => "" }
     None => ""
   }
 }
@@ -167,13 +145,7 @@ fn BrowserDemoSession::payload(self : BrowserDemoSession) -> String {
 ///|
 fn BrowserDemoSession::selection(self : BrowserDemoSession) -> Array[Int] {
   match self.query_result("selection") {
-    Some(raw) => {
-      let parsed : Result[Array[Int], Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(selection) => selection
-        Err(_) => []
-      }
-    }
+    Some(raw) => try @json.from_json(raw) catch { _ => [] }
     None => []
   }
 }
@@ -181,13 +153,7 @@ fn BrowserDemoSession::selection(self : BrowserDemoSession) -> Array[Int] {
 ///|
 fn BrowserDemoSession::all_cell_ids(self : BrowserDemoSession) -> Array[Int] {
   match self.query_result("all_cell_ids_json") {
-    Some(raw) => {
-      let parsed : Result[Array[Int], Error] = try? @json.from_json(raw)
-      match parsed {
-        Ok(cell_ids) => cell_ids
-        Err(_) => []
-      }
-    }
+    Some(raw) => try @json.from_json(raw) catch { _ => [] }
     None => []
   }
 }

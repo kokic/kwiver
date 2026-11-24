@@ -269,7 +269,7 @@ pub fn Quiver::export_fletcher(
   options~ : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
   let vertices : Array[Vertex] = []
-  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.new()
+  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.HashMap([])
   let edges : Array[Edge] = []
 
   for cell in self.all_cells() {
