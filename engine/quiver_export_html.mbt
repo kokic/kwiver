@@ -14,6 +14,7 @@ pub struct HtmlEmbedExportOptions {
   share_base_url : String?
   macro_url : String?
   renderer : String?
+  scale : Double
 }
 
 ///|
@@ -33,7 +34,7 @@ pub fn HtmlEmbedExportSettings::default(
 
 ///|
 pub fn HtmlEmbedExportOptions::default() -> HtmlEmbedExportOptions {
-  { share_base_url: None, macro_url: None, renderer: None, }
+  { share_base_url: None, macro_url: None, renderer: None, scale: 0.0 }
 }
 
 ///|
@@ -41,18 +42,14 @@ pub fn HtmlEmbedExportOptions::with_share_base_url(
   self : HtmlEmbedExportOptions,
   base_url : String,
 ) -> HtmlEmbedExportOptions {
-  {
-    share_base_url: Some(base_url),
-    macro_url: self.macro_url,
-    renderer: self.renderer,
-  }
+  { ..self, share_base_url: Some(base_url) }
 }
 
 ///|
 pub fn HtmlEmbedExportOptions::without_share_base_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer, }
+  { ..self, share_base_url: None }
 }
 
 ///|
@@ -60,22 +57,14 @@ pub fn HtmlEmbedExportOptions::with_macro_url(
   self : HtmlEmbedExportOptions,
   macro_url : String,
 ) -> HtmlEmbedExportOptions {
-  {
-    share_base_url: self.share_base_url,
-    macro_url: Some(macro_url),
-    renderer: self.renderer,
-  }
+  { ..self, macro_url: Some(macro_url) }
 }
 
 ///|
 pub fn HtmlEmbedExportOptions::without_macro_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  {
-    share_base_url: self.share_base_url,
-    macro_url: None,
-    renderer: self.renderer,
-  }
+  { ..self, macro_url: None }
 }
 
 ///|
@@ -83,22 +72,23 @@ pub fn HtmlEmbedExportOptions::with_renderer(
   self : HtmlEmbedExportOptions,
   renderer : String,
 ) -> HtmlEmbedExportOptions {
-  {
-    share_base_url: self.share_base_url,
-    macro_url: self.macro_url,
-    renderer: Some(renderer),
-  }
+  { ..self, renderer: Some(renderer) }
 }
 
 ///|
 pub fn HtmlEmbedExportOptions::without_renderer(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  {
-    share_base_url: self.share_base_url,
-    macro_url: self.macro_url,
-    renderer: None,
-  }
+  { ..self, renderer: None }
+}
+
+///|
+/// Sets the log2 zoom for the iframe. Zero leaves the diagram fitted to the frame.
+pub fn HtmlEmbedExportOptions::with_scale(
+  self : HtmlEmbedExportOptions,
+  scale : Double,
+) -> HtmlEmbedExportOptions {
+  { ..self, scale, }
 }
 
 ///|
@@ -229,7 +219,8 @@ pub fn Quiver::export_html_embed(
   options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
   let url = html_embed_url(self, settings, options)
-  let src = if self.is_empty() { url + "#embed" } else { url + "&embed" }
+  let embed = if self.is_empty() { "#embed" } else { "&embed" }
+  let scale = if options.scale == 0.0 { "" } else { "&scale=\{options.scale}" }
   let (width, height) = if settings.fixed_size {
     (settings.width, settings.height)
   } else {
@@ -242,7 +233,9 @@ pub fn Quiver::export_html_embed(
     "<!-- ",
     url,
     " -->\n<iframe class=\"quiver-embed\" src=\"",
-    src,
+    url,
+    embed,
+    scale,
     "\" width=\"",
     width.to_string(),
     "\" height=\"",

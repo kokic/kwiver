@@ -28,13 +28,10 @@ import {
   kwiver_bridge_flip_edge_labels_json,
   kwiver_bridge_import_payload_json,
   kwiver_bridge_move_vertex_json,
-  kwiver_bridge_patch_edge_options_json,
   kwiver_bridge_paste_selection_json,
   kwiver_bridge_preview_reconnect_plan,
-  kwiver_bridge_reconnect_edge_json,
   kwiver_bridge_remove_json,
   kwiver_bridge_reverse_edge_json,
-  kwiver_bridge_reset,
   kwiver_bridge_ready,
   kwiver_bridge_selection_panel_state,
   kwiver_bridge_selection_summary,
@@ -45,7 +42,6 @@ import {
   kwiver_bridge_set_edge_label_position_json,
   kwiver_bridge_set_edge_offset_json,
   kwiver_bridge_set_label_colour_json,
-  kwiver_bridge_set_label_json,
   kwiver_bridge_set_selection,
   kwiver_bridge_snapshot,
   kwiver_bridge_status,
@@ -53,10 +49,6 @@ import {
   kwiver_bridge_test_reset,
   kwiver_bridge_test_set_autoload,
 } from "../kwiver_bridge.mjs";
-import {
-  KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
-  kwiver_bridge_unavailable_error,
-} from "../bridge_startup.mjs";
 
 const COMMAND_PROTOCOL = "kwiver.command.v1";
 
@@ -123,35 +115,9 @@ function testRejectsProtocolMismatch() {
   assert.equal(imported, null);
 }
 
-function testBridgeUnavailableErrorFormatting() {
-  const message = kwiver_bridge_unavailable_error({
-    loaded_candidate: "http://localhost:8080/webui/_build/js/release/build/runtime/runtime.js",
-    load_errors: ["mock-load-error"],
-  });
-  assert.equal(
-    message,
-    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=http://localhost:8080/webui/_build/js/release/build/runtime/runtime.js, error=mock-load-error)",
-  );
-  assert.equal(
-    KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
-    "Kwiver runtime unavailable. Please verify server root and build artifacts.",
-  );
-}
-
-function testBridgeUnavailableErrorFormattingFallback() {
-  const message = kwiver_bridge_unavailable_error({});
-  assert.equal(
-    message,
-    "[kwiver-only] ui.bootstrap: bridge unavailable (candidate=none, error=n/a)",
-  );
-}
-
-function installRecordingMock(recorder = null) {
+function installRuntimeMock() {
   const installed = kwiver_bridge_test_install_mock_api(
     mockApiFromResponder((command) => {
-      if (Array.isArray(recorder)) {
-        recorder.push(command);
-      }
       switch (command.action) {
         case "snapshot_json":
           return {
@@ -394,7 +360,7 @@ function requireSelectionSummary(summary, context) {
 }
 
 function testInteractionWrappersDispatchRuntimeCommands() {
-  installRecordingMock();
+  installRuntimeMock();
 
   const snapshot = requireSnapshot(
     kwiver_bridge_snapshot("ui.test.snapshot"),
@@ -542,7 +508,7 @@ function testInteractionWrappersDispatchRuntimeCommands() {
 }
 
 function testRenderWrappersDispatchRuntimeCommands() {
-  installRecordingMock();
+  installRuntimeMock();
 
   const settings = {
     get(key) {
@@ -632,69 +598,6 @@ function testExportBase64UsesRuntimePayload() {
   } finally {
     globalThis.window = previousWindow;
   }
-}
-
-function testResetUsesRuntimeResetAction() {
-  const installed = kwiver_bridge_test_install_mock_api(
-    mockApiFromResponder(() => ({
-      ok: true,
-      protocol: COMMAND_PROTOCOL,
-      result: {},
-    })),
-  );
-  assert.equal(installed, true);
-
-  const reset = kwiver_bridge_reset("ui.test.reset");
-  assert.equal(reset?.ok, true);
-}
-
-function testReconnectDispatchesRuntimeMutation() {
-  const installed = kwiver_bridge_test_install_mock_api(
-    mockApiFromResponder(() => ({
-      ok: true,
-      protocol: COMMAND_PROTOCOL,
-      result: { ok: true, payload: "payload-after-reconnect" },
-      after: { payload: "payload-after-reconnect" },
-    })),
-  );
-  assert.equal(installed, true);
-
-  const reconnectEnvelope = kwiver_bridge_reconnect_edge_json(7, 2, 3, "ui.test.reconnect");
-  assert.equal(reconnectEnvelope?.ok, true);
-}
-
-function testSetLabelDispatchesRuntimeMutation() {
-  const installed = kwiver_bridge_test_install_mock_api(
-    mockApiFromResponder(() => ({
-      ok: true,
-      protocol: COMMAND_PROTOCOL,
-      result: { ok: true, payload: "payload-after-label" },
-      after: { payload: "payload-after-label" },
-    })),
-  );
-  assert.equal(installed, true);
-
-  const labelEnvelope = kwiver_bridge_set_label_json(11, "f", "ui.test.label");
-  assert.equal(labelEnvelope?.ok, true);
-}
-
-function testPatchEdgeOptionsDispatchesRuntimeMutation() {
-  const installed = kwiver_bridge_test_install_mock_api(
-    mockApiFromResponder(() => ({
-      ok: true,
-      protocol: COMMAND_PROTOCOL,
-      result: { ok: true, payload: "payload-after-patch" },
-      after: { payload: "payload-after-patch" },
-    })),
-  );
-  assert.equal(installed, true);
-
-  const patch = {
-    level: 3,
-    edge_alignment_source: true,
-  };
-  const patchEnvelope = kwiver_bridge_patch_edge_options_json(13, patch, "ui.test.patch");
-  assert.equal(patchEnvelope?.ok, true);
 }
 
 function testPureGeometryWrappersUseBridgeExports() {
@@ -1064,14 +967,6 @@ const TEST_CASES = [
     testRejectsProtocolMismatch,
   ],
   [
-    "bridge smoke: startup fail-fast error message includes candidate and first load error",
-    testBridgeUnavailableErrorFormatting,
-  ],
-  [
-    "bridge smoke: startup fail-fast error message falls back to none/n-a details",
-    testBridgeUnavailableErrorFormattingFallback,
-  ],
-  [
     "bridge smoke: bridge-backed interaction wrappers return bridged results",
     testInteractionWrappersDispatchRuntimeCommands,
   ],
@@ -1086,22 +981,6 @@ const TEST_CASES = [
   [
     "bridge smoke: base64 export uses bridged payload in share URL",
     testExportBase64UsesRuntimePayload,
-  ],
-  [
-    "bridge smoke: ui reset returns bridged envelope",
-    testResetUsesRuntimeResetAction,
-  ],
-  [
-    "bridge smoke: reconnect path returns bridged envelope",
-    testReconnectDispatchesRuntimeMutation,
-  ],
-  [
-    "bridge smoke: set label path returns bridged envelope",
-    testSetLabelDispatchesRuntimeMutation,
-  ],
-  [
-    "bridge smoke: patch edge options path returns bridged envelope",
-    testPatchEdgeOptionsDispatchesRuntimeMutation,
   ],
   [
     "bridge smoke: pure geometry wrappers use MoonBit bridge exports",

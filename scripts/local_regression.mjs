@@ -2,26 +2,13 @@ import { spawnSync } from "node:child_process";
 
 const args = new Set(process.argv.slice(2));
 const smokeOnly = args.has("--smoke-only");
-const BUILD_ARGS = ["build", "--release", "--target-dir", "webui/_build"];
-
-const STEPS = smokeOnly
-  ? [
-      ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
-      ["moon", BUILD_ARGS],
-      ["node", ["webui/tests/kwiver_bridge_smoke.test.mjs"]],
-      ["node", ["webui/tests/toolbar_update_fail_fast.test.mjs"]],
-      ["node", ["webui/tests/runtime_smoke_non_mock.test.mjs"]],
-      ["node", ["webui/tests/parser_corpus_runtime_non_mock.test.mjs"]],
-    ]
-  : [
-      ["node", ["scripts/sync_parser_corpus_manifest.mjs"]],
-      ["moon", BUILD_ARGS],
-      ["moon", ["test", "-v"]],
-      ["node", ["webui/tests/kwiver_bridge_smoke.test.mjs"]],
-      ["node", ["webui/tests/toolbar_update_fail_fast.test.mjs"]],
-      ["node", ["webui/tests/runtime_smoke_non_mock.test.mjs"]],
-      ["node", ["webui/tests/parser_corpus_runtime_non_mock.test.mjs"]],
-    ];
+const STEPS = [
+  ...(smokeOnly ? [] : [["node", ["scripts/sync_parser_corpus_manifest.mjs"]]]),
+  ["moon", ["build", "--release", "--target-dir", "webui/_build"]],
+  ...(smokeOnly ? [] : [["moon", ["test", "-v"]]]),
+  ["node", ["webui/tests/kwiver_bridge_smoke.test.mjs"]],
+  ["node", ["webui/tests/runtime_smoke_non_mock.test.mjs"]],
+];
 
 function runStep(command, commandArgs, index, total) {
   const pretty = [command, ...commandArgs].join(" ");

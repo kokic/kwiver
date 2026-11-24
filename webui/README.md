@@ -31,7 +31,7 @@ Run smoke-only mode (skip `moon test -v`):
 node scripts/local_regression.mjs --smoke-only
 ```
 
-Parser corpus fixture expectations are declared in `tests/parser_corpus_manifest.json` and shared with engine tests via the sync script.
+The full run syncs `tests/parser_corpus_manifest.json` and its TeX fixtures into the MoonBit parser tests, which exercise the full corpus once.
 
-The smoke suite verifies protocol enforcement, startup fail-fast formatting, command routing for interaction/export entrypoints, non-mock runtime command dispatch against built runtime artifacts, and parser.tex corpus import/fail-fast behavior through runtime bridge entrypoints.
+The smoke suite checks protocol enforcement, malformed bridge responses, and representative command paths against the compiled runtime, including successful and rejected TikZ imports.
 These checks do not mean the browser graph migration is complete; they only guard the current bridge/runtime boundary while JS graph ownership is still being removed.

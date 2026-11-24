@@ -1212,22 +1212,30 @@ pub fn Quiver::import_base64_v0_selection_result(
     return { imported_ids: [], id_remap: Map([]), }
   }
 
+  let occupied : Set[(Int32, Int32)] = Set([])
+  self.cells.each((id, cell) => {
+    if cell is Vertex(vertex) && !self.deleted.contains(id) {
+      occupied.add((vertex.x, vertex.y))
+    }
+  })
+  let placements = vertices.map(vertex => {
+    let x = vertex.x - min_x + origin_x
+    let y = vertex.y - min_y + origin_y
+    guard occupied.add_and_check((x, y)) else {
+      fail("position already occupied: (\{x}, \{y})")
+    }
+    (vertex, x, y)
+  })
+
   let id_remap : Map[Int32, Int32] = Map([])
   let imported_ids : Array[Int32] = []
-
-  for vertex in vertices {
+  for (vertex, x, y) in placements {
     let new_id = self.base64_import_alloc_unique_id(alloc_id)
     id_remap.set(vertex.cell.id, new_id)
     imported_ids.push(new_id)
     self.add(
       CellData::from_vertex(
-        Vertex::new(
-          new_id,
-          vertex.cell.label,
-          vertex.x - min_x + origin_x,
-          vertex.y - min_y + origin_y,
-          vertex.cell.label_colour,
-        ),
+        Vertex::new(new_id, vertex.cell.label, x, y, vertex.cell.label_colour),
       ),
     )
   }

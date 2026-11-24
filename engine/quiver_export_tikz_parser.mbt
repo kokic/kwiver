@@ -851,6 +851,7 @@ fn tikz_is_arrow_flag_token(option : String) -> Bool {
     "dash" => true
     "equal" => true
     "double line" => true
+    "nfold" => true
     "dashed" => true
     "dotted" => true
     "squiggly" => true
@@ -2170,9 +2171,12 @@ fn tikz_parse_shorten_magnitude(value : String) -> Int32? {
 
 ///|
 fn tikz_extract_arrow_label_option(option : String) -> String? {
-  match tikz_extract_first_quoted(option) {
-    Some(value) => return Some(value)
-    None => ()
+  if tikz_extract_first_quoted(option) is Some(value) {
+    if value.has_prefix("{") &&
+      tikz_take_leading_braced_group(value) is Some((inner, "")) {
+      return Some(inner)
+    }
+    return Some(value)
   }
 
   if option.contains("=") {
@@ -3721,6 +3725,13 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                     )
                     .trim()
                     .to_owned()
+                  if token is ("coil" | "coil'" | "multimap") {
+                    return Some(
+                      tikz_import_error(
+                        "option", "unsupported arrow style: " + token,
+                      ),
+                    )
+                  }
                   if tikz_is_direction_token(token) {
                     has_direction = true
                   }

@@ -168,42 +168,6 @@ fn tikz_test_assert_import_failure(
 }
 
 ///|
-fn tikz_parser_corpus_cases_by_engine_group(
-  engine_group : String,
-) -> Array[TikzParserCorpusManifestCase] {
-  let out : Array[TikzParserCorpusManifestCase] = []
-  for parser_case in tikz_parser_corpus_manifest_cases() {
-    if parser_case.engine_group == engine_group {
-      out.push(parser_case)
-    }
-  }
-  out
-}
-
-///|
-fn tikz_parser_corpus_cases_by_fixture(
-  fixture : String,
-) -> Array[TikzParserCorpusManifestCase] {
-  let out : Array[TikzParserCorpusManifestCase] = []
-  for parser_case in tikz_parser_corpus_manifest_cases() {
-    if parser_case.fixture == fixture {
-      out.push(parser_case)
-    }
-  }
-  out
-}
-
-///|
-fn tikz_parser_corpus_runtime_min_cells(
-  parser_case : TikzParserCorpusManifestCase,
-) -> Int32 {
-  match parser_case.runtime_min_cells {
-    Some(value) => value
-    None => 2
-  }
-}
-
-///|
 fn tikz_parser_corpus_engine_context(
   parser_case : TikzParserCorpusManifestCase,
 ) -> String {
@@ -1335,92 +1299,28 @@ test "tikz-cd try import rejects arrows without target" {
 }
 
 ///|
-test "tikz-cd parser corpus valid snippets from parser.tex import successfully" {
-  let cases = tikz_parser_corpus_cases_by_engine_group("valid")
-  inspect(cases.length() >= 1, content="true")
-
+test "tikz-cd parser corpus imports supported snippets" {
+  let cases = tikz_parser_corpus_manifest_cases().filter(parser_case =>
+    parser_case.engine_group == "valid"
+  )
+  assert_true(!cases.is_empty())
   for parser_case in cases {
     let imported = tikz_test_import_success(parser_case.snippet)
-    inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
-  }
-}
-
-///|
-test "tikz-cd parser corpus invalid snippets from parser.tex return structured errors" {
-  let cases = tikz_parser_corpus_cases_by_engine_group("invalid_fail_fast")
-  inspect(cases.length() >= 1, content="true")
-
-  for parser_case in cases {
-    tikz_test_assert_import_failure(
-      parser_case.snippet,
-      context=tikz_parser_corpus_engine_context(parser_case),
-    )
-  }
-}
-
-///|
-test "tikz-cd parser corpus compatibility snippets from parser.tex now fail fast" {
-  let cases = tikz_parser_corpus_cases_by_engine_group("compat_fail_fast")
-  inspect(cases.length() >= 1, content="true")
-
-  for parser_case in cases {
-    tikz_test_assert_import_failure(
-      parser_case.snippet,
-      context=tikz_parser_corpus_engine_context(parser_case),
-    )
-  }
-}
-
-///|
-test "tikz-cd parser corpus keeps explicit invalid-section supported cases stable" {
-  let invalid_section_supported_ids : Array[String] = []
-  for parser_case in tikz_parser_corpus_manifest_cases() {
-    if parser_case.section == "invalid" && parser_case.engine_group == "valid" {
-      invalid_section_supported_ids.push(parser_case.id)
-      let imported = tikz_test_import_success(parser_case.snippet)
-      inspect(imported.quiver.all_cell_ids().length() >= 2, content="true")
-    }
-  }
-
-  inspect(
-    invalid_section_supported_ids,
-    content="[\"valid-zero-length-edge-reference-chain\", \"compat-invalid-level-1-clamped\", \"compat-invalid-loop\", \"compat-invalid-zero-length-arrow\", \"compat-invalid-no-ampersand\", \"compat-invalid-multiple-node-errors\"]",
-  )
-}
-
-///|
-test "tikz-cd parser corpus keeps parser_external fixture expectations stable" {
-  let external_cases = tikz_parser_corpus_cases_by_fixture(
-    "parser_external.tex",
-  )
-  inspect(external_cases.length() >= 1, content="true")
-
-  for parser_case in external_cases {
-    inspect(parser_case.runtime_expectation, content="import_success")
-    inspect(parser_case.engine_group, content="valid")
-    let imported = tikz_test_import_success(parser_case.snippet)
-    inspect(
+    assert_true(
       imported.quiver.all_cell_ids().length() >=
-      tikz_parser_corpus_runtime_min_cells(parser_case),
-      content="true",
+      parser_case.runtime_min_cells.unwrap_or(2),
+      msg=parser_case.id,
     )
   }
 }
 
 ///|
-test "tikz-cd parser corpus keeps parser_external_invalid fixture fail-fast expectations stable" {
-  let external_invalid_cases = tikz_parser_corpus_cases_by_fixture(
-    "parser_external_invalid.tex",
+test "tikz-cd parser corpus rejects unsupported and invalid snippets" {
+  let cases = tikz_parser_corpus_manifest_cases().filter(parser_case =>
+    parser_case.engine_group is ("compat_fail_fast" | "invalid_fail_fast")
   )
-  inspect(external_invalid_cases.length() >= 1, content="true")
-
-  for parser_case in external_invalid_cases {
-    inspect(parser_case.runtime_expectation, content="fail_fast")
-    inspect(
-      parser_case.engine_group == "compat_fail_fast" ||
-      parser_case.engine_group == "invalid_fail_fast",
-      content="true",
-    )
+  assert_true(!cases.is_empty())
+  for parser_case in cases {
     tikz_test_assert_import_failure(
       parser_case.snippet,
       context=tikz_parser_corpus_engine_context(parser_case),

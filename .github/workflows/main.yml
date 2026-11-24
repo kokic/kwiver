@@ -22,6 +22,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Build browser runtime
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o "$RUNNER_TEMP/install-moonbit.sh"
+          bash "$RUNNER_TEMP/install-moonbit.sh"
+          "$HOME/.moon/bin/moon" build --release --target js --target-dir webui/_build
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

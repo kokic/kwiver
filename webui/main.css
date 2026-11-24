@@ -698,7 +698,7 @@ input[type="text"].flash {
 }
 
 .panel input[type="radio"] {
-    -webkit-appearance: none;
+    appearance: none;
     display: inline-block;
     width: 48px; height: 48px;
 
@@ -926,7 +926,7 @@ div.slider {
     border-color: var(--ui-blue);
 }
 
-.panel button, .pane button, .port button, .panel select {
+.panel button, .pane button, .port button, .panel select, .port select {
     position: relative;
     display: block;
     width: 100%; height: 30px;
@@ -942,10 +942,13 @@ div.slider {
     text-align: center;
 }
 
-.global select {
+.global select, .port select {
+    appearance: none;
     display: inline-block;
     width: auto;
     margin: 0;
+    padding: 0 8pt;
+    text-align: left;
 }
 
 .global button {
@@ -1765,6 +1768,10 @@ button.flash {
     margin-right: -12pt;
 }
 
+.port .options input[type="range"] {
+    vertical-align: middle;
+}
+
 /* Disable the up/down buttons for `type="number"` inputs. */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -1772,7 +1779,7 @@ input::-webkit-inner-spin-button {
     margin: 0;
 }
 input[type="number"] {
-    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 label input[type="checkbox"] {

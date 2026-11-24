@@ -1155,7 +1155,8 @@ function tikzInput(settings, options, definitions) {
         settingValue(settings, "export.ampersand_replacement", false),
       ),
       cramped: Boolean(settingValue(settings, "export.cramped", false)),
-      standalone: false,
+      standalone: Boolean(settingValue(settings, "export.standalone", false)),
+      package_version: settingValue(settings, "quiver.package_version", undefined),
     },
     options: {
       renderer: rendererFromSettings(settings, options),
@@ -1212,6 +1213,7 @@ function htmlInput(settings, options) {
     },
     options: {
       renderer: rendererFromSettings(settings, options),
+      scale: asNumber(options?.scale, 0),
     },
   };
   if (options && typeof options.macro_url === "string" && options.macro_url !== "") {
@@ -2173,13 +2175,14 @@ export function kwiver_bridge_set_selection(selectedIds, origin = "ui.bridge.sel
 export function kwiver_bridge_export_selection(
   includeDependencies = true,
   origin = "ui.bridge.selection",
+  selectedIds = undefined,
 ) {
   if (!isBoolean(includeDependencies)) {
     return null;
   }
   const envelope = dispatchCommandResult(
     "export_selection",
-    { include_dependencies: includeDependencies },
+    { include_dependencies: includeDependencies, selected_ids: selectedIds },
     origin,
   );
   if (!envelope) {

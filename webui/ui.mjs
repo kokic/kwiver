@@ -8,7 +8,7 @@ import { cancel, DOM, delay, pointer_event } from "./dom.mjs";
 import { Colour, Dimensions, Enum, Offset, Point, Position, clamp, deg_to_rad, mod, rad_to_deg, url_parameters } from "./ds.mjs";
 import { Quiver, QuiverImportExport } from "./quiver.mjs";
 import { ConnectPreview } from "./ui_connect_preview.mjs";
-import { Settings } from "./ui_settings.mjs";
+import { QUIVER_PACKAGE_VERSIONS, Settings } from "./ui_settings.mjs";
 import { ViewRegistry } from "./ui_view_registry.mjs";
 import {
     KWIVER_BRIDGE_UNAVAILABLE_DISPLAY_ERROR,
@@ -51,8 +51,6 @@ import {
 Object.assign(CONSTANTS, {
     /// The current quiver version.
     VERSION: "1.6.0",
-    /// When the `quiver.sty` package was last modified.
-    PACKAGE_VERSION: "2025/09/20",
     /// We currently only support n-cells for (n ≤ 4). This restriction is not technical: it can be
     /// lifted in the editor without issue. Rather, this is for usability: a user is unlikely to
     /// want to draw a higher cell. For n-cells for n ≥ 3, we make use of tikz-nfold in exported
@@ -2096,18 +2094,6 @@ class UI {
         return Array.isArray(runtime_ids) ? runtime_ids : null;
     }
 
-    kwiver_runtime_transitive_reverse_dependency_ids(
-        roots,
-        origin = "ui.runtime.transitive_reverse_dependencies",
-    ) {
-        if (!Array.isArray(roots)) {
-            return null;
-        }
-        const summary = this.kwiver_runtime_selection_summary(roots, origin);
-        const runtime_ids = summary?.transitive_reverse_dependency_ids;
-        return Array.isArray(runtime_ids) ? runtime_ids : null;
-    }
-
     kwiver_runtime_transitive_dependency_cells(
         roots_cells,
         exclude_roots = false,
@@ -2120,24 +2106,6 @@ class UI {
         const runtime_ids = this.kwiver_runtime_transitive_dependency_ids(
             root_ids,
             exclude_roots,
-            origin,
-        );
-        if (!Array.isArray(runtime_ids)) {
-            return null;
-        }
-        return this.kwiver_cells_from_runtime_ids(runtime_ids);
-    }
-
-    kwiver_runtime_transitive_reverse_dependency_cells(
-        roots_cells,
-        origin = "ui.runtime.transitive_reverse_dependencies",
-    ) {
-        const root_ids = this.kwiver_cell_ids_from_cells(roots_cells);
-        if (!Array.isArray(root_ids)) {
-            return null;
-        }
-        const runtime_ids = this.kwiver_runtime_transitive_reverse_dependency_ids(
-            root_ids,
             origin,
         );
         if (!Array.isArray(runtime_ids)) {
@@ -3263,22 +3231,8 @@ class UI {
         );
     }
     copy_selection_with_kwiver() {
-        const selection = this.kwiver_require_runtime_transitive_reverse_dependency_cells(
-            this.selection,
-            "ui.clipboard.copy.reverse_closure",
-        );
-
-        const selected_ids = this.kwiver_cell_ids_from_cells(selection);
-        if (!Array.isArray(selected_ids)) {
-            throw new Error("[kwiver-only] ui.clipboard.copy: selected id mapping failed");
-        }
-
-        const set_selection = kwiver_bridge_set_selection(selected_ids, "ui.clipboard.copy");
-        if (!set_selection || set_selection.ok !== true) {
-            throw new Error("[kwiver-only] ui.clipboard.copy: set_selection failed");
-        }
-
-        const exported = kwiver_bridge_export_selection(true, "ui.clipboard.copy");
+        const selected_ids = this.kwiver_require_selected_ids("ui.clipboard.copy");
+        const exported = kwiver_bridge_export_selection(true, "ui.clipboard.copy", selected_ids);
         if (typeof exported !== "string" || exported === "") {
             throw new Error("[kwiver-only] ui.clipboard.copy: export_selection failed");
         }
@@ -3381,6 +3335,7 @@ class UI {
             macro_url,
             dimensions: this.diagram_size(),
             sep: this.panel.sep,
+            scale: this.panel.port?.embed_scale?.element.valueAsNumber ?? 0,
         };
     }
 
@@ -4867,22 +4822,17 @@ class UI {
                     document.body.offsetWidth / 2 ** this.scale,
                     document.body.offsetHeight / 2 ** this.scale,
                 ).sub(Dimensions.diag(CONSTANTS.VIEW_PADDING * 2));
-                const pan = Offset.zero();
-                // We only adjust in the direction of movement, to avoid issues with edge cases,
-                // e.g. where the height of the screen is too small, which can cause panning
-                // vertically back and forth with each key press.
-                if (position_delta.x !== 0) {
-                    // Left.
-                    pan.x += Math.min(offset.x - (this.view.x - view.width / 2), 0);
-                    // Right.
-                    pan.x += Math.max(offset.x + width - (this.view.x + view.width / 2), 0);
-                }
-                if (position_delta.y !== 0) {
-                    // Top.
-                    pan.y += Math.min(offset.y - (this.view.y - view.height / 2), 0);
-                    // Bottom.
-                    pan.y += Math.max(offset.y + height - (this.view.y + view.height / 2), 0);
-                }
+                const pan_axis = (start, size, centre, visible) => {
+                    if (visible <= CONSTANTS.VIEW_PADDING) {
+                        return start + size / 2 - centre;
+                    }
+                    return Math.min(start - (centre - visible / 2), 0)
+                        + Math.max(start + size - (centre + visible / 2), 0);
+                };
+                const pan = new Offset(
+                    pan_axis(offset.x, width, this.view.x, view.width),
+                    pan_axis(offset.y, height, this.view.y, view.height),
+                );
 
                 const start = performance.now();
                 const view_origin = new Offset(this.view.x, this.view.y);
@@ -7441,36 +7391,23 @@ class Panel {
                     throw new Error("[kwiver-only] ui.panel.label_input: runtime snapshot unavailable");
                 }
 
-                const labels = [];
-                for (const cell of ui.selection) {
-                    const runtime_label = ui.kwiver_runtime_cell_label(cell, runtime_by_id);
-                    if (runtime_label === null) {
+                const value = this.label_input.element.value;
+                // Later keystrokes reuse this action, so it must include the whole selection.
+                const labels = Array.from(ui.selection, (cell) => {
+                    const from = ui.kwiver_runtime_cell_label(cell, runtime_by_id);
+                    if (from === null) {
                         throw new Error("[kwiver-only] ui.panel.label_input: runtime label snapshot invalid");
                     }
-                    if (runtime_label !== this.label_input.element.value) {
-                        labels.push({
-                            cell,
-                            from: runtime_label,
-                            to: this.label_input.element.value,
-                        });
-                    }
-                }
-                if (labels.length === 0) {
-                    // It can happen that we receive an event (e.g. `inputType` `historyUndo`)
-                    // that has no effect on any label. It is unclear whether this is the
-                    // correct behaviour, but we must account for it in any case. In this case,
-                    // we do not want to add a history event, as it would be idempotent.
+                    return { cell, from, to: value };
+                });
+                if (labels.every(({ from }) => from === value)) {
                     return;
                 }
                 this.unqueue_selected(ui);
                 ui.history.add_or_modify_previous(
                     ui,
                     ["label", ui.selection],
-                    [{
-                        kind: "label",
-                        value: this.label_input.element.value,
-                        cells: labels,
-                    }],
+                    [{ kind: "label", value, cells: labels }],
                 );
             } else {
                 // We are jumping to a cell with the entered ID.
@@ -8262,24 +8199,13 @@ class Panel {
             .add("to edge")
             .add_to(wrapper);
 
-        const display_port_pane = (kind, format, modify = (output) => output) => {
+        const display_port_pane = (kind, format) => {
             // Handle import/export button interaction.
             // If the user clicks on two different imports/exports in a row
             // we will simply switch the displayed import/export format.
             // Clicking on the same button twice closes the panel.
             if (this.port === null || this.port.kind !== kind || this.port.format !== format) {
                 ui.switch_mode(new UIMode.Modal());
-
-                // Get the encoding of the diagram. The output may be modified by the caller.
-                const { data, metadata } = modify(kind === "import" ?
-                    { data: "", metadata: null } :
-                    ui.bridge_quiver.export(
-                        format,
-                        ui.settings,
-                        ui.options(),
-                        ui.definitions(),
-                    )
-                );
 
                 let port_pane, latex_tip, typst_tip, warning, error, latex_options, typst_options;
                 let embed_options, note, content, textarea, parse_button, import_success;
@@ -8294,9 +8220,34 @@ class Panel {
                     import_success.class_list.add("hidden");
                 };
 
-                const update_output = (data, prevent_defocus = false) => {
-                    // At present, the data is always a string.
+                const update_output = ({ data, metadata }, prevent_defocus = false) => {
                     content.replace(data);
+                    warning.clear();
+                    const unsupported_items = Array.from(metadata.tikz_incompatibilities
+                        || metadata.fletcher_incompatibilities || []).sort();
+                    if (unsupported_items.length !== 0) {
+                        warning.add("The exported diagram may not match the ")
+                            .add(new DOM.Element("b").add("quiver"))
+                            .add(" diagram exactly. Unsupported features:");
+                        const list = new DOM.Element("ul").add_to(warning);
+                        for (const item of unsupported_items) {
+                            list.add(new DOM.Element("li").add(item));
+                        }
+                    }
+                    const dependencies = metadata.dependencies ?? new Map();
+                    if (dependencies.size !== 0) {
+                        warning.add("The exported diagram requires additional packages:");
+                        const list = new DOM.Element("ul").add_to(warning);
+                        for (const [library, reasons] of dependencies) {
+                            const package_name = library === "quiver 1.6.0" ? "quiver" : library;
+                            new DOM.Element("li").add_to(list)
+                                .add(new DOM.Link(`https://ctan.org/pkg/${package_name}`, library, true))
+                                .add(`, for ${Array.from(reasons).join("; ")}.`);
+                        }
+                    }
+                    warning.class_list.toggle("hidden",
+                        unsupported_items.length === 0 && dependencies.size === 0,
+                    );
                     if (prevent_defocus) {
                         return;
                     }
@@ -8305,6 +8256,12 @@ class Panel {
                     // Safari seems to occasionally fail to select the text immediately, so we
                     // also select it after a delay to ensure the text is selected.
                     delay(() => content.select_contents());
+                };
+
+                const refresh_export = (format, prevent_defocus = false) => {
+                    update_output(ui.bridge_quiver.export(
+                        format, ui.settings, ui.options(), ui.definitions(),
+                    ), prevent_defocus);
                 };
 
                 if (this.port === null) {
@@ -8336,15 +8293,7 @@ class Panel {
                     const sep_sliders = {};
                     const update_sep_slider = (axis) => {
                         this.sep[axis] = sep_sliders[axis].values();
-                        // Update the output. We ignore `metadata`, which currently does not
-                        // change in response to the settings.
-                        const { data } = modify(ui.bridge_quiver.export(
-                            format,
-                            ui.settings,
-                            ui.options(),
-                            ui.definitions(),
-                        ));
-                        update_output(data);
+                        refresh_export("tikz-cd");
                         // Update the label.
                         update_sep_label(sep_sliders[axis]);
                     };
@@ -8392,7 +8341,7 @@ class Panel {
                         .add_to(port_pane);
                     latex_tip.add(new DOM.Element("span", { class: "update" })
                         .add("updated on ")
-                        .add(new DOM.Element("time").add("2025-07-05"))
+                        .add(new DOM.Element("time").add("2026-07-27"))
                     );
 
                     typst_tip = new DOM.Element("span", { class: "tip hidden typst" });
@@ -8428,6 +8377,15 @@ class Panel {
                         type: "checkbox",
                         "data-setting": "export.standalone",
                     });
+                    const package_version = new DOM.Element("select", { name: "quiver_package_version" });
+                    for (const [value, label] of QUIVER_PACKAGE_VERSIONS) {
+                        package_version.add(new DOM.Element("option", { value }).add(label));
+                    }
+                    package_version.element.value = ui.settings.get("quiver.package_version");
+                    package_version.listen("change", () => {
+                        ui.settings.set("quiver.package_version", package_version.element.value);
+                        refresh_export("tikz-cd");
+                    });
                     latex_options = new DOM.Div({ class: "options latex hidden" })
                         .add(new DOM.Element("label")
                             .add(centre_checkbox_tikzcd)
@@ -8449,6 +8407,8 @@ class Panel {
                             .add(sep_sliders.column.label)
                             .add(sep_sliders.row.label)
                         )
+                        .add(new DOM.Element("label").add(new DOM.Code("quiver.sty"))
+                            .add(" version: ").add(package_version))
                         .add_to(port_pane);
                     typst_options = new DOM.Div({ class: "options typst hidden" })
                         .add(new DOM.Element("label")
@@ -8464,6 +8424,9 @@ class Panel {
                         width: new DOM.Element("input", { type: "number", min: "0" }),
                         height: new DOM.Element("input", { type: "number", min: "0" }),
                     };
+                    const embed_scale = new DOM.Element("input", {
+                        type: "range", min: "-1", max: "1", step: "0.25", value: "0",
+                    }).listen("input", () => refresh_export("html", true));
                     embed_options = new DOM.Div({ class: "options embed hidden" })
                         .add(new DOM.Element("label")
                             .add(fixed_size_checkbox)
@@ -8471,6 +8434,7 @@ class Panel {
                         )
                         .add(new DOM.Element("label").add("Width: ").add(embed_size.width))
                         .add(new DOM.Element("label").add("Height: ").add(embed_size.height))
+                        .add(new DOM.Element("label").add("Scale: ").add(embed_scale))
                         .add_to(port_pane);
 
                     const checkboxes = [
@@ -8507,15 +8471,7 @@ class Panel {
                                 checkbox.get_attribute("data-setting"),
                                 checkbox.element.checked,
                             );
-                            // Update the output. We ignore `metadata`, which currently does not
-                            // change in response to the settings.
-                            const { data } = modify(ui.bridge_quiver.export(
-                                format,
-                                ui.settings,
-                                ui.options(),
-                                ui.definitions(),
-                            ));
-                            update_output(data);
+                            refresh_export(format);
                         });
                         // Prevent the highlighted output from being deselected when changing a
                         // setting.
@@ -8528,13 +8484,7 @@ class Panel {
                             value = CONSTANTS.DEFAULT_EMBED_SIZE[dimension.toUpperCase()];
                         }
                         ui.settings.set(`export.embed.${dimension}`, value);
-                        const { data } = modify(ui.bridge_quiver.export(
-                            "html",
-                            ui.settings,
-                            ui.options(),
-                            ui.definitions(),
-                        ));
-                        update_output(data, true);
+                        refresh_export("html", true);
                     };
 
                     for (const dimension of ["width", "height"]) {
@@ -9192,7 +9142,7 @@ class Panel {
 
                     ui.element.add(port_pane);
 
-                    this.port = { shortcuts };
+                    this.port = { shortcuts, embed_scale };
                 } else {
                     // Find the existing import/export pane.
                     port_pane = ui.element.query_selector(".port");
@@ -9238,54 +9188,6 @@ class Panel {
                 // Clear any existing errors, which do not persist between tabs.
                 hide_errors_and_warnings();
 
-                // Display a warning if necessary.
-                const unsupported_items = kind === "export"
-                        && Array.from(metadata.tikz_incompatibilities
-                            || metadata.fletcher_incompatibilities
-                            || []).sort()
-                        || [];
-                if (unsupported_items.length !== 0) {
-                    warning.class_list.remove("hidden");
-                    warning.add("The exported ").add(new DOM.Code(format))
-                        .add(" diagram may not match the ")
-                        .add(new DOM.Element("b").add("quiver"))
-                        .add(" diagram exactly, as ").add(new DOM.Code(format))
-                        .add(" does not support the following features that " +
-                            "appear in this diagram:");
-                    const list = new DOM.Element("ul").add_to(warning);
-                    for (const [index, item] of unsupported_items.entries()) {
-                        list.add(new DOM.Element("li")
-                            .add(`${item}${index + 1 < unsupported_items.length ? ";" : "."}`)
-                        );
-                    }
-                }
-                const dependencies = kind === "export" && format === "tikz-cd" ?
-                    metadata.dependencies : new Map();
-                if (dependencies.size !== 0) {
-                    warning.class_list.remove("hidden");
-                    if (unsupported_items.length !== 0) {
-                        warning.add(new DOM.Element("br"));
-                    }
-                    warning.add("The exported ").add(new DOM.Code("tikz-cd"))
-                        .add(" diagram relies upon additional packages " +
-                        " that you may have to install for the diagram to render " +
-                        "correctly:");
-                    const list = new DOM.Element("ul").add_to(warning);
-                    for (const [library, reasons] of dependencies) {
-                        const li = new DOM.Element("li").add_to(list);
-                        const url = {
-                            "tikz-nfold": "https://ctan.org/pkg/tikz-nfold",
-                            "quiver": "https://ctan.org/pkg/quiver",
-                        }[library];
-                        if (library === "quiver") {
-                            li.add("The latest version of ");
-                        }
-                        li.add(new DOM.Element("a", { href: url, target: "_blank" })
-                            .add(new DOM.Code(library)));
-                        li.add(`, for ${Array.from(reasons).join("; ")}.`);
-                    }
-                }
-
                 // Update the note.
                 note.clear();
                 if (kind === "import" && format === "tikz-cd") {
@@ -9308,9 +9210,6 @@ class Panel {
                 // Show/hide relevant UI elements.
                 latex_tip.class_list.toggle("hidden", kind !== "export" || format !== "tikz-cd");
                 typst_tip.class_list.toggle("hidden", kind !== "export" || format !== "fletcher");
-                warning.class_list.toggle("hidden",
-                    unsupported_items.length === 0 && dependencies.size === 0,
-                );
                 latex_options.class_list.toggle(
                     "hidden",
                     kind !== "export" || format !== "tikz-cd",
@@ -9342,8 +9241,10 @@ class Panel {
                 port_pane.class_list.remove("import", "export");
                 port_pane.class_list.add(kind);
 
-                update_output(data);
-                if (kind === "import" && format === "tikz-cd") {
+                if (kind === "export") {
+                    refresh_export(format);
+                } else {
+                    content.clear();
                     delay(() => textarea.element.focus());
                 }
                 // Disable cell data editing while the import/export pane is visible.
@@ -12147,21 +12048,13 @@ const load_typst = (ui) => {
     if (Typst !== null) {
         return Typst;
     }
-    Typst = import("https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts@0.6.1-rc3/dist/esm/contrib/all-in-one-lite.bundle.js").then((module) => {
+    Typst = import("https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts@0.7.0/dist/esm/contrib/all-in-one-lite.bundle.js").then((module) => {
         const $typst = module.$typst;
-        const preloadRemoteFonts = module.preloadRemoteFonts;
         $typst.setCompilerInitOptions({
-            beforeBuild: [
-                preloadRemoteFonts([], {
-                    assets: ["text" , "cjk" , "emoji"],
-                    // Pinned commit from the `assets-fonts` branch.
-                    assetUrlPrefix: "https://cdn.jsdelivr.net/gh/Myriad-Dreamin/typst@bcaa00ae845bfb13ca06501f30c70ab13894517c/"
-                })
-            ],
-            getModule: () => "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-web-compiler@0.6.1-rc3/pkg/typst_ts_web_compiler_bg.wasm",
+            getModule: () => "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-web-compiler@0.7.0/pkg/typst_ts_web_compiler_bg.wasm",
         });
         $typst.setRendererInitOptions({
-            getModule: () => "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-renderer@0.6.1-rc3/pkg/typst_ts_renderer_bg.wasm",
+            getModule: () => "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-ts-renderer@0.7.0/pkg/typst_ts_renderer_bg.wasm",
         });
 
         return $typst;
@@ -12203,10 +12096,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         const query_data = url_parameters();
 
         // Set the initial zoom level based on the `scale` parameter.
+        let scale;
         if (query_data.has("scale")) {
-            const scale = parseFloat(decodeURIComponent(query_data.get("scale")));
-            if (!Number.isNaN(scale)) {
+            try {
+                scale = parseFloat(decodeURIComponent(query_data.get("scale")));
+            } catch (_) {
+                scale = NaN;
+            }
+            if (Number.isFinite(scale)) {
                 ui.pan_view(Offset.zero(), scale);
+            } else {
+                UI.display_error("Invalid scale amount.");
             }
         }
 
@@ -12222,6 +12122,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (["katex", "typst"].includes(renderer)) {
                 ui.settings.set("quiver.renderer", renderer);
                 ui.element.query_selector('select[name="renderer"]').element.value = renderer;
+            } else {
+                UI.display_error("Unknown renderer.");
             }
         }
 
@@ -12310,7 +12212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Adjust the diagram scale to fit the screen in embedded view.
                 // However, we have to be careful to only do this if the user
                 // hasn't already set the scale explicitly.
-                if (query_data.has("embed") && !query_data.has("scale")) {
+                if (query_data.has("embed") && !Number.isFinite(scale)) {
                     ui.scale_to_fit();
                 }
                 dismiss_loading_screen();

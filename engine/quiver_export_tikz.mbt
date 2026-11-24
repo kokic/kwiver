@@ -4,6 +4,14 @@ pub struct TikzCdExportSettings {
   ampersand_replacement : Bool
   cramped : Bool
   standalone : Bool
+  package_version : QuiverPackageVersion?
+}
+
+///|
+pub(all) enum QuiverPackageVersion {
+  V1_2_0
+  V1_6_0
+  V1_7_0
 }
 
 ///|
@@ -62,6 +70,7 @@ pub fn TikzCdExportSettings::default() -> TikzCdExportSettings {
     ampersand_replacement: false,
     cramped: false,
     standalone: false,
+    package_version: None,
   }
 }
 
@@ -70,12 +79,7 @@ pub fn TikzCdExportSettings::with_centre_diagram(
   self : TikzCdExportSettings,
   value~ : Bool = true,
 ) -> TikzCdExportSettings {
-  {
-    centre_diagram: value,
-    ampersand_replacement: self.ampersand_replacement,
-    cramped: self.cramped,
-    standalone: self.standalone,
-  }
+  { ..self, centre_diagram: value }
 }
 
 ///|
@@ -83,12 +87,7 @@ pub fn TikzCdExportSettings::with_ampersand_replacement(
   self : TikzCdExportSettings,
   value~ : Bool = true,
 ) -> TikzCdExportSettings {
-  {
-    centre_diagram: self.centre_diagram,
-    ampersand_replacement: value,
-    cramped: self.cramped,
-    standalone: self.standalone,
-  }
+  { ..self, ampersand_replacement: value }
 }
 
 ///|
@@ -96,12 +95,7 @@ pub fn TikzCdExportSettings::with_cramped(
   self : TikzCdExportSettings,
   value~ : Bool = true,
 ) -> TikzCdExportSettings {
-  {
-    centre_diagram: self.centre_diagram,
-    ampersand_replacement: self.ampersand_replacement,
-    cramped: value,
-    standalone: self.standalone,
-  }
+  { ..self, cramped: value }
 }
 
 ///|
@@ -109,12 +103,16 @@ pub fn TikzCdExportSettings::with_standalone(
   self : TikzCdExportSettings,
   value~ : Bool = true,
 ) -> TikzCdExportSettings {
-  {
-    centre_diagram: self.centre_diagram,
-    ampersand_replacement: self.ampersand_replacement,
-    cramped: self.cramped,
-    standalone: value,
-  }
+  { ..self, standalone: value }
+}
+
+///|
+/// Targets a known quiver.sty release. Without a target, retain legacy output and warnings.
+pub fn TikzCdExportSettings::with_package_version(
+  self : TikzCdExportSettings,
+  version : QuiverPackageVersion,
+) -> TikzCdExportSettings {
+  { ..self, package_version: Some(version) }
 }
 
 ///|
@@ -952,6 +950,7 @@ fn tikz_append_style_options(
   options : Array[String],
   edge : Edge,
   edge_is_empty : Bool,
+  package_provides_nfold : Bool,
 ) -> Unit {
   if edge.options.style.name != "arrow" {
     return
@@ -967,6 +966,9 @@ fn tikz_append_style_options(
       options.push("equals")
     } else {
       options.push("Rightarrow")
+    }
+    if package_provides_nfold {
+      options.push("nfold")
     }
   } else if edge.options.level > 2 {
     options.push("Rightarrow")
@@ -1330,6 +1332,7 @@ pub fn Quiver::export_tikz_cd_result(
   }
 
   let begin_line = tikz_begin_line(settings, options)
+  let package_provides_nfold = settings.package_version is Some(V1_7_0)
   let tikz_incompatibilities : @hashmap.HashMap[String, Bool] = @hashmap.HashMap(
     [],
   )
@@ -1444,7 +1447,12 @@ pub fn Quiver::export_tikz_cd_result(
         let shared_colour = tikz_shared_colour(edge)
         if !edge_is_empty &&
           (edge.options.shorten.source != 0 || edge.options.shorten.target != 0) {
-          tikz_add_dependency(dependencies, "quiver", "shortened arrows")
+          match settings.package_version {
+            None => tikz_add_dependency(dependencies, "quiver", "shortened arrows")
+            Some(V1_2_0) =>
+              tikz_add_dependency(dependencies, "quiver 1.6.0", "shortened arrows")
+            _ => ()
+          }
         }
         let explicit_label_colour = tikz_append_colour_options(
           arrow_options, edge, edge_is_empty, definitions,
@@ -1461,9 +1469,14 @@ pub fn Quiver::export_tikz_cd_result(
         tikz_append_non_arrow_style_options(
           arrow_options, edge, shared_colour, source_origin, target_origin, definitions,
         )
-        tikz_append_style_options(arrow_options, edge, edge_is_empty)
+        tikz_append_style_options(
+          arrow_options, edge, edge_is_empty, package_provides_nfold,
+        )
 
-        if edge.options.style.name == "arrow" && edge.options.level > 2 {
+        if !package_provides_nfold &&
+          !edge_is_empty &&
+          edge.options.style.name == "arrow" &&
+          edge.options.level > 2 {
           tikz_add_dependency(
             dependencies, "tikz-nfold", "triple arrows or higher",
           )

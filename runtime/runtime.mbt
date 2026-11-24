@@ -331,7 +331,7 @@ fn runtime_dispatch_tikz_settings_from_input(
 ) -> @engine.TikzCdExportSettings {
   let settings_input = runtime_dispatch_object_field_or_self(input, "settings")
   let defaults = @engine.TikzCdExportSettings::default()
-  defaults
+  let settings = defaults
   .with_centre_diagram(
     value=runtime_dispatch_bool_from_object(
       settings_input,
@@ -360,6 +360,12 @@ fn runtime_dispatch_tikz_settings_from_input(
       defaults.standalone,
     ),
   )
+  match runtime_dispatch_optional_string(settings_input, "package_version") {
+    Some("1.2.0") => settings.with_package_version(@engine.V1_2_0)
+    Some("1.6.0") => settings.with_package_version(@engine.V1_6_0)
+    Some("1.7.0") => settings.with_package_version(@engine.V1_7_0)
+    _ => settings
+  }
 }
 
 ///|
@@ -520,9 +526,11 @@ fn runtime_dispatch_fletcher_options_from_input(
 ///|
 fn runtime_dispatch_html_options_from_input(
   input : Map[String, Json],
-) -> @engine.HtmlEmbedExportOptions {
+) -> @engine.HtmlEmbedExportOptions raise {
   let options_input = runtime_dispatch_object_field_or_self(input, "options")
-  let mut options = @engine.HtmlEmbedExportOptions::default()
+  let mut options = @engine.HtmlEmbedExportOptions::default().with_scale(
+    runtime_dispatch_optional_double(options_input, "scale").unwrap_or(0.0),
+  )
 
   match runtime_dispatch_optional_string(options_input, "share_base_url") {
     Some(value) => options = options.with_share_base_url(value)
@@ -1689,10 +1697,11 @@ pub fn BrowserRuntime::export_payload(self : BrowserRuntime) -> String {
 pub fn BrowserRuntime::export_selection(
   self : BrowserRuntime,
   include_dependencies~ : Bool = true,
+  selected_ids? : Array[Int32],
 ) -> String {
   @engine.ffi_adapter_export_base64_selection(
     self.adapter,
-    self.selected_ids,
+    selected_ids.unwrap_or(self.selected_ids),
     include_dependencies~,
   )
 }
@@ -1909,15 +1918,13 @@ pub fn BrowserRuntime::paste_selection(
   origin_y : Int32,
   start_id~ : Int32 = 1,
 ) -> @engine.QuiverUiSelectionImportResult raise {
-  let imported = @engine.ffi_adapter_paste_base64_selection(
+  @engine.ffi_adapter_paste_base64_selection(
     self.adapter,
     payload,
     origin_x,
     origin_y,
     start_id~,
   )
-  self.selected_ids = imported.imported_ids.copy()
-  imported
 }
 
 ///|
@@ -2221,7 +2228,13 @@ pub fn BrowserRuntime::dispatch_json(
             None => true
           }
       }
-      result = Json::string(self.export_selection(include_dependencies~))
+      let selected_ids = match input.get("selected_ids") {
+        Some(raw) => Some(@json.from_json(raw))
+        None => None
+      }
+      result = Json::string(
+        self.export_selection(include_dependencies~, selected_ids?),
+      )
     }
     _ => {
       ok = false
