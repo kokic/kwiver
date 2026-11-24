@@ -160,7 +160,7 @@ fn base64_normalise_fragment(value : String) -> String {
 
 ///|
 fn base64_trimmed(line : String) -> String {
-  line.trim().to_string()
+  line.trim().to_owned()
 }
 
 ///|
@@ -230,7 +230,7 @@ pub fn Quiver::extract_base64_share_reference(input : String) -> String? {
 
   let mut fallback : String? = None
   for raw_line_view in input.split("\n") {
-    let line = base64_trimmed(raw_line_view.to_string())
+    let line = base64_trimmed(raw_line_view.to_owned())
     if line == "" {
       continue
     }
@@ -289,7 +289,7 @@ fn base64_parse_share_segment(
   }
 
   for pair_view in segment.split("&") {
-    let pair = pair_view.to_string()
+    let pair = pair_view.to_owned()
     if pair == "" {
       continue
     }

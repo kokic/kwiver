@@ -179,7 +179,7 @@ fn html_embed_extract_src(input : String) -> String? {
   let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
 
   for raw_line_view in input.split("\n") {
-    let line = raw_line_view.to_string()
+    let line = raw_line_view.to_owned()
     let bytes = @utf8.encode(line)
     let mut i = 0
     while i + 2 < bytes.length() {

@@ -1942,7 +1942,7 @@ pub fn QuiverUiAdapter::set_edge_label_alignment(
 
   match self.quiver.cells.get(edge_id) {
     Some(CellData::Edge(edge)) => {
-      let updated_options = match label_alignment.trim().to_string() {
+      let updated_options = match label_alignment.trim().to_owned() {
         "left" => edge.options.with_label_alignment_left()
         "centre" => edge.options.with_label_alignment_centre()
         "center" => edge.options.with_label_alignment_centre()

@@ -290,7 +290,7 @@ fn tikz_parse_ampersand_replacement(options : String) -> String? {
           .replace_all(old=" ", new="")
           .replace_all(old="\t", new="")
         if key_token == "ampersandreplacement" {
-          let token = tikz_unwrap_braced_text(value).trim().to_string()
+          let token = tikz_unwrap_braced_text(value).trim().to_owned()
           if token != "" {
             return Some(token)
           }
@@ -540,7 +540,7 @@ fn tikz_find_unescaped_percent(line : String) -> Int32? {
 fn tikz_strip_line_comments(body : String) -> String {
   let rows : Array[String] = []
   for line_view in body.split("\n") {
-    let line = line_view.to_string()
+    let line = line_view.to_owned()
     match tikz_find_unescaped_percent(line) {
       Some(index) => rows.push(line.unsafe_substring(start=0, end=index))
       None => rows.push(line)
@@ -636,12 +636,12 @@ fn tikz_split_cells_with_offsets(
 
 ///|
 fn tikz_unwrap_braced_text(input : String) -> String {
-  let trimmed = input.trim().to_string()
+  let trimmed = input.trim().to_owned()
   if trimmed.length() >= 2 && trimmed.has_prefix("{") && trimmed.has_suffix("}") {
     trimmed
     .unsafe_substring(start=1, end=trimmed.length() - 1)
     .trim()
-    .to_string()
+    .to_owned()
   } else {
     trimmed
   }
@@ -649,12 +649,12 @@ fn tikz_unwrap_braced_text(input : String) -> String {
 
 ///|
 fn tikz_strip_math_wrapper(input : String) -> String {
-  let trimmed = input.trim().to_string()
+  let trimmed = input.trim().to_owned()
   if trimmed.length() >= 2 && trimmed.has_prefix("$") && trimmed.has_suffix("$") {
     trimmed
     .unsafe_substring(start=1, end=trimmed.length() - 1)
     .trim()
-    .to_string()
+    .to_owned()
   } else {
     trimmed
   }
@@ -662,7 +662,7 @@ fn tikz_strip_math_wrapper(input : String) -> String {
 
 ///|
 fn tikz_parse_positive_int(input : String) -> Int32? {
-  let value = input.trim().to_string()
+  let value = input.trim().to_owned()
   if value == "" {
     return None
   }
@@ -712,7 +712,7 @@ fn tikz_parse_grid_reference(value : String) -> (Int32, Int32)? {
 fn tikz_parse_reference_name(value : String) -> String? {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   if token == "" {
     None
   } else {
@@ -781,11 +781,11 @@ fn tikz_option_key_value(option : String) -> (String, String)? {
     Some(index) =>
       Some(
         (
-          option.unsafe_substring(start=0, end=index).trim().to_string(),
+          option.unsafe_substring(start=0, end=index).trim().to_owned(),
           option
           .unsafe_substring(start=index + 1, end=option.length())
           .trim()
-          .to_string(),
+          .to_owned(),
         ),
       )
     None => None
@@ -935,7 +935,7 @@ fn tikz_parse_level_option_value(value : String) -> Int32? {
 
 ///|
 fn tikz_parse_signed_double(value : String) -> Double? {
-  let text = value.trim().to_string()
+  let text = value.trim().to_owned()
   if text == "" {
     return None
   }
@@ -996,7 +996,7 @@ fn tikz_parse_signed_double(value : String) -> Double? {
 fn tikz_parse_shift_magnitude(value : String) -> Int32? {
   let text_raw = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   let text = tikz_trim_supported_unit(text_raw)
   match tikz_parse_signed_double(text) {
     Some(shift_value) => {
@@ -1017,7 +1017,7 @@ fn tikz_parse_shift_magnitude(value : String) -> Int32? {
 
 ///|
 fn tikz_trim_supported_unit(value : String) -> String {
-  let text = value.trim().to_string()
+  let text = value.trim().to_owned()
   let units = ["pt", "ex", "em", "mm", "cm"]
   for unit in units {
     if text.has_suffix(unit) && text.length() > unit.length() {
@@ -1031,7 +1031,7 @@ fn tikz_trim_supported_unit(value : String) -> String {
 fn tikz_parse_bend_curve_magnitude(value : String) -> Int32? {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   if text.has_suffix("deg") {
     text = text.unsafe_substring(start=0, end=text.length() - 3)
   }
@@ -1054,7 +1054,7 @@ fn tikz_parse_bend_curve_magnitude(value : String) -> Int32? {
 
 ///|
 fn tikz_take_braced_group(input : String) -> (String, String)? {
-  let text = input.trim().to_string()
+  let text = input.trim().to_owned()
   if !text.has_prefix("{") {
     return None
   }
@@ -1108,9 +1108,9 @@ fn tikz_parse_between_option(value : String) -> (Int32, Int32)? {
 
 ///|
 fn tikz_parse_curve_height_option(value : String) -> Int32? {
-  let text = value.trim().to_string()
+  let text = value.trim().to_owned()
   let inner = if text.has_prefix("{") && text.has_suffix("}") {
-    text.unsafe_substring(start=1, end=text.length() - 1).trim().to_string()
+    text.unsafe_substring(start=1, end=text.length() - 1).trim().to_owned()
   } else {
     text
   }
@@ -1127,13 +1127,13 @@ fn tikz_parse_curve_height_option(value : String) -> Int32? {
             tikz_unwrap_braced_text(key_raw),
           )
           .trim()
-          .to_string()
+          .to_owned()
         if key_token == "height" {
           let height_text = tikz_strip_math_wrapper(
               tikz_unwrap_braced_text(value_raw),
             )
             .trim()
-            .to_string()
+            .to_owned()
           let height_value = tikz_trim_supported_unit(height_text)
           match tikz_parse_signed_double(height_value) {
             Some(height_pt) =>
@@ -1173,19 +1173,19 @@ fn tikz_ascii_lower(value : String) -> String {
 fn tikz_normalise_colour_name(value : String) -> String {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   if text.has_prefix("(") && text.has_suffix(")") && text.length() >= 2 {
     text = text
       .unsafe_substring(start=1, end=text.length() - 1)
       .trim()
-      .to_string()
+      .to_owned()
   }
   if text.has_prefix("\\") {
     text = text.unsafe_substring(start=1, end=text.length())
   }
   match text.find("!") {
     Some(index) =>
-      text = text.unsafe_substring(start=0, end=index).trim().to_string()
+      text = text.unsafe_substring(start=0, end=index).trim().to_owned()
     None => ()
   }
   tikz_ascii_lower(text)
@@ -1212,7 +1212,7 @@ fn tikz_named_colour(name : String) -> Colour? {
 
 ///|
 fn tikz_parse_rgb_255_component(value : String) -> Int32? {
-  match tikz_parse_positive_int(value.trim().to_string()) {
+  match tikz_parse_positive_int(value.trim().to_owned()) {
     Some(component) =>
       if component >= 0 && component <= 255 {
         Some(component)
@@ -1297,7 +1297,7 @@ fn tikz_parse_rgb_255_colour(value : String) -> Colour? {
 fn tikz_parse_colour_option(value : String) -> Colour? {
   let inner = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   match tikz_parse_rgb_255_colour(inner) {
     Some(colour) => Some(colour)
     None => tikz_named_colour(tikz_normalise_colour_name(inner))
@@ -1308,7 +1308,7 @@ fn tikz_parse_colour_option(value : String) -> Colour? {
 fn tikz_parse_rotate_option(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   match tikz_parse_signed_double(text) {
     Some(value_double) => Some(tikz_round_to_int(value_double))
     None => None
@@ -1319,7 +1319,7 @@ fn tikz_parse_rotate_option(value : String) -> Int32? {
 fn tikz_decoration_style_name(content : String) -> String? {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(content))
     .trim()
-    .to_string()
+    .to_owned()
   if token == "\\dashv" {
     return Some("adjunction")
   }
@@ -1397,7 +1397,7 @@ fn tikz_is_background_colour_expression(value : String) -> Bool {
 fn tikz_arrow_body_decoration_style(content : String) -> String? {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(content))
     .trim()
-    .to_string()
+    .to_owned()
   if token == "\\shortmid" {
     return Some("barred")
   }
@@ -1477,7 +1477,7 @@ fn tikz_signed_angle_delta(from : Double, to : Double) -> Double {
 fn tikz_parse_angle_option(value : String) -> Double? {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   if text.has_suffix("deg") {
     text = text.unsafe_substring(start=0, end=text.length() - 3)
   }
@@ -1488,7 +1488,7 @@ fn tikz_parse_angle_option(value : String) -> Double? {
 fn tikz_parse_distance_option(value : String) -> Double? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   match tikz_parse_signed_double(tikz_trim_supported_unit(text)) {
     Some(distance_mm) =>
       if distance_mm > 0.0 {
@@ -1507,7 +1507,7 @@ fn tikz_apply_loop_flag_option(
 ) -> TikzParsedLoopOptions {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
     .trim()
-    .to_string()
+    .to_owned()
   if token == "loop left" {
     return { ..loop_options, is_loop: true, clockwise_hint: Some(-1), }
   }
@@ -1612,7 +1612,7 @@ fn tikz_apply_loop_geometry_options(
 fn tikz_parse_label_pos_percent(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   if text == "" {
     return None
   }
@@ -1950,7 +1950,7 @@ fn tikz_apply_arrow_key_value_option(
   value : String,
 ) -> EdgeOptions {
   let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
-  let value_raw = value.trim().to_string()
+  let value_raw = value.trim().to_owned()
   let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
   if key_token == "draw" && value_token == "none" {
     return tikz_apply_empty_arrow_style(options)
@@ -2089,14 +2089,14 @@ fn tikz_label_suffix_options(option : String) -> Array[String] {
           let mut suffix = option
             .unsafe_substring(start=end + 1, end=option.length())
             .trim()
-            .to_string()
+            .to_owned()
 
           if suffix.has_prefix("'") {
             suffix_options.push("'")
             suffix = suffix
               .unsafe_substring(start=1, end=suffix.length())
               .trim()
-              .to_string()
+              .to_owned()
           }
 
           if suffix == "" {
@@ -2147,7 +2147,7 @@ fn tikz_apply_label_options_to_edge_options(
 fn tikz_parse_shorten_magnitude(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
   let magnitude_text = tikz_trim_supported_unit(text)
   if magnitude_text == text {
     return None
@@ -2268,8 +2268,8 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
     let label = input
       .unsafe_substring(start=start + 1, end=j - 1)
       .trim()
-      .to_string()
-    let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+      .to_owned()
+    let normalised = tikz_strip_math_wrapper(label).trim().to_owned()
     if normalised == "" {
       None
     } else {
@@ -2284,7 +2284,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
           let label = input
             .unsafe_substring(start=i + 1, end=end_quote)
             .replace_all(old="\\\"", new="\"")
-          let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+          let normalised = tikz_strip_math_wrapper(label).trim().to_owned()
           if normalised == "" {
             None
           } else {
@@ -2311,8 +2311,8 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
       return None
     }
 
-    let label = input.unsafe_substring(start=i, end=j).trim().to_string()
-    let normalised = tikz_strip_math_wrapper(label).trim().to_string()
+    let label = input.unsafe_substring(start=i, end=j).trim().to_owned()
+    let normalised = tikz_strip_math_wrapper(label).trim().to_owned()
     if normalised == "" {
       None
     } else {
@@ -2491,7 +2491,7 @@ fn tikz_split_arrow_options(raw_options : String) -> Array[String] {
         let option = raw_options
           .unsafe_substring(start=segment_start, end=i)
           .trim()
-          .to_string()
+          .to_owned()
         if option != "" {
           options.push(option)
         }
@@ -2507,7 +2507,7 @@ fn tikz_split_arrow_options(raw_options : String) -> Array[String] {
   let option = raw_options
     .unsafe_substring(start=segment_start, end=raw_options.length())
     .trim()
-    .to_string()
+    .to_owned()
   if option != "" {
     options.push(option)
   }
@@ -2516,7 +2516,7 @@ fn tikz_split_arrow_options(raw_options : String) -> Array[String] {
 
 ///|
 fn tikz_has_empty_arrow_option(raw_options : String) -> Bool {
-  if raw_options.trim().to_string() == "" {
+  if raw_options.trim().to_owned() == "" {
     return false
   }
 
@@ -2564,7 +2564,7 @@ fn tikz_has_empty_arrow_option(raw_options : String) -> Bool {
         let segment = raw_options
           .unsafe_substring(start=segment_start, end=i)
           .trim()
-          .to_string()
+          .to_owned()
         if segment == "" {
           return true
         }
@@ -2580,7 +2580,7 @@ fn tikz_has_empty_arrow_option(raw_options : String) -> Bool {
   raw_options
   .unsafe_substring(start=segment_start, end=raw_options.length())
   .trim()
-  .to_string() ==
+  .to_owned() ==
   ""
 }
 
@@ -2676,10 +2676,10 @@ fn tikz_find_closing_delimiter(
 
 ///|
 fn tikz_cell_label_raw(cell : String) -> String {
-  let trimmed = cell.trim().to_string()
+  let trimmed = cell.trim().to_owned()
   match tikz_next_arrow_match(trimmed) {
     Some(matched) =>
-      trimmed.unsafe_substring(start=0, end=matched.start).trim().to_string()
+      trimmed.unsafe_substring(start=0, end=matched.start).trim().to_owned()
     None => trimmed
   }
 }
@@ -2709,12 +2709,12 @@ fn tikz_take_leading_braced_group(input : String) -> (String, String)? {
 
 ///|
 fn tikz_unwrap_trivial_braced_label(label_raw : String) -> String {
-  let mut trimmed = label_raw.trim().to_string()
+  let mut trimmed = label_raw.trim().to_owned()
   while true {
     match tikz_take_leading_braced_group(trimmed) {
       Some((inner, rest)) =>
         if tikz_trim_left(rest) == "" {
-          trimmed = inner.trim().to_string()
+          trimmed = inner.trim().to_owned()
           continue
         } else {
           break
@@ -2747,7 +2747,7 @@ fn tikz_parse_textcolor_vertex_label(
             Some((label_text, _)) =>
               Some({ label: tikz_unwrap_braced_text(label_text), label_colour, })
             None => {
-              let plain_label = tikz_trim_left(after_colour).trim().to_string()
+              let plain_label = tikz_trim_left(after_colour).trim().to_owned()
               if plain_label == "" {
                 None
               } else {
@@ -3161,7 +3161,7 @@ fn tikz_find_phantom_anchor_edge_id(
 
 ///|
 fn tikz_is_phantom_helper_name(reference_name : String) -> Bool {
-  let name = reference_name.trim().to_string()
+  let name = reference_name.trim().to_owned()
   if name.length() < 2 || !name.has_suffix("p") {
     return false
   }
@@ -3183,7 +3183,7 @@ fn tikz_is_phantom_helper_name(reference_name : String) -> Bool {
 ///|
 fn tikz_has_wrapper_marker(input : String) -> Bool {
   for raw_line in input.split("\n") {
-    let line = raw_line.to_string().trim().to_string()
+    let line = raw_line.to_owned().trim().to_owned()
     if line == "" {
       continue
     }
@@ -3291,7 +3291,7 @@ fn tikz_import_error(
 
 ///|
 fn tikz_is_supported_style_diagram_option_key(key_token : String) -> Bool {
-  let key = key_token.trim().to_string()
+  let key = key_token.trim().to_owned()
   if key == "cells" {
     return true
   }
@@ -3310,14 +3310,14 @@ fn tikz_is_supported_style_diagram_option_key(key_token : String) -> Bool {
 
 ///|
 fn tikz_is_supported_style_diagram_option_token(token : String) -> Bool {
-  let trimmed = token.trim().to_string()
+  let trimmed = token.trim().to_owned()
   let sep_prefixes = ["sep/", "row sep/", "column sep/"]
   for prefix in sep_prefixes {
     if trimmed.has_prefix(prefix) {
       let suffix = trimmed
         .unsafe_substring(start=prefix.length(), end=trimmed.length())
         .trim()
-        .to_string()
+        .to_owned()
       return suffix != ""
     }
   }
@@ -3327,7 +3327,7 @@ fn tikz_is_supported_style_diagram_option_token(token : String) -> Bool {
 ///|
 fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
   for option in tikz_split_arrow_options(options) {
-    let trimmed = option.trim().to_string()
+    let trimmed = option.trim().to_owned()
     if trimmed == "" {
       return Some(tikz_import_error("syntax", "empty tikzcd diagram option"))
     }
@@ -3336,11 +3336,11 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
       Some((key, value)) => {
         let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
           .trim()
-          .to_string()
+          .to_owned()
         let key_compact = key_token
           .replace_all(old=" ", new="")
           .replace_all(old="\t", new="")
-        let value_token = tikz_unwrap_braced_text(value).trim().to_string()
+        let value_token = tikz_unwrap_braced_text(value).trim().to_owned()
 
         if key_compact == "ampersandreplacement" {
           if value_token == "" {
@@ -3408,7 +3408,7 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
 fn tikz_validate_label_suffix_option(option : String) -> String? {
   let suffixes = tikz_label_suffix_options(option)
   for suffix in suffixes {
-    let suffix_trimmed = suffix.trim().to_string()
+    let suffix_trimmed = suffix.trim().to_owned()
     if suffix_trimmed == "" {
       return Some("empty label suffix option")
     }
@@ -3417,12 +3417,12 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
       Some((key, value)) => {
         let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
           .trim()
-          .to_string()
+          .to_owned()
         let value_token = tikz_strip_math_wrapper(
             tikz_unwrap_braced_text(value),
           )
           .trim()
-          .to_string()
+          .to_owned()
         if key_token == "name" {
           if tikz_parse_reference_name(value) is None {
             return Some("invalid name value in label suffix")
@@ -3478,13 +3478,13 @@ fn tikz_validate_arrow_key_value_option(
 ) -> String? {
   let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
     .trim()
-    .to_string()
+    .to_owned()
   let key_compact = key_token
     .replace_all(old=" ", new="")
     .replace_all(old="\t", new="")
   let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
-    .to_string()
+    .to_owned()
 
   if key_token == "from" || key_token == "to" {
     if value_token.contains(" ") || value_token.contains("\t") {
@@ -3611,7 +3611,7 @@ fn tikz_validate_arrow_key_value_option(
 
 ///|
 fn tikz_validate_arrow_option(option : String) -> String? {
-  let trimmed = option.trim().to_string()
+  let trimmed = option.trim().to_owned()
   if trimmed == "" {
     return Some("empty arrow option")
   }
@@ -3631,7 +3631,7 @@ fn tikz_validate_arrow_option(option : String) -> String? {
     None => {
       let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(trimmed))
         .trim()
-        .to_string()
+        .to_owned()
       if token == "phantom" ||
         tikz_is_direction_token(token) ||
         tikz_is_arrow_flag_token(token) ||
@@ -3673,7 +3673,7 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
             let mut is_loop = false
 
             for option in options {
-              let trimmed = option.trim().to_string()
+              let trimmed = option.trim().to_owned()
               if trimmed == "" {
                 return Some(tikz_import_error("syntax", "empty arrow option"))
               }
@@ -3700,7 +3700,7 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                       tikz_unwrap_braced_text(key),
                     )
                     .trim()
-                    .to_string()
+                    .to_owned()
                   if key_token == "to" {
                     has_to = true
                   }
@@ -3717,7 +3717,7 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                       tikz_unwrap_braced_text(trimmed),
                     )
                     .trim()
-                    .to_string()
+                    .to_owned()
                   if tikz_is_direction_token(token) {
                     has_direction = true
                   }
@@ -3876,7 +3876,7 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
     end=rest.length(),
   )
   let tail_without_comments = tikz_strip_line_comments(tail)
-  let tail_trimmed = tail_without_comments.trim().to_string()
+  let tail_trimmed = tail_without_comments.trim().to_owned()
   if tail_trimmed != "" &&
     tail_trimmed != "\\]" &&
     tail_trimmed != "\\)" &&
@@ -3897,7 +3897,7 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
 
   let body_without_comments = tikz_strip_line_comments(body)
   for row_segment in tikz_split_rows_with_offsets(body_without_comments) {
-    let row = row_segment.text.trim().to_string()
+    let row = row_segment.text.trim().to_owned()
     if row == "" {
       continue
     }
@@ -3906,7 +3906,7 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
         row_segment.text,
         ampersand_replacement,
       ) {
-      let cell = cell_segment.text.trim().to_string()
+      let cell = cell_segment.text.trim().to_owned()
       let cell_offset = tikz_first_non_whitespace_offset(cell_segment.text)
       let cell_absolute = rest_start +
         row_segment.start +
@@ -3947,7 +3947,7 @@ fn Quiver::import_tikz_cd_minimal(
 
   let mut y = 0
   for row_segment in rows {
-    let row = row_segment.text.trim().to_string()
+    let row = row_segment.text.trim().to_owned()
     if row == "" {
       continue
     }
@@ -3957,7 +3957,7 @@ fn Quiver::import_tikz_cd_minimal(
     )
     let mut x = 0
     for cell_segment in cells {
-      let cell = cell_segment.text.trim().to_string()
+      let cell = cell_segment.text.trim().to_owned()
       let cell_offset = tikz_first_non_whitespace_offset(cell_segment.text)
       let cell_absolute = environment.body_offset +
         row_segment.start +
