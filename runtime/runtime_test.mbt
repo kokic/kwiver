@@ -1,5 +1,8 @@
 ///|
-fn runtime_dispatch_test_json_get(root : Map[String, Json], key : String) -> Json {
+fn runtime_dispatch_test_json_get(
+  root : Map[String, Json],
+  key : String,
+) -> Json {
   match root.get(key) {
     Some(value) => value
     None => panic()
@@ -10,8 +13,7 @@ fn runtime_dispatch_test_json_get(root : Map[String, Json], key : String) -> Jso
 test "browser runtime dispatch_json_safe handles add_vertex action" {
   let runtime = ffi_runtime_new()
   let output = ffi_runtime_dispatch_json_safe(
-    runtime,
-    "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+    runtime, "{\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 

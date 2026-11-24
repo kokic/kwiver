@@ -14,8 +14,8 @@ pub enum EdgeShape {
 
 ///|
 pub struct EdgeShorten {
-  source : Int
-  target : Int
+  source : Int32
+  target : Int32
 }
 
 ///|
@@ -41,13 +41,13 @@ pub struct EdgeStyle {
 ///|
 pub struct EdgeOptions {
   label_alignment : LabelAlignment
-  label_position : Int
-  offset : Int
-  curve : Int
-  radius : Int
-  angle : Int
+  label_position : Int32
+  offset : Int32
+  curve : Int32
+  radius : Int32
+  angle : Int32
   shorten : EdgeShorten
-  level : Int
+  level : Int32
   shape : EdgeShape
   colour : Colour
   edge_alignment : EdgeAlignment
@@ -60,7 +60,7 @@ pub fn EdgeOptions::default() -> EdgeOptions {
 }
 
 ///|
-pub fn EdgeOptions::at_level(level : Int) -> EdgeOptions {
+pub fn EdgeOptions::at_level(level : Int32) -> EdgeOptions {
   {
     label_alignment: LabelAlignment::Left,
     label_position: 50,
@@ -68,7 +68,7 @@ pub fn EdgeOptions::at_level(level : Int) -> EdgeOptions {
     curve: 0,
     radius: 3,
     angle: 0,
-    shorten: { source: 0, target: 0 },
+    shorten: { source: 0, target: 0, },
     level: if level < 1 {
       1
     } else {
@@ -76,18 +76,21 @@ pub fn EdgeOptions::at_level(level : Int) -> EdgeOptions {
     },
     shape: EdgeShape::Bezier,
     colour: Colour::black(),
-    edge_alignment: { source: true, target: true },
+    edge_alignment: { source: true, target: true, },
     style: {
       name: "arrow",
-      tail: { name: "none", side: "" },
-      body: { name: "cell", side: "" },
-      head: { name: "arrowhead", side: "" },
+      tail: { name: "none", side: "", },
+      body: { name: "cell", side: "", },
+      head: { name: "arrowhead", side: "", },
     },
   }
 }
 
 ///|
-pub fn EdgeOptions::with_level(self : EdgeOptions, level : Int) -> EdgeOptions {
+pub fn EdgeOptions::with_level(
+  self : EdgeOptions,
+  level : Int32,
+) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
     label_position: self.label_position,
@@ -227,7 +230,7 @@ pub fn EdgeOptions::with_shape_arc(self : EdgeOptions) -> EdgeOptions {
 ///|
 pub fn EdgeOptions::with_label_position(
   self : EdgeOptions,
-  label_position : Int,
+  label_position : Int32,
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -248,7 +251,7 @@ pub fn EdgeOptions::with_label_position(
 ///|
 pub fn EdgeOptions::with_offset(
   self : EdgeOptions,
-  offset : Int,
+  offset : Int32,
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -267,7 +270,10 @@ pub fn EdgeOptions::with_offset(
 }
 
 ///|
-pub fn EdgeOptions::with_curve(self : EdgeOptions, curve : Int) -> EdgeOptions {
+pub fn EdgeOptions::with_curve(
+  self : EdgeOptions,
+  curve : Int32,
+) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
     label_position: self.label_position,
@@ -287,7 +293,7 @@ pub fn EdgeOptions::with_curve(self : EdgeOptions, curve : Int) -> EdgeOptions {
 ///|
 pub fn EdgeOptions::with_radius(
   self : EdgeOptions,
-  radius : Int,
+  radius : Int32,
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -306,7 +312,10 @@ pub fn EdgeOptions::with_radius(
 }
 
 ///|
-pub fn EdgeOptions::with_angle(self : EdgeOptions, angle : Int) -> EdgeOptions {
+pub fn EdgeOptions::with_angle(
+  self : EdgeOptions,
+  angle : Int32,
+) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
     label_position: self.label_position,
@@ -326,8 +335,8 @@ pub fn EdgeOptions::with_angle(self : EdgeOptions, angle : Int) -> EdgeOptions {
 ///|
 pub fn EdgeOptions::with_shorten(
   self : EdgeOptions,
-  source : Int,
-  target : Int,
+  source : Int32,
+  target : Int32,
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -336,7 +345,7 @@ pub fn EdgeOptions::with_shorten(
     curve: self.curve,
     radius: self.radius,
     angle: self.angle,
-    shorten: { source, target },
+    shorten: { source, target, },
     level: self.level,
     shape: self.shape,
     colour: self.colour,
@@ -383,7 +392,7 @@ pub fn EdgeOptions::with_edge_alignment(
     level: self.level,
     shape: self.shape,
     colour: self.colour,
-    edge_alignment: { source, target },
+    edge_alignment: { source, target, },
     style: self.style,
   }
 }
@@ -404,7 +413,7 @@ pub fn EdgeOptions::with_edge_alignment_source(
     level: self.level,
     shape: self.shape,
     colour: self.colour,
-    edge_alignment: { source, target: self.edge_alignment.target },
+    edge_alignment: { source, target: self.edge_alignment.target, },
     style: self.style,
   }
 }
@@ -425,7 +434,7 @@ pub fn EdgeOptions::with_edge_alignment_target(
     level: self.level,
     shape: self.shape,
     colour: self.colour,
-    edge_alignment: { source: self.edge_alignment.source, target },
+    edge_alignment: { source: self.edge_alignment.source, target, },
     style: self.style,
   }
 }
@@ -460,7 +469,7 @@ pub fn EdgeOptions::with_style_name(
 pub fn EdgeOptions::with_style_tail(
   self : EdgeOptions,
   name : String,
-  side? : String = "",
+  side~ : String = "",
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -476,7 +485,7 @@ pub fn EdgeOptions::with_style_tail(
     edge_alignment: self.edge_alignment,
     style: {
       name: self.style.name,
-      tail: { name, side },
+      tail: { name, side, },
       body: self.style.body,
       head: self.style.head,
     },
@@ -487,7 +496,7 @@ pub fn EdgeOptions::with_style_tail(
 pub fn EdgeOptions::with_style_body(
   self : EdgeOptions,
   name : String,
-  side? : String = "",
+  side~ : String = "",
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -504,7 +513,7 @@ pub fn EdgeOptions::with_style_body(
     style: {
       name: self.style.name,
       tail: self.style.tail,
-      body: { name, side },
+      body: { name, side, },
       head: self.style.head,
     },
   }
@@ -514,7 +523,7 @@ pub fn EdgeOptions::with_style_body(
 pub fn EdgeOptions::with_style_head(
   self : EdgeOptions,
   name : String,
-  side? : String = "",
+  side~ : String = "",
 ) -> EdgeOptions {
   {
     label_alignment: self.label_alignment,
@@ -532,7 +541,7 @@ pub fn EdgeOptions::with_style_head(
       name: self.style.name,
       tail: self.style.tail,
       body: self.style.body,
-      head: { name, side },
+      head: { name, side, },
     },
   }
 }

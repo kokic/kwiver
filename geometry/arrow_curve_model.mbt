@@ -31,12 +31,12 @@ pub fn ArrowCurveInterval::new(
   start_t : Double,
   end_t : Double,
 ) -> ArrowCurveInterval {
-  { start_t, end_t }
+  { start_t, end_t, }
 }
 
 ///|
 pub fn ArrowCurveInterval::full() -> ArrowCurveInterval {
-  { start_t: 0.0, end_t: 1.0 }
+  { start_t: 0.0, end_t: 1.0, }
 }
 
 ///|
@@ -68,11 +68,11 @@ pub fn ArrowCurveModel::with_config(
   options : EdgeOptions,
   config : ArrowCurveModelConfig,
 ) -> ArrowCurveModel {
-  { source_origin, target_origin, options, config }
+  { source_origin, target_origin, options, config, }
 }
 
 ///|
-fn arrow_curve_model_int_sign(value : Int) -> Double {
+fn arrow_curve_model_int_sign(value : Int32) -> Double {
   if value > 0 {
     1.0
   } else if value < 0 {
@@ -108,7 +108,7 @@ fn ArrowCurveModel::chord_length(self : ArrowCurveModel) -> Double {
 
 ///|
 fn ArrowCurveModel::loop_radius_pixels(self : ArrowCurveModel) -> Double {
-  let abs_radius = Int::abs(self.options.radius)
+  let abs_radius = Int32::abs(self.options.radius)
   let step = if abs_radius < 2 {
     2.0
   } else if abs_radius < 4 {
@@ -286,15 +286,18 @@ fn ArrowCurveModel::display_intersections_with_rounded_rectangle(
   let angle = self.display_angle()
   match self.options.shape {
     EdgeShape::Bezier =>
-      Bezier::new(Point::zero(), chord, self.bezier_height_pixels(), angle)
-      .intersections_with_rounded_rectangle(rect, permit_containment)
+      Bezier::new(Point::zero(), chord, self.bezier_height_pixels(), angle).intersections_with_rounded_rectangle(
+        rect, permit_containment,
+      )
     EdgeShape::Arc => {
       let loop_radius = self.loop_radius_pixels()
       if self.source_origin.eq(self.target_origin) {
-        Arc::new(Point::zero(), chord, true, loop_radius, angle)
-        .intersections_with_rounded_rectangle(rect, permit_containment)
+        Arc::new(Point::zero(), chord, true, loop_radius, angle).intersections_with_rounded_rectangle(
+          rect, permit_containment,
+        )
       } else {
-        self.arc_for_chord_at_angle(chord, loop_radius, angle)
+        self
+        .arc_for_chord_at_angle(chord, loop_radius, angle)
         .intersections_with_rounded_rectangle(rect, permit_containment)
       }
     }
@@ -349,7 +352,7 @@ pub fn ArrowCurveModel::arc_length(
 pub fn ArrowCurveModel::t_after_length(
   self : ArrowCurveModel,
   length : Double,
-  clamp? : Bool = false,
+  clamp~ : Bool = false,
 ) -> Double {
   ArrowCurveModel::curve_t_after_length(self.curve_data(), length, clamp)
 }
@@ -378,7 +381,7 @@ pub fn ArrowCurveModel::shorten_interval(
 pub fn ArrowCurveModel::path_points(
   self : ArrowCurveModel,
   interval : ArrowCurveInterval,
-  segments? : Int = 64,
+  segments~ : Int32 = 64,
 ) -> Array[Point] {
   let n = if segments < 2 { 2 } else { segments }
   let points : Array[Point] = []
@@ -394,7 +397,7 @@ pub fn ArrowCurveModel::path_points(
 pub fn ArrowCurveModel::path_svg(
   self : ArrowCurveModel,
   interval : ArrowCurveInterval,
-  segments? : Int = 64,
+  segments~ : Int32 = 64,
 ) -> String {
   let points = self.path_points(interval, segments~)
   if points.is_empty() {

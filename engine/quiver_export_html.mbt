@@ -2,11 +2,11 @@
 pub struct HtmlEmbedExportSettings {
   base_url : String
   fixed_size : Bool
-  width : Int
-  height : Int
-  diagram_width : Int
-  diagram_height : Int
-  embed_padding : Int
+  width : Int32
+  height : Int32
+  diagram_width : Int32
+  diagram_height : Int32
+  embed_padding : Int32
 }
 
 ///|
@@ -33,7 +33,7 @@ pub fn HtmlEmbedExportSettings::default(
 
 ///|
 pub fn HtmlEmbedExportOptions::default() -> HtmlEmbedExportOptions {
-  { share_base_url: None, macro_url: None, renderer: None }
+  { share_base_url: None, macro_url: None, renderer: None, }
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn HtmlEmbedExportOptions::with_share_base_url(
 pub fn HtmlEmbedExportOptions::without_share_base_url(
   self : HtmlEmbedExportOptions,
 ) -> HtmlEmbedExportOptions {
-  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
+  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer, }
 }
 
 ///|
@@ -104,8 +104,8 @@ pub fn HtmlEmbedExportOptions::without_renderer(
 ///|
 pub fn HtmlEmbedExportSettings::with_fixed_size(
   self : HtmlEmbedExportSettings,
-  width : Int,
-  height : Int,
+  width : Int32,
+  height : Int32,
 ) -> HtmlEmbedExportSettings {
   {
     base_url: self.base_url,
@@ -129,9 +129,9 @@ pub fn HtmlEmbedExportSettings::with_fixed_size(
 ///|
 pub fn HtmlEmbedExportSettings::with_dynamic_size(
   self : HtmlEmbedExportSettings,
-  diagram_width : Int,
-  diagram_height : Int,
-  embed_padding? : Int = 24,
+  diagram_width : Int32,
+  diagram_height : Int32,
+  embed_padding~ : Int32 = 24,
 ) -> HtmlEmbedExportSettings {
   {
     base_url: self.base_url,
@@ -175,7 +175,7 @@ fn html_embed_url(
 
 ///|
 fn html_embed_extract_src(input : String) -> String? {
-  let single_quote = Int::to_byte(39)
+  let single_quote = Int32::to_byte(39)
   let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
 
   for raw_line_view in input.split("\n") {
@@ -226,7 +226,7 @@ fn html_embed_extract_src(input : String) -> String? {
 pub fn Quiver::export_html_embed(
   self : Quiver,
   settings : HtmlEmbedExportSettings,
-  options? : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
+  options~ : HtmlEmbedExportOptions = HtmlEmbedExportOptions::default(),
 ) -> String {
   let url = html_embed_url(self, settings, options)
   let src = if self.is_empty() { url + "#embed" } else { url + "&embed" }
@@ -254,7 +254,7 @@ pub fn Quiver::export_html_embed(
 ///|
 pub fn Quiver::import_html_embed_result(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Base64ShareImportResult raise {
   let reference = match html_embed_extract_src(input) {
     Some(url) => url
@@ -270,7 +270,7 @@ pub fn Quiver::import_html_embed_result(
 ///|
 pub fn Quiver::import_html_embed(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Quiver raise {
   Quiver::import_html_embed_result(input, default_renderer~).quiver
 }

@@ -1,8 +1,8 @@
-﻿///|
+///|
 fn assert_close_arrow(
   actual : Double,
   expected : Double,
-  tolerance? : Double = 0.001,
+  tolerance~ : Double = 0.001,
 ) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")
@@ -25,7 +25,12 @@ test "arrow geometry endpoints for point-to-point line" {
 
 ///|
 test "arrow geometry rounded-rect source clipping" {
-  let source = ArrowShape::rounded_rect(@engine.Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
+  let source = ArrowShape::rounded_rect(
+    @engine.Point::new(0.0, 0.0),
+    20.0,
+    20.0,
+    4.0,
+  )
   let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
   let options = @engine.EdgeOptions::default()
   let geometry = ArrowGeometry::new(source, target, options)
@@ -97,4 +102,3 @@ test "arrow geometry arc path and label" {
     abort("invalid label position")
   }
 }
-

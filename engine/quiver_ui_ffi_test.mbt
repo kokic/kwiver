@@ -1,4 +1,5 @@
 ///|
+
 ///|
 fn test_json_get(root : Map[String, Json], key : String) -> Json {
   match root.get(key) {
@@ -93,7 +94,9 @@ test "ui ffi adapter export tikz json wrapper includes metadata contract" {
   inspect(data.contains("\\begin{tikzcd}"), content="true")
   inspect(data.contains("\\arrow["), content="true")
 
-  let metadata : Map[String, Json] = @json.from_json(test_json_get(root, "metadata"))
+  let metadata : Map[String, Json] = @json.from_json(
+    test_json_get(root, "metadata"),
+  )
   let incompatibilities : Array[String] = @json.from_json(
     test_json_get(metadata, "tikz_incompatibilities"),
   )
@@ -145,13 +148,14 @@ test "ui ffi adapter add remove flush json wrappers carry payload" {
   let adapter = ffi_adapter_new()
 
   let add_vertex_json = ffi_adapter_add_vertex_json(
-    adapter,
-    "{\"label\":\"A\",\"x\":0,\"y\":0}",
+    adapter, "{\"label\":\"A\",\"x\":0,\"y\":0}",
   )
   let add_vertex_result : Map[String, Json] = @json.from_json(
     @json.parse(add_vertex_json),
   )
-  let vertex_id : Int = @json.from_json(test_json_get(add_vertex_result, "id"))
+  let vertex_id : Int32 = @json.from_json(
+    test_json_get(add_vertex_result, "id"),
+  )
   let payload_after_add_vertex : String = @json.from_json(
     test_json_get(add_vertex_result, "payload"),
   )
@@ -165,11 +169,12 @@ test "ui ffi adapter add remove flush json wrappers carry payload" {
   inspect(target_id, content="2")
 
   let add_edge_json = ffi_adapter_add_edge_json(
-    adapter,
-    "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
+    adapter, "{\"source_id\":1,\"target_id\":2,\"label\":\"f\"}",
   )
-  let add_edge_result : Map[String, Json] = @json.from_json(@json.parse(add_edge_json))
-  let edge_id : Int = @json.from_json(test_json_get(add_edge_result, "id"))
+  let add_edge_result : Map[String, Json] = @json.from_json(
+    @json.parse(add_edge_json),
+  )
+  let edge_id : Int32 = @json.from_json(test_json_get(add_edge_result, "id"))
   let payload_after_add_edge : String = @json.from_json(
     test_json_get(add_edge_result, "payload"),
   )
@@ -179,9 +184,13 @@ test "ui ffi adapter add remove flush json wrappers carry payload" {
     content="true",
   )
 
-  let remove_json = ffi_adapter_remove_json(adapter, "{\"cell_id\":1,\"when\":9}")
-  let remove_result : Map[String, Json] = @json.from_json(@json.parse(remove_json))
-  let removed_ids : Array[Int] = @json.from_json(
+  let remove_json = ffi_adapter_remove_json(
+    adapter, "{\"cell_id\":1,\"when\":9}",
+  )
+  let remove_result : Map[String, Json] = @json.from_json(
+    @json.parse(remove_json),
+  )
+  let removed_ids : Array[Int32] = @json.from_json(
     test_json_get(remove_result, "removed_ids"),
   )
   removed_ids.sort()
@@ -195,7 +204,9 @@ test "ui ffi adapter add remove flush json wrappers carry payload" {
   )
 
   let flush_json = ffi_adapter_flush_json(adapter, "{\"when\":9}")
-  let flush_result : Map[String, Json] = @json.from_json(@json.parse(flush_json))
+  let flush_result : Map[String, Json] = @json.from_json(
+    @json.parse(flush_json),
+  )
   let payload_after_flush : String = @json.from_json(
     test_json_get(flush_result, "payload"),
   )
@@ -220,7 +231,9 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
   let set_label_result : Map[String, Json] = @json.from_json(
     @json.parse(set_label_json),
   )
-  let set_label_ok : Bool = @json.from_json(test_json_get(set_label_result, "ok"))
+  let set_label_ok : Bool = @json.from_json(
+    test_json_get(set_label_result, "ok"),
+  )
   let payload_after_set_label : String = @json.from_json(
     test_json_get(set_label_result, "payload"),
   )
@@ -255,16 +268,14 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
 
   let move_vertex_json = ffi_adapter_move_vertex_json(
     adapter,
-    [
-      "{\"vertex_id\":",
-      source_id.to_string(),
-      ",\"x\":5,\"y\":7}",
-    ].join(""),
+    ["{\"vertex_id\":", source_id.to_string(), ",\"x\":5,\"y\":7}"].join(""),
   )
   let move_vertex_result : Map[String, Json] = @json.from_json(
     @json.parse(move_vertex_json),
   )
-  let move_vertex_ok : Bool = @json.from_json(test_json_get(move_vertex_result, "ok"))
+  let move_vertex_ok : Bool = @json.from_json(
+    test_json_get(move_vertex_result, "ok"),
+  )
   let payload_after_move_vertex : String = @json.from_json(
     test_json_get(move_vertex_result, "payload"),
   )
@@ -278,7 +289,9 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
     adapter,
     [
       "{",
-      "\"edge_id\":", edge_id.to_string(), ",",
+      "\"edge_id\":",
+      edge_id.to_string(),
+      ",",
       "\"options\":{",
       "\"label_alignment\":\"left\",",
       "\"label_position\":50,",
@@ -320,11 +333,9 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
 
   let set_edge_label_alignment_json = ffi_adapter_set_edge_label_alignment_json(
     adapter,
-    [
-      "{\"edge_id\":",
-      edge_id.to_string(),
-      ",\"label_alignment\":\"right\"}",
-    ].join(""),
+    ["{\"edge_id\":", edge_id.to_string(), ",\"label_alignment\":\"right\"}"].join(
+      "",
+    ),
   )
   let set_edge_label_alignment_result : Map[String, Json] = @json.from_json(
     @json.parse(set_edge_label_alignment_json),
@@ -343,11 +354,7 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
 
   let set_edge_label_position_json = ffi_adapter_set_edge_label_position_json(
     adapter,
-    [
-      "{\"edge_id\":",
-      edge_id.to_string(),
-      ",\"label_position\":80}",
-    ].join(""),
+    ["{\"edge_id\":", edge_id.to_string(), ",\"label_position\":80}"].join(""),
   )
   let set_edge_label_position_result : Map[String, Json] = @json.from_json(
     @json.parse(set_edge_label_position_json),
@@ -366,11 +373,7 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
 
   let set_edge_offset_json = ffi_adapter_set_edge_offset_json(
     adapter,
-    [
-      "{\"edge_id\":",
-      edge_id.to_string(),
-      ",\"offset\":11}",
-    ].join(""),
+    ["{\"edge_id\":", edge_id.to_string(), ",\"offset\":11}"].join(""),
   )
   let set_edge_offset_result : Map[String, Json] = @json.from_json(
     @json.parse(set_edge_offset_json),
@@ -389,11 +392,7 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
 
   let set_edge_curve_json = ffi_adapter_set_edge_curve_json(
     adapter,
-    [
-      "{\"edge_id\":",
-      edge_id.to_string(),
-      ",\"curve\":-3}",
-    ].join(""),
+    ["{\"edge_id\":", edge_id.to_string(), ",\"curve\":-3}"].join(""),
   )
   let set_edge_curve_result : Map[String, Json] = @json.from_json(
     @json.parse(set_edge_curve_json),
@@ -461,8 +460,7 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
   )
 
   let missing_result_json = ffi_adapter_set_cell_label_json(
-    adapter,
-    "{\"cell_id\":999,\"label\":\"missing\"}",
+    adapter, "{\"cell_id\":999,\"label\":\"missing\"}",
   )
   let missing_result : Map[String, Json] = @json.from_json(
     @json.parse(missing_result_json),
@@ -515,7 +513,10 @@ test "ui ffi adapter single mutation json wrappers return ok and payload" {
       inspect(edge.options.style.body.name, content="barred")
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
-      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(
+        edge.options.label_alignment is LabelAlignment::Right,
+        content="true",
+      )
       inspect(edge.options.label_position, content="80")
     }
     None => abort("expected updated edge")
@@ -545,11 +546,9 @@ test "ui ffi adapter import tikz reports typed error and preserves state on fail
   ignore(ffi_adapter_add_vertex(adapter, "Seed", 0, 0))
   let before_payload = ffi_adapter_export_base64(adapter)
 
-  let invalid = [
-    "\\begin{tikzcd}\n",
-    "A \\arrow[\"f\"] & B\n",
-    "\\end{tikzcd}",
-  ].join("")
+  let invalid = ["\\begin{tikzcd}\n", "A \\arrow[\"f\"] & B\n", "\\end{tikzcd}"].join(
+    "",
+  )
 
   let imported = ffi_adapter_import_tikz_cd(adapter, invalid)
   inspect(imported.ok, content="false")
@@ -598,9 +597,9 @@ test "ui ffi adapter import share text supports exported wrappers and iframe-onl
 ///|
 test "ui ffi adapter import text auto supports handwritten tikz and raw payload" {
   let adapter = ffi_adapter_new()
-  let tikz = [
-    "\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}",
-  ].join("")
+  let tikz = ["\\begin{tikzcd}\n", "A \\arrow[r, \"f\"] & B\n", "\\end{tikzcd}"].join(
+    "",
+  )
 
   let imported_tikz = ffi_adapter_import_text_auto(adapter, tikz)
   inspect(imported_tikz.renderer, content="None")
@@ -638,7 +637,9 @@ test "ui ffi adapter import and paste json wrappers expose plain contracts" {
   let tikz = ffi_adapter_export_tikz_cd(source).data
   let imported_json = ffi_adapter_import_text_auto_json(target, tikz)
   let imported : Map[String, Json] = @json.from_json(@json.parse(imported_json))
-  let imported_payload : String = @json.from_json(test_json_get(imported, "payload"))
+  let imported_payload : String = @json.from_json(
+    test_json_get(imported, "payload"),
+  )
   let imported_embed : Bool = @json.from_json(test_json_get(imported, "embed"))
   inspect(imported_payload == ffi_adapter_export_base64(target), content="true")
   inspect(imported_embed, content="false")
@@ -656,16 +657,25 @@ test "ui ffi adapter import and paste json wrappers expose plain contracts" {
     start_id=1,
   )
   let pasted : Map[String, Json] = @json.from_json(@json.parse(pasted_json))
-  let pasted_payload : String = @json.from_json(test_json_get(pasted, "payload"))
-  let imported_ids : Array[Int] = @json.from_json(test_json_get(pasted, "imported_ids"))
-  let remap : Array[Map[String, Json]] = @json.from_json(test_json_get(pasted, "id_remap"))
+  let pasted_payload : String = @json.from_json(
+    test_json_get(pasted, "payload"),
+  )
+  let imported_ids : Array[Int32] = @json.from_json(
+    test_json_get(pasted, "imported_ids"),
+  )
+  let remap : Array[Map[String, Json]] = @json.from_json(
+    test_json_get(pasted, "id_remap"),
+  )
   inspect(imported_ids, content="[2, 3, 4]")
   inspect(remap.length(), content="3")
-  let remap0_old : Int = @json.from_json(test_json_get(remap[0], "old_id"))
-  let remap0_new : Int = @json.from_json(test_json_get(remap[0], "new_id"))
+  let remap0_old : Int32 = @json.from_json(test_json_get(remap[0], "old_id"))
+  let remap0_new : Int32 = @json.from_json(test_json_get(remap[0], "new_id"))
   inspect(remap0_old, content="1")
   inspect(remap0_new, content="2")
-  inspect(pasted_payload == ffi_adapter_export_base64(target_paste), content="true")
+  inspect(
+    pasted_payload == ffi_adapter_export_base64(target_paste),
+    content="true",
+  )
 }
 
 ///|
@@ -684,7 +694,10 @@ test "ui ffi adapter exposes dependency graph queries" {
 
   inspect(ffi_adapter_dependencies_of(adapter, source_id), content="[3]")
   inspect(ffi_adapter_dependencies_of(adapter, target_id), content="[3, 4]")
-  inspect(ffi_adapter_reverse_dependencies_of(adapter, edge_id), content="[1, 2]")
+  inspect(
+    ffi_adapter_reverse_dependencies_of(adapter, edge_id),
+    content="[1, 2]",
+  )
   inspect(
     ffi_adapter_transitive_dependencies(adapter, [source_id]),
     content="[1, 3, 4]",
@@ -737,18 +750,9 @@ test "ui ffi adapter supports incremental mutation without reload" {
     ffi_adapter_set_edge_label_position(adapter, edge_id, 80),
     content="true",
   )
-  inspect(
-    ffi_adapter_set_edge_offset(adapter, edge_id, 11),
-    content="true",
-  )
-  inspect(
-    ffi_adapter_set_edge_curve(adapter, edge_id, -3),
-    content="true",
-  )
-  inspect(
-    ffi_adapter_set_edge_shorten(adapter, edge_id, 6, 4),
-    content="true",
-  )
+  inspect(ffi_adapter_set_edge_offset(adapter, edge_id, 11), content="true")
+  inspect(ffi_adapter_set_edge_curve(adapter, edge_id, -3), content="true")
+  inspect(ffi_adapter_set_edge_shorten(adapter, edge_id, 6, 4), content="true")
   inspect(
     ffi_adapter_reconnect_edge(adapter, edge_id, target_id, source_id),
     content="true",
@@ -794,7 +798,10 @@ test "ui ffi adapter supports incremental mutation without reload" {
       inspect(edge.options.style.head.name, content="epi")
       inspect(edge.options.level, content="1")
       inspect(edge.options.colour.h, content="0")
-      inspect(edge.options.label_alignment is LabelAlignment::Right, content="true")
+      inspect(
+        edge.options.label_alignment is LabelAlignment::Right,
+        content="true",
+      )
       inspect(edge.options.label_position, content="80")
     }
     None => abort("expected updated edge")
@@ -814,10 +821,7 @@ test "ui ffi adapter applies mutation batch and reports per-op results" {
       QuiverUiSetLabelPatch::new(999, "missing"),
     ],
     [
-      QuiverUiSetLabelColourPatch::new(
-        edge_id,
-        Colour::new(120, 100, 25, 1.0),
-      ),
+      QuiverUiSetLabelColourPatch::new(edge_id, Colour::new(120, 100, 25, 1.0)),
       QuiverUiSetLabelColourPatch::new(999, Colour::new(0, 0, 0, 1.0)),
     ],
     [
@@ -828,9 +832,9 @@ test "ui ffi adapter applies mutation batch and reports per-op results" {
       QuiverUiSetEdgeOptionsPatch::new(
         edge_id,
         EdgeOptions::at_level(9)
-          .with_curve(-2)
-          .with_style_head("epi")
-          .with_colour(Colour::new(0, 100, 50, 1.0)),
+        .with_curve(-2)
+        .with_style_head("epi")
+        .with_colour(Colour::new(0, 100, 50, 1.0)),
       ),
       QuiverUiSetEdgeOptionsPatch::new(999, EdgeOptions::at_level(1)),
     ],
@@ -900,31 +904,14 @@ test "ui ffi adapter apply_mutation_batch_json supports plain json batch input" 
   inspect(edge_id, content="3")
 
   let batch_json = [
-    "{",
-    "\"labels\":[{\"cell_id\":1,\"label\":\"A-json\"}],",
-    "\"label_colours\":[{\"cell_id\":3,\"label_colour\":{\"h\":120,\"s\":100,\"l\":25,\"a\":1}}],",
-    "\"vertex_positions\":[{\"vertex_id\":1,\"x\":5,\"y\":7}],",
-    "\"edge_options\":[{\"edge_id\":3,\"options\":{",
-    "\"label_alignment\":\"left\",",
-    "\"label_position\":50,",
-    "\"offset\":0,",
-    "\"curve\":-2,",
-    "\"radius\":3,",
-    "\"angle\":0,",
-    "\"shorten_source\":0,",
-    "\"shorten_target\":0,",
-    "\"level\":1,",
-    "\"shape\":\"bezier\",",
-    "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
-    "\"edge_alignment_source\":true,",
-    "\"edge_alignment_target\":true,",
-    "\"style\":{",
-    "\"name\":\"arrow\",",
-    "\"tail\":{\"name\":\"none\",\"side\":\"\"},",
-    "\"body\":{\"name\":\"barred\",\"side\":\"\"},",
-    "\"head\":{\"name\":\"epi\",\"side\":\"\"}",
-    "}}}],",
-    "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
+    "{", "\"labels\":[{\"cell_id\":1,\"label\":\"A-json\"}],", "\"label_colours\":[{\"cell_id\":3,\"label_colour\":{\"h\":120,\"s\":100,\"l\":25,\"a\":1}}],",
+    "\"vertex_positions\":[{\"vertex_id\":1,\"x\":5,\"y\":7}],", "\"edge_options\":[{\"edge_id\":3,\"options\":{",
+    "\"label_alignment\":\"left\",", "\"label_position\":50,", "\"offset\":0,", "\"curve\":-2,",
+    "\"radius\":3,", "\"angle\":0,", "\"shorten_source\":0,", "\"shorten_target\":0,",
+    "\"level\":1,", "\"shape\":\"bezier\",", "\"colour\":{\"h\":0,\"s\":100,\"l\":50,\"a\":1},",
+    "\"edge_alignment_source\":true,", "\"edge_alignment_target\":true,", "\"style\":{",
+    "\"name\":\"arrow\",", "\"tail\":{\"name\":\"none\",\"side\":\"\"},", "\"body\":{\"name\":\"barred\",\"side\":\"\"},",
+    "\"head\":{\"name\":\"epi\",\"side\":\"\"}", "}}}],", "\"edge_connections\":[{\"edge_id\":3,\"source_id\":2,\"target_id\":1}]",
     "}",
   ].join("")
 
@@ -1015,14 +1002,8 @@ test "ui ffi adapter mutation APIs return false for invalid ids" {
     ffi_adapter_set_edge_label_position(adapter, vertex_id, 50),
     content="false",
   )
-  inspect(
-    ffi_adapter_set_edge_offset(adapter, vertex_id, 1),
-    content="false",
-  )
-  inspect(
-    ffi_adapter_set_edge_curve(adapter, vertex_id, 1),
-    content="false",
-  )
+  inspect(ffi_adapter_set_edge_offset(adapter, vertex_id, 1), content="false")
+  inspect(ffi_adapter_set_edge_curve(adapter, vertex_id, 1), content="false")
   inspect(
     ffi_adapter_set_edge_shorten(adapter, vertex_id, 1, 1),
     content="false",
@@ -1091,7 +1072,10 @@ test "ui ffi adapter snapshot exposes js-friendly model data" {
   )
 
   let snapshot = ffi_adapter_snapshot(adapter)
-  inspect(snapshot.payload == ffi_adapter_export_base64(adapter), content="true")
+  inspect(
+    snapshot.payload == ffi_adapter_export_base64(adapter),
+    content="true",
+  )
   inspect(snapshot.cell_ids, content="[1, 2, 3]")
   inspect(snapshot.vertices.length(), content="2")
   inspect(snapshot.edges.length(), content="1")
@@ -1141,9 +1125,15 @@ test "ui ffi adapter snapshot exposes js-friendly model data" {
   inspect(snapshot.dependencies[2].dependencies.length(), content="0")
   inspect(snapshot.dependencies[2].reverse_dependencies.length(), content="2")
   inspect(snapshot.dependencies[2].reverse_dependencies[0].cell_id, content="1")
-  inspect(snapshot.dependencies[2].reverse_dependencies[0].role, content="source")
+  inspect(
+    snapshot.dependencies[2].reverse_dependencies[0].role,
+    content="source",
+  )
   inspect(snapshot.dependencies[2].reverse_dependencies[1].cell_id, content="2")
-  inspect(snapshot.dependencies[2].reverse_dependencies[1].role, content="target")
+  inspect(
+    snapshot.dependencies[2].reverse_dependencies[1].role,
+    content="target",
+  )
 }
 
 ///|
@@ -1172,20 +1162,28 @@ test "ui ffi adapter snapshot_json returns stable plain json shape" {
   let payload : String = @json.from_json(test_json_get(root, "payload"))
   inspect(payload == ffi_adapter_export_base64(adapter), content="true")
 
-  let cell_ids : Array[Int] = @json.from_json(test_json_get(root, "cell_ids"))
+  let cell_ids : Array[Int32] = @json.from_json(test_json_get(root, "cell_ids"))
   inspect(cell_ids, content="[1, 2, 3]")
 
   let vertices : Array[Map[String, Json]] = @json.from_json(
     test_json_get(root, "vertices"),
   )
   inspect(vertices.length(), content="2")
-  let vertex0_label : String = @json.from_json(test_json_get(vertices[0], "label"))
+  let vertex0_label : String = @json.from_json(
+    test_json_get(vertices[0], "label"),
+  )
   inspect(vertex0_label, content="A")
 
-  let edges : Array[Map[String, Json]] = @json.from_json(test_json_get(root, "edges"))
+  let edges : Array[Map[String, Json]] = @json.from_json(
+    test_json_get(root, "edges"),
+  )
   inspect(edges.length(), content="1")
-  let edge0_source : Int = @json.from_json(test_json_get(edges[0], "source_id"))
-  let edge0_target : Int = @json.from_json(test_json_get(edges[0], "target_id"))
+  let edge0_source : Int32 = @json.from_json(
+    test_json_get(edges[0], "source_id"),
+  )
+  let edge0_target : Int32 = @json.from_json(
+    test_json_get(edges[0], "target_id"),
+  )
   let edge0_label : String = @json.from_json(test_json_get(edges[0], "label"))
   inspect(edge0_source, content="1")
   inspect(edge0_target, content="2")
@@ -1212,7 +1210,9 @@ test "ui ffi adapter snapshot_json returns stable plain json shape" {
   let edge_style : Map[String, Json] = @json.from_json(
     test_json_get(edge_options, "style"),
   )
-  let edge_style_name : String = @json.from_json(test_json_get(edge_style, "name"))
+  let edge_style_name : String = @json.from_json(
+    test_json_get(edge_style, "name"),
+  )
   inspect(edge_style_name, content="arrow")
   let edge_style_body : Map[String, Json] = @json.from_json(
     test_json_get(edge_style, "body"),
@@ -1240,18 +1240,20 @@ test "ui ffi adapter snapshot_json returns stable plain json shape" {
     test_json_get(dependencies[2], "reverse_dependencies"),
   )
   inspect(deps0.length(), content="1")
-  let deps0_cell_id : Int = @json.from_json(test_json_get(deps0[0], "cell_id"))
+  let deps0_cell_id : Int32 = @json.from_json(
+    test_json_get(deps0[0], "cell_id"),
+  )
   let deps0_role : String = @json.from_json(test_json_get(deps0[0], "role"))
   inspect(deps0_cell_id, content="3")
   inspect(deps0_role, content="source")
   inspect(rev_deps2.length(), content="2")
-  let rev_deps2_0_cell_id : Int = @json.from_json(
+  let rev_deps2_0_cell_id : Int32 = @json.from_json(
     test_json_get(rev_deps2[0], "cell_id"),
   )
   let rev_deps2_0_role : String = @json.from_json(
     test_json_get(rev_deps2[0], "role"),
   )
-  let rev_deps2_1_cell_id : Int = @json.from_json(
+  let rev_deps2_1_cell_id : Int32 = @json.from_json(
     test_json_get(rev_deps2[1], "cell_id"),
   )
   let rev_deps2_1_role : String = @json.from_json(

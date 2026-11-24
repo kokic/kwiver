@@ -16,11 +16,12 @@ pub struct Base64ShareImportResult {
 
 ///|
 pub struct Base64SelectionImportResult {
-  imported_ids : Array[Int]
-  id_remap : Map[Int, Int]
+  imported_ids : Array[Int32]
+  id_remap : Map[Int32, Int32]
 }
 
-fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
+///|
+fn label_alignment_to_int(alignment : LabelAlignment) -> Int32 {
   match alignment {
     LabelAlignment::Left => 0
     LabelAlignment::Centre => 1
@@ -29,7 +30,8 @@ fn label_alignment_to_int(alignment : LabelAlignment) -> Int {
   }
 }
 
-fn base64_is_url_unreserved(code : Int) -> Bool {
+///|
+fn base64_is_url_unreserved(code : Int32) -> Bool {
   let is_digit = code >= 48 && code <= 57
   let is_upper = code >= 65 && code <= 90
   let is_lower = code >= 97 && code <= 122
@@ -50,7 +52,7 @@ fn base64_is_url_unreserved(code : Int) -> Bool {
 }
 
 ///|
-fn base64_hex_upper(n : Int) -> Char {
+fn base64_hex_upper(n : Int32) -> Char {
   if n < 10 {
     (48 + n).unsafe_to_char()
   } else {
@@ -76,7 +78,7 @@ fn base64_percent_encode_component(value : String) -> String {
 }
 
 ///|
-fn base64_hex_to_int(code : Int) -> Int {
+fn base64_hex_to_int(code : Int32) -> Int32 {
   if code >= 48 && code <= 57 {
     code - 48
   } else if code >= 65 && code <= 70 {
@@ -177,7 +179,7 @@ fn base64_extract_html_comment_reference(line : String) -> String? {
 
 ///|
 fn base64_extract_iframe_src_reference(line : String) -> String? {
-  let single_quote = Int::to_byte(39)
+  let single_quote = Int32::to_byte(39)
   let is_space = (byte : Byte) => byte == b' ' || byte == b'\t'
   let bytes = @utf8.encode(line)
   let mut i = 0
@@ -320,7 +322,7 @@ fn base64_parse_share_segment(
 ///|
 pub fn Quiver::parse_base64_share_url(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Base64ShareUrlParts {
   let is_url = input.contains("://")
   let has_hash = input.contains("#")
@@ -353,7 +355,7 @@ pub fn Quiver::parse_base64_share_url(
     }
     let query = base64_normalise_fragment(base64_share_url_query(input))
     if fragment == "" && query == "" {
-      return { payload: None, macro_url: None, renderer: None, embed: false }
+      return { payload: None, macro_url: None, renderer: None, embed: false, }
     }
 
     let parsed_fragment = base64_parse_share_segment(
@@ -389,7 +391,7 @@ pub fn Quiver::parse_base64_share_url(
     }
     let fragment = base64_normalise_fragment(fragment_raw)
     if fragment == "" {
-      return { payload: None, macro_url: None, renderer: None, embed: false }
+      return { payload: None, macro_url: None, renderer: None, embed: false, }
     }
 
     let parsed = base64_parse_share_segment(
@@ -412,12 +414,12 @@ pub fn Quiver::parse_base64_share_url(
     None => None
   }
 
-  { payload, macro_url, renderer, embed }
+  { payload, macro_url, renderer, embed, }
 }
 
 ///|
-fn base64_id_set(ids : Array[Int]) -> @hashmap.HashMap[Int, Bool] {
-  let out : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+fn base64_id_set(ids : Array[Int32]) -> @hashmap.HashMap[Int32, Bool] {
+  let out : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
   for id in ids {
     out.set(id, true)
   }
@@ -427,7 +429,7 @@ fn base64_id_set(ids : Array[Int]) -> @hashmap.HashMap[Int, Bool] {
 ///|
 fn Quiver::base64_export_v0_with_ids(
   self : Quiver,
-  included_ids : @hashmap.HashMap[Int, Bool],
+  included_ids : @hashmap.HashMap[Int32, Bool],
   strict_edge_refs : Bool,
 ) -> String {
   let cells = self.all_cells()
@@ -459,7 +461,7 @@ fn Quiver::base64_export_v0_with_ids(
     }
   }
 
-  let json_int = (value : Int) => Json::number(value.to_double())
+  let json_int = (value : Int32) => Json::number(value.to_double())
   let json_colour = (colour : Colour) => {
     let values : Array[Json] = [
       Json::number(colour.h.to_double()),
@@ -481,10 +483,11 @@ fn Quiver::base64_export_v0_with_ids(
 
   let options_delta = (edge : Edge) => {
     let options = edge.options
-    let canonical_level = Int::max(
-      self.cell_level_or_default(edge.source),
-      self.cell_level_or_default(edge.target),
-    ) + 1
+    let canonical_level = Int32::max(
+        self.cell_level_or_default(edge.source),
+        self.cell_level_or_default(edge.target),
+      ) +
+      1
     let defaults = EdgeOptions::at_level(options.level)
     let delta : Map[String, Json] = Map::new()
 
@@ -607,7 +610,7 @@ fn Quiver::base64_export_v0_with_ids(
   }
 
   let encoded_cells : Array[Json] = []
-  let indices : @hashmap.HashMap[Int, Int] = @hashmap.new()
+  let indices : @hashmap.HashMap[Int32, Int32] = @hashmap.new()
 
   for vertex in vertices {
     let cell : Array[Json] = [
@@ -685,8 +688,8 @@ pub fn Quiver::export_base64_v0(self : Quiver) -> String {
 ///|
 pub fn Quiver::export_base64_v0_selection(
   self : Quiver,
-  selected_ids : Array[Int],
-  include_dependencies? : Bool = true,
+  selected_ids : Array[Int32],
+  include_dependencies~ : Bool = true,
 ) -> String {
   let ids = if include_dependencies {
     self.transitive_reverse_dependencies(selected_ids)
@@ -703,7 +706,7 @@ pub fn Quiver::export_base64_share_url(
   share_base_url : String?,
   macro_url : String?,
   renderer? : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String {
   let payload = self.export_base64_v0()
   match share_base_url {
@@ -774,7 +777,7 @@ fn base64_import_endpoint_style(
   fallback : EdgeEndpointStyle,
 ) -> EdgeEndpointStyle raise {
   match raw {
-    Json::String(name) => { name, side: fallback.side }
+    Json::String(name) => { name, side: fallback.side, }
     Json::Object(value_map) => {
       let name = match value_map.get("name") {
         Some(value) => @json.from_json(value)
@@ -784,7 +787,7 @@ fn base64_import_endpoint_style(
         Some(value) => @json.from_json(value)
         None => fallback.side
       }
-      { name, side }
+      { name, side, }
     }
     _ => fallback
   }
@@ -794,11 +797,11 @@ fn base64_import_endpoint_style(
 fn base64_import_apply_style_delta(
   options : EdgeOptions,
   style_raw : Json,
-) -> (EdgeOptions, Int?) raise {
+) -> (EdgeOptions, Int32?) raise {
   match style_raw {
     Json::Object(style_map) => {
       let mut out = options
-      let mut level_override : Int? = None
+      let mut level_override : Int32? = None
 
       match style_map.get("name") {
         Some(value) => {
@@ -822,7 +825,7 @@ fn base64_import_apply_style_delta(
             Json::Object(body_map) =>
               match body_map.get("level") {
                 Some(level_value) => {
-                  let level : Int = @json.from_json(level_value)
+                  let level : Int32 = @json.from_json(level_value)
                   base64_import_assert(level >= 1, "invalid level")
                   level_override = Some(level)
                 }
@@ -859,7 +862,7 @@ fn base64_import_apply_options_delta(
 
   match options_map.get("label_position") {
     Some(value) => {
-      let label_position : Int = @json.from_json(value)
+      let label_position : Int32 = @json.from_json(value)
       base64_import_assert(
         label_position >= 0 && label_position <= 100,
         "invalid label position",
@@ -870,14 +873,14 @@ fn base64_import_apply_options_delta(
   }
   match options_map.get("offset") {
     Some(value) => {
-      let offset : Int = @json.from_json(value)
+      let offset : Int32 = @json.from_json(value)
       out = out.with_offset(offset)
     }
     None => ()
   }
   match options_map.get("curve") {
     Some(value) => {
-      let curve : Int = @json.from_json(value)
+      let curve : Int32 = @json.from_json(value)
       out = out.with_curve(curve)
       has_curve = true
     }
@@ -885,7 +888,7 @@ fn base64_import_apply_options_delta(
   }
   match options_map.get("radius") {
     Some(value) => {
-      let radius : Int = @json.from_json(value)
+      let radius : Int32 = @json.from_json(value)
       out = out.with_radius(radius)
       has_radius_or_angle = true
     }
@@ -893,7 +896,7 @@ fn base64_import_apply_options_delta(
   }
   match options_map.get("angle") {
     Some(value) => {
-      let angle : Int = @json.from_json(value)
+      let angle : Int32 = @json.from_json(value)
       out = out.with_angle(angle)
       has_radius_or_angle = true
     }
@@ -927,7 +930,7 @@ fn base64_import_apply_options_delta(
   if !has_shorten {
     match options_map.get("length") {
       Some(value) => {
-        let length : Int = @json.from_json(value)
+        let length : Int32 = @json.from_json(value)
         base64_import_assert(length >= 0 && length <= 100, "invalid length")
         let shorten = (100 - length) / 2
         out = out.with_shorten(shorten, shorten)
@@ -975,7 +978,7 @@ fn base64_import_apply_options_delta(
   }
   match options_map.get("level") {
     Some(value) => {
-      let level : Int = @json.from_json(value)
+      let level : Int32 = @json.from_json(value)
       if level >= 1 {
         out = out.with_level(level)
       }
@@ -986,20 +989,21 @@ fn base64_import_apply_options_delta(
   out
 }
 
+///|
 fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
   base64_import_assert(root.length() >= 2, "invalid quiver format")
 
-  let version : Int = @json.from_json(root.unsafe_get(0))
+  let version : Int32 = @json.from_json(root.unsafe_get(0))
   base64_import_assert(version == 0, "unsupported base64 quiver version")
 
-  let vertices : Int = @json.from_json(root.unsafe_get(1))
+  let vertices : Int32 = @json.from_json(root.unsafe_get(1))
   let cells_count = root.length() - 2
   base64_import_assert(vertices >= 0, "invalid number of vertices")
   base64_import_assert(vertices <= cells_count, "invalid number of vertices")
 
   let quiver = Quiver::new()
-  let index_to_id : Array[Int] = []
-  let index_to_level : Array[Int] = []
+  let index_to_id : Array[Int32] = []
+  let index_to_level : Array[Int32] = []
   let mut i = 0
   while i < cells_count {
     let cell_raw = root.unsafe_get(i + 2)
@@ -1009,8 +1013,8 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
         cell.length() >= 2 && cell.length() <= 4,
         "invalid vertex format",
       )
-      let x : Int = @json.from_json(cell.unsafe_get(0))
-      let y : Int = @json.from_json(cell.unsafe_get(1))
+      let x : Int32 = @json.from_json(cell.unsafe_get(0))
+      let y : Int32 = @json.from_json(cell.unsafe_get(1))
       base64_import_assert(x >= 0, "invalid x position")
       base64_import_assert(y >= 0, "invalid y position")
       let label = if cell.length() >= 3 {
@@ -1034,8 +1038,8 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
         cell.length() >= 2 && cell.length() <= 6,
         "invalid edge format",
       )
-      let source_index : Int = @json.from_json(cell.unsafe_get(0))
-      let target_index : Int = @json.from_json(cell.unsafe_get(1))
+      let source_index : Int32 = @json.from_json(cell.unsafe_get(0))
+      let target_index : Int32 = @json.from_json(cell.unsafe_get(1))
       base64_import_assert(source_index >= 0, "invalid source index")
       base64_import_assert(target_index >= 0, "invalid target index")
       base64_import_assert(
@@ -1055,7 +1059,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
         ""
       }
       let alignment = if cell.length() >= 4 {
-        let value : Int = @json.from_json(cell.unsafe_get(3))
+        let value : Int32 = @json.from_json(cell.unsafe_get(3))
         base64_import_assert(
           value >= 0 && value <= 3,
           "invalid label alignment",
@@ -1064,7 +1068,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       } else {
         0
       }
-      let structural_level = Int::max(
+      let structural_level = Int32::max(
           index_to_level.unsafe_get(source_index),
           index_to_level.unsafe_get(target_index),
         ) +
@@ -1114,12 +1118,7 @@ fn base64_import_quiver_from_js(root : Array[Json]) -> Quiver raise {
       quiver.add(
         CellData::from_edge(
           Edge::new(
-            id,
-            label,
-            source_id,
-            target_id,
-            structural_options,
-            label_colour,
+            id, label, source_id, target_id, structural_options, label_colour,
           ),
         ),
       )
@@ -1160,8 +1159,8 @@ pub fn Quiver::import_base64_v0(encoded : String) -> Quiver raise {
 ///|
 fn Quiver::base64_import_alloc_unique_id(
   self : Quiver,
-  alloc_id : () -> Int,
-) -> Int {
+  alloc_id : () -> Int32,
+) -> Int32 {
   let mut retries = 0
   while retries < 1_000_000 {
     let id = alloc_id()
@@ -1177,9 +1176,9 @@ fn Quiver::base64_import_alloc_unique_id(
 pub fn Quiver::import_base64_v0_selection_result(
   self : Quiver,
   encoded : String,
-  origin_x : Int,
-  origin_y : Int,
-  alloc_id : () -> Int,
+  origin_x : Int32,
+  origin_y : Int32,
+  alloc_id : () -> Int32,
 ) -> Base64SelectionImportResult raise {
   let imported = Quiver::import_base64_v0(encoded)
   let vertices : Array[Vertex] = []
@@ -1210,11 +1209,11 @@ pub fn Quiver::import_base64_v0_selection_result(
   }
 
   if vertices.is_empty() {
-    return { imported_ids: [], id_remap: Map::new() }
+    return { imported_ids: [], id_remap: Map::new(), }
   }
 
-  let id_remap : Map[Int, Int] = Map::new()
-  let imported_ids : Array[Int] = []
+  let id_remap : Map[Int32, Int32] = Map::new()
+  let imported_ids : Array[Int32] = []
 
   for vertex in vertices {
     let new_id = self.base64_import_alloc_unique_id(alloc_id)
@@ -1261,17 +1260,17 @@ pub fn Quiver::import_base64_v0_selection_result(
     self.connect(source, target, new_id)
   }
 
-  { imported_ids: self.order_ids(imported_ids), id_remap }
+  { imported_ids: self.order_ids(imported_ids), id_remap, }
 }
 
 ///|
 pub fn Quiver::import_base64_v0_selection(
   self : Quiver,
   encoded : String,
-  origin_x : Int,
-  origin_y : Int,
-  alloc_id : () -> Int,
-) -> Array[Int] raise {
+  origin_x : Int32,
+  origin_y : Int32,
+  alloc_id : () -> Int32,
+) -> Array[Int32] raise {
   self.import_base64_v0_selection_result(encoded, origin_x, origin_y, alloc_id).imported_ids
 }
 
@@ -1279,9 +1278,9 @@ pub fn Quiver::import_base64_v0_selection(
 pub fn Quiver::import_base64_v0_selection_auto_ids(
   self : Quiver,
   encoded : String,
-  origin_x : Int,
-  origin_y : Int,
-  start_id? : Int = 1,
+  origin_x : Int32,
+  origin_y : Int32,
+  start_id~ : Int32 = 1,
 ) -> Base64SelectionImportResult raise {
   let mut next_id = self.next_available_id(start=start_id)
   let alloc_id = () => {
@@ -1295,7 +1294,7 @@ pub fn Quiver::import_base64_v0_selection_auto_ids(
 ///|
 pub fn Quiver::import_base64_share_url(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Quiver raise {
   Quiver::import_base64_share_url_result(input, default_renderer~).quiver
 }
@@ -1303,7 +1302,7 @@ pub fn Quiver::import_base64_share_url(
 ///|
 pub fn Quiver::import_base64_share_url_result(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Base64ShareImportResult raise {
   let parsed = Quiver::parse_base64_share_url(input, default_renderer~)
   match parsed.payload {
@@ -1321,7 +1320,7 @@ pub fn Quiver::import_base64_share_url_result(
 ///|
 pub fn Quiver::import_base64_share_text(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Base64ShareImportResult raise {
   let reference = match Quiver::extract_base64_share_reference(input) {
     Some(value) => value

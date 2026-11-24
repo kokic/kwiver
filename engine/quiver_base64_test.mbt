@@ -1,5 +1,5 @@
 ///|
-fn find_edge(quiver : Quiver, id : Int) -> Edge? {
+fn find_edge(quiver : Quiver, id : Int32) -> Edge? {
   for cell in quiver.all_cells() {
     match cell {
       CellData::Edge(edge) => if edge.cell.id == id { return Some(edge) }
@@ -46,7 +46,7 @@ fn base64_decode_json_array(encoded : String) -> Array[Json] raise {
 }
 
 ///|
-fn alignment_variant_to_int(alignment : LabelAlignment) -> Int {
+fn alignment_variant_to_int(alignment : LabelAlignment) -> Int32 {
   match alignment {
     LabelAlignment::Left => 0
     LabelAlignment::Centre => 1
@@ -155,7 +155,9 @@ test "base64 v0 roundtrip preserves default loop shape" {
 
 ///|
 test "base64 v0 roundtrip preserves explicit edge level" {
-  let encoded = base64_encode_json("[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"n\",0,{\"level\":4}]]")
+  let encoded = base64_encode_json(
+    "[0,2,[0,0,\"A\"],[1,0,\"B\"],[0,1,\"n\",0,{\"level\":4}]]",
+  )
   let quiver = Quiver::import_base64_v0(encoded)
   let re_encoded = quiver.export_base64_v0()
   let root = base64_decode_json_array(re_encoded)

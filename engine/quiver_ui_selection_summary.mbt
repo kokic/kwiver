@@ -1,17 +1,15 @@
 ///|
 pub struct QuiverUiSelectionSummary {
-  roots : Array[Int]
-  all_cell_ids : Array[Int]
-  connected_component_ids : Array[Int]
-  transitive_dependency_ids : Array[Int]
-  transitive_dependency_ids_excluding_roots : Array[Int]
-  transitive_reverse_dependency_ids : Array[Int]
+  roots : Array[Int32]
+  all_cell_ids : Array[Int32]
+  connected_component_ids : Array[Int32]
+  transitive_dependency_ids : Array[Int32]
+  transitive_dependency_ids_excluding_roots : Array[Int32]
+  transitive_reverse_dependency_ids : Array[Int32]
 }
 
 ///|
-fn quiver_ui_selection_summary_json(
-  summary : QuiverUiSelectionSummary,
-) -> Json {
+fn quiver_ui_selection_summary_json(summary : QuiverUiSelectionSummary) -> Json {
   let out : Map[String, Json] = Map::new()
   out.set("roots", quiver_ui_int_array_json(summary.roots))
   out.set("all_cell_ids", quiver_ui_int_array_json(summary.all_cell_ids))
@@ -25,9 +23,7 @@ fn quiver_ui_selection_summary_json(
   )
   out.set(
     "transitive_dependency_ids_excluding_roots",
-    quiver_ui_int_array_json(
-      summary.transitive_dependency_ids_excluding_roots,
-    ),
+    quiver_ui_int_array_json(summary.transitive_dependency_ids_excluding_roots),
   )
   out.set(
     "transitive_reverse_dependency_ids",
@@ -46,7 +42,7 @@ pub fn QuiverUiSelectionSummary::to_json_string(
 ///|
 pub fn QuiverUiAdapter::selection_summary(
   self : QuiverUiAdapter,
-  roots : Array[Int],
+  roots : Array[Int32],
 ) -> QuiverUiSelectionSummary {
   {
     roots,
@@ -66,7 +62,7 @@ pub fn QuiverUiAdapter::selection_summary(
 ///|
 pub fn QuiverUiAdapter::selection_summary_json(
   self : QuiverUiAdapter,
-  roots : Array[Int],
+  roots : Array[Int32],
 ) -> String {
   self.selection_summary(roots).to_json_string()
 }
@@ -74,7 +70,7 @@ pub fn QuiverUiAdapter::selection_summary_json(
 ///|
 pub fn ffi_adapter_selection_summary_json(
   adapter : QuiverUiAdapter,
-  roots : Array[Int],
+  roots : Array[Int32],
 ) -> String {
   adapter.selection_summary_json(roots)
 }

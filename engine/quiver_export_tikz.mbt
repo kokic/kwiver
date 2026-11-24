@@ -8,8 +8,8 @@ pub struct TikzCdExportSettings {
 
 ///|
 pub struct TikzCdSepOptions {
-  column_hundredths : Int
-  row_hundredths : Int
+  column_hundredths : Int32
+  row_hundredths : Int32
 }
 
 ///|
@@ -41,8 +41,8 @@ pub struct TikzCdExportResult {
 pub struct TikzCdImportError {
   kind : String
   message : String
-  line : Int
-  column : Int
+  line : Int32
+  column : Int32
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn TikzCdExportSettings::default() -> TikzCdExportSettings {
 ///|
 pub fn TikzCdExportSettings::with_centre_diagram(
   self : TikzCdExportSettings,
-  value? : Bool = true,
+  value~ : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: value,
@@ -81,7 +81,7 @@ pub fn TikzCdExportSettings::with_centre_diagram(
 ///|
 pub fn TikzCdExportSettings::with_ampersand_replacement(
   self : TikzCdExportSettings,
-  value? : Bool = true,
+  value~ : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -94,7 +94,7 @@ pub fn TikzCdExportSettings::with_ampersand_replacement(
 ///|
 pub fn TikzCdExportSettings::with_cramped(
   self : TikzCdExportSettings,
-  value? : Bool = true,
+  value~ : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -107,7 +107,7 @@ pub fn TikzCdExportSettings::with_cramped(
 ///|
 pub fn TikzCdExportSettings::with_standalone(
   self : TikzCdExportSettings,
-  value? : Bool = true,
+  value~ : Bool = true,
 ) -> TikzCdExportSettings {
   {
     centre_diagram: self.centre_diagram,
@@ -119,7 +119,7 @@ pub fn TikzCdExportSettings::with_standalone(
 
 ///|
 pub fn TikzCdSepOptions::default() -> TikzCdSepOptions {
-  { column_hundredths: 180, row_hundredths: 180 }
+  { column_hundredths: 180, row_hundredths: 180, }
 }
 
 ///|
@@ -150,7 +150,7 @@ pub fn TikzCdSepOptions::with_em(
   value : Double,
 ) -> TikzCdSepOptions {
   let hundredths = tikz_round_to_int(value * 100.0)
-  { column_hundredths: hundredths, row_hundredths: hundredths }
+  { column_hundredths: hundredths, row_hundredths: hundredths, }
 }
 
 ///|
@@ -292,7 +292,7 @@ pub fn TikzCdExportOptions::without_renderer(
 
 ///|
 pub fn TikzCdExportDefinitions::default() -> TikzCdExportDefinitions {
-  { colours: @hashmap.new() }
+  { colours: @hashmap.new(), }
 }
 
 ///|
@@ -386,9 +386,9 @@ fn tikz_begin_line(
 }
 
 ///|
-fn tikz_fixed_2(value : Int) -> String {
+fn tikz_fixed_2(value : Int32) -> String {
   let sign = if value < 0 { "-" } else { "" }
-  let abs_value = Int::abs(value)
+  let abs_value = Int32::abs(value)
   let whole = abs_value / 100
   let frac = abs_value % 100
   let frac_string = if frac < 10 {
@@ -400,7 +400,7 @@ fn tikz_fixed_2(value : Int) -> String {
 }
 
 ///|
-fn tikz_sep_option_name(value : Int) -> String {
+fn tikz_sep_option_name(value : Int32) -> String {
   match value {
     45 => "tiny"
     90 => "small"
@@ -451,7 +451,7 @@ fn tikz_indent_lines(content : String) -> String {
 }
 
 ///|
-fn tikz_repeat(token : String, count : Int) -> String {
+fn tikz_repeat(token : String, count : Int32) -> String {
   if count <= 0 {
     return ""
   }
@@ -473,7 +473,7 @@ fn tikz_mod(x : Double, y : Double) -> Double {
 }
 
 ///|
-fn tikz_round_to_int(x : Double) -> Int {
+fn tikz_round_to_int(x : Double) -> Int32 {
   if x >= 0.0 {
     @math.floor(x + 0.5).to_int()
   } else {
@@ -488,13 +488,13 @@ fn tikz_direction_option(source : Vertex, target : Vertex) -> String? {
   let parts : Array[String] = []
 
   if dy < 0 {
-    parts.push(tikz_repeat("u", Int::abs(dy)))
+    parts.push(tikz_repeat("u", Int32::abs(dy)))
   } else if dy > 0 {
     parts.push(tikz_repeat("d", dy))
   }
 
   if dx < 0 {
-    parts.push(tikz_repeat("l", Int::abs(dx)))
+    parts.push(tikz_repeat("l", Int32::abs(dx)))
   } else if dx > 0 {
     parts.push(tikz_repeat("r", dx))
   }
@@ -507,17 +507,16 @@ fn tikz_direction_option(source : Vertex, target : Vertex) -> String? {
   }
 }
 
-fn tikz_colour_channel(colour : Colour, n : Int) -> Int {
+///|
+fn tikz_colour_channel(colour : Colour, n : Int32) -> Int32 {
   let h = colour.h.to_double()
   let s = colour.s.to_double() / 100.0
   let l = colour.l.to_double() / 100.0
   let a = s * Double::min(l, 1.0 - l)
   let k_raw = n.to_double() + h / 30.0
   let k = k_raw - 12.0 * @math.floor(k_raw / 12.0)
-  let f = l - a * Double::max(
-    -1.0,
-    Double::min(k - 3.0, Double::min(9.0 - k, 1.0)),
-  )
+  let f = l -
+    a * Double::max(-1.0, Double::min(k - 3.0, Double::min(9.0 - k, 1.0)))
   let rounded = @math.floor(f * 255.0 + 0.5).to_int()
   if rounded < 0 {
     0
@@ -690,7 +689,7 @@ fn tikz_vertex_label(
 }
 
 ///|
-fn tikz_edge_coord_part(vertex : Vertex?) -> (Int, Int) {
+fn tikz_edge_coord_part(vertex : Vertex?) -> (Int32, Int32) {
   match vertex {
     Some(v) => (v.y, v.x)
     None => (2147483647, 2147483647)
@@ -699,9 +698,9 @@ fn tikz_edge_coord_part(vertex : Vertex?) -> (Int, Int) {
 
 ///|
 fn tikz_resolve_vertex(
-  start_id : Int,
-  vertices_by_id : @hashmap.HashMap[Int, Vertex],
-  edges_by_id : @hashmap.HashMap[Int, Edge],
+  start_id : Int32,
+  vertices_by_id : @hashmap.HashMap[Int32, Vertex],
+  edges_by_id : @hashmap.HashMap[Int32, Edge],
   pick_source : Bool,
 ) -> Vertex? {
   let mut current = start_id
@@ -738,7 +737,11 @@ fn tikz_named_placeholder(name : String) -> String {
 }
 
 ///|
-fn tikz_vertex_reference(vertex : Vertex, min_x : Int, min_y : Int) -> String {
+fn tikz_vertex_reference(
+  vertex : Vertex,
+  min_x : Int32,
+  min_y : Int32,
+) -> String {
   [(vertex.y - min_y + 1).to_string(), "-", (vertex.x - min_x + 1).to_string()].join(
     "",
   )
@@ -746,12 +749,12 @@ fn tikz_vertex_reference(vertex : Vertex, min_x : Int, min_y : Int) -> String {
 
 ///|
 fn tikz_cell_reference(
-  cell_id : Int,
-  min_x : Int,
-  min_y : Int,
+  cell_id : Int32,
+  min_x : Int32,
+  min_y : Int32,
   phantom : Bool,
-  vertices_by_id : @hashmap.HashMap[Int, Vertex],
-  edge_export_name_by_id : @hashmap.HashMap[Int, String],
+  vertices_by_id : @hashmap.HashMap[Int32, Vertex],
+  edge_export_name_by_id : @hashmap.HashMap[Int32, String],
 ) -> String? {
   match vertices_by_id.get(cell_id) {
     Some(vertex) => Some(tikz_vertex_reference(vertex, min_x, min_y))
@@ -770,11 +773,11 @@ fn tikz_vertex_origin(vertex : Vertex) -> Point {
 
 ///|
 fn tikz_cell_origin(
-  cell_id : Int,
+  cell_id : Int32,
   use_phantom : Bool,
-  vertices_by_id : @hashmap.HashMap[Int, Vertex],
-  edges_by_id : @hashmap.HashMap[Int, Edge],
-  depth : Int,
+  vertices_by_id : @hashmap.HashMap[Int32, Vertex],
+  edges_by_id : @hashmap.HashMap[Int32, Edge],
+  depth : Int32,
 ) -> Point? {
   if depth > edges_by_id.length() + 1 {
     return None
@@ -825,11 +828,11 @@ fn tikz_edge_angle_deg(source : Point, target : Point) -> Double {
 
 ///|
 fn tikz_compare_edges(
-  vertices_by_id : @hashmap.HashMap[Int, Vertex],
-  edges_by_id : @hashmap.HashMap[Int, Edge],
+  vertices_by_id : @hashmap.HashMap[Int32, Vertex],
+  edges_by_id : @hashmap.HashMap[Int32, Edge],
   a : Edge,
   b : Edge,
-) -> Int {
+) -> Int32 {
   if a.options.level != b.options.level {
     return a.options.level - b.options.level
   }
@@ -1017,7 +1020,7 @@ fn tikz_append_shift_and_curve_options(
 ) -> Unit {
   if edge.options.offset != 0 {
     let side = if edge.options.offset > 0 { "right" } else { "left" }
-    let abs_offset = Int::abs(edge.options.offset)
+    let abs_offset = Int32::abs(edge.options.offset)
     if abs_offset == 1 {
       options.push(["shift ", side].join(""))
     } else {
@@ -1141,11 +1144,11 @@ fn tikz_append_loop_options(
   let clockwise = if edge.options.radius >= 0 { 1.0 } else { -1.0 }
   let loop_angle = 180.0 - 90.0 * clockwise - edge.options.angle.to_double()
   let angle_spread = 30.0 +
-    5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
+    5.0 * (Int32::abs(edge.options.radius).to_double() - 1.0) / 2.0
   let in_angle = tikz_mod(loop_angle - angle_spread * clockwise, 360.0)
   let out_angle = tikz_mod(loop_angle + angle_spread * clockwise, 360.0)
   let distance = 5.0 +
-    5.0 * (Int::abs(edge.options.radius).to_double() - 1.0) / 2.0
+    5.0 * (Int32::abs(edge.options.radius).to_double() - 1.0) / 2.0
 
   options.push(["in=", in_angle.to_string()].join(""))
   options.push(["out=", out_angle.to_string()].join(""))
@@ -1288,12 +1291,12 @@ fn tikz_finalize_metadata(
 ///|
 pub fn Quiver::export_tikz_cd_result(
   self : Quiver,
-  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> TikzCdExportResult {
-  let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
-  let edges_by_id : @hashmap.HashMap[Int, Edge] = @hashmap.new()
+  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.new()
+  let edges_by_id : @hashmap.HashMap[Int32, Edge] = @hashmap.new()
   let edges : Array[Edge] = []
 
   let mut has_vertex = false
@@ -1313,10 +1316,10 @@ pub fn Quiver::export_tikz_cd_result(
           min_y = vertex.y
           max_y = vertex.y
         } else {
-          min_x = Int::min(min_x, vertex.x)
-          max_x = Int::max(max_x, vertex.x)
-          min_y = Int::min(min_y, vertex.y)
-          max_y = Int::max(max_y, vertex.y)
+          min_x = Int32::min(min_x, vertex.x)
+          max_x = Int32::max(max_x, vertex.x)
+          min_y = Int32::min(min_y, vertex.y)
+          max_y = Int32::max(max_y, vertex.y)
         }
       }
       CellData::Edge(edge) => {
@@ -1339,8 +1342,8 @@ pub fn Quiver::export_tikz_cd_result(
 
   edges.sort_by((a, b) => tikz_compare_edges(vertices_by_id, edges_by_id, a, b))
 
-  let referenced_edges : @hashmap.HashMap[Int, Bool] = @hashmap.new()
-  let phantom_referenced_edges : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  let referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let phantom_referenced_edges : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
   for edge in edges {
     if edges_by_id.contains(edge.source) {
       referenced_edges.set(edge.source, true)
@@ -1356,7 +1359,7 @@ pub fn Quiver::export_tikz_cd_result(
     }
   }
 
-  let edge_export_name_by_id : @hashmap.HashMap[Int, String] = @hashmap.new()
+  let edge_export_name_by_id : @hashmap.HashMap[Int32, String] = @hashmap.new()
   let mut edge_name_index = 0
   for edge in edges {
     if referenced_edges.contains(edge.cell.id) {
@@ -1518,8 +1521,8 @@ pub fn Quiver::export_tikz_cd_result(
   }
 
   let ampersand = if settings.ampersand_replacement { "\\&" } else { "&" }
-  let rows_by_y : @hashmap.HashMap[Int, Array[(Int, Vertex)]] = @hashmap.new()
-  let row_indices : Array[Int] = []
+  let rows_by_y : @hashmap.HashMap[Int32, Array[(Int32, Vertex)]] = @hashmap.new()
+  let row_indices : Array[Int32] = []
   vertices_by_id.each((_, vertex) => {
     if !rows_by_y.contains(vertex.y) {
       row_indices.push(vertex.y)
@@ -1581,10 +1584,9 @@ pub fn Quiver::export_tikz_cd_result(
 ///|
 pub fn Quiver::export_tikz_cd(
   self : Quiver,
-  settings? : TikzCdExportSettings = TikzCdExportSettings::default(),
-  options? : TikzCdExportOptions = TikzCdExportOptions::default(),
-  definitions? : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
+  settings~ : TikzCdExportSettings = TikzCdExportSettings::default(),
+  options~ : TikzCdExportOptions = TikzCdExportOptions::default(),
+  definitions~ : TikzCdExportDefinitions = TikzCdExportDefinitions::default(),
 ) -> String {
   self.export_tikz_cd_result(settings~, options~, definitions~).data
 }
-

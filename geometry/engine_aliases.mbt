@@ -1,4 +1,4 @@
-﻿///|
+///|
 type Point = @engine.Point
 
 ///|

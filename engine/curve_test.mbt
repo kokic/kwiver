@@ -2,7 +2,7 @@
 fn assert_close(
   actual : Double,
   expected : Double,
-  tolerance? : Double = 0.0001,
+  tolerance~ : Double = 0.0001,
 ) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")

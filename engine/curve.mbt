@@ -37,7 +37,7 @@ pub struct CurvePoint {
 
 ///|
 pub fn CurvePoint::new(point : Point, t : Double, angle : Double) -> CurvePoint {
-  { x: point.x, y: point.y, t, angle }
+  { x: point.x, y: point.y, t, angle, }
 }
 
 ///|
@@ -60,7 +60,7 @@ pub fn Bezier::new(
   h : Double,
   angle : Double,
 ) -> Bezier {
-  { origin, w, h, angle }
+  { origin, w, h, angle, }
 }
 
 ///|
@@ -140,7 +140,7 @@ pub fn Bezier::arc_length(self : Bezier, t : Double) -> Double {
 ///|
 pub fn Bezier::t_after_length(
   self : Bezier,
-  clamp? : Bool = false,
+  clamp~ : Bool = false,
 ) -> (Double) -> Double {
   let (points, _) = self.delineate(1.0)
 
@@ -273,7 +273,7 @@ pub fn Arc::arc_length(self : Arc, t : Double) -> Double {
 ///|
 pub fn Arc::t_after_length(
   self : Arc,
-  clamp? : Bool = false,
+  clamp~ : Bool = false,
 ) -> (Double) -> Double {
   (length : Double) => {
     if length < 0.0 {

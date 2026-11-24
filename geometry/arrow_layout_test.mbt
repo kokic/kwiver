@@ -1,8 +1,8 @@
-﻿///|
+///|
 fn assert_close_layout(
   actual : Double,
   expected : Double,
-  tolerance? : Double = 0.001,
+  tolerance~ : Double = 0.001,
 ) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")
@@ -11,7 +11,12 @@ fn assert_close_layout(
 
 ///|
 test "arrow layout clips source rounded rectangle" {
-  let source = ArrowShape::rounded_rect(@engine.Point::new(0.0, 0.0), 20.0, 20.0, 4.0)
+  let source = ArrowShape::rounded_rect(
+    @engine.Point::new(0.0, 0.0),
+    20.0,
+    20.0,
+    4.0,
+  )
   let target = ArrowShape::endpoint(@engine.Point::new(100.0, 0.0))
   let options = @engine.EdgeOptions::default()
   let model = ArrowCurveModel::new(source.origin(), target.origin(), options)
@@ -66,4 +71,3 @@ test "arrow layout label left-right differs" {
     abort("unexpected label offset directions")
   }
 }
-

@@ -5,15 +5,15 @@ pub struct FletcherExportSettings {
 
 ///|
 pub fn FletcherExportSettings::default() -> FletcherExportSettings {
-  { centre_diagram: false }
+  { centre_diagram: false, }
 }
 
 ///|
 pub fn FletcherExportSettings::with_centre_diagram(
   _self : FletcherExportSettings,
-  value? : Bool = true,
+  value~ : Bool = true,
 ) -> FletcherExportSettings {
-  { centre_diagram: value }
+  { centre_diagram: value, }
 }
 
 ///|
@@ -25,7 +25,7 @@ pub struct FletcherExportOptions {
 
 ///|
 pub fn FletcherExportOptions::default() -> FletcherExportOptions {
-  { share_base_url: None, macro_url: None, renderer: None }
+  { share_base_url: None, macro_url: None, renderer: None, }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub fn FletcherExportOptions::with_share_base_url(
 pub fn FletcherExportOptions::without_share_base_url(
   self : FletcherExportOptions,
 ) -> FletcherExportOptions {
-  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer }
+  { share_base_url: None, macro_url: self.macro_url, renderer: self.renderer, }
 }
 
 ///|
@@ -123,7 +123,7 @@ fn fletcher_arg_list(args : Array[String]) -> String {
 }
 
 ///|
-fn fletcher_repeat(token : String, count : Int) -> String {
+fn fletcher_repeat(token : String, count : Int32) -> String {
   if count <= 0 {
     return ""
   }
@@ -135,7 +135,7 @@ fn fletcher_repeat(token : String, count : Int) -> String {
 }
 
 ///|
-fn fletcher_round_to_int(x : Double) -> Int {
+fn fletcher_round_to_int(x : Double) -> Int32 {
   if x >= 0.0 {
     @math.floor(x + 0.5).to_int()
   } else {
@@ -159,7 +159,7 @@ fn fletcher_colour_to_typst_hsl(colour : Colour) -> String {
 }
 
 ///|
-fn fletcher_int_sign(value : Int) -> Double {
+fn fletcher_int_sign(value : Int32) -> Double {
   if value > 0 {
     1.0
   } else if value < 0 {
@@ -265,11 +265,11 @@ fn fletcher_wrap_output(
 ///|
 pub fn Quiver::export_fletcher(
   self : Quiver,
-  settings? : FletcherExportSettings = FletcherExportSettings::default(),
-  options? : FletcherExportOptions = FletcherExportOptions::default(),
+  settings~ : FletcherExportSettings = FletcherExportSettings::default(),
+  options~ : FletcherExportOptions = FletcherExportOptions::default(),
 ) -> String {
   let vertices : Array[Vertex] = []
-  let vertices_by_id : @hashmap.HashMap[Int, Vertex] = @hashmap.new()
+  let vertices_by_id : @hashmap.HashMap[Int32, Vertex] = @hashmap.new()
   let edges : Array[Edge] = []
 
   for cell in self.all_cells() {
@@ -385,7 +385,7 @@ pub fn Quiver::export_fletcher(
         if edge.source == edge.target {
           let loop_bend = fletcher_int_sign(edge.options.radius) *
             (
-              (Int::abs(edge.options.radius).to_double() - 1.0) *
+              (Int32::abs(edge.options.radius).to_double() - 1.0) *
               (150.0 - 130.0) /
               4.0 +
               130.0
@@ -427,7 +427,7 @@ pub fn Quiver::export_fletcher(
 ///|
 pub fn Quiver::import_fletcher_result(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Base64ShareImportResult raise {
   Quiver::import_base64_share_text(input, default_renderer~)
 }
@@ -435,7 +435,7 @@ pub fn Quiver::import_fletcher_result(
 ///|
 pub fn Quiver::import_fletcher(
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> Quiver raise {
   Quiver::import_fletcher_result(input, default_renderer~).quiver
 }

@@ -105,7 +105,7 @@ priv struct ArrowHeadRenderContext {
   dash_padding_start : Double
   dash_padding_end : Double
   offset : Point
-  level : Int
+  level : Int32
   direction_angle : Double
 }
 
@@ -129,7 +129,11 @@ fn arrow_render_max(left : Double, right : Double) -> Double {
 }
 
 ///|
-fn arrow_render_clamp(minimum : Double, value : Double, maximum : Double) -> Double {
+fn arrow_render_clamp(
+  minimum : Double,
+  value : Double,
+  maximum : Double,
+) -> Double {
   if value < minimum {
     minimum
   } else if value > maximum {
@@ -162,9 +166,13 @@ fn arrow_render_curve(
   loop_angle : Double,
 ) -> ArrowRenderCurveData {
   if !shape_is_arc {
-    ArrowRenderCurveData::Bezier(Bezier::new(arrow_render_zero_point(), length, curve, 0.0))
+    ArrowRenderCurveData::Bezier(
+      Bezier::new(arrow_render_zero_point(), length, curve, 0.0),
+    )
   } else if is_loop {
-    ArrowRenderCurveData::Arc(Arc::new(arrow_render_zero_point(), length, true, curve, loop_angle))
+    ArrowRenderCurveData::Arc(
+      Arc::new(arrow_render_zero_point(), length, true, curve, loop_angle),
+    )
   } else {
     ArrowRenderCurveData::Arc(arrow_render_arc_for_chord(length, curve))
   }
@@ -182,12 +190,19 @@ fn arrow_render_arc_for_chord(chord : Double, loop_radius : Double) -> Arc {
   let r_for_sagitta = sagitta / 2.0 + chord * chord / (8.0 * sagitta)
   let r = if chord <= ARROW_RENDER_ARC_INNER_DIS {
     semicircle_radius +
-    (ARROW_RENDER_ARC_INNER_DIS - chord) / ARROW_RENDER_ARC_INNER_DIS *
+    (ARROW_RENDER_ARC_INNER_DIS - chord) /
+    ARROW_RENDER_ARC_INNER_DIS *
     (loop_radius - semicircle_radius)
   } else {
     r_for_sagitta
   }
-  Arc::new(arrow_render_zero_point(), chord, chord <= ARROW_RENDER_ARC_INNER_DIS, r, 0.0)
+  Arc::new(
+    arrow_render_zero_point(),
+    chord,
+    chord <= ARROW_RENDER_ARC_INNER_DIS,
+    r,
+    0.0,
+  )
 }
 
 ///|
@@ -199,7 +214,10 @@ fn arrow_render_curve_point(curve : ArrowRenderCurveData, t : Double) -> Point {
 }
 
 ///|
-fn arrow_render_curve_tangent(curve : ArrowRenderCurveData, t : Double) -> Double {
+fn arrow_render_curve_tangent(
+  curve : ArrowRenderCurveData,
+  t : Double,
+) -> Double {
   match curve {
     ArrowRenderCurveData::Bezier(bezier) => bezier.tangent(t)
     ArrowRenderCurveData::Arc(arc) => arc.tangent(t)
@@ -207,7 +225,10 @@ fn arrow_render_curve_tangent(curve : ArrowRenderCurveData, t : Double) -> Doubl
 }
 
 ///|
-fn arrow_render_curve_arc_length(curve : ArrowRenderCurveData, t : Double) -> Double {
+fn arrow_render_curve_arc_length(
+  curve : ArrowRenderCurveData,
+  t : Double,
+) -> Double {
   match curve {
     ArrowRenderCurveData::Bezier(bezier) => bezier.arc_length(t)
     ArrowRenderCurveData::Arc(arc) => arc.arc_length(t)
@@ -220,7 +241,8 @@ fn arrow_render_curve_t_after_length(
   length : Double,
 ) -> Double {
   match curve {
-    ArrowRenderCurveData::Bezier(bezier) => bezier.t_after_length(clamp=true)(length)
+    ArrowRenderCurveData::Bezier(bezier) =>
+      bezier.t_after_length(clamp=true)(length)
     ArrowRenderCurveData::Arc(arc) => arc.t_after_length(clamp=true)(length)
   }
 }
@@ -242,31 +264,36 @@ fn arrow_render_curve_width(curve : ArrowRenderCurveData) -> Double {
 }
 
 ///|
-fn arrow_render_part_none(total_width? : Double = 0.0) -> ArrowHeadRenderPartPlan {
-  { has_path: false, d: "", total_width }
+fn arrow_render_part_none(
+  total_width~ : Double = 0.0,
+) -> ArrowHeadRenderPartPlan {
+  { has_path: false, d: "", total_width, }
 }
 
 ///|
 fn arrow_render_path_none() -> ArrowPathRenderPlan {
-  { d: "", dash_array: None }
+  { d: "", dash_array: None, }
 }
 
 ///|
 fn arrow_render_path_plan(
   d : String,
-  dash_array? : String? = None,
+  dash_array~ : String? = None,
 ) -> ArrowPathRenderPlan {
-  { d, dash_array }
+  { d, dash_array, }
 }
 
 ///|
-fn arrow_render_circle_plan(point : Point, radius : Double) -> ArrowCircleRenderPlan {
-  { cx: point.x, cy: point.y, r: radius }
+fn arrow_render_circle_plan(
+  point : Point,
+  radius : Double,
+) -> ArrowCircleRenderPlan {
+  { cx: point.x, cy: point.y, r: radius, }
 }
 
 ///|
 fn arrow_render_decoration_none() -> ArrowBodyDecorationRenderPlan {
-  { kind: "none", path_d: "", circle: None, mask_circle: None }
+  { kind: "none", path_d: "", circle: None, mask_circle: None, }
 }
 
 ///|
@@ -275,16 +302,16 @@ fn arrow_render_commands_to_part(
   total_width : Double,
 ) -> ArrowHeadRenderPartPlan {
   if commands.is_empty() {
-    arrow_render_part_none(total_width=total_width)
+    arrow_render_part_none(total_width~)
   } else {
-    { has_path: true, d: commands.join("\n"), total_width }
+    { has_path: true, d: commands.join("\n"), total_width, }
   }
 }
 
 ///|
 fn arrow_render_commands_to_path_plan(
   commands : Array[String],
-  dash_array? : String? = None,
+  dash_array~ : String? = None,
 ) -> ArrowPathRenderPlan {
   if commands.is_empty() {
     arrow_render_path_none()
@@ -333,8 +360,7 @@ fn arrow_render_curve_by(
       control.y.to_string(),
       next.x.to_string(),
       next.y.to_string(),
-    ]
-    .join(" "),
+    ].join(" "),
   )
 }
 
@@ -357,21 +383,25 @@ fn arrow_render_arc_by(
       arrow_render_bool_digit(clockwise),
       next.x.to_string(),
       next.y.to_string(),
-    ]
-    .join(" "),
+    ].join(" "),
   )
 }
 
 ///|
-fn arrow_render_curve_path(commands : Array[String], curve : ArrowRenderCurveData, offset : Point) -> Unit {
+fn arrow_render_curve_path(
+  commands : Array[String],
+  curve : ArrowRenderCurveData,
+  offset : Point,
+) -> Unit {
   arrow_render_move_to(commands, offset)
   match curve {
-    ArrowRenderCurveData::Bezier(bezier) => arrow_render_curve_by(
-      commands,
-      Point::new(bezier.w / 2.0, bezier.h),
-      Point::new(bezier.w, 0.0),
-    )
-    ArrowRenderCurveData::Arc(arc) => {
+    ArrowRenderCurveData::Bezier(bezier) =>
+      arrow_render_curve_by(
+        commands,
+        Point::new(bezier.w / 2.0, bezier.h),
+        Point::new(bezier.w, 0.0),
+      )
+    ArrowRenderCurveData::Arc(arc) =>
       if !arc.major && Double::abs(arc.sagitta) <= 1.0 {
         arrow_render_line_by(commands, Point::new(arc.chord, 0.0))
       } else {
@@ -385,7 +415,6 @@ fn arrow_render_curve_path(commands : Array[String], curve : ArrowRenderCurveDat
           Point::new(arc.chord, 0.0),
         )
       }
-    }
   }
 }
 
@@ -410,8 +439,7 @@ fn arrow_render_dash_array(
     arclen_to_start.to_string(),
     arrow_render_string_array(dashes),
     (arclen - arclen_to_end).to_string(),
-  ]
-  .join(" ")
+  ].join(" ")
 }
 
 ///|
@@ -434,7 +462,10 @@ fn arrow_render_styles_have_hook(styles : Array[String]) -> Bool {
 }
 
 ///|
-fn arrow_render_head_margins(style : String, head_width : Double) -> (Double, Double, Double) {
+fn arrow_render_head_margins(
+  style : String,
+  head_width : Double,
+) -> (Double, Double, Double) {
   match style {
     "epi" => (0.0, head_width, 0.0)
     "corner" => (0.0, head_width, 0.0)
@@ -493,8 +524,10 @@ fn arrow_render_draw_epi_like(
       angle,
       false,
       side_ind,
-      Point::new(start_sign * context.head_width, side_sign * context.head_height / 2.0)
-      .rotate(angle),
+      Point::new(
+        start_sign * context.head_width,
+        side_sign * context.head_height / 2.0,
+      ).rotate(angle),
     )
     if is_mask {
       let distance = match head_style {
@@ -535,9 +568,11 @@ fn arrow_render_draw_corner(
   }
   let base_point = arrow_render_curve_point(
     context.curve,
-    arrow_render_curve_t_after_length(context.curve, arclen_to_head + base_shift),
-  )
-  .add(context.offset)
+    arrow_render_curve_t_after_length(
+      context.curve,
+      arclen_to_head + base_shift,
+    ),
+  ).add(context.offset)
   let pi_4 = @math.PI / 4.0
   let end_rotation = if end_ind { 1.0 } else { 0.0 }
   let corner_angle = (if is_inverse { 0.0 } else { @math.PI }) +
@@ -571,7 +606,10 @@ fn arrow_render_heads(
   let end_ind = !is_start
   let commands : Array[String] = []
   let mut total_width = 0.0
-  let arclen_to_endpoint = arrow_render_curve_arc_length(context.curve, endpoint.t) +
+  let arclen_to_endpoint = arrow_render_curve_arc_length(
+      context.curve,
+      endpoint.t,
+    ) +
     (if is_start {
       context.shorten_start + context.shorten_tail
     } else {
@@ -590,29 +628,37 @@ fn arrow_render_heads(
     let t = arrow_render_curve_t_after_length(context.curve, arclen_to_endpoint)
     let angle = arrow_render_curve_tangent(context.curve, t)
     let point = arrow_render_curve_point(context.curve, t)
-    .add(context.offset)
-    .add(
-      Point::new(
-        0.0,
-        side_sign * context.stroke_width / 2.0 -
-        side_sign * ARROW_RENDER_STROKE_WIDTH / 2.0,
+      .add(context.offset)
+      .add(
+        Point::new(
+          0.0,
+          side_sign * context.stroke_width / 2.0 -
+          side_sign * ARROW_RENDER_STROKE_WIDTH / 2.0,
+        ).rotate(angle),
       )
-      .rotate(angle),
-    )
     arrow_render_move_to(commands, point)
     arrow_render_arc_by(
       commands,
       Point::new(start_sign * context.head_width, edge_bottom),
       angle,
       false,
-      if side_sign == 1.0 { end_ind } else { !end_ind },
-      Point::new(start_sign * context.head_width, -edge_bottom * side_sign).rotate(angle),
+      if side_sign == 1.0 {
+        end_ind
+      } else {
+        !end_ind
+      },
+      Point::new(start_sign * context.head_width, -edge_bottom * side_sign).rotate(
+        angle,
+      ),
     )
     total_width = context.head_width
     if is_mask {
       arrow_render_line_by(
         commands,
-        Point::lendir(-start_sign * (context.head_width + ARROW_RENDER_MASK_PADDING), angle),
+        Point::lendir(
+          -start_sign * (context.head_width + ARROW_RENDER_MASK_PADDING),
+          angle,
+        ),
       )
       arrow_render_line_by(
         commands,
@@ -639,24 +685,28 @@ fn arrow_render_heads(
     let mask_adjustment = 0.5
     for i in 0..<context.level {
       let point = base_point
-      .add(context.offset)
-      .add(
-        Point::new(
-          mask_adjustment,
-          side_sign * context.stroke_width / 2.0 -
-          side_sign * ARROW_RENDER_STROKE_WIDTH / 2.0 -
-          side_sign * (ARROW_RENDER_LINE_SPACING + ARROW_RENDER_STROKE_WIDTH) *
-          i.to_double(),
+        .add(context.offset)
+        .add(
+          Point::new(
+            mask_adjustment,
+            side_sign * context.stroke_width / 2.0 -
+            side_sign * ARROW_RENDER_STROKE_WIDTH / 2.0 -
+            side_sign *
+            (ARROW_RENDER_LINE_SPACING + ARROW_RENDER_STROKE_WIDTH) *
+            i.to_double(),
+          ).rotate(angle),
         )
-        .rotate(angle),
-      )
       arrow_render_move_to(commands, point)
       arrow_render_arc_by(
         commands,
         Point::new(start_sign * context.head_width, context.head_width),
         angle,
         false,
-        if side_sign == 1.0 { end_ind } else { !end_ind },
+        if side_sign == 1.0 {
+          end_ind
+        } else {
+          !end_ind
+        },
         Point::new(0.0, side_sign * context.head_width * 2.0).rotate(angle),
       )
     }
@@ -675,7 +725,8 @@ fn arrow_render_heads(
       heads_arclen += margin_begin
     } else {
       let collapse = if styles[i] == styles[i - 1] { 2.0 } else { 1.0 }
-      heads_arclen += (prev_margin + margin_right) / collapse + ARROW_RENDER_HEAD_SPACING
+      heads_arclen += (prev_margin + margin_right) / collapse +
+        ARROW_RENDER_HEAD_SPACING
     }
     prev_margin = margin_left
     arclens_to_head.push(heads_arclen)
@@ -693,50 +744,37 @@ fn arrow_render_heads(
       let angle = arrow_render_curve_tangent(context.curve, t)
 
       match head_style {
-        "mono" => arrow_render_draw_epi_like(
-          commands,
-          context,
-          point,
-          angle + @math.PI,
-          start_sign,
-          end_ind,
-          is_mask,
-          is_start,
-          "mono",
-        )
-        "epi" => arrow_render_draw_epi_like(
-          commands,
-          context,
-          point,
-          angle,
-          start_sign,
-          end_ind,
-          is_mask,
-          is_start,
-          "epi",
-        )
-        "corner" => arrow_render_draw_corner(
-          commands,
-          context,
-          point,
-          arclen_to_head,
-          start_sign,
-          end_ind,
-          false,
-        )
-        "corner-inverse" => arrow_render_draw_corner(
-          commands,
-          context,
-          point,
-          arclen_to_head,
-          start_sign,
-          end_ind,
-          true,
-        )
+        "mono" =>
+          arrow_render_draw_epi_like(
+            commands,
+            context,
+            point,
+            angle + @math.PI,
+            start_sign,
+            end_ind,
+            is_mask,
+            is_start,
+            "mono",
+          )
+        "epi" =>
+          arrow_render_draw_epi_like(
+            commands, context, point, angle, start_sign, end_ind, is_mask, is_start,
+            "epi",
+          )
+        "corner" =>
+          arrow_render_draw_corner(
+            commands, context, point, arclen_to_head, start_sign, end_ind, false,
+          )
+        "corner-inverse" =>
+          arrow_render_draw_corner(
+            commands, context, point, arclen_to_head, start_sign, end_ind, true,
+          )
         "maps to" => {
           arrow_render_move_to(
             commands,
-            point.add(Point::lendir(context.head_height / 2.0, angle + @math.PI / 2.0)),
+            point.add(
+              Point::lendir(context.head_height / 2.0, angle + @math.PI / 2.0),
+            ),
           )
           arrow_render_line_by(
             commands,
@@ -769,7 +807,10 @@ fn arrow_render_body_decoration(
     start.t,
     arrow_render_curve_t_after_length(curve, arclen_to_start + shorten_tail),
   )
-  let end_t_raw = arrow_render_curve_t_after_length(curve, arclen_to_end - shorten_head)
+  let end_t_raw = arrow_render_curve_t_after_length(
+    curve,
+    arclen_to_end - shorten_head,
+  )
   let end_t = if end_t_raw < end.t { end_t_raw } else { end.t }
   let mid = (start_t + end_t) / 2.0
 
@@ -784,7 +825,11 @@ fn arrow_render_body_decoration(
       for bar_offset in [-2.5, 2.5] {
         let bar_t = arrow_render_curve_t_after_length(
           curve,
-          arrow_render_clamp(arclen_to_start, arclen_to_mid + bar_offset, arclen_to_end),
+          arrow_render_clamp(
+            arclen_to_start,
+            arclen_to_mid + bar_offset,
+            arclen_to_end,
+          ),
         )
         let centre = arrow_render_curve_point(curve, bar_t).add(offset)
         arrow_render_move_to(commands, centre.sub(adj_seg_2.rotate(normal)))
@@ -849,7 +894,7 @@ fn arrow_render_edge_path(
   offset : Point,
   body_style : String,
   dash_style : String,
-  level : Int,
+  level : Int32,
   shorten_start : Double,
   shorten_end : Double,
   shorten_tail : Double,
@@ -860,9 +905,11 @@ fn arrow_render_edge_path(
   total_width_of_heads : Double,
 ) -> ArrowPathRenderPlan {
   let mut arclen_to_start = arrow_render_curve_arc_length(curve, start.t) +
-    (shorten_tail + shorten_start) - dash_padding_start
+    (shorten_tail + shorten_start) -
+    dash_padding_start
   let mut arclen_to_end = arrow_render_curve_arc_length(curve, end.t) -
-    (shorten_head + shorten_end) + dash_padding_end
+    (shorten_head + shorten_end) +
+    dash_padding_end
   let mut arclen = arrow_render_curve_arc_length(curve, 1.0)
   let half_wavelength = ARROW_RENDER_SQUIGGLY_TRIANGLE_HEIGHT * 2.0
   let commands : Array[String] = []
@@ -888,14 +935,15 @@ fn arrow_render_edge_path(
       arrow_render_line_by(commands, adj_seg.rotate(normal))
     }
     "squiggly" => {
-      let arclen_to_squiggle_start =
-        arclen_to_start + total_width_of_tails + ARROW_RENDER_SQUIGGLY_PADDING
+      let arclen_to_squiggle_start = arclen_to_start +
+        total_width_of_tails +
+        ARROW_RENDER_SQUIGGLY_PADDING
       let squiggle_start_point = arrow_render_curve_point(
         curve,
         arrow_render_curve_t_after_length(curve, arclen_to_squiggle_start),
       )
-      let arclen_to_squiggle_end =
-        arclen_to_end - (total_width_of_heads + ARROW_RENDER_SQUIGGLY_PADDING)
+      let arclen_to_squiggle_end = arclen_to_end -
+        (total_width_of_heads + ARROW_RENDER_SQUIGGLY_PADDING)
       let start_point = arrow_render_curve_point(
         curve,
         arrow_render_curve_t_after_length(curve, arclen_to_start),
@@ -914,12 +962,16 @@ fn arrow_render_edge_path(
       let mut sign = -1.0
       let mut amplitude = 1
 
-      while l + amplitude.to_double() * half_wavelength / 2.0 < arclen_to_squiggle_end {
+      while l + amplitude.to_double() * half_wavelength / 2.0 <
+            arclen_to_squiggle_end {
         l += half_wavelength / 2.0
         let t = arrow_render_curve_t_after_length(curve, l)
         let angle = arrow_render_curve_tangent(curve, t) + @math.PI / 2.0 * sign
         let next_point = arrow_render_curve_point(curve, t).add(
-          Point::lendir(ARROW_RENDER_SQUIGGLY_TRIANGLE_HEIGHT * amplitude.to_double(), angle),
+          Point::lendir(
+            ARROW_RENDER_SQUIGGLY_TRIANGLE_HEIGHT * amplitude.to_double(),
+            angle,
+          ),
         )
         path_len += next_point.sub(prev_point).length()
         prev_point = next_point
@@ -950,13 +1002,14 @@ fn arrow_render_edge_path(
 
   if dash_style != "solid" {
     match body_style {
-      "squiggly" => {
+      "squiggly" =>
         if level == 1 {
           let dash_offset = 4.0
           dashes = [total_width_of_tails + dash_offset, 0.0]
-          arclen_line -= total_width_of_tails + total_width_of_heads - dash_offset
+          arclen_line -= total_width_of_tails +
+            total_width_of_heads -
+            dash_offset
         }
-      }
       "line" => dashes = []
       "proarrow" => dashes = []
       "double proarrow" => dashes = []
@@ -967,9 +1020,12 @@ fn arrow_render_edge_path(
 
     if body_style == "squiggly" && level > 1 {
       dashes = [arclen_line]
-    } else if body_style == "line" || body_style == "proarrow" ||
-      body_style == "double proarrow" || body_style == "bullet solid" ||
-      body_style == "bullet hollow" || body_style == "squiggly" {
+    } else if body_style == "line" ||
+      body_style == "proarrow" ||
+      body_style == "double proarrow" ||
+      body_style == "bullet solid" ||
+      body_style == "bullet hollow" ||
+      body_style == "squiggly" {
       if arclen_line > 0.0 {
         let triangle_side = half_wavelength * ARROW_RENDER_SQRT_2
         let dash_pairs = if body_style != "squiggly" {
@@ -996,7 +1052,8 @@ fn arrow_render_edge_path(
           }
         }
         if dashes_and_gaps > whole_pairs.to_double() {
-          let mut deficit = arclen_line - whole_pairs.to_double() * dash_gap_length
+          let mut deficit = arclen_line -
+            whole_pairs.to_double() * dash_gap_length
           for part in dash_pairs {
             if part <= deficit {
               dashes.push(part)
@@ -1047,8 +1104,7 @@ fn arrow_render_background_path(
         arclen_to_start.to_string(),
         (arclen_to_end - arclen_to_start).to_string(),
         @math.ceil(arclen - arclen_to_end).to_string(),
-      ]
-      .join(" "),
+      ].join(" "),
     ),
   )
 }
@@ -1071,27 +1127,25 @@ fn arrow_render_clipping_path(
     commands,
     dash_array=Some(
       [
-        (arclen_to_start + shorten_tail + shorten_start + ARROW_RENDER_ENDPOINT_PADDING)
-        .to_string(),
+        (arclen_to_start +
+        shorten_tail +
+        shorten_start +
+        ARROW_RENDER_ENDPOINT_PADDING).to_string(),
+        (arclen_to_end -
         (
-          arclen_to_end -
-          (
-            arclen_to_start +
-            shorten_start +
-            shorten_tail +
-            ARROW_RENDER_ENDPOINT_PADDING * 2.0 +
-            shorten_head +
-            shorten_end
-          )
-        )
-        .to_string(),
-        (
-          arclen - arclen_to_end + shorten_head + shorten_end +
-          ARROW_RENDER_ENDPOINT_PADDING
-        )
-        .to_string(),
-      ]
-      .join(" "),
+          arclen_to_start +
+          shorten_start +
+          shorten_tail +
+          ARROW_RENDER_ENDPOINT_PADDING * 2.0 +
+          shorten_head +
+          shorten_end
+        )).to_string(),
+        (arclen -
+        arclen_to_end +
+        shorten_head +
+        shorten_end +
+        ARROW_RENDER_ENDPOINT_PADDING).to_string(),
+      ].join(" "),
     ),
   )
 }
@@ -1128,7 +1182,7 @@ pub fn arrow_render_plan_local(
   loop_angle : Double,
   start : CurvePoint,
   end : CurvePoint,
-  level : Int,
+  level : Int32,
   stroke_width : Double,
   edge_width : Double,
   head_width : Double,
@@ -1142,7 +1196,9 @@ pub fn arrow_render_plan_local(
   tails : Array[String],
   heads : Array[String],
 ) -> ArrowRenderPlan {
-  let curve_data = arrow_render_curve(shape_is_arc, is_loop, length, curve, loop_angle)
+  let curve_data = arrow_render_curve(
+    shape_is_arc, is_loop, length, curve, loop_angle,
+  )
   let curve_width = arrow_render_curve_width(curve_data)
   let curve_height = 2.0 * Double::abs(arrow_render_curve_height(curve_data))
   let padding = ARROW_RENDER_BACKGROUND_PADDING +
@@ -1153,23 +1209,21 @@ pub fn arrow_render_plan_local(
   )
   let svg_width = curve_width + padding * 2.0
   let svg_height = curve_height + padding * 2.0
-  let shorten_start = if arrow_render_styles_have_hook(tails) { head_width } else { 0.0 }
-  let shorten_end = if arrow_render_styles_have_hook(heads) { head_width } else { 0.0 }
+  let shorten_start = if arrow_render_styles_have_hook(tails) {
+    head_width
+  } else {
+    0.0
+  }
+  let shorten_end = if arrow_render_styles_have_hook(heads) {
+    head_width
+  } else {
+    0.0
+  }
   let dash_padding_start = arrow_render_adjust_dash_padding(
-    curve_data,
-    tails,
-    start,
-    true,
-    head_width,
-    edge_width,
+    curve_data, tails, start, true, head_width, edge_width,
   )
   let dash_padding_end = arrow_render_adjust_dash_padding(
-    curve_data,
-    heads,
-    end,
-    false,
-    head_width,
-    edge_width,
+    curve_data, heads, end, false, head_width, edge_width,
   )
   let context = {
     curve: curve_data,
@@ -1191,19 +1245,13 @@ pub fn arrow_render_plan_local(
   let head = arrow_render_heads(context, heads, end, false, false)
   let head_mask = arrow_render_heads(context, heads, end, false, true)
   let decoration = arrow_render_body_decoration(
-    curve_data,
-    start,
-    end,
-    shorten_tail,
-    shorten_head,
-    head_height,
-    offset,
-    body_style,
+    curve_data, start, end, shorten_tail, shorten_head, head_height, offset, body_style,
   )
   let arclen_to_start = arrow_render_curve_arc_length(curve_data, start.t)
   let arclen_to_end = arrow_render_curve_arc_length(curve_data, end.t)
   let arclen = arrow_render_curve_arc_length(curve_data, 1.0)
-  let edge_valid = arclen_to_end - arclen_to_start -
+  let edge_valid = arclen_to_end -
+    arclen_to_start -
     shorten_tail -
     shorten_head -
     shorten_start -
@@ -1224,11 +1272,7 @@ pub fn arrow_render_plan_local(
     start,
     end,
     background: arrow_render_background_path(
-      curve_data,
-      offset,
-      arclen_to_start,
-      arclen_to_end,
-      arclen,
+      curve_data, offset, arclen_to_start, arclen_to_end, arclen,
     ),
     edge: if edge_valid {
       arrow_render_edge_path(
@@ -1253,15 +1297,8 @@ pub fn arrow_render_plan_local(
     },
     clipping_path: if edge_valid {
       arrow_render_clipping_path(
-        curve_data,
-        offset,
-        arclen_to_start,
-        arclen_to_end,
-        arclen,
-        shorten_start,
-        shorten_end,
-        shorten_tail,
-        shorten_head,
+        curve_data, offset, arclen_to_start, arclen_to_end, arclen, shorten_start,
+        shorten_end, shorten_tail, shorten_head,
       )
     } else {
       arrow_render_path_none()

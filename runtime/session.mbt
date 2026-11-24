@@ -70,7 +70,7 @@ fn runtime_optional_string_json(value : String?) -> Json {
 }
 
 ///|
-fn runtime_int_array_json(values : Array[Int]) -> Json {
+fn runtime_int_array_json(values : Array[Int32]) -> Json {
   let out : Array[Json] = []
   for value in values {
     out.push(Json::number(value.to_double()))
@@ -79,7 +79,7 @@ fn runtime_int_array_json(values : Array[Int]) -> Json {
 }
 
 ///|
-fn runtime_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
+fn runtime_int_arrays_equal(lhs : Array[Int32], rhs : Array[Int32]) -> Bool {
   if lhs.length() != rhs.length() {
     return false
   }
@@ -94,8 +94,8 @@ fn runtime_int_arrays_equal(lhs : Array[Int], rhs : Array[Int]) -> Bool {
 ///|
 fn runtime_state_json(
   payload : String,
-  selection : Array[Int],
-  cell_ids : Array[Int],
+  selection : Array[Int32],
+  cell_ids : Array[Int32],
 ) -> Json {
   Json::object({
     "payload": Json::string(payload),
@@ -127,7 +127,7 @@ fn runtime_dispatch_error_output(action : String, message : String) -> String {
 ///|
 pub struct BrowserDemoSession {
   runtime : BrowserRuntime
-  mut command_sequence : Int
+  mut command_sequence : Int32
 }
 
 ///|
@@ -139,8 +139,12 @@ fn BrowserDemoSession::dispatch_json_safe(
 }
 
 ///|
-fn BrowserDemoSession::query_result(self : BrowserDemoSession, action : String) -> Json? {
-  match runtime_parse_json_object(self.dispatch_json_safe(runtime_action(action))) {
+fn BrowserDemoSession::query_result(
+  self : BrowserDemoSession,
+  action : String,
+) -> Json? {
+  match
+    runtime_parse_json_object(self.dispatch_json_safe(runtime_action(action))) {
     Some(root) => root.get("result")
     None => None
   }
@@ -190,10 +194,7 @@ fn BrowserDemoSession::all_cell_ids(self : BrowserDemoSession) -> Array[Int] {
 
 ///|
 pub fn BrowserDemoSession::new() -> BrowserDemoSession {
-  {
-    runtime: ffi_runtime_new(),
-    command_sequence: 0,
-  }
+  { runtime: ffi_runtime_new(), command_sequence: 0, }
 }
 
 ///|
@@ -220,37 +221,26 @@ pub fn BrowserDemoSession::dispatch_command_json(
       origin = runtime_json_optional_string(command_root, "origin")
       command_id = runtime_json_optional_string(command_root, "command_id")
       requested_action = runtime_json_string_or(
-        command_root,
-        "action",
-        requested_action,
+        command_root, "action", requested_action,
       )
       match runtime_json_optional_string(command_root, "protocol") {
         Some(requested_protocol) =>
           if requested_protocol != protocol {
             protocol_error = Some(
               [
-                "command protocol mismatch: expected ",
-                protocol,
-                ", got ",
-                requested_protocol,
+                "command protocol mismatch: expected ", protocol, ", got ", requested_protocol,
               ].join(""),
             )
           }
         None =>
           protocol_error = Some(
-            [
-              "missing command protocol: expected ",
-              protocol,
-            ].join(""),
+            ["missing command protocol: expected ", protocol].join(""),
           )
       }
     }
     None =>
       protocol_error = Some(
-        [
-          "malformed command envelope: expected protocol ",
-          protocol,
-        ].join(""),
+        ["malformed command envelope: expected protocol ", protocol].join(""),
       )
   }
 
@@ -288,16 +278,8 @@ pub fn BrowserDemoSession::dispatch_command_json(
 
   // Read-only commands still get a full envelope, but only material state
   // changes should create undo/redo checkpoints.
-  let undo_checkpoint = if changed {
-    Some(before_payload)
-  } else {
-    None
-  }
-  let redo_checkpoint = if changed {
-    Some(after_payload)
-  } else {
-    None
-  }
+  let undo_checkpoint = if changed { Some(before_payload) } else { None }
+  let redo_checkpoint = if changed { Some(after_payload) } else { None }
 
   Json::object({
     "sequence": Json::number(sequence.to_double()),
@@ -312,15 +294,9 @@ pub fn BrowserDemoSession::dispatch_command_json(
     "undo_checkpoint": runtime_optional_string_json(undo_checkpoint),
     "redo_checkpoint": runtime_optional_string_json(redo_checkpoint),
     "before": runtime_state_json(
-      before_payload,
-      before_selection,
-      before_cell_ids,
+      before_payload, before_selection, before_cell_ids,
     ),
-    "after": runtime_state_json(
-      after_payload,
-      after_selection,
-      after_cell_ids,
-    ),
+    "after": runtime_state_json(after_payload, after_selection, after_cell_ids),
   }).stringify()
 }
 

@@ -13,7 +13,7 @@ pub fn RoundedRectangle::new(
   height : Double,
   radius : Double,
 ) -> RoundedRectangle {
-  { centre, width, height, radius }
+  { centre, width, height, radius, }
 }
 
 ///|
@@ -87,7 +87,12 @@ fn curve_check_for_containment(
   rect : RoundedRectangle,
   permit_containment : Bool,
 ) -> Array[CurvePoint] {
-  let sharp_rect = RoundedRectangle::new(rect.centre, rect.width, rect.height, 0.0)
+  let sharp_rect = RoundedRectangle::new(
+    rect.centre,
+    rect.width,
+    rect.height,
+    0.0,
+  )
   if curve_point_inside_polygon(origin, sharp_rect.points()) {
     if permit_containment {
       return [CurvePoint::new(rect.centre, 0.0, 0.0)]
@@ -115,14 +120,16 @@ fn curve_normalised_bezier_x_intersections_with_nonvertical_line(
 }
 
 ///|
-fn curve_normalised_bezier_y_intersection_with_vertical_line(a : Double) -> Double {
+fn curve_normalised_bezier_y_intersection_with_vertical_line(
+  a : Double,
+) -> Double {
   2.0 * a * (1.0 - a)
 }
 
 ///|
 pub fn RoundedRectangle::points(
   self : RoundedRectangle,
-  max_segment_length? : Double = 5.0,
+  max_segment_length~ : Double = 5.0,
 ) -> Array[Point] {
   let points : Array[Point] = []
 
@@ -147,15 +154,18 @@ pub fn RoundedRectangle::points(
     half_size : Point,
     radius_point : Point,
     polygon_radius : Double,
-    quarter_steps : Int,
+    quarter_steps : Int32,
     sx : Double,
     sy : Double,
     angle_offset : Double,
   ) -> Double {
-    let corner_centre = rect.centre.add(half_size.sub(radius_point).scale(sx, sy))
+    let corner_centre = rect.centre.add(
+      half_size.sub(radius_point).scale(sx, sy),
+    )
     points.push(corner_centre.add(Point::lendir(rect.radius, angle_offset)))
     for i in 0..<quarter_steps {
-      let angle = (i.to_double() + 0.5) / sides.to_double() * 2.0 * @math.PI + angle_offset
+      let angle = (i.to_double() + 0.5) / sides.to_double() * 2.0 * @math.PI +
+        angle_offset
       points.push(corner_centre.add(Point::lendir(polygon_radius, angle)))
     }
     let next_angle = angle_offset + @math.PI / 2.0
@@ -165,49 +175,21 @@ pub fn RoundedRectangle::points(
 
   let mut angle_offset = 0.0
   angle_offset = add_corner_points(
-    points,
-    self,
-    half_size,
-    radius_point,
-    polygon_radius,
-    quarter_steps,
-    1.0,
-    1.0,
+    points, self, half_size, radius_point, polygon_radius, quarter_steps, 1.0, 1.0,
     angle_offset,
   )
   angle_offset = add_corner_points(
-    points,
-    self,
-    half_size,
-    radius_point,
-    polygon_radius,
-    quarter_steps,
-    -1.0,
-    1.0,
+    points, self, half_size, radius_point, polygon_radius, quarter_steps, -1.0, 1.0,
     angle_offset,
   )
   angle_offset = add_corner_points(
-    points,
-    self,
-    half_size,
-    radius_point,
-    polygon_radius,
-    quarter_steps,
-    -1.0,
-    -1.0,
+    points, self, half_size, radius_point, polygon_radius, quarter_steps, -1.0, -1.0,
     angle_offset,
   )
   ignore(
     add_corner_points(
-      points,
-      self,
-      half_size,
-      radius_point,
-      polygon_radius,
-      quarter_steps,
-      1.0,
-      -1.0,
-      angle_offset,
+      points, self, half_size, radius_point, polygon_radius, quarter_steps, 1.0,
+      -1.0, angle_offset,
     ),
   )
 
@@ -290,7 +272,8 @@ pub fn Bezier::intersections_with_rounded_rectangle(
       }
     } else {
       let (m, c) = line_m_c(p0, p1)
-      for x in curve_normalised_bezier_x_intersections_with_nonvertical_line(m, c) {
+      for
+        x in curve_normalised_bezier_x_intersections_with_nonvertical_line(m, c) {
         if x >= 0.0 &&
           x <= 1.0 &&
           x >= Double::min(p0.x, p1.x) &&
@@ -325,8 +308,9 @@ pub fn Arc::intersections_with_rounded_rectangle(
   permit_containment : Bool,
 ) -> Array[CurvePoint] {
   if !self.major && Double::abs(self.sagitta) <= 1.0 {
-    return Bezier::new(self.origin, self.chord, 0.0, self.angle)
-    .intersections_with_rounded_rectangle(rect, permit_containment)
+    return Bezier::new(self.origin, self.chord, 0.0, self.angle).intersections_with_rounded_rectangle(
+      rect, permit_containment,
+    )
   }
 
   let rect_points = rect.points()
@@ -357,7 +341,11 @@ pub fn Arc::intersections_with_rounded_rectangle(
   let intersections : Array[Point] = []
   for i in 0..<iteration_points.length() {
     let p0 = iteration_points[i]
-    let p1 = iteration_points[if i + 1 < iteration_points.length() { i + 1 } else { 0 }]
+    let p1 = iteration_points[if i + 1 < iteration_points.length() {
+        i + 1
+      } else {
+        0
+      }]
     let delta = p1.sub(p0)
     let determinant = p0.x * p1.y - p1.x * p0.y
     let line_square = delta.length() * delta.length()
@@ -367,8 +355,19 @@ pub fn Arc::intersections_with_rounded_rectangle(
       continue
     }
 
-    let roots = if Double::abs(discriminant) <= EPSILON { [0.0] } else { [1.0, -1.0] }
-    let root = @math.pow(if discriminant < 0.0 { 0.0 } else { discriminant }, 0.5)
+    let roots = if Double::abs(discriminant) <= EPSILON {
+      [0.0]
+    } else {
+      [1.0, -1.0]
+    }
+    let root = @math.pow(
+      if discriminant < 0.0 {
+        0.0
+      } else {
+        discriminant
+      },
+      0.5,
+    )
     let y_sign = if delta.y < 0.0 { -1.0 } else { 1.0 }
     for s in roots {
       let x = curve_round_to_epsilon(
@@ -393,7 +392,9 @@ pub fn Arc::intersections_with_rounded_rectangle(
 
   let out : Array[CurvePoint] = []
   for point in intersections {
-    let t = mod_2pi((@math.atan2(point.y, point.x) - self.start_angle) * self.clockwise()) /
+    let t = mod_2pi(
+        (@math.atan2(point.y, point.x) - self.start_angle) * self.clockwise(),
+      ) /
       self.sweep_angle
     out.push(
       CurvePoint::new(

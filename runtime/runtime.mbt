@@ -1,5 +1,5 @@
 ///|
-fn browser_contains_id(ids : Array[Int], target : Int) -> Bool {
+fn browser_contains_id(ids : Array[Int32], target : Int32) -> Bool {
   for id in ids {
     if id == target {
       return true
@@ -17,24 +17,24 @@ fn browser_json_required_field(root : Map[String, Json], key : String) -> Json {
 }
 
 ///|
-fn browser_parse_added_id(result_json : String) -> Int raise {
+fn browser_parse_added_id(result_json : String) -> Int32 raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(result_json))
   @json.from_json(browser_json_required_field(root, "id"))
 }
 
 ///|
-fn browser_parse_removed_ids(result_json : String) -> Array[Int] raise {
+fn browser_parse_removed_ids(result_json : String) -> Array[Int32] raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(result_json))
   @json.from_json(browser_json_required_field(root, "removed_ids"))
 }
 
 ///|
-fn browser_int_array_json_string(values : Array[Int]) -> String {
+fn browser_int_array_json_string(values : Array[Int32]) -> String {
   browser_int_array_json(values).stringify()
 }
 
 ///|
-fn browser_int_array_json(values : Array[Int]) -> Json {
+fn browser_int_array_json(values : Array[Int32]) -> Json {
   let out : Array[Json] = []
   for value in values {
     out.push(Json::number(value.to_double()))
@@ -127,7 +127,7 @@ fn runtime_dispatch_bool_from_object(
 fn runtime_dispatch_optional_int(
   input : Map[String, Json],
   key : String,
-) -> Int? raise {
+) -> Int32? raise {
   match input.get(key) {
     Some(Json::Null) => None
     Some(value) => Some(@json.from_json(value))
@@ -178,9 +178,7 @@ fn runtime_dispatch_many_input(
         browser_json_required_field(config, "actions"),
       )
       let stop_on_error = runtime_dispatch_bool_from_object(
-        config,
-        "stop_on_error",
-        false,
+        config, "stop_on_error", false,
       )
       (actions, stop_on_error)
     }
@@ -265,7 +263,7 @@ fn runtime_dispatch_safe_error_json(
   action : String,
   error : String,
   payload : String,
-  selection : Array[Int],
+  selection : Array[Int32],
 ) -> String {
   Json::object({
     "ok": Json::boolean(false),
@@ -281,7 +279,7 @@ fn runtime_dispatch_safe_error_json(
 fn runtime_dispatch_many_safe_error_json(
   error : String,
   payload : String,
-  selection : Array[Int],
+  selection : Array[Int32],
 ) -> String {
   Json::object({
     "ok": Json::boolean(false),
@@ -318,9 +316,9 @@ fn runtime_dispatch_object_field_or_self(
 ///|
 fn runtime_dispatch_colour_from_json(raw : Json) -> @engine.Colour raise {
   let root : Map[String, Json] = @json.from_json(raw)
-  let h : Int = @json.from_json(browser_json_required_field(root, "h"))
-  let s : Int = @json.from_json(browser_json_required_field(root, "s"))
-  let l : Int = @json.from_json(browser_json_required_field(root, "l"))
+  let h : Int32 = @json.from_json(browser_json_required_field(root, "h"))
+  let s : Int32 = @json.from_json(browser_json_required_field(root, "s"))
+  let l : Int32 = @json.from_json(browser_json_required_field(root, "l"))
   let a : Double = @json.from_json(browser_json_required_field(root, "a"))
   @engine.Colour::new(h, s, l, a)
 }
@@ -329,44 +327,37 @@ fn runtime_dispatch_colour_from_json(raw : Json) -> @engine.Colour raise {
 fn runtime_dispatch_tikz_settings_from_input(
   input : Map[String, Json],
 ) -> @engine.TikzCdExportSettings {
-  let settings_input = runtime_dispatch_object_field_or_self(
-    input,
-    "settings",
-  )
+  let settings_input = runtime_dispatch_object_field_or_self(input, "settings")
   let defaults = @engine.TikzCdExportSettings::default()
   defaults
-    .with_centre_diagram(
-      value=
-      runtime_dispatch_bool_from_object(
-        settings_input,
-        "centre_diagram",
-        defaults.centre_diagram,
-      ),
-    )
-    .with_ampersand_replacement(
-      value=
-      runtime_dispatch_bool_from_object(
-        settings_input,
-        "ampersand_replacement",
-        defaults.ampersand_replacement,
-      ),
-    )
-    .with_cramped(
-      value=
-      runtime_dispatch_bool_from_object(
-        settings_input,
-        "cramped",
-        defaults.cramped,
-      ),
-    )
-    .with_standalone(
-      value=
-      runtime_dispatch_bool_from_object(
-        settings_input,
-        "standalone",
-        defaults.standalone,
-      ),
-    )
+  .with_centre_diagram(
+    value=runtime_dispatch_bool_from_object(
+      settings_input,
+      "centre_diagram",
+      defaults.centre_diagram,
+    ),
+  )
+  .with_ampersand_replacement(
+    value=runtime_dispatch_bool_from_object(
+      settings_input,
+      "ampersand_replacement",
+      defaults.ampersand_replacement,
+    ),
+  )
+  .with_cramped(
+    value=runtime_dispatch_bool_from_object(
+      settings_input,
+      "cramped",
+      defaults.cramped,
+    ),
+  )
+  .with_standalone(
+    value=runtime_dispatch_bool_from_object(
+      settings_input,
+      "standalone",
+      defaults.standalone,
+    ),
+  )
 }
 
 ///|
@@ -459,17 +450,13 @@ fn runtime_dispatch_tikz_definitions_from_input(
   input : Map[String, Json],
 ) -> @engine.TikzCdExportDefinitions raise {
   let mut definitions = @engine.TikzCdExportDefinitions::default()
-  let definitions_input = match runtime_dispatch_optional_object(
-    input,
-    "definitions",
-  ) {
+  let definitions_input = match
+    runtime_dispatch_optional_object(input, "definitions") {
     Some(value) => value
     None => return definitions
   }
-  let colours_input = match runtime_dispatch_optional_object(
-    definitions_input,
-    "colours",
-  ) {
+  let colours_input = match
+    runtime_dispatch_optional_object(definitions_input, "colours") {
     Some(value) => value
     None => return definitions
   }
@@ -494,14 +481,10 @@ fn runtime_dispatch_tikz_definitions_from_input(
 fn runtime_dispatch_fletcher_settings_from_input(
   input : Map[String, Json],
 ) -> @engine.FletcherExportSettings {
-  let settings_input = runtime_dispatch_object_field_or_self(
-    input,
-    "settings",
-  )
+  let settings_input = runtime_dispatch_object_field_or_self(input, "settings")
   let defaults = @engine.FletcherExportSettings::default()
   defaults.with_centre_diagram(
-    value=
-    runtime_dispatch_bool_from_object(
+    value=runtime_dispatch_bool_from_object(
       settings_input,
       "centre_diagram",
       defaults.centre_diagram,
@@ -560,14 +543,9 @@ fn runtime_dispatch_html_settings_from_input(
   input : Map[String, Json],
   options : @engine.HtmlEmbedExportOptions,
 ) -> @engine.HtmlEmbedExportSettings raise {
-  let settings_input = runtime_dispatch_object_field_or_self(
-    input,
-    "settings",
-  )
-  let base_url = match runtime_dispatch_optional_string(
-    settings_input,
-    "base_url",
-  ) {
+  let settings_input = runtime_dispatch_object_field_or_self(input, "settings")
+  let base_url = match
+    runtime_dispatch_optional_string(settings_input, "base_url") {
     Some(value) => value
     None =>
       match options.share_base_url {
@@ -581,22 +559,17 @@ fn runtime_dispatch_html_settings_from_input(
   let width = runtime_dispatch_optional_int(settings_input, "width")
   let height = runtime_dispatch_optional_int(settings_input, "height")
   let diagram_width = runtime_dispatch_optional_int(
-    settings_input,
-    "diagram_width",
+    settings_input, "diagram_width",
   )
   let diagram_height = runtime_dispatch_optional_int(
-    settings_input,
-    "diagram_height",
+    settings_input, "diagram_height",
   )
   let embed_padding = runtime_dispatch_optional_int(
-    settings_input,
-    "embed_padding",
+    settings_input, "embed_padding",
   )
 
-  let use_fixed_size = match runtime_dispatch_optional_bool(
-    settings_input,
-    "fixed_size",
-  ) {
+  let use_fixed_size = match
+    runtime_dispatch_optional_bool(settings_input, "fixed_size") {
     Some(value) => value
     None =>
       match width {
@@ -630,11 +603,10 @@ fn runtime_dispatch_html_settings_from_input(
         Some(value) => value
         None => defaults.diagram_height
       },
-      embed_padding=
-        match embed_padding {
-          Some(value) => value
-          None => defaults.embed_padding
-        },
+      embed_padding=match embed_padding {
+        Some(value) => value
+        None => defaults.embed_padding
+      },
     )
   }
 
@@ -642,9 +614,7 @@ fn runtime_dispatch_html_settings_from_input(
 }
 
 ///|
-fn runtime_label_alignment_name(
-  alignment : @engine.LabelAlignment,
-) -> String {
+fn runtime_label_alignment_name(alignment : @engine.LabelAlignment) -> String {
   match alignment {
     @engine.LabelAlignment::Left => "left"
     @engine.LabelAlignment::Centre => "centre"
@@ -902,11 +872,10 @@ fn runtime_patch_edge_options_from_map(
         Some(value) => value
         None => out.style.tail.name
       },
-      side=
-        match tail_side {
-          Some(value) => value
-          None => out.style.tail.side
-        },
+      side=match tail_side {
+        Some(value) => value
+        None => out.style.tail.side
+      },
     )
   }
   let body_name = runtime_dispatch_optional_string(patch, "style_body_name")
@@ -917,11 +886,10 @@ fn runtime_patch_edge_options_from_map(
         Some(value) => value
         None => out.style.body.name
       },
-      side=
-        match body_side {
-          Some(value) => value
-          None => out.style.body.side
-        },
+      side=match body_side {
+        Some(value) => value
+        None => out.style.body.side
+      },
     )
   }
   let head_name = runtime_dispatch_optional_string(patch, "style_head_name")
@@ -932,11 +900,10 @@ fn runtime_patch_edge_options_from_map(
         Some(value) => value
         None => out.style.head.name
       },
-      side=
-        match head_side {
-          Some(value) => value
-          None => out.style.head.side
-        },
+      side=match head_side {
+        Some(value) => value
+        None => out.style.head.side
+      },
     )
   }
 
@@ -948,17 +915,13 @@ fn runtime_patch_edge_options_from_map(
       }
       match runtime_dispatch_optional_object(style_patch, "tail") {
         Some(tail_patch) => {
-          let tail_name = match runtime_dispatch_optional_string(
-            tail_patch,
-            "name",
-          ) {
+          let tail_name = match
+            runtime_dispatch_optional_string(tail_patch, "name") {
             Some(value) => value
             None => out.style.tail.name
           }
-          let tail_side = match runtime_dispatch_optional_string(
-            tail_patch,
-            "side",
-          ) {
+          let tail_side = match
+            runtime_dispatch_optional_string(tail_patch, "side") {
             Some(value) => value
             None => out.style.tail.side
           }
@@ -968,17 +931,13 @@ fn runtime_patch_edge_options_from_map(
       }
       match runtime_dispatch_optional_object(style_patch, "body") {
         Some(body_patch) => {
-          let body_name = match runtime_dispatch_optional_string(
-            body_patch,
-            "name",
-          ) {
+          let body_name = match
+            runtime_dispatch_optional_string(body_patch, "name") {
             Some(value) => value
             None => out.style.body.name
           }
-          let body_side = match runtime_dispatch_optional_string(
-            body_patch,
-            "side",
-          ) {
+          let body_side = match
+            runtime_dispatch_optional_string(body_patch, "side") {
             Some(value) => value
             None => out.style.body.side
           }
@@ -988,17 +947,13 @@ fn runtime_patch_edge_options_from_map(
       }
       match runtime_dispatch_optional_object(style_patch, "head") {
         Some(head_patch) => {
-          let head_name = match runtime_dispatch_optional_string(
-            head_patch,
-            "name",
-          ) {
+          let head_name = match
+            runtime_dispatch_optional_string(head_patch, "name") {
             Some(value) => value
             None => out.style.head.name
           }
-          let head_side = match runtime_dispatch_optional_string(
-            head_patch,
-            "side",
-          ) {
+          let head_side = match
+            runtime_dispatch_optional_string(head_patch, "side") {
             Some(value) => value
             None => out.style.head.side
           }
@@ -1016,18 +971,17 @@ fn runtime_patch_edge_options_from_map(
 ///|
 fn runtime_patch_edge_options_input_from_json(
   input_json : String,
-) -> (Int, Map[String, Json]) raise {
+) -> (Int32, Map[String, Json]) raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(input_json))
-  let edge_id : Int = @json.from_json(browser_json_required_field(root, "edge_id"))
+  let edge_id : Int32 = @json.from_json(
+    browser_json_required_field(root, "edge_id"),
+  )
 
   let patch = match runtime_dispatch_optional_object(root, "patch") {
     Some(value) => value
     None => root
   }
-  let options_patch = match runtime_dispatch_optional_object(
-    patch,
-    "options",
-  ) {
+  let options_patch = match runtime_dispatch_optional_object(patch, "options") {
     Some(value) => value
     None => patch
   }
@@ -1035,7 +989,7 @@ fn runtime_patch_edge_options_input_from_json(
 }
 
 ///|
-fn runtime_edge_id_input_from_json(input_json : String) -> Int raise {
+fn runtime_edge_id_input_from_json(input_json : String) -> Int32 raise {
   let root : Map[String, Json] = @json.from_json(@json.parse(input_json))
   @json.from_json(browser_json_required_field(root, "edge_id"))
 }
@@ -1050,7 +1004,7 @@ fn runtime_flip_side(side : String) -> String {
 }
 
 ///|
-fn runtime_reverse_loop_angle(angle : Int) -> Int {
+fn runtime_reverse_loop_angle(angle : Int32) -> Int32 {
   let mut normalized = (angle + 360) % 360
   if normalized < 0 {
     normalized += 360
@@ -1098,8 +1052,8 @@ fn runtime_flip_options(
 ///|
 fn runtime_find_edge(
   cells : Array[@engine.CellData],
-  edge_id : Int,
-) -> (Int, Int, @engine.EdgeOptions)? {
+  edge_id : Int32,
+) -> (Int32, Int32, @engine.EdgeOptions)? {
   for cell in cells {
     match cell {
       @engine.CellData::Edge(edge) =>
@@ -1115,12 +1069,12 @@ fn runtime_find_edge(
 ///|
 pub struct BrowserRuntime {
   adapter : @engine.QuiverUiAdapter
-  mut selected_ids : Array[Int]
+  mut selected_ids : Array[Int32]
 }
 
 ///|
 pub fn BrowserRuntime::new() -> BrowserRuntime {
-  { adapter: @engine.ffi_adapter_new(), selected_ids: [] }
+  { adapter: @engine.ffi_adapter_new(), selected_ids: [], }
 }
 
 ///|
@@ -1132,13 +1086,13 @@ pub fn BrowserRuntime::reset(self : BrowserRuntime) -> Unit {
 ///|
 pub fn BrowserRuntime::set_selection(
   self : BrowserRuntime,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> Unit {
   self.selected_ids = selected_ids.copy()
 }
 
 ///|
-pub fn BrowserRuntime::selection(self : BrowserRuntime) -> Array[Int] {
+pub fn BrowserRuntime::selection(self : BrowserRuntime) -> Array[Int32] {
   self.selected_ids.copy()
 }
 
@@ -1146,10 +1100,10 @@ pub fn BrowserRuntime::selection(self : BrowserRuntime) -> Array[Int] {
 pub fn BrowserRuntime::add_vertex(
   self : BrowserRuntime,
   label : String,
-  x : Int,
-  y : Int,
-  label_colour? : @engine.Colour = @engine.Colour::black(),
-) -> Int {
+  x : Int32,
+  y : Int32,
+  label_colour~ : @engine.Colour = @engine.Colour::black(),
+) -> Int32 {
   let id = @engine.ffi_adapter_add_vertex(
     self.adapter,
     label,
@@ -1164,12 +1118,12 @@ pub fn BrowserRuntime::add_vertex(
 ///|
 pub fn BrowserRuntime::add_edge(
   self : BrowserRuntime,
-  source_id : Int,
-  target_id : Int,
-  label? : String = "",
-  options? : @engine.EdgeOptions = @engine.EdgeOptions::at_level(1),
-  label_colour? : @engine.Colour = @engine.Colour::black(),
-) -> Int {
+  source_id : Int32,
+  target_id : Int32,
+  label~ : String = "",
+  options~ : @engine.EdgeOptions = @engine.EdgeOptions::at_level(1),
+  label_colour~ : @engine.Colour = @engine.Colour::black(),
+) -> Int32 {
   let id = @engine.ffi_adapter_add_edge(
     self.adapter,
     source_id,
@@ -1187,7 +1141,10 @@ pub fn BrowserRuntime::add_vertex_json(
   self : BrowserRuntime,
   input_json : String,
 ) -> String raise {
-  let result_json = @engine.ffi_adapter_add_vertex_json(self.adapter, input_json)
+  let result_json = @engine.ffi_adapter_add_vertex_json(
+    self.adapter,
+    input_json,
+  )
   self.selected_ids = [browser_parse_added_id(result_json)]
   result_json
 }
@@ -1205,7 +1162,7 @@ pub fn BrowserRuntime::add_edge_json(
 ///|
 pub fn BrowserRuntime::set_label(
   self : BrowserRuntime,
-  cell_id : Int,
+  cell_id : Int32,
   label : String,
 ) -> Bool {
   @engine.ffi_adapter_set_cell_label(self.adapter, cell_id, label)
@@ -1222,7 +1179,7 @@ pub fn BrowserRuntime::set_label_json(
 ///|
 pub fn BrowserRuntime::set_label_colour(
   self : BrowserRuntime,
-  cell_id : Int,
+  cell_id : Int32,
   label_colour : @engine.Colour,
 ) -> Bool {
   @engine.ffi_adapter_set_cell_label_colour(self.adapter, cell_id, label_colour)
@@ -1239,9 +1196,9 @@ pub fn BrowserRuntime::set_label_colour_json(
 ///|
 pub fn BrowserRuntime::move_vertex(
   self : BrowserRuntime,
-  vertex_id : Int,
-  x : Int,
-  y : Int,
+  vertex_id : Int32,
+  x : Int32,
+  y : Int32,
 ) -> Bool {
   @engine.ffi_adapter_move_vertex(self.adapter, vertex_id, x, y)
 }
@@ -1257,7 +1214,7 @@ pub fn BrowserRuntime::move_vertex_json(
 ///|
 pub fn BrowserRuntime::set_edge_options(
   self : BrowserRuntime,
-  edge_id : Int,
+  edge_id : Int32,
   options : @engine.EdgeOptions,
 ) -> Bool {
   @engine.ffi_adapter_set_edge_options(self.adapter, edge_id, options)
@@ -1274,7 +1231,7 @@ pub fn BrowserRuntime::set_edge_options_json(
 ///|
 pub fn BrowserRuntime::patch_edge_options(
   self : BrowserRuntime,
-  edge_id : Int,
+  edge_id : Int32,
   options_patch : Map[String, Json],
 ) -> Bool raise {
   let mut current : @engine.Edge? = None
@@ -1317,7 +1274,7 @@ pub fn BrowserRuntime::patch_edge_options_json(
 ///|
 pub fn BrowserRuntime::set_edge_label_alignment(
   self : BrowserRuntime,
-  edge_id : Int,
+  edge_id : Int32,
   label_alignment : String,
 ) -> Bool {
   @engine.ffi_adapter_set_edge_label_alignment(
@@ -1338,8 +1295,8 @@ pub fn BrowserRuntime::set_edge_label_alignment_json(
 ///|
 pub fn BrowserRuntime::set_edge_label_position(
   self : BrowserRuntime,
-  edge_id : Int,
-  label_position : Int,
+  edge_id : Int32,
+  label_position : Int32,
 ) -> Bool {
   @engine.ffi_adapter_set_edge_label_position(
     self.adapter,
@@ -1359,14 +1316,10 @@ pub fn BrowserRuntime::set_edge_label_position_json(
 ///|
 pub fn BrowserRuntime::set_edge_offset(
   self : BrowserRuntime,
-  edge_id : Int,
-  offset : Int,
+  edge_id : Int32,
+  offset : Int32,
 ) -> Bool {
-  @engine.ffi_adapter_set_edge_offset(
-    self.adapter,
-    edge_id,
-    offset,
-  )
+  @engine.ffi_adapter_set_edge_offset(self.adapter, edge_id, offset)
 }
 
 ///|
@@ -1380,14 +1333,10 @@ pub fn BrowserRuntime::set_edge_offset_json(
 ///|
 pub fn BrowserRuntime::set_edge_curve(
   self : BrowserRuntime,
-  edge_id : Int,
-  curve : Int,
+  edge_id : Int32,
+  curve : Int32,
 ) -> Bool {
-  @engine.ffi_adapter_set_edge_curve(
-    self.adapter,
-    edge_id,
-    curve,
-  )
+  @engine.ffi_adapter_set_edge_curve(self.adapter, edge_id, curve)
 }
 
 ///|
@@ -1401,9 +1350,9 @@ pub fn BrowserRuntime::set_edge_curve_json(
 ///|
 pub fn BrowserRuntime::set_edge_shorten(
   self : BrowserRuntime,
-  edge_id : Int,
-  shorten_source : Int,
-  shorten_target : Int,
+  edge_id : Int32,
+  shorten_source : Int32,
+  shorten_target : Int32,
 ) -> Bool {
   @engine.ffi_adapter_set_edge_shorten(
     self.adapter,
@@ -1424,7 +1373,7 @@ pub fn BrowserRuntime::set_edge_shorten_json(
 ///|
 pub fn BrowserRuntime::flip_edge(
   self : BrowserRuntime,
-  edge_id : Int,
+  edge_id : Int32,
   flip_arrow : Bool,
 ) -> Bool {
   match runtime_find_edge(self.all_cells(), edge_id) {
@@ -1440,13 +1389,16 @@ pub fn BrowserRuntime::flip_edge(
 ///|
 pub fn BrowserRuntime::flip_edge_labels(
   self : BrowserRuntime,
-  edge_id : Int,
+  edge_id : Int32,
 ) -> Bool {
   self.flip_edge(edge_id, false)
 }
 
 ///|
-pub fn BrowserRuntime::reverse_edge(self : BrowserRuntime, edge_id : Int) -> Bool {
+pub fn BrowserRuntime::reverse_edge(
+  self : BrowserRuntime,
+  edge_id : Int32,
+) -> Bool {
   match runtime_find_edge(self.all_cells(), edge_id) {
     Some((source_id, target_id, options)) => {
       let is_loop = source_id == target_id
@@ -1505,9 +1457,9 @@ pub fn BrowserRuntime::reverse_edge_json(
 ///|
 pub fn BrowserRuntime::reconnect_edge(
   self : BrowserRuntime,
-  edge_id : Int,
-  source_id : Int,
-  target_id : Int,
+  edge_id : Int32,
+  source_id : Int32,
+  target_id : Int32,
 ) -> Bool {
   @engine.ffi_adapter_reconnect_edge(
     self.adapter,
@@ -1544,9 +1496,9 @@ pub fn BrowserRuntime::apply_mutation_batch_json(
 ///|
 pub fn BrowserRuntime::remove(
   self : BrowserRuntime,
-  cell_id : Int,
-  when : Int,
-) -> Array[Int] {
+  cell_id : Int32,
+  when : Int32,
+) -> Array[Int32] {
   let removed = @engine.ffi_adapter_remove(self.adapter, cell_id, when)
   self.selected_ids.retain(id => !browser_contains_id(removed, id))
   removed
@@ -1564,7 +1516,7 @@ pub fn BrowserRuntime::remove_json(
 }
 
 ///|
-pub fn BrowserRuntime::flush(self : BrowserRuntime, when : Int) -> Unit {
+pub fn BrowserRuntime::flush(self : BrowserRuntime, when : Int32) -> Unit {
   @engine.ffi_adapter_flush(self.adapter, when)
 }
 
@@ -1577,17 +1529,21 @@ pub fn BrowserRuntime::flush_json(
 }
 
 ///|
-pub fn BrowserRuntime::all_cell_ids(self : BrowserRuntime) -> Array[Int] {
+pub fn BrowserRuntime::all_cell_ids(self : BrowserRuntime) -> Array[Int32] {
   @engine.ffi_adapter_all_cell_ids(self.adapter)
 }
 
 ///|
-pub fn BrowserRuntime::all_cells(self : BrowserRuntime) -> Array[@engine.CellData] {
+pub fn BrowserRuntime::all_cells(
+  self : BrowserRuntime,
+) -> Array[@engine.CellData] {
   @engine.ffi_adapter_all_cells(self.adapter)
 }
 
 ///|
-pub fn BrowserRuntime::snapshot(self : BrowserRuntime) -> @engine.QuiverUiSnapshot {
+pub fn BrowserRuntime::snapshot(
+  self : BrowserRuntime,
+) -> @engine.QuiverUiSnapshot {
   @engine.ffi_adapter_snapshot(self.adapter)
 }
 
@@ -1599,7 +1555,7 @@ pub fn BrowserRuntime::snapshot_json(self : BrowserRuntime) -> String {
 ///|
 pub fn BrowserRuntime::selection_summary_json(
   self : BrowserRuntime,
-  roots : Array[Int],
+  roots : Array[Int32],
 ) -> String {
   @engine.ffi_adapter_selection_summary_json(self.adapter, roots)
 }
@@ -1607,7 +1563,7 @@ pub fn BrowserRuntime::selection_summary_json(
 ///|
 pub fn BrowserRuntime::selection_panel_state_json(
   self : BrowserRuntime,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   @engine.ffi_adapter_selection_panel_state_json(self.adapter, selected_ids)
 }
@@ -1615,7 +1571,7 @@ pub fn BrowserRuntime::selection_panel_state_json(
 ///|
 pub fn BrowserRuntime::selection_toolbar_state_json(
   self : BrowserRuntime,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   @engine.ffi_adapter_selection_toolbar_state_json(self.adapter, selected_ids)
 }
@@ -1623,25 +1579,25 @@ pub fn BrowserRuntime::selection_toolbar_state_json(
 ///|
 pub fn BrowserRuntime::dependencies_of(
   self : BrowserRuntime,
-  cell_id : Int,
-) -> Array[Int] {
+  cell_id : Int32,
+) -> Array[Int32] {
   @engine.ffi_adapter_dependencies_of(self.adapter, cell_id)
 }
 
 ///|
 pub fn BrowserRuntime::reverse_dependencies_of(
   self : BrowserRuntime,
-  cell_id : Int,
-) -> Array[Int] {
+  cell_id : Int32,
+) -> Array[Int32] {
   @engine.ffi_adapter_reverse_dependencies_of(self.adapter, cell_id)
 }
 
 ///|
 pub fn BrowserRuntime::transitive_dependencies(
   self : BrowserRuntime,
-  roots : Array[Int],
-  exclude_roots? : Bool = false,
-) -> Array[Int] {
+  roots : Array[Int32],
+  exclude_roots~ : Bool = false,
+) -> Array[Int32] {
   @engine.ffi_adapter_transitive_dependencies(
     self.adapter,
     roots,
@@ -1652,17 +1608,17 @@ pub fn BrowserRuntime::transitive_dependencies(
 ///|
 pub fn BrowserRuntime::transitive_reverse_dependencies(
   self : BrowserRuntime,
-  roots : Array[Int],
-) -> Array[Int] {
+  roots : Array[Int32],
+) -> Array[Int32] {
   @engine.ffi_adapter_transitive_reverse_dependencies(self.adapter, roots)
 }
 
 ///|
 pub fn BrowserRuntime::preview_reconnect_plan(
   self : BrowserRuntime,
-  edge_id : Int,
-  source_id : Int,
-  target_id : Int,
+  edge_id : Int32,
+  source_id : Int32,
+  target_id : Int32,
 ) -> @engine.QuiverReconnectPreviewPlan? {
   @engine.ffi_adapter_preview_reconnect_plan(
     self.adapter,
@@ -1675,9 +1631,9 @@ pub fn BrowserRuntime::preview_reconnect_plan(
 ///|
 pub fn BrowserRuntime::preview_reconnect_plan_json(
   self : BrowserRuntime,
-  edge_id : Int,
-  source_id : Int,
-  target_id : Int,
+  edge_id : Int32,
+  source_id : Int32,
+  target_id : Int32,
 ) -> String {
   match self.preview_reconnect_plan(edge_id, source_id, target_id) {
     Some(plan) => runtime_preview_reconnect_plan_json(plan).stringify()
@@ -1688,9 +1644,9 @@ pub fn BrowserRuntime::preview_reconnect_plan_json(
 ///|
 pub fn BrowserRuntime::suggest_edge_options(
   self : BrowserRuntime,
-  source_id : Int,
-  target_id : Int,
-  default_label_alignment? : String = "left",
+  source_id : Int32,
+  target_id : Int32,
+  default_label_alignment~ : String = "left",
 ) -> @engine.EdgeOptions? {
   @engine.ffi_adapter_suggest_edge_options(
     self.adapter,
@@ -1703,15 +1659,12 @@ pub fn BrowserRuntime::suggest_edge_options(
 ///|
 pub fn BrowserRuntime::suggest_edge_options_json(
   self : BrowserRuntime,
-  source_id : Int,
-  target_id : Int,
-  default_label_alignment? : String = "left",
+  source_id : Int32,
+  target_id : Int32,
+  default_label_alignment~ : String = "left",
 ) -> String {
-  match self.suggest_edge_options(
-    source_id,
-    target_id,
-    default_label_alignment~,
-  ) {
+  match
+    self.suggest_edge_options(source_id, target_id, default_label_alignment~) {
     Some(options) => runtime_edge_options_json(options).stringify()
     None => Json::null().stringify()
   }
@@ -1720,8 +1673,8 @@ pub fn BrowserRuntime::suggest_edge_options_json(
 ///|
 pub fn BrowserRuntime::connected_components(
   self : BrowserRuntime,
-  roots : Array[Int],
-) -> Array[Int] {
+  roots : Array[Int32],
+) -> Array[Int32] {
   @engine.ffi_adapter_connected_components(self.adapter, roots)
 }
 
@@ -1733,7 +1686,7 @@ pub fn BrowserRuntime::export_payload(self : BrowserRuntime) -> String {
 ///|
 pub fn BrowserRuntime::export_selection(
   self : BrowserRuntime,
-  include_dependencies? : Bool = true,
+  include_dependencies~ : Bool = true,
 ) -> String {
   @engine.ffi_adapter_export_base64_selection(
     self.adapter,
@@ -1750,9 +1703,9 @@ pub fn BrowserRuntime::render_tikz(self : BrowserRuntime) -> String {
 ///|
 pub fn BrowserRuntime::render_tikz_json(
   self : BrowserRuntime,
-  settings? : @engine.TikzCdExportSettings = @engine.TikzCdExportSettings::default(),
-  options? : @engine.TikzCdExportOptions = @engine.TikzCdExportOptions::default(),
-  definitions? : @engine.TikzCdExportDefinitions = @engine.TikzCdExportDefinitions::default(),
+  settings~ : @engine.TikzCdExportSettings = @engine.TikzCdExportSettings::default(),
+  options~ : @engine.TikzCdExportOptions = @engine.TikzCdExportOptions::default(),
+  definitions~ : @engine.TikzCdExportDefinitions = @engine.TikzCdExportDefinitions::default(),
 ) -> String {
   @engine.ffi_adapter_export_tikz_cd_json(
     self.adapter,
@@ -1765,8 +1718,8 @@ pub fn BrowserRuntime::render_tikz_json(
 ///|
 pub fn BrowserRuntime::render_fletcher(
   self : BrowserRuntime,
-  settings? : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
-  options? : @engine.FletcherExportOptions = @engine.FletcherExportOptions::default(),
+  settings~ : @engine.FletcherExportSettings = @engine.FletcherExportSettings::default(),
+  options~ : @engine.FletcherExportOptions = @engine.FletcherExportOptions::default(),
 ) -> String {
   @engine.ffi_adapter_export_fletcher(self.adapter, settings~, options~)
 }
@@ -1775,7 +1728,7 @@ pub fn BrowserRuntime::render_fletcher(
 pub fn BrowserRuntime::render_html_embed(
   self : BrowserRuntime,
   settings : @engine.HtmlEmbedExportSettings,
-  options? : @engine.HtmlEmbedExportOptions = @engine.HtmlEmbedExportOptions::default(),
+  options~ : @engine.HtmlEmbedExportOptions = @engine.HtmlEmbedExportOptions::default(),
 ) -> String {
   @engine.ffi_adapter_export_html_embed(self.adapter, settings, options~)
 }
@@ -1794,7 +1747,7 @@ pub fn BrowserRuntime::import_payload(
 pub fn BrowserRuntime::import_share_url(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult raise {
   let imported = @engine.ffi_adapter_import_share_url(
     self.adapter,
@@ -1811,7 +1764,7 @@ pub fn BrowserRuntime::import_share_url(
 pub fn BrowserRuntime::import_share_url_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String raise {
   self.import_share_url(input, default_renderer~).to_json_string()
 }
@@ -1820,7 +1773,7 @@ pub fn BrowserRuntime::import_share_url_json(
 pub fn BrowserRuntime::import_share_text(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult raise {
   let imported = @engine.ffi_adapter_import_share_text(
     self.adapter,
@@ -1837,7 +1790,7 @@ pub fn BrowserRuntime::import_share_text(
 pub fn BrowserRuntime::import_share_text_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String raise {
   self.import_share_text(input, default_renderer~).to_json_string()
 }
@@ -1846,7 +1799,7 @@ pub fn BrowserRuntime::import_share_text_json(
 pub fn BrowserRuntime::import_text_auto(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult raise {
   let imported = @engine.ffi_adapter_import_text_auto(
     self.adapter,
@@ -1863,7 +1816,7 @@ pub fn BrowserRuntime::import_text_auto(
 pub fn BrowserRuntime::import_text_auto_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String raise {
   self.import_text_auto(input, default_renderer~).to_json_string()
 }
@@ -1872,7 +1825,7 @@ pub fn BrowserRuntime::import_text_auto_json(
 pub fn BrowserRuntime::import_tikz_cd(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult {
   let imported = @engine.ffi_adapter_import_tikz_cd(
     self.adapter,
@@ -1889,7 +1842,7 @@ pub fn BrowserRuntime::import_tikz_cd(
 pub fn BrowserRuntime::import_tikz_cd_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String {
   self.import_tikz_cd(input, default_renderer~).to_json_string()
 }
@@ -1898,7 +1851,7 @@ pub fn BrowserRuntime::import_tikz_cd_json(
 pub fn BrowserRuntime::import_fletcher(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult raise {
   let imported = @engine.ffi_adapter_import_fletcher(
     self.adapter,
@@ -1915,7 +1868,7 @@ pub fn BrowserRuntime::import_fletcher(
 pub fn BrowserRuntime::import_fletcher_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String raise {
   self.import_fletcher(input, default_renderer~).to_json_string()
 }
@@ -1924,7 +1877,7 @@ pub fn BrowserRuntime::import_fletcher_json(
 pub fn BrowserRuntime::import_html_embed(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> @engine.QuiverUiImportResult raise {
   let imported = @engine.ffi_adapter_import_html_embed(
     self.adapter,
@@ -1941,7 +1894,7 @@ pub fn BrowserRuntime::import_html_embed(
 pub fn BrowserRuntime::import_html_embed_json(
   self : BrowserRuntime,
   input : String,
-  default_renderer? : String = "canvas",
+  default_renderer~ : String = "canvas",
 ) -> String raise {
   self.import_html_embed(input, default_renderer~).to_json_string()
 }
@@ -1950,9 +1903,9 @@ pub fn BrowserRuntime::import_html_embed_json(
 pub fn BrowserRuntime::paste_selection(
   self : BrowserRuntime,
   payload : String,
-  origin_x : Int,
-  origin_y : Int,
-  start_id? : Int = 1,
+  origin_x : Int32,
+  origin_y : Int32,
+  start_id~ : Int32 = 1,
 ) -> @engine.QuiverUiSelectionImportResult raise {
   let imported = @engine.ffi_adapter_paste_base64_selection(
     self.adapter,
@@ -1969,9 +1922,9 @@ pub fn BrowserRuntime::paste_selection(
 pub fn BrowserRuntime::paste_selection_json(
   self : BrowserRuntime,
   payload : String,
-  origin_x : Int,
-  origin_y : Int,
-  start_id? : Int = 1,
+  origin_x : Int32,
+  origin_y : Int32,
+  start_id~ : Int32 = 1,
 ) -> String raise {
   self.paste_selection(payload, origin_x, origin_y, start_id~).to_json_string()
 }
@@ -1995,7 +1948,8 @@ pub fn BrowserRuntime::dispatch_json(
     "set_label_json" => result = @json.parse(self.set_label_json(input_json))
     "set_label_colour_json" =>
       result = @json.parse(self.set_label_colour_json(input_json))
-    "move_vertex_json" => result = @json.parse(self.move_vertex_json(input_json))
+    "move_vertex_json" =>
+      result = @json.parse(self.move_vertex_json(input_json))
     "set_edge_options_json" =>
       result = @json.parse(self.set_edge_options_json(input_json))
     "patch_edge_options_json" =>
@@ -2036,7 +1990,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_text_auto_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_text_auto_json(raw_input, default_renderer~),
+      )
     }
     "import_share_url_json" => {
       let raw_input = runtime_dispatch_raw_input(root)
@@ -2045,7 +2001,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_share_url_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_share_url_json(raw_input, default_renderer~),
+      )
     }
     "import_share_text_json" => {
       let raw_input = runtime_dispatch_raw_input(root)
@@ -2054,7 +2012,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_share_text_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_share_text_json(raw_input, default_renderer~),
+      )
     }
     "import_tikz_cd_json" => {
       let raw_input = runtime_dispatch_raw_input(root)
@@ -2063,7 +2023,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_tikz_cd_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_tikz_cd_json(raw_input, default_renderer~),
+      )
     }
     "import_fletcher_json" => {
       let raw_input = runtime_dispatch_raw_input(root)
@@ -2072,7 +2034,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_fletcher_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_fletcher_json(raw_input, default_renderer~),
+      )
     }
     "import_html_embed_json" => {
       let raw_input = runtime_dispatch_raw_input(root)
@@ -2081,7 +2045,9 @@ pub fn BrowserRuntime::dispatch_json(
         Some(value) => value
         None => "canvas"
       }
-      result = @json.parse(self.import_html_embed_json(raw_input, default_renderer~))
+      result = @json.parse(
+        self.import_html_embed_json(raw_input, default_renderer~),
+      )
     }
     "paste_selection_json" => {
       let input : Map[String, Json] = @json.from_json(
@@ -2090,13 +2056,13 @@ pub fn BrowserRuntime::dispatch_json(
       let payload : String = @json.from_json(
         browser_json_required_field(input, "payload"),
       )
-      let origin_x : Int = @json.from_json(
+      let origin_x : Int32 = @json.from_json(
         browser_json_required_field(input, "origin_x"),
       )
-      let origin_y : Int = @json.from_json(
+      let origin_y : Int32 = @json.from_json(
         browser_json_required_field(input, "origin_y"),
       )
-      let start_id : Int = match input.get("start_id") {
+      let start_id : Int32 = match input.get("start_id") {
         Some(value) => @json.from_json(value)
         None => 1
       }
@@ -2105,7 +2071,7 @@ pub fn BrowserRuntime::dispatch_json(
       )
     }
     "set_selection" => {
-      let selected_ids : Array[Int] = match root.get("input") {
+      let selected_ids : Array[Int32] = match root.get("input") {
         Some(value) => @json.from_json(value)
         None => []
       }
@@ -2114,52 +2080,54 @@ pub fn BrowserRuntime::dispatch_json(
     }
     "selection" => result = browser_int_array_json(self.selection())
     "snapshot_json" => result = @json.parse(self.snapshot_json())
-    "all_cells_json" => result = @json.parse(runtime_cell_data_array_json_string(self.all_cells()))
-    "all_cell_ids_json" => result = @json.parse(browser_int_array_json_string(self.all_cell_ids()))
+    "all_cells_json" =>
+      result = @json.parse(
+        runtime_cell_data_array_json_string(self.all_cells()),
+      )
+    "all_cell_ids_json" =>
+      result = @json.parse(browser_int_array_json_string(self.all_cell_ids()))
     "selection_summary_json" => {
       let input = runtime_dispatch_input_object(root)
-      let roots : Array[Int] = @json.from_json(
+      let roots : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "roots"),
       )
       result = @json.parse(self.selection_summary_json(roots))
     }
     "selection_panel_state_json" => {
       let input = runtime_dispatch_input_object(root)
-      let selected_ids : Array[Int] = @json.from_json(
+      let selected_ids : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "selected_ids"),
       )
       result = @json.parse(self.selection_panel_state_json(selected_ids))
     }
     "selection_toolbar_state_json" => {
       let input = runtime_dispatch_input_object(root)
-      let selected_ids : Array[Int] = @json.from_json(
+      let selected_ids : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "selected_ids"),
       )
       result = @json.parse(self.selection_toolbar_state_json(selected_ids))
     }
     "dependencies_of_json" => {
       let input = runtime_dispatch_input_object(root)
-      let cell_id : Int = @json.from_json(
+      let cell_id : Int32 = @json.from_json(
         browser_json_required_field(input, "cell_id"),
       )
       result = browser_int_array_json(self.dependencies_of(cell_id))
     }
     "reverse_dependencies_of_json" => {
       let input = runtime_dispatch_input_object(root)
-      let cell_id : Int = @json.from_json(
+      let cell_id : Int32 = @json.from_json(
         browser_json_required_field(input, "cell_id"),
       )
       result = browser_int_array_json(self.reverse_dependencies_of(cell_id))
     }
     "transitive_dependencies_json" => {
       let input = runtime_dispatch_input_object(root)
-      let roots : Array[Int] = @json.from_json(
+      let roots : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "roots"),
       )
       let exclude_roots = runtime_dispatch_bool_from_object(
-        input,
-        "exclude_roots",
-        false,
+        input, "exclude_roots", false,
       )
       result = browser_int_array_json(
         self.transitive_dependencies(roots, exclude_roots~),
@@ -2167,20 +2135,22 @@ pub fn BrowserRuntime::dispatch_json(
     }
     "transitive_reverse_dependencies_json" => {
       let input = runtime_dispatch_input_object(root)
-      let roots : Array[Int] = @json.from_json(
+      let roots : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "roots"),
       )
-      result = browser_int_array_json(self.transitive_reverse_dependencies(roots))
+      result = browser_int_array_json(
+        self.transitive_reverse_dependencies(roots),
+      )
     }
     "preview_reconnect_plan_json" => {
       let input = runtime_dispatch_input_object(root)
-      let edge_id : Int = @json.from_json(
+      let edge_id : Int32 = @json.from_json(
         browser_json_required_field(input, "edge_id"),
       )
-      let source_id : Int = @json.from_json(
+      let source_id : Int32 = @json.from_json(
         browser_json_required_field(input, "source_id"),
       )
-      let target_id : Int = @json.from_json(
+      let target_id : Int32 = @json.from_json(
         browser_json_required_field(input, "target_id"),
       )
       result = @json.parse(
@@ -2189,16 +2159,14 @@ pub fn BrowserRuntime::dispatch_json(
     }
     "suggest_edge_options_json" => {
       let input = runtime_dispatch_input_object(root)
-      let source_id : Int = @json.from_json(
+      let source_id : Int32 = @json.from_json(
         browser_json_required_field(input, "source_id"),
       )
-      let target_id : Int = @json.from_json(
+      let target_id : Int32 = @json.from_json(
         browser_json_required_field(input, "target_id"),
       )
-      let default_label_alignment = match runtime_dispatch_optional_string(
-        input,
-        "default_label_alignment",
-      ) {
+      let default_label_alignment = match
+        runtime_dispatch_optional_string(input, "default_label_alignment") {
         Some(value) => value
         None => "left"
       }
@@ -2212,7 +2180,7 @@ pub fn BrowserRuntime::dispatch_json(
     }
     "connected_components_json" => {
       let input = runtime_dispatch_input_object(root)
-      let roots : Array[Int] = @json.from_json(
+      let roots : Array[Int32] = @json.from_json(
         browser_json_required_field(input, "roots"),
       )
       result = browser_int_array_json(self.connected_components(roots))
@@ -2222,7 +2190,9 @@ pub fn BrowserRuntime::dispatch_json(
       let settings = runtime_dispatch_tikz_settings_from_input(input)
       let options = runtime_dispatch_tikz_options_from_input(input)
       let definitions = runtime_dispatch_tikz_definitions_from_input(input)
-      result = @json.parse(self.render_tikz_json(settings~, options~, definitions~))
+      result = @json.parse(
+        self.render_tikz_json(settings~, options~, definitions~),
+      )
     }
     "render_fletcher" => {
       let input = runtime_dispatch_input_object_or_empty(root)
@@ -2233,26 +2203,18 @@ pub fn BrowserRuntime::dispatch_json(
     "render_html_embed" => {
       let input = runtime_dispatch_input_object_or_empty(root)
       let options = runtime_dispatch_html_options_from_input(input)
-      let settings = runtime_dispatch_html_settings_from_input(
-        input,
-        options,
-      )
+      let settings = runtime_dispatch_html_settings_from_input(input, options)
       result = Json::string(self.render_html_embed(settings, options~))
     }
     "render_tikz" => result = Json::string(self.render_tikz())
     "export_payload" => result = Json::string(self.export_payload())
     "export_selection" => {
       let input = runtime_dispatch_input_object_or_empty(root)
-      let include_dependencies = match runtime_dispatch_optional_bool(
-        input,
-        "include_dependencies",
-      ) {
+      let include_dependencies = match
+        runtime_dispatch_optional_bool(input, "include_dependencies") {
         Some(value) => value
         None =>
-          match runtime_dispatch_optional_bool(
-            root,
-            "include_dependencies",
-          ) {
+          match runtime_dispatch_optional_bool(root, "include_dependencies") {
             Some(value) => value
             None => true
           }

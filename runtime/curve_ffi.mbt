@@ -187,7 +187,9 @@ pub fn ffi_runtime_arc_t_after_length(
   angle : Double,
   length : Double,
 ) -> Double {
-  runtime_arc(origin_x, origin_y, chord, major, radius, angle).t_after_length()(length)
+  runtime_arc(origin_x, origin_y, chord, major, radius, angle).t_after_length()(
+    length,
+  )
 }
 
 ///|
@@ -229,14 +231,7 @@ pub fn ffi_runtime_arc_intersections_with_rounded_rectangle(
   rect_radius : Double,
   permit_containment : Bool,
 ) -> Array[@engine.CurvePoint] {
-  runtime_arc(
-    origin_x,
-    origin_y,
-    chord,
-    major,
-    radius,
-    angle,
-  ).intersections_with_rounded_rectangle(
+  runtime_arc(origin_x, origin_y, chord, major, radius, angle).intersections_with_rounded_rectangle(
     runtime_rounded_rectangle(centre_x, centre_y, width, height, rect_radius),
     permit_containment,
   )

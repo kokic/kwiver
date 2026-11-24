@@ -1,8 +1,8 @@
-﻿///|
+///|
 fn assert_close_curve(
   actual : Double,
   expected : Double,
-  tolerance? : Double = 0.001,
+  tolerance~ : Double = 0.001,
 ) -> Unit {
   if Double::abs(actual - expected) > tolerance {
     abort("values are not close")
@@ -34,7 +34,9 @@ test "arrow curve model bezier endpoints and svg" {
 
 ///|
 test "arrow curve model shorten interval on straight line" {
-  let options = @engine.EdgeOptions::default().with_shape_bezier().with_shorten(10, 20)
+  let options = @engine.EdgeOptions::default()
+    .with_shape_bezier()
+    .with_shorten(10, 20)
   let model = ArrowCurveModel::new(
     @engine.Point::new(0.0, 0.0),
     @engine.Point::new(100.0, 0.0),
@@ -62,4 +64,3 @@ test "arrow curve model loop arc has finite midpoint" {
     abort("midpoint should be finite")
   }
 }
-

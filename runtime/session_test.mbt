@@ -30,8 +30,7 @@ test "browser demo command envelope dispatches runtime action" {
 
   let session = ffi_runtime_session_new()
   let output = ffi_runtime_session_dispatch_command_json(
-    session,
-    "{\"protocol\":\"kwiver.command.v1\",\"action\":\"add_vertex_json\",\"origin\":\"test\",\"command_id\":\"cmd-1\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+    session, "{\"protocol\":\"kwiver.command.v1\",\"action\":\"add_vertex_json\",\"origin\":\"test\",\"command_id\":\"cmd-1\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 
@@ -45,10 +44,7 @@ test "browser demo command envelope dispatches runtime action" {
     runtime_test_json_get(root, "protocol"),
     content="String(\"kwiver.command.v1\")",
   )
-  inspect(
-    runtime_test_json_get(root, "origin"),
-    content="String(\"test\")",
-  )
+  inspect(runtime_test_json_get(root, "origin"), content="String(\"test\")")
   inspect(
     runtime_test_json_get(root, "command_id"),
     content="String(\"cmd-1\")",
@@ -59,8 +55,7 @@ test "browser demo command envelope dispatches runtime action" {
 test "browser demo command envelope rejects protocol mismatch" {
   let session = ffi_runtime_session_new()
   let output = ffi_runtime_session_dispatch_command_json(
-    session,
-    "{\"protocol\":\"kwiver.command.v2\",\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
+    session, "{\"protocol\":\"kwiver.command.v2\",\"action\":\"add_vertex_json\",\"input\":{\"label\":\"A\",\"x\":0,\"y\":0}}",
   )
   let root : Map[String, Json] = @json.from_json(@json.parse(output))
 

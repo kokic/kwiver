@@ -1,6 +1,6 @@
 ///|
 pub struct QuiverUiSelectionPanelState {
-  selection_size : Int
+  selection_size : Int32
   has_selection : Bool
   has_selected_edges : Bool
   has_selected_nonloop_edges : Bool
@@ -9,21 +9,21 @@ pub struct QuiverUiSelectionPanelState {
   label_colour : QuiverUiColourData?
   edge_angle : Double?
   label_alignment : String?
-  label_position : Int?
-  offset : Int?
-  curve : Int?
-  radius : Int?
-  angle : Int?
+  label_position : Int32?
+  offset : Int32?
+  curve : Int32?
+  radius : Int32?
+  angle : Int32?
   length : EdgeShorten?
-  level : Int?
+  level : Int32?
   edge_type : String?
   edge_colour : QuiverUiColourData?
   tail_type : String?
   body_type : String?
   head_type : String?
   all_edges_are_arrows : Bool
-  corners : Int
-  inverse_corners : Int
+  corners : Int32
+  inverse_corners : Int32
   endpoint_positioning_source_visible : Bool
   endpoint_positioning_source_checked : Bool
   endpoint_positioning_target_visible : Bool
@@ -32,8 +32,8 @@ pub struct QuiverUiSelectionPanelState {
 
 ///|
 pub struct QuiverUiSelectionToolbarState {
-  all_cells_count : Int
-  selected_count : Int
+  all_cells_count : Int32
+  selected_count : Int32
   has_selection : Bool
   has_any_cells : Bool
   has_vertices : Bool
@@ -47,10 +47,10 @@ pub struct QuiverUiSelectionToolbarState {
 ///|
 fn quiver_ui_unique_existing_ids(
   quiver : Quiver,
-  selected_ids : Array[Int],
-) -> Array[Int] {
-  let unique_ids : Array[Int] = []
-  let seen : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  selected_ids : Array[Int32],
+) -> Array[Int32] {
+  let unique_ids : Array[Int32] = []
+  let seen : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
   for cell_id in selected_ids {
     if quiver.contains_cell(cell_id) && !seen.contains(cell_id) {
       seen.set(cell_id, true)
@@ -75,7 +75,7 @@ fn quiver_ui_unanimous_string(values : Array[String]) -> String? {
 }
 
 ///|
-fn quiver_ui_unanimous_int(values : Array[Int]) -> Int? {
+fn quiver_ui_unanimous_int(values : Array[Int32]) -> Int32? {
   if values.length() == 0 {
     return None
   }
@@ -104,7 +104,10 @@ fn quiver_ui_unanimous_double(values : Array[Double]) -> Double? {
 
 ///|
 fn quiver_ui_colour_eq(left : Colour, right : Colour) -> Bool {
-  left.h == right.h && left.s == right.s && left.l == right.l && left.a == right.a
+  left.h == right.h &&
+  left.s == right.s &&
+  left.l == right.l &&
+  left.a == right.a
 }
 
 ///|
@@ -127,7 +130,9 @@ fn quiver_ui_edge_shorten_eq(left : EdgeShorten, right : EdgeShorten) -> Bool {
 }
 
 ///|
-fn quiver_ui_unanimous_edge_shorten(values : Array[EdgeShorten]) -> EdgeShorten? {
+fn quiver_ui_unanimous_edge_shorten(
+  values : Array[EdgeShorten],
+) -> EdgeShorten? {
   if values.length() == 0 {
     return None
   }
@@ -153,8 +158,8 @@ fn quiver_ui_panel_edge_component_type(component : EdgeEndpointStyle) -> String 
 ///|
 fn quiver_ui_cell_origin(
   quiver : Quiver,
-  cell_id : Int,
-  cache : @hashmap.HashMap[Int, Point],
+  cell_id : Int32,
+  cache : @hashmap.HashMap[Int32, Point],
 ) -> Point {
   match cache.get(cell_id) {
     Some(point) => point
@@ -185,7 +190,7 @@ fn quiver_ui_cell_origin(
 fn quiver_ui_panel_edge_angle(
   quiver : Quiver,
   edge : Edge,
-  cache : @hashmap.HashMap[Int, Point],
+  cache : @hashmap.HashMap[Int32, Point],
 ) -> Double {
   if edge.source == edge.target {
     edge.options.angle.to_double() * 3.141592653589793 / 180.0
@@ -197,7 +202,7 @@ fn quiver_ui_panel_edge_angle(
 }
 
 ///|
-fn quiver_ui_option_int_json(value : Int?) -> Json {
+fn quiver_ui_option_int_json(value : Int32?) -> Json {
   match value {
     Some(number) => Json::number(number.to_double())
     None => Json::null()
@@ -248,7 +253,10 @@ fn quiver_ui_selection_panel_state_json(
     "has_selected_nonloop_edges",
     Json::boolean(state.has_selected_nonloop_edges),
   )
-  out.set("has_selected_loop_edges", Json::boolean(state.has_selected_loop_edges))
+  out.set(
+    "has_selected_loop_edges",
+    Json::boolean(state.has_selected_loop_edges),
+  )
   out.set("label", quiver_ui_option_string_json(state.label))
   out.set("label_colour", quiver_ui_option_colour_json(state.label_colour))
   out.set("edge_angle", quiver_ui_option_double_json(state.edge_angle))
@@ -325,7 +333,7 @@ pub fn QuiverUiSelectionToolbarState::to_json_string(
 ///|
 pub fn QuiverUiAdapter::selection_panel_state(
   self : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> QuiverUiSelectionPanelState {
   let selected_ids = quiver_ui_unique_existing_ids(self.quiver, selected_ids)
   let mut has_selected_edges = false
@@ -335,13 +343,13 @@ pub fn QuiverUiAdapter::selection_panel_state(
   let label_colour_values : Array[Colour] = []
   let edge_angle_values : Array[Double] = []
   let label_alignment_values : Array[String] = []
-  let label_position_values : Array[Int] = []
-  let offset_values : Array[Int] = []
-  let curve_values : Array[Int] = []
-  let radius_values : Array[Int] = []
-  let angle_values : Array[Int] = []
+  let label_position_values : Array[Int32] = []
+  let offset_values : Array[Int32] = []
+  let curve_values : Array[Int32] = []
+  let radius_values : Array[Int32] = []
+  let angle_values : Array[Int32] = []
   let length_values : Array[EdgeShorten] = []
-  let level_values : Array[Int] = []
+  let level_values : Array[Int32] = []
   let edge_type_values : Array[String] = []
   let edge_colour_values : Array[Colour] = []
   let tail_type_values : Array[String] = []
@@ -354,7 +362,7 @@ pub fn QuiverUiAdapter::selection_panel_state(
   let mut endpoint_positioning_source_checked = true
   let mut endpoint_positioning_target_visible = false
   let mut endpoint_positioning_target_checked = true
-  let origin_cache : @hashmap.HashMap[Int, Point] = @hashmap.new()
+  let origin_cache : @hashmap.HashMap[Int32, Point] = @hashmap.new()
   for cell_id in selected_ids {
     match self.quiver.cells.get(cell_id) {
       Some(CellData::Vertex(vertex)) => {
@@ -408,20 +416,20 @@ pub fn QuiverUiAdapter::selection_panel_state(
           self.quiver,
           edge.source,
         )
-        if source_projection.kind == "edge" && source_projection.has_vertex_endpoint {
+        if source_projection.kind == "edge" &&
+          source_projection.has_vertex_endpoint {
           endpoint_positioning_source_visible = true
-          endpoint_positioning_source_checked =
-            endpoint_positioning_source_checked &&
+          endpoint_positioning_source_checked = endpoint_positioning_source_checked &&
             edge.options.edge_alignment.source
         }
         let target_projection = quiver_ui_edge_endpoint_projection_data(
           self.quiver,
           edge.target,
         )
-        if target_projection.kind == "edge" && target_projection.has_vertex_endpoint {
+        if target_projection.kind == "edge" &&
+          target_projection.has_vertex_endpoint {
           endpoint_positioning_target_visible = true
-          endpoint_positioning_target_checked =
-            endpoint_positioning_target_checked &&
+          endpoint_positioning_target_checked = endpoint_positioning_target_checked &&
             edge.options.edge_alignment.target
         }
       }
@@ -468,7 +476,7 @@ pub fn QuiverUiAdapter::selection_panel_state(
 ///|
 pub fn QuiverUiAdapter::selection_panel_state_json(
   self : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   self.selection_panel_state(selected_ids).to_json_string()
 }
@@ -476,7 +484,7 @@ pub fn QuiverUiAdapter::selection_panel_state_json(
 ///|
 pub fn QuiverUiAdapter::selection_toolbar_state(
   self : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> QuiverUiSelectionToolbarState {
   let selected_ids = quiver_ui_unique_existing_ids(self.quiver, selected_ids)
   let all_cells = self.quiver.all_cells()
@@ -512,7 +520,7 @@ pub fn QuiverUiAdapter::selection_toolbar_state(
 ///|
 pub fn QuiverUiAdapter::selection_toolbar_state_json(
   self : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   self.selection_toolbar_state(selected_ids).to_json_string()
 }
@@ -520,7 +528,7 @@ pub fn QuiverUiAdapter::selection_toolbar_state_json(
 ///|
 pub fn ffi_adapter_selection_panel_state_json(
   adapter : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   adapter.selection_panel_state_json(selected_ids)
 }
@@ -528,7 +536,7 @@ pub fn ffi_adapter_selection_panel_state_json(
 ///|
 pub fn ffi_adapter_selection_toolbar_state_json(
   adapter : QuiverUiAdapter,
-  selected_ids : Array[Int],
+  selected_ids : Array[Int32],
 ) -> String {
   adapter.selection_toolbar_state_json(selected_ids)
 }

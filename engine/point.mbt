@@ -6,7 +6,7 @@ pub struct Point {
 
 ///|
 pub fn Point::new(x : Double, y : Double) -> Point {
-  { x, y }
+  { x, y, }
 }
 
 ///|
@@ -16,27 +16,27 @@ pub fn Point::lendir(length : Double, direction : Double) -> Point {
 
 ///|
 pub fn Point::zero() -> Point {
-  { x: 0.0, y: 0.0 }
+  { x: 0.0, y: 0.0, }
 }
 
 ///|
 pub fn Point::add(self : Point, other : Point) -> Point {
-  { x: self.x + other.x, y: self.y + other.y }
+  { x: self.x + other.x, y: self.y + other.y, }
 }
 
 ///|
 pub fn Point::sub(self : Point, other : Point) -> Point {
-  { x: self.x - other.x, y: self.y - other.y }
+  { x: self.x - other.x, y: self.y - other.y, }
 }
 
 ///|
 pub fn Point::neg(self : Point) -> Point {
-  { x: -self.x, y: -self.y }
+  { x: -self.x, y: -self.y, }
 }
 
 ///|
 pub fn Point::scale(self : Point, w : Double, h : Double) -> Point {
-  { x: self.x * w, y: self.y * h }
+  { x: self.x * w, y: self.y * h, }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn Point::mul(self : Point, multiplier : Double) -> Point {
 
 ///|
 pub fn Point::div(self : Point, divisor : Double) -> Point {
-  { x: self.x / divisor, y: self.y / divisor }
+  { x: self.x / divisor, y: self.y / divisor, }
 }
 
 ///|

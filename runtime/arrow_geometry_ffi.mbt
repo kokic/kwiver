@@ -43,10 +43,10 @@ fn runtime_arrow_shape(
 ///|
 fn runtime_arrow_options(
   shape_is_arc : Bool,
-  curve : Int,
-  radius : Int,
-  angle : Int,
-  offset : Int,
+  curve : Int32,
+  radius : Int32,
+  angle : Int32,
+  offset : Int32,
 ) -> @engine.EdgeOptions {
   let mut options = @engine.EdgeOptions::default()
   options = if shape_is_arc {
@@ -64,15 +64,16 @@ fn runtime_arrow_options(
 ///|
 fn runtime_arrow_options_with_label(
   shape_is_arc : Bool,
-  curve : Int,
-  radius : Int,
-  angle : Int,
-  offset : Int,
+  curve : Int32,
+  radius : Int32,
+  angle : Int32,
+  offset : Int32,
   label_alignment : String,
-  label_position : Int,
+  label_position : Int32,
 ) -> @engine.EdgeOptions {
-  let options = runtime_arrow_options(shape_is_arc, curve, radius, angle, offset)
-    .with_label_position(label_position)
+  let options = runtime_arrow_options(
+    shape_is_arc, curve, radius, angle, offset,
+  ).with_label_position(label_position)
   match label_alignment {
     "centre" => options.with_label_alignment_centre()
     "center" => options.with_label_alignment_centre()
@@ -131,36 +132,28 @@ pub fn ffi_runtime_arrow_find_endpoints_local(
   target_height : Double,
   target_radius : Double,
   shape_is_arc : Bool,
-  curve : Int,
-  radius : Int,
-  angle : Int,
-  offset : Int,
+  curve : Int32,
+  radius : Int32,
+  angle : Int32,
+  offset : Int32,
 ) -> BrowserDemoArrowEndpointsResult {
   let render_source = runtime_point(render_source_x, render_source_y)
   let render_target = runtime_point(render_target_x, render_target_y)
   let render_angle = render_target.sub(render_source).angle()
 
   let source = runtime_arrow_shape(
-    source_is_endpoint,
-    source_origin_x,
-    source_origin_y,
-    source_width,
-    source_height,
+    source_is_endpoint, source_origin_x, source_origin_y, source_width, source_height,
     source_radius,
   )
   let target = runtime_arrow_shape(
-    target_is_endpoint,
-    target_origin_x,
-    target_origin_y,
-    target_width,
-    target_height,
+    target_is_endpoint, target_origin_x, target_origin_y, target_width, target_height,
     target_radius,
   )
-  let options = runtime_arrow_options(shape_is_arc, curve, radius, angle, offset)
+  let options = runtime_arrow_options(
+    shape_is_arc, curve, radius, angle, offset,
+  )
   let curve_model = @geometry.ArrowCurveModel::new(
-    render_source,
-    render_target,
-    options,
+    render_source, render_target, options,
   )
   let layout = @geometry.ArrowLayout::new(source, target, curve_model, options)
   let endpoints = layout.clipped_endpoints()
@@ -180,7 +173,7 @@ pub fn ffi_runtime_arrow_find_endpoints_local(
     (target_is_endpoint || endpoints.end.t < 1.0 - @engine.EPSILON) &&
     endpoints.end.t >= endpoints.start.t
 
-  { ok, start, end }
+  { ok, start, end, }
 }
 
 ///|
@@ -202,12 +195,12 @@ pub fn ffi_runtime_arrow_label_position_local(
   target_height : Double,
   target_radius : Double,
   shape_is_arc : Bool,
-  curve : Int,
-  radius : Int,
-  angle : Int,
-  offset : Int,
+  curve : Int32,
+  radius : Int32,
+  angle : Int32,
+  offset : Int32,
   label_alignment : String,
-  label_position : Int,
+  label_position : Int32,
   label_width : Double,
   label_height : Double,
   edge_width : Double,
@@ -216,37 +209,21 @@ pub fn ffi_runtime_arrow_label_position_local(
   let render_target = runtime_point(render_target_x, render_target_y)
 
   let source = runtime_arrow_shape(
-    source_is_endpoint,
-    source_origin_x,
-    source_origin_y,
-    source_width,
-    source_height,
+    source_is_endpoint, source_origin_x, source_origin_y, source_width, source_height,
     source_radius,
   )
   let target = runtime_arrow_shape(
-    target_is_endpoint,
-    target_origin_x,
-    target_origin_y,
-    target_width,
-    target_height,
+    target_is_endpoint, target_origin_x, target_origin_y, target_width, target_height,
     target_radius,
   )
   let options = runtime_arrow_options_with_label(
-    shape_is_arc,
-    curve,
-    radius,
-    angle,
-    offset,
-    label_alignment,
-    label_position,
+    shape_is_arc, curve, radius, angle, offset, label_alignment, label_position,
   )
   let curve_model = @geometry.ArrowCurveModel::new(
-    render_source,
-    render_target,
-    options,
+    render_source, render_target, options,
   )
   let layout = @geometry.ArrowLayout::new(source, target, curve_model, options)
-  layout.label_position_local(label_width, label_height, edge_width=edge_width)
+  layout.label_position_local(label_width, label_height, edge_width~)
 }
 
 ///|
@@ -269,13 +246,13 @@ pub fn ffi_runtime_arrow_render_plan_local(
   target_radius : Double,
   shape_is_arc : Bool,
   is_loop : Bool,
-  geometry_curve : Int,
-  geometry_radius : Int,
-  geometry_angle : Int,
-  geometry_offset : Int,
+  geometry_curve : Int32,
+  geometry_radius : Int32,
+  geometry_angle : Int32,
+  geometry_offset : Int32,
   display_curve : Double,
   display_loop_angle : Double,
-  level : Int,
+  level : Int32,
   stroke_width : Double,
   edge_width : Double,
   head_width : Double,
@@ -293,32 +270,18 @@ pub fn ffi_runtime_arrow_render_plan_local(
   let render_angle = render_target.sub(render_source).angle()
 
   let source = runtime_arrow_shape(
-    source_is_endpoint,
-    source_origin_x,
-    source_origin_y,
-    source_width,
-    source_height,
+    source_is_endpoint, source_origin_x, source_origin_y, source_width, source_height,
     source_radius,
   )
   let target = runtime_arrow_shape(
-    target_is_endpoint,
-    target_origin_x,
-    target_origin_y,
-    target_width,
-    target_height,
+    target_is_endpoint, target_origin_x, target_origin_y, target_width, target_height,
     target_radius,
   )
   let options = runtime_arrow_options(
-    shape_is_arc,
-    geometry_curve,
-    geometry_radius,
-    geometry_angle,
-    geometry_offset,
+    shape_is_arc, geometry_curve, geometry_radius, geometry_angle, geometry_offset,
   )
   let curve_model = @geometry.ArrowCurveModel::new(
-    render_source,
-    render_target,
-    options,
+    render_source, render_target, options,
   )
   let layout = @geometry.ArrowLayout::new(source, target, curve_model, options)
   let endpoints = layout.clipped_endpoints()
@@ -346,7 +309,12 @@ pub fn ffi_runtime_arrow_render_plan_local(
     render_target.sub(render_source).length(),
     display_curve,
     display_loop_angle,
-    runtime_curve_point(local_start.x, local_start.y, local_start.t, local_start.angle),
+    runtime_curve_point(
+      local_start.x,
+      local_start.y,
+      local_start.t,
+      local_start.angle,
+    ),
     runtime_curve_point(local_end.x, local_end.y, local_end.t, local_end.angle),
     level,
     stroke_width,

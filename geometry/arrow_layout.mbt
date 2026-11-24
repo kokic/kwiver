@@ -19,7 +19,7 @@ pub struct ArrowShape {
 
 ///|
 pub fn ArrowShape::endpoint(origin : Point) -> ArrowShape {
-  { data: ArrowShapeData::Endpoint(origin) }
+  { data: ArrowShapeData::Endpoint(origin), }
 }
 
 ///|
@@ -29,7 +29,7 @@ pub fn ArrowShape::rounded_rect(
   height : Double,
   radius : Double,
 ) -> ArrowShape {
-  { data: ArrowShapeData::RoundedRect({ origin, width, height, radius }) }
+  { data: ArrowShapeData::RoundedRect({ origin, width, height, radius, }), }
 }
 
 ///|
@@ -70,13 +70,13 @@ fn ArrowShape::contains(self : ArrowShape, point : Point) -> Bool {
 ///|
 pub struct ArrowLayoutConfig {
   label_padding : Double
-  boundary_samples : Int
-  boundary_iterations : Int
+  boundary_samples : Int32
+  boundary_iterations : Int32
 }
 
 ///|
 pub fn ArrowLayoutConfig::default() -> ArrowLayoutConfig {
-  { label_padding: 8.0, boundary_samples: 256, boundary_iterations: 30 }
+  { label_padding: 8.0, boundary_samples: 256, boundary_iterations: 30, }
 }
 
 ///|
@@ -101,7 +101,13 @@ pub fn ArrowLayout::new(
   curve_model : ArrowCurveModel,
   options : EdgeOptions,
 ) -> ArrowLayout {
-  { source, target, curve_model, options, config: ArrowLayoutConfig::default() }
+  {
+    source,
+    target,
+    curve_model,
+    options,
+    config: ArrowLayoutConfig::default(),
+  }
 }
 
 ///|
@@ -112,7 +118,7 @@ pub fn ArrowLayout::with_config(
   options : EdgeOptions,
   config : ArrowLayoutConfig,
 ) -> ArrowLayout {
-  { source, target, curve_model, options, config }
+  { source, target, curve_model, options, config, }
 }
 
 ///|
@@ -274,7 +280,7 @@ pub fn ArrowLayout::label_position(
   self : ArrowLayout,
   label_width : Double,
   label_height : Double,
-  edge_width? : Double = 1.5,
+  edge_width~ : Double = 1.5,
 ) -> Point {
   self.curve_model.local_to_world(
     self.label_position_local(label_width, label_height, edge_width~),
@@ -286,7 +292,7 @@ pub fn ArrowLayout::label_position_local(
   self : ArrowLayout,
   label_width : Double,
   label_height : Double,
-  edge_width? : Double = 1.5,
+  edge_width~ : Double = 1.5,
 ) -> Point {
   let endpoints = self.clipped_endpoints()
   let ratio = self.options.label_position.to_double() / 100.0
@@ -307,7 +313,10 @@ pub fn ArrowLayout::label_position_local(
   }
 
   let offset_allowance = 4.0
-  let label_size = Point::new(label_width + edge_width, label_height + edge_width)
+  let label_size = Point::new(
+    label_width + edge_width,
+    label_height + edge_width,
+  )
   let mut offset_min = 0.0
   let mut offset_max = offset_allowance +
     Double::abs(self.curve_model.local_height()) +
@@ -321,9 +330,9 @@ pub fn ArrowLayout::label_position_local(
   let mut i = 0
   while true {
     label_offset = (offset_min + offset_max) / 2.0
-    let rect_centre = centre.rotate(angle).add(
-      Point::lendir(label_offset, angle + offset_angle),
-    )
+    let rect_centre = centre
+      .rotate(angle)
+      .add(Point::lendir(label_offset, angle + offset_angle))
     let intersections = self.curve_model.display_intersections_with_rounded_rectangle(
       RoundedRectangle::new(
         rect_centre,

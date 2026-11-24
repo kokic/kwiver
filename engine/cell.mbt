@@ -1,58 +1,63 @@
 ///|
 pub struct Cell {
-  id : Int
-  level : Int
+  id : Int32
+  level : Int32
   label : String
   label_colour : Colour
 }
 
 ///|
 pub fn Cell::new(
-  id : Int,
-  level : Int,
+  id : Int32,
+  level : Int32,
   label : String,
   label_colour : Colour,
 ) -> Cell {
-  { id, level: if level < 0 { 0 } else { level }, label, label_colour }
+  { id, level: if level < 0 { 0 } else { level }, label, label_colour, }
 }
 
 ///|
 pub struct Vertex {
   cell : Cell
-  x : Int
-  y : Int
+  x : Int32
+  y : Int32
 }
 
 ///|
 pub fn Vertex::new(
-  id : Int,
+  id : Int32,
   label : String,
-  x : Int,
-  y : Int,
+  x : Int32,
+  y : Int32,
   label_colour : Colour,
 ) -> Vertex {
-  { cell: Cell::new(id, 0, label, label_colour), x, y }
+  { cell: Cell::new(id, 0, label, label_colour), x, y, }
 }
 
 ///|
-pub fn Vertex::new_black(id : Int, label : String, x : Int, y : Int) -> Vertex {
+pub fn Vertex::new_black(
+  id : Int32,
+  label : String,
+  x : Int32,
+  y : Int32,
+) -> Vertex {
   Vertex::new(id, label, x, y, Colour::black())
 }
 
 ///|
 pub struct Edge {
   cell : Cell
-  source : Int
-  target : Int
+  source : Int32
+  target : Int32
   options : EdgeOptions
 }
 
 ///|
 pub fn Edge::new(
-  id : Int,
+  id : Int32,
   label : String,
-  source : Int,
-  target : Int,
+  source : Int32,
+  target : Int32,
   options : EdgeOptions,
   label_colour : Colour,
 ) -> Edge {
@@ -81,7 +86,7 @@ pub fn CellData::from_edge(edge : Edge) -> CellData {
 }
 
 ///|
-pub fn CellData::id(self : CellData) -> Int {
+pub fn CellData::id(self : CellData) -> Int32 {
   match self {
     CellData::Vertex(vertex) => vertex.cell.id
     CellData::Edge(edge) => edge.cell.id
@@ -89,7 +94,7 @@ pub fn CellData::id(self : CellData) -> Int {
 }
 
 ///|
-pub fn CellData::level(self : CellData) -> Int {
+pub fn CellData::level(self : CellData) -> Int32 {
   match self {
     CellData::Vertex(vertex) => vertex.cell.level
     CellData::Edge(edge) => edge.cell.level
@@ -115,9 +120,9 @@ pub fn CellData::is_edge(self : CellData) -> Bool {
 ///|
 pub fn Edge::reconnected(
   self : Edge,
-  source : Int,
-  target : Int,
-  level : Int,
+  source : Int32,
+  target : Int32,
+  level : Int32,
 ) -> Edge {
   {
     cell: Cell::new(

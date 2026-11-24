@@ -6,11 +6,14 @@ pub enum DependencyRole {
 
 ///|
 pub struct Quiver {
-  cells_by_level : Array[@hashmap.HashMap[Int, Bool]]
-  cells : @hashmap.HashMap[Int, CellData]
-  dependencies : @hashmap.HashMap[Int, @hashmap.HashMap[Int, DependencyRole]]
-  reverse_dependencies : @hashmap.HashMap[Int, @hashmap.HashMap[Int, Bool]]
-  deleted : @hashmap.HashMap[Int, Int]
+  cells_by_level : Array[@hashmap.HashMap[Int32, Bool]]
+  cells : @hashmap.HashMap[Int32, CellData]
+  dependencies : @hashmap.HashMap[
+    Int32,
+    @hashmap.HashMap[Int32, DependencyRole],
+  ]
+  reverse_dependencies : @hashmap.HashMap[Int32, @hashmap.HashMap[Int32, Bool]]
+  deleted : @hashmap.HashMap[Int32, Int32]
 }
 
 ///|
@@ -25,7 +28,7 @@ pub fn Quiver::new() -> Quiver {
 }
 
 ///|
-fn Quiver::ensure_level(self : Quiver, level : Int) -> Unit {
+fn Quiver::ensure_level(self : Quiver, level : Int32) -> Unit {
   let target = if level < 0 { 0 } else { level }
   while self.cells_by_level.length() <= target {
     self.cells_by_level.push(@hashmap.new())
@@ -33,7 +36,11 @@ fn Quiver::ensure_level(self : Quiver, level : Int) -> Unit {
 }
 
 ///|
-fn Quiver::remove_from_level(self : Quiver, level : Int, cell_id : Int) -> Unit {
+fn Quiver::remove_from_level(
+  self : Quiver,
+  level : Int32,
+  cell_id : Int32,
+) -> Unit {
   if level >= 0 && level < self.cells_by_level.length() {
     self.cells_by_level[level].remove(cell_id)
   }
@@ -42,9 +49,9 @@ fn Quiver::remove_from_level(self : Quiver, level : Int, cell_id : Int) -> Unit 
 ///|
 fn Quiver::cell_level_or_default(
   self : Quiver,
-  cell_id : Int,
-  default? : Int = 0,
-) -> Int {
+  cell_id : Int32,
+  default~ : Int32 = 0,
+) -> Int32 {
   match self.cells.get(cell_id) {
     Some(cell) => cell.level()
     None => default
@@ -52,7 +59,7 @@ fn Quiver::cell_level_or_default(
 }
 
 ///|
-fn Quiver::order_ids(self : Quiver, ids : Array[Int]) -> Array[Int] {
+fn Quiver::order_ids(self : Quiver, ids : Array[Int32]) -> Array[Int32] {
   let ordered = ids.copy()
   ordered.sort_by((a, b) => {
     let level_cmp = self.cell_level_or_default(a) -
@@ -82,9 +89,13 @@ pub fn Quiver::add(self : Quiver, cell : CellData) -> Unit {
 }
 
 ///|
-pub fn Quiver::remove(self : Quiver, cell_id : Int, when : Int) -> Array[Int] {
-  let removed : @hashmap.HashMap[Int, Bool] = @hashmap.new()
-  let removal_queue : Array[Int] = [cell_id]
+pub fn Quiver::remove(
+  self : Quiver,
+  cell_id : Int32,
+  when : Int32,
+) -> Array[Int32] {
+  let removed : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let removal_queue : Array[Int32] = [cell_id]
   let mut index = 0
   // `dependencies` stores the forward dependent closure. Walking it here
   // tombstones every cell that must disappear with the requested root.
@@ -109,8 +120,8 @@ pub fn Quiver::remove(self : Quiver, cell_id : Int, when : Int) -> Array[Int] {
 }
 
 ///|
-pub fn Quiver::flush(self : Quiver, when : Int) -> Unit {
-  let to_flush : Array[Int] = []
+pub fn Quiver::flush(self : Quiver, when : Int32) -> Unit {
+  let to_flush : Array[Int32] = []
   self.deleted.each((cell_id, deleted_at) => {
     if deleted_at >= when {
       to_flush.push(cell_id)
@@ -138,8 +149,8 @@ pub fn Quiver::flush(self : Quiver, when : Int) -> Unit {
 }
 
 ///|
-pub fn Quiver::all_cell_ids(self : Quiver) -> Array[Int] {
-  let ids : Array[Int] = []
+pub fn Quiver::all_cell_ids(self : Quiver) -> Array[Int32] {
+  let ids : Array[Int32] = []
   self.cells.each((cell_id, _) => {
     if !self.deleted.contains(cell_id) {
       ids.push(cell_id)
@@ -166,12 +177,12 @@ pub fn Quiver::is_empty(self : Quiver) -> Bool {
 }
 
 ///|
-pub fn Quiver::contains_cell(self : Quiver, cell_id : Int) -> Bool {
+pub fn Quiver::contains_cell(self : Quiver, cell_id : Int32) -> Bool {
   self.cells.contains(cell_id) && !self.deleted.contains(cell_id)
 }
 
 ///|
-pub fn Quiver::next_available_id(self : Quiver, start? : Int = 1) -> Int {
+pub fn Quiver::next_available_id(self : Quiver, start~ : Int32 = 1) -> Int32 {
   let mut candidate = if start < 1 { 1 } else { start }
   while self.cells.contains(candidate) {
     candidate = candidate + 1
@@ -182,9 +193,9 @@ pub fn Quiver::next_available_id(self : Quiver, start? : Int = 1) -> Int {
 ///|
 pub fn Quiver::dependencies_of(
   self : Quiver,
-  cell_id : Int,
-) -> @hashmap.HashMap[Int, DependencyRole] {
-  let filtered : @hashmap.HashMap[Int, DependencyRole] = @hashmap.new()
+  cell_id : Int32,
+) -> @hashmap.HashMap[Int32, DependencyRole] {
+  let filtered : @hashmap.HashMap[Int32, DependencyRole] = @hashmap.new()
   match self.dependencies.get(cell_id) {
     Some(deps) =>
       deps.each((dependency, relationship) => {
@@ -200,9 +211,9 @@ pub fn Quiver::dependencies_of(
 ///|
 pub fn Quiver::reverse_dependencies_of(
   self : Quiver,
-  cell_id : Int,
-) -> @hashmap.HashMap[Int, Bool] {
-  let filtered : @hashmap.HashMap[Int, Bool] = @hashmap.new()
+  cell_id : Int32,
+) -> @hashmap.HashMap[Int32, Bool] {
+  let filtered : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
   match self.reverse_dependencies.get(cell_id) {
     Some(deps) =>
       deps.each((dependency, _) => {
@@ -218,11 +229,11 @@ pub fn Quiver::reverse_dependencies_of(
 ///|
 pub fn Quiver::transitive_dependencies(
   self : Quiver,
-  roots : Array[Int],
-  exclude_roots? : Bool = false,
-) -> Array[Int] {
-  let closure : @hashmap.HashMap[Int, Bool] = @hashmap.new()
-  let queue : Array[Int] = []
+  roots : Array[Int32],
+  exclude_roots~ : Bool = false,
+) -> Array[Int32] {
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let queue : Array[Int32] = []
   for cell_id in roots {
     if !closure.contains(cell_id) {
       closure.set(cell_id, true)
@@ -253,10 +264,10 @@ pub fn Quiver::transitive_dependencies(
 ///|
 pub fn Quiver::transitive_reverse_dependencies(
   self : Quiver,
-  roots : Array[Int],
-) -> Array[Int] {
-  let closure : @hashmap.HashMap[Int, Bool] = @hashmap.new()
-  let queue : Array[Int] = []
+  roots : Array[Int32],
+) -> Array[Int32] {
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let queue : Array[Int32] = []
   for cell_id in roots {
     if !closure.contains(cell_id) {
       closure.set(cell_id, true)
@@ -282,10 +293,10 @@ pub fn Quiver::transitive_reverse_dependencies(
 ///|
 pub fn Quiver::connected_components(
   self : Quiver,
-  roots : Array[Int],
-) -> Array[Int] {
-  let closure : @hashmap.HashMap[Int, Bool] = @hashmap.new()
-  let queue : Array[Int] = []
+  roots : Array[Int32],
+) -> Array[Int32] {
+  let closure : @hashmap.HashMap[Int32, Bool] = @hashmap.new()
+  let queue : Array[Int32] = []
 
   for cell_id in roots {
     if !closure.contains(cell_id) {
@@ -324,9 +335,9 @@ pub fn Quiver::connected_components(
 ///|
 pub fn Quiver::connect(
   self : Quiver,
-  source : Int,
-  target : Int,
-  edge_id : Int,
+  source : Int32,
+  target : Int32,
+  edge_id : Int32,
 ) -> Unit {
   let reverse_deps = self.reverse_dependencies.get_or_init(edge_id, () => {
     @hashmap.new()
@@ -369,7 +380,7 @@ pub fn Quiver::connect(
     match self.cells.get(cell_id) {
       Some(CellData::Edge(edge)) => {
         let old_level = edge.cell.level
-        let new_level = Int::max(
+        let new_level = Int32::max(
             self.cell_level_or_default(edge.source),
             self.cell_level_or_default(edge.target),
           ) +

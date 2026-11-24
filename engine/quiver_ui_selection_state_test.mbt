@@ -103,7 +103,12 @@ test "selection panel state derives corner endpoint semantics" {
   let adapter = ffi_adapter_new()
   let source_id = ffi_adapter_add_vertex(adapter, "A", 0, 0)
   let target_id = ffi_adapter_add_vertex(adapter, "B", 3, 0)
-  let base_edge_id = ffi_adapter_add_edge(adapter, source_id, target_id, label="f")
+  let base_edge_id = ffi_adapter_add_edge(
+    adapter,
+    source_id,
+    target_id,
+    label="f",
+  )
   let source_corner_id = ffi_adapter_add_edge(
     adapter,
     base_edge_id,
@@ -123,7 +128,9 @@ test "selection panel state derives corner endpoint semantics" {
       .with_edge_alignment_target(false),
   )
 
-  let state = adapter.selection_panel_state([source_corner_id, target_inverse_id])
+  let state = adapter.selection_panel_state([
+    source_corner_id, target_inverse_id,
+  ])
   inspect(state.selection_size, content="2")
   inspect(state.has_selection, content="true")
   inspect(state.has_selected_edges, content="true")

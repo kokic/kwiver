@@ -1,19 +1,19 @@
 ///|
 pub struct Colour {
-  h : Int
-  s : Int
-  l : Int
+  h : Int32
+  s : Int32
+  l : Int32
   a : Double
 }
 
 ///|
-pub fn Colour::new(h : Int, s : Int, l : Int, a : Double) -> Colour {
-  { h, s, l, a }
+pub fn Colour::new(h : Int32, s : Int32, l : Int32, a : Double) -> Colour {
+  { h, s, l, a, }
 }
 
 ///|
 pub fn Colour::black() -> Colour {
-  { h: 0, s: 0, l: 0, a: 1.0 }
+  { h: 0, s: 0, l: 0, a: 1.0, }
 }
 
 ///|

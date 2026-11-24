@@ -1,12 +1,12 @@
 ///|
-fn sort_ids(ids : Array[Int]) -> Array[Int] {
+fn sort_ids(ids : Array[Int32]) -> Array[Int32] {
   let out = ids.copy()
   out.sort()
   out
 }
 
 ///|
-fn cell_ids(cells : Array[CellData]) -> Array[Int] {
+fn cell_ids(cells : Array[CellData]) -> Array[Int32] {
   let ids = cells.map(cell => cell.id())
   sort_ids(ids)
 }

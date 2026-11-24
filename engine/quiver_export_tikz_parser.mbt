@@ -20,7 +20,7 @@ fn tikz_trim_left(input : String) -> String {
 }
 
 ///|
-fn tikz_trim_left_length(input : String) -> Int {
+fn tikz_trim_left_length(input : String) -> Int32 {
   let mut start = 0
   while start < input.length() {
     if tikz_is_whitespace(input.unsafe_get(start)) {
@@ -38,7 +38,7 @@ fn tikz_is_whitespace(ch : UInt16) -> Bool {
 }
 
 ///|
-fn tikz_first_non_whitespace_offset(input : String) -> Int {
+fn tikz_first_non_whitespace_offset(input : String) -> Int32 {
   let mut i = 0
   while i < input.length() {
     if !tikz_is_whitespace(input.unsafe_get(i)) {
@@ -50,7 +50,7 @@ fn tikz_first_non_whitespace_offset(input : String) -> Int {
 }
 
 ///|
-fn tikz_line_column_from_index(input : String, index : Int) -> (Int, Int) {
+fn tikz_line_column_from_index(input : String, index : Int32) -> (Int32, Int32) {
   let limit = if index < 0 {
     0
   } else if index > input.length() {
@@ -76,18 +76,13 @@ fn tikz_line_column_from_index(input : String, index : Int) -> (Int, Int) {
 ///|
 fn tikz_error_with_position_if_missing(
   error : TikzCdImportError,
-  line : Int,
-  column : Int,
+  line : Int32,
+  column : Int32,
 ) -> TikzCdImportError {
   if error.line > 0 || error.column > 0 {
     return error
   }
-  {
-    kind: error.kind,
-    message: error.message,
-    line,
-    column,
-  }
+  { kind: error.kind, message: error.message, line, column, }
 }
 
 ///|
@@ -96,7 +91,10 @@ fn tikz_is_ascii_letter(ch : UInt16) -> Bool {
 }
 
 ///|
-fn tikz_consume_row_separator_suffix(body : String, after_separator : Int) -> Int {
+fn tikz_consume_row_separator_suffix(
+  body : String,
+  after_separator : Int32,
+) -> Int32 {
   let mut i = after_separator
   while i < body.length() && tikz_is_whitespace(body.unsafe_get(i)) {
     i = i + 1
@@ -125,7 +123,7 @@ fn tikz_consume_row_separator_suffix(body : String, after_separator : Int) -> In
 }
 
 ///|
-fn tikz_take_cr_row_separator(body : String, index : Int) -> Int? {
+fn tikz_take_cr_row_separator(body : String, index : Int32) -> Int32? {
   if index + 2 >= body.length() {
     return None
   }
@@ -150,14 +148,17 @@ fn tikz_take_cr_row_separator(body : String, index : Int) -> Int? {
 }
 
 ///|
-fn tikz_take_tabularnewline_row_separator(body : String, index : Int) -> Int? {
+fn tikz_take_tabularnewline_row_separator(
+  body : String,
+  index : Int32,
+) -> Int32? {
   let token = "tabularnewline"
   let start = index + 1
   let end = start + token.length()
   if end > body.length() {
     return None
   }
-  if body.unsafe_substring(start~, end=end) != token {
+  if body.unsafe_substring(start~, end~) != token {
     return None
   }
   if end < body.length() && tikz_is_ascii_letter(body.unsafe_get(end)) {
@@ -170,14 +171,14 @@ fn tikz_take_tabularnewline_row_separator(body : String, index : Int) -> Int? {
 ///|
 priv struct TikzEnvironmentBody {
   body : String
-  body_offset : Int
+  body_offset : Int32
   ampersand_replacement : String?
 }
 
 ///|
 priv struct TikzArrowMatch {
-  start : Int
-  options_start : Int
+  start : Int32
+  options_start : Int32
   open_delimiter : UInt16
   close_delimiter : UInt16
 }
@@ -192,11 +193,11 @@ priv struct TikzParsedArrow {
   source_center_anchor : Bool
   target_center_anchor : Bool
   label : String
-  from_x : Int?
-  from_y : Int?
+  from_x : Int32?
+  from_y : Int32?
   from_ref : String?
-  to_x : Int?
-  to_y : Int?
+  to_x : Int32?
+  to_y : Int32?
   to_ref : String?
   options : EdgeOptions
   label_colour : Colour
@@ -210,23 +211,23 @@ priv struct TikzParsedVertexLabel {
 
 ///|
 priv struct TikzPendingArrow {
-  default_source_x : Int
-  default_source_y : Int
+  default_source_x : Int32
+  default_source_y : Int32
   reverse : Bool
   is_loop : Bool
-  source_x : Int?
-  source_y : Int?
+  source_x : Int32?
+  source_y : Int32?
   source_ref : String?
   source_center_anchor : Bool
-  target_x : Int?
-  target_y : Int?
+  target_x : Int32?
+  target_y : Int32?
   target_ref : String?
   target_center_anchor : Bool
   is_phantom : Bool
   name : String?
   label : String
-  line : Int
-  column : Int
+  line : Int32
+  column : Int32
   options : EdgeOptions
   label_colour : Colour
 }
@@ -234,18 +235,18 @@ priv struct TikzPendingArrow {
 ///|
 priv struct TikzTextSegment {
   text : String
-  start : Int
+  start : Int32
 }
 
 ///|
 priv struct TikzNamedCellRef {
-  id : Int
+  id : Int32
   center_anchor : Bool
 }
 
 ///|
 priv struct TikzResolvedEndpoint {
-  id : Int
+  id : Int32
   center_anchor : Bool
 }
 
@@ -254,7 +255,7 @@ priv struct TikzParsedLabelOptions {
   swap : Bool
   description : Bool
   marking : Bool
-  pos : Int?
+  pos : Int32?
   colour : Colour?
 }
 
@@ -262,7 +263,7 @@ priv struct TikzParsedLabelOptions {
 priv struct TikzParsedDecorationOption {
   style_name : String
   colour : Colour?
-  rotate : Int?
+  rotate : Int32?
 }
 
 ///|
@@ -274,7 +275,7 @@ priv struct TikzParsedArrowBodyDecorationOption {
 ///|
 priv struct TikzParsedLoopOptions {
   is_loop : Bool
-  clockwise_hint : Int?
+  clockwise_hint : Int32?
   in_angle : Double?
   out_angle : Double?
   distance_mm : Double?
@@ -302,7 +303,7 @@ fn tikz_parse_ampersand_replacement(options : String) -> String? {
 }
 
 ///|
-fn tikz_find_token_outside_comments(input : String, token : String) -> Int? {
+fn tikz_find_token_outside_comments(input : String, token : String) -> Int32? {
   if token == "" {
     return None
   }
@@ -336,14 +337,16 @@ fn tikz_find_token_outside_comments(input : String, token : String) -> Int? {
 }
 
 ///|
-fn tikz_find_environment_tokens(input : String) -> (Int, String, String)? {
+fn tikz_find_environment_tokens(input : String) -> (Int32, String, String)? {
   let begin_token = "\\begin{tikzcd}"
   let end_token = "\\end{tikzcd}"
   let begin_star_token = "\\begin{tikzcd*}"
   let end_star_token = "\\end{tikzcd*}"
 
   let begin_index = tikz_find_token_outside_comments(input, begin_token)
-  let begin_star_index = tikz_find_token_outside_comments(input, begin_star_token)
+  let begin_star_index = tikz_find_token_outside_comments(
+    input, begin_star_token,
+  )
   match begin_index {
     Some(index) =>
       match begin_star_index {
@@ -385,14 +388,20 @@ fn tikz_extract_environment_body(input : String) -> TikzEnvironmentBody? {
       let mut rest = if after_begin_trimmed == 0 {
         after_begin
       } else {
-        after_begin.unsafe_substring(start=after_begin_trimmed, end=after_begin.length())
+        after_begin.unsafe_substring(
+          start=after_begin_trimmed,
+          end=after_begin.length(),
+        )
       }
       let mut ampersand_replacement : String? = None
       if rest.has_prefix("[") {
         let options_body = rest.unsafe_substring(start=1, end=rest.length())
         match tikz_find_closing_delimiter(options_body, '[', ']') {
           Some(close_index) => {
-            let options = options_body.unsafe_substring(start=0, end=close_index)
+            let options = options_body.unsafe_substring(
+              start=0,
+              end=close_index,
+            )
             ampersand_replacement = tikz_parse_ampersand_replacement(options)
             rest = options_body.unsafe_substring(
               start=close_index + 1,
@@ -507,7 +516,8 @@ fn tikz_split_rows_with_offsets(body : String) -> Array[TikzTextSegment] {
   rows
 }
 
-fn tikz_find_unescaped_percent(line : String) -> Int? {
+///|
+fn tikz_find_unescaped_percent(line : String) -> Int32? {
   let mut i = 0
   while i < line.length() {
     if line.unsafe_get(i) == '%' {
@@ -539,6 +549,7 @@ fn tikz_strip_line_comments(body : String) -> String {
   rows.join("\n")
 }
 
+///|
 fn tikz_split_cells_with_offsets(
   row : String,
   ampersand_replacement : String?,
@@ -551,10 +562,7 @@ fn tikz_split_cells_with_offsets(
   let mut paren_depth = 0
   let mut in_quotes = false
   while i < row.length() {
-    if !in_quotes &&
-      brace_depth == 0 &&
-      bracket_depth == 0 &&
-      paren_depth == 0 {
+    if !in_quotes && brace_depth == 0 && bracket_depth == 0 && paren_depth == 0 {
       match ampersand_replacement {
         Some(token) =>
           if token != "" &&
@@ -653,7 +661,7 @@ fn tikz_strip_math_wrapper(input : String) -> String {
 }
 
 ///|
-fn tikz_parse_positive_int(input : String) -> Int? {
+fn tikz_parse_positive_int(input : String) -> Int32? {
   let value = input.trim().to_string()
   if value == "" {
     return None
@@ -672,7 +680,7 @@ fn tikz_parse_positive_int(input : String) -> Int? {
 }
 
 ///|
-fn tikz_parse_grid_reference(value : String) -> (Int, Int)? {
+fn tikz_parse_grid_reference(value : String) -> (Int32, Int32)? {
   let raw = tikz_unwrap_braced_text(value)
   let compact = raw.replace_all(old=" ", new="").replace_all(old="\t", new="")
   match compact.find("-") {
@@ -726,7 +734,7 @@ fn tikz_is_direction_token(token : String) -> Bool {
 }
 
 ///|
-fn tikz_is_escaped_at(value : String, index : Int) -> Bool {
+fn tikz_is_escaped_at(value : String, index : Int32) -> Bool {
   let mut slash_count = 0
   let mut i = index
   while i > 0 && value.unsafe_get(i - 1) == '\\' {
@@ -737,7 +745,7 @@ fn tikz_is_escaped_at(value : String, index : Int) -> Bool {
 }
 
 ///|
-fn tikz_find_unescaped_quote(value : String, start : Int) -> Int? {
+fn tikz_find_unescaped_quote(value : String, start : Int32) -> Int32? {
   let mut i = start
   while i < value.length() {
     if value.unsafe_get(i) == '"' && !tikz_is_escaped_at(value, i) {
@@ -757,7 +765,7 @@ fn tikz_extract_first_quoted(value : String) -> String? {
         Some(end) =>
           Some(
             value
-            .unsafe_substring(start=content_start, end=end)
+            .unsafe_substring(start=content_start, end~)
             .replace_all(old="\\\"", new="\""),
           )
         None => None
@@ -920,7 +928,7 @@ fn tikz_apply_empty_arrow_style(options : EdgeOptions) -> EdgeOptions {
 }
 
 ///|
-fn tikz_parse_level_option_value(value : String) -> Int? {
+fn tikz_parse_level_option_value(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
   tikz_parse_positive_int(text)
 }
@@ -979,12 +987,13 @@ fn tikz_parse_signed_double(value : String) -> Double? {
   }
 
   Some(
-    sign * (int_part.to_double() + frac_part.to_double() / frac_scale.to_double()),
+    sign *
+    (int_part.to_double() + frac_part.to_double() / frac_scale.to_double()),
   )
 }
 
 ///|
-fn tikz_parse_shift_magnitude(value : String) -> Int? {
+fn tikz_parse_shift_magnitude(value : String) -> Int32? {
   let text_raw = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
@@ -1019,7 +1028,7 @@ fn tikz_trim_supported_unit(value : String) -> String {
 }
 
 ///|
-fn tikz_parse_bend_curve_magnitude(value : String) -> Int? {
+fn tikz_parse_bend_curve_magnitude(value : String) -> Int32? {
   let mut text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
@@ -1070,7 +1079,7 @@ fn tikz_take_braced_group(input : String) -> (String, String)? {
 }
 
 ///|
-fn tikz_parse_between_option(value : String) -> (Int, Int)? {
+fn tikz_parse_between_option(value : String) -> (Int32, Int32)? {
   match tikz_take_braced_group(value) {
     Some((source_text, rest)) =>
       match tikz_take_braced_group(rest) {
@@ -1081,7 +1090,9 @@ fn tikz_parse_between_option(value : String) -> (Int, Int)? {
               tikz_parse_label_pos_percent(target_text),
             ) {
             (Some(source), Some(target_end)) =>
-              if source >= 0 && source <= 100 && target_end >= 0 &&
+              if source >= 0 &&
+                source <= 100 &&
+                target_end >= 0 &&
                 target_end <= 100 {
                 Some((source, 100 - target_end))
               } else {
@@ -1096,7 +1107,7 @@ fn tikz_parse_between_option(value : String) -> (Int, Int)? {
 }
 
 ///|
-fn tikz_parse_curve_height_option(value : String) -> Int? {
+fn tikz_parse_curve_height_option(value : String) -> Int32? {
   let text = value.trim().to_string()
   let inner = if text.has_prefix("{") && text.has_suffix("}") {
     text.unsafe_substring(start=1, end=text.length() - 1).trim().to_string()
@@ -1108,15 +1119,19 @@ fn tikz_parse_curve_height_option(value : String) -> Int? {
     return None
   }
 
-  let mut parsed_height : Int? = None
+  let mut parsed_height : Int32? = None
   for token in tokens {
     match tikz_option_key_value(token) {
       Some((key_raw, value_raw)) => {
-        let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key_raw))
+        let key_token = tikz_strip_math_wrapper(
+            tikz_unwrap_braced_text(key_raw),
+          )
           .trim()
           .to_string()
         if key_token == "height" {
-          let height_text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value_raw))
+          let height_text = tikz_strip_math_wrapper(
+              tikz_unwrap_braced_text(value_raw),
+            )
             .trim()
             .to_string()
           let height_value = tikz_trim_supported_unit(height_text)
@@ -1196,7 +1211,7 @@ fn tikz_named_colour(name : String) -> Colour? {
 }
 
 ///|
-fn tikz_parse_rgb_255_component(value : String) -> Int? {
+fn tikz_parse_rgb_255_component(value : String) -> Int32? {
   match tikz_parse_positive_int(value.trim().to_string()) {
     Some(component) =>
       if component >= 0 && component <= 255 {
@@ -1245,7 +1260,9 @@ fn tikz_parse_rgb_255_colour(value : String) -> Colour? {
               let delta = max_channel - min_channel
               let l = (max_channel + min_channel) / 2.0
               if delta == 0.0 {
-                return Some(Colour::new(0, 0, tikz_round_to_int(l * 100.0), 1.0))
+                return Some(
+                  Colour::new(0, 0, tikz_round_to_int(l * 100.0), 1.0),
+                )
               }
 
               let abs_l = Double::abs(2.0 * l - 1.0)
@@ -1253,9 +1270,9 @@ fn tikz_parse_rgb_255_colour(value : String) -> Colour? {
               let h = if max_channel == r {
                 60.0 * tikz_mod((g - b) / delta, 6.0)
               } else if max_channel == g {
-                60.0 * (((b - r) / delta) + 2.0)
+                60.0 * ((b - r) / delta + 2.0)
               } else {
-                60.0 * (((r - g) / delta) + 4.0)
+                60.0 * ((r - g) / delta + 4.0)
               }
               Some(
                 Colour::new(
@@ -1288,7 +1305,7 @@ fn tikz_parse_colour_option(value : String) -> Colour? {
 }
 
 ///|
-fn tikz_parse_rotate_option(value : String) -> Int? {
+fn tikz_parse_rotate_option(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
@@ -1322,7 +1339,7 @@ fn tikz_parse_decoration_option(option : String) -> TikzParsedDecorationOption? 
       match tikz_decoration_style_name(content) {
         Some(style_name) => {
           let mut colour : Colour? = None
-          let mut rotate : Int? = None
+          let mut rotate : Int32? = None
           for suffix_option in tikz_label_suffix_options(option) {
             match tikz_option_key_value(suffix_option) {
               Some((key, value)) => {
@@ -1344,7 +1361,7 @@ fn tikz_parse_decoration_option(option : String) -> TikzParsedDecorationOption? 
               None => ()
             }
           }
-          Some({ style_name, colour, rotate })
+          Some({ style_name, colour, rotate, })
         }
         None => None
       }
@@ -1356,7 +1373,7 @@ fn tikz_parse_decoration_option(option : String) -> TikzParsedDecorationOption? 
 fn tikz_apply_decoration_rotation(
   options : EdgeOptions,
   style_name : String,
-  rotate : Int,
+  rotate : Int32,
 ) -> EdgeOptions {
   match style_name {
     "adjunction" => options.with_angle(-rotate)
@@ -1370,8 +1387,8 @@ fn tikz_apply_decoration_rotation(
 fn tikz_is_background_colour_expression(value : String) -> Bool {
   let compact = tikz_ascii_lower(
     tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
-      .replace_all(old=" ", new="")
-      .replace_all(old="\t", new=""),
+    .replace_all(old=" ", new="")
+    .replace_all(old="\t", new=""),
   )
   compact.contains("/tikz/commutativediagrams/backgroundcolor")
 }
@@ -1427,7 +1444,7 @@ fn tikz_parse_arrow_body_decoration_option(
               None => ()
             }
           }
-          Some({ style_body, colour })
+          Some({ style_body, colour, })
         }
         None => None
       }
@@ -1473,7 +1490,12 @@ fn tikz_parse_distance_option(value : String) -> Double? {
     .trim()
     .to_string()
   match tikz_parse_signed_double(tikz_trim_supported_unit(text)) {
-    Some(distance_mm) => if distance_mm > 0.0 { Some(distance_mm) } else { None }
+    Some(distance_mm) =>
+      if distance_mm > 0.0 {
+        Some(distance_mm)
+      } else {
+        None
+      }
     None => None
   }
 }
@@ -1487,13 +1509,13 @@ fn tikz_apply_loop_flag_option(
     .trim()
     .to_string()
   if token == "loop left" {
-    return { ..loop_options, is_loop: true, clockwise_hint: Some(-1) }
+    return { ..loop_options, is_loop: true, clockwise_hint: Some(-1), }
   }
   if token == "loop right" {
-    return { ..loop_options, is_loop: true, clockwise_hint: Some(1) }
+    return { ..loop_options, is_loop: true, clockwise_hint: Some(1), }
   }
   if token == "loop" {
-    return { ..loop_options, is_loop: true }
+    return { ..loop_options, is_loop: true, }
   }
   loop_options
 }
@@ -1507,19 +1529,20 @@ fn tikz_apply_loop_key_value_option(
   let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
   if key_token == "in" {
     match tikz_parse_angle_option(value) {
-      Some(in_angle) => return { ..loop_options, in_angle: Some(in_angle) }
+      Some(in_angle) => return { ..loop_options, in_angle: Some(in_angle), }
       None => ()
     }
   }
   if key_token == "out" {
     match tikz_parse_angle_option(value) {
-      Some(out_angle) => return { ..loop_options, out_angle: Some(out_angle) }
+      Some(out_angle) => return { ..loop_options, out_angle: Some(out_angle), }
       None => ()
     }
   }
   if key_token == "distance" {
     match tikz_parse_distance_option(value) {
-      Some(distance_mm) => return { ..loop_options, distance_mm: Some(distance_mm) }
+      Some(distance_mm) =>
+        return { ..loop_options, distance_mm: Some(distance_mm), }
       None => ()
     }
   }
@@ -1537,15 +1560,10 @@ fn tikz_apply_loop_geometry_options(
 
   let mut clockwise = match loop_options.clockwise_hint {
     Some(value) => if value < 0 { -1 } else { 1 }
-    None =>
-      if options.radius < 0 {
-        -1
-      } else {
-        1
-      }
+    None => if options.radius < 0 { -1 } else { 1 }
   }
 
-  let mut abs_radius = Int::abs(options.radius)
+  let mut abs_radius = Int32::abs(options.radius)
   if abs_radius < 1 {
     abs_radius = 1
   }
@@ -1591,7 +1609,7 @@ fn tikz_apply_loop_geometry_options(
 }
 
 ///|
-fn tikz_parse_label_pos_percent(value : String) -> Int? {
+fn tikz_parse_label_pos_percent(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
@@ -1602,7 +1620,10 @@ fn tikz_parse_label_pos_percent(value : String) -> Int? {
   match text.find(".") {
     Some(dot_index) => {
       let whole_text = text.unsafe_substring(start=0, end=dot_index)
-      let frac_text = text.unsafe_substring(start=dot_index + 1, end=text.length())
+      let frac_text = text.unsafe_substring(
+        start=dot_index + 1,
+        end=text.length(),
+      )
       if frac_text == "" {
         return None
       }
@@ -1938,13 +1959,7 @@ fn tikz_apply_arrow_key_value_option(
   if key_token == "scaling nfold" {
     match tikz_parse_level_option_value(value_token) {
       Some(level) => {
-        let clamped = if level < 2 {
-          2
-        } else if level > 4 {
-          4
-        } else {
-          level
-        }
+        let clamped = if level < 2 { 2 } else if level > 4 { 4 } else { level }
         return options.with_level(clamped)
       }
       None => ()
@@ -1991,13 +2006,15 @@ fn tikz_apply_arrow_key_value_option(
     .replace_all(old="\t", new="")
   if key_compact == "shorten<" {
     match tikz_parse_shorten_magnitude(value_raw) {
-      Some(source) => return options.with_shorten(source, options.shorten.target)
+      Some(source) =>
+        return options.with_shorten(source, options.shorten.target)
       None => ()
     }
   }
   if key_compact == "shorten>" {
     match tikz_parse_shorten_magnitude(value_raw) {
-      Some(target) => return options.with_shorten(options.shorten.source, target)
+      Some(target) =>
+        return options.with_shorten(options.shorten.source, target)
       None => ()
     }
   }
@@ -2014,13 +2031,7 @@ fn tikz_apply_arrow_key_value_option(
 
 ///|
 fn tikz_label_options_default() -> TikzParsedLabelOptions {
-  {
-    swap: false,
-    description: false,
-    marking: false,
-    pos: None,
-    colour: None,
-  }
+  { swap: false, description: false, marking: false, pos: None, colour: None, }
 }
 
 ///|
@@ -2030,18 +2041,18 @@ fn tikz_apply_label_flag_option(
 ) -> TikzParsedLabelOptions {
   let token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(option))
   match token {
-    "'" => { ..label_options, swap: !label_options.swap }
-    "swap" => { ..label_options, swap: !label_options.swap }
-    "description" => { ..label_options, description: true }
-    "marking" => { ..label_options, marking: true }
+    "'" => { ..label_options, swap: !label_options.swap, }
+    "swap" => { ..label_options, swap: !label_options.swap, }
+    "description" => { ..label_options, description: true, }
+    "marking" => { ..label_options, marking: true, }
     "allow upside down" => label_options
-    "at start" => { ..label_options, pos: Some(0) }
-    "very near start" => { ..label_options, pos: Some(10) }
-    "near start" => { ..label_options, pos: Some(20) }
-    "midway" => { ..label_options, pos: Some(50) }
-    "near end" => { ..label_options, pos: Some(80) }
-    "very near end" => { ..label_options, pos: Some(90) }
-    "at end" => { ..label_options, pos: Some(1) }
+    "at start" => { ..label_options, pos: Some(0), }
+    "very near start" => { ..label_options, pos: Some(10), }
+    "near start" => { ..label_options, pos: Some(20), }
+    "midway" => { ..label_options, pos: Some(50), }
+    "near end" => { ..label_options, pos: Some(80), }
+    "very near end" => { ..label_options, pos: Some(90), }
+    "at end" => { ..label_options, pos: Some(1), }
     _ => label_options
   }
 }
@@ -2055,12 +2066,12 @@ fn tikz_apply_label_key_value_option(
   let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
   if key_token == "pos" {
     match tikz_parse_label_pos_percent(value) {
-      Some(pos) => { ..label_options, pos: Some(pos) }
+      Some(pos) => { ..label_options, pos: Some(pos), }
       None => label_options
     }
   } else if key_token == "text" {
     match tikz_parse_colour_option(value) {
-      Some(colour) => { ..label_options, colour: Some(colour) }
+      Some(colour) => { ..label_options, colour: Some(colour), }
       None => label_options
     }
   } else {
@@ -2072,7 +2083,7 @@ fn tikz_apply_label_key_value_option(
 fn tikz_label_suffix_options(option : String) -> Array[String] {
   let suffix_options : Array[String] = []
   match tikz_find_unescaped_quote(option, 0) {
-    Some(start) => {
+    Some(start) =>
       match tikz_find_unescaped_quote(option, start + 1) {
         Some(end) => {
           let mut suffix = option
@@ -2093,7 +2104,10 @@ fn tikz_label_suffix_options(option : String) -> Array[String] {
           }
 
           if suffix.has_prefix("{") && suffix.has_suffix("}") {
-            let inner = suffix.unsafe_substring(start=1, end=suffix.length() - 1)
+            let inner = suffix.unsafe_substring(
+              start=1,
+              end=suffix.length() - 1,
+            )
             for opt in tikz_split_arrow_options(inner) {
               suffix_options.push(opt)
             }
@@ -2103,7 +2117,6 @@ fn tikz_label_suffix_options(option : String) -> Array[String] {
         }
         None => ()
       }
-    }
     None => ()
   }
   suffix_options
@@ -2131,7 +2144,7 @@ fn tikz_apply_label_options_to_edge_options(
 }
 
 ///|
-fn tikz_parse_shorten_magnitude(value : String) -> Int? {
+fn tikz_parse_shorten_magnitude(value : String) -> Int32? {
   let text = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
     .trim()
     .to_string()
@@ -2216,9 +2229,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
     "left"
   }
   i = i + 1
-  if marker == '|' &&
-    i < input.length() &&
-    input.unsafe_get(i) == '-' {
+  if marker == '|' && i < input.length() && input.unsafe_get(i) == '-' {
     i = i + 1
   }
   while i < input.length() && tikz_is_whitespace(input.unsafe_get(i)) {
@@ -2310,6 +2321,7 @@ fn tikz_take_leading_positional_label(input : String) -> (String, String)? {
   }
 }
 
+///|
 fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
   let mut brace_depth = 0
   let mut bracket_depth = 0
@@ -2404,7 +2416,7 @@ fn tikz_next_arrow_match(input : String) -> TikzArrowMatch? {
 
     let mut options_start = i + command_len
     while options_start < input.length() &&
-      tikz_is_whitespace(input.unsafe_get(options_start)) {
+          tikz_is_whitespace(input.unsafe_get(options_start)) {
       options_start = options_start + 1
     }
     if options_start < input.length() {
@@ -2566,9 +2578,10 @@ fn tikz_has_empty_arrow_option(raw_options : String) -> Bool {
   }
 
   raw_options
-    .unsafe_substring(start=segment_start, end=raw_options.length())
-    .trim()
-    .to_string() == ""
+  .unsafe_substring(start=segment_start, end=raw_options.length())
+  .trim()
+  .to_string() ==
+  ""
 }
 
 ///|
@@ -2576,7 +2589,7 @@ fn tikz_find_closing_delimiter(
   input : String,
   open_delimiter : UInt16,
   close_delimiter : UInt16,
-) -> Int? {
+) -> Int32? {
   let mut in_quotes = false
   let mut brace_depth = 0
   let mut bracket_depth = 0
@@ -2666,10 +2679,7 @@ fn tikz_cell_label_raw(cell : String) -> String {
   let trimmed = cell.trim().to_string()
   match tikz_next_arrow_match(trimmed) {
     Some(matched) =>
-      trimmed
-      .unsafe_substring(start=0, end=matched.start)
-      .trim()
-      .to_string()
+      trimmed.unsafe_substring(start=0, end=matched.start).trim().to_string()
     None => trimmed
   }
 }
@@ -2687,7 +2697,10 @@ fn tikz_take_leading_braced_group(input : String) -> (String, String)? {
       Some(
         (
           after_open.unsafe_substring(start=0, end=close_index),
-          after_open.unsafe_substring(start=close_index + 1, end=after_open.length()),
+          after_open.unsafe_substring(
+            start=close_index + 1,
+            end=after_open.length(),
+          ),
         ),
       )
     None => None
@@ -2718,7 +2731,9 @@ fn tikz_looks_like_textcolor_vertex_label(label_raw : String) -> Bool {
 }
 
 ///|
-fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabel? {
+fn tikz_parse_textcolor_vertex_label(
+  label_raw : String,
+) -> TikzParsedVertexLabel? {
   let trimmed = tikz_unwrap_trivial_braced_label(label_raw)
   if !trimmed.has_prefix("\\textcolor") {
     return None
@@ -2730,10 +2745,7 @@ fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabe
         Some(label_colour) =>
           match tikz_take_leading_braced_group(after_colour) {
             Some((label_text, _)) =>
-              Some({
-                label: tikz_unwrap_braced_text(label_text),
-                label_colour,
-              })
+              Some({ label: tikz_unwrap_braced_text(label_text), label_colour, })
             None => {
               let plain_label = tikz_trim_left(after_colour).trim().to_string()
               if plain_label == "" {
@@ -2756,10 +2768,11 @@ fn tikz_parse_textcolor_vertex_label(label_raw : String) -> TikzParsedVertexLabe
 fn tikz_parse_vertex_label(label_raw : String) -> TikzParsedVertexLabel {
   match tikz_parse_textcolor_vertex_label(label_raw) {
     Some(parsed) => parsed
-    None => {
-      label: tikz_unwrap_braced_text(label_raw),
-      label_colour: Colour::black(),
-    }
+    None =>
+      {
+        label: tikz_unwrap_braced_text(label_raw),
+        label_colour: Colour::black(),
+      }
   }
 }
 
@@ -2786,11 +2799,11 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 
             let mut direction : String? = None
             let mut label = ""
-            let mut from_x : Int? = None
-            let mut from_y : Int? = None
+            let mut from_x : Int32? = None
+            let mut from_y : Int32? = None
             let mut from_ref : String? = None
-            let mut to_x : Int? = None
-            let mut to_y : Int? = None
+            let mut to_x : Int32? = None
+            let mut to_y : Int32? = None
             let mut to_ref : String? = None
             let mut is_phantom = false
             let mut name : String? = None
@@ -2809,7 +2822,8 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                     parsed_decoration.style_name,
                   )
                   match parsed_decoration.colour {
-                    Some(colour) => parsed_options = parsed_options.with_colour(colour)
+                    Some(colour) =>
+                      parsed_options = parsed_options.with_colour(colour)
                     None => ()
                   }
                   match parsed_decoration.rotate {
@@ -2832,7 +2846,8 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                     parsed_decoration.style_body,
                   )
                   match parsed_decoration.colour {
-                    Some(colour) => parsed_options = parsed_options.with_colour(colour)
+                    Some(colour) =>
+                      parsed_options = parsed_options.with_colour(colour)
                     None => ()
                   }
                   continue
@@ -2848,89 +2863,85 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
               }
 
               match tikz_option_key_value(option) {
-                Some((key, value)) =>
-                  {
-                    let key_token = tikz_strip_math_wrapper(
-                      tikz_unwrap_braced_text(key),
-                    )
-                    let value_token = tikz_strip_math_wrapper(
-                      tikz_unwrap_braced_text(value),
-                    )
-                    if key_token == "from" {
-                      match tikz_parse_grid_reference(value) {
-                        Some((x, y)) => {
-                          from_x = Some(x)
-                          from_y = Some(y)
-                        }
-                        None =>
-                          match tikz_parse_reference_name(value) {
-                            Some(reference_name) => from_ref = Some(reference_name)
-                            None => ()
-                          }
+                Some((key, value)) => {
+                  let key_token = tikz_strip_math_wrapper(
+                    tikz_unwrap_braced_text(key),
+                  )
+                  let value_token = tikz_strip_math_wrapper(
+                    tikz_unwrap_braced_text(value),
+                  )
+                  if key_token == "from" {
+                    match tikz_parse_grid_reference(value) {
+                      Some((x, y)) => {
+                        from_x = Some(x)
+                        from_y = Some(y)
                       }
-                    } else if key_token == "to" {
-                      match tikz_parse_grid_reference(value) {
-                        Some((x, y)) => {
-                          to_x = Some(x)
-                          to_y = Some(y)
-                        }
-                        None =>
-                          match tikz_parse_reference_name(value) {
-                            Some(reference_name) => to_ref = Some(reference_name)
-                            None => ()
-                          }
-                      }
-                    } else {
-                      if key_token == "name" {
+                      None =>
                         match tikz_parse_reference_name(value) {
-                          Some(reference_name) => name = Some(reference_name)
+                          Some(reference_name) =>
+                            from_ref = Some(reference_name)
                           None => ()
                         }
-                      }
-                      if key_token == "draw" || key_token == "color" {
-                        match tikz_parse_colour_option(value) {
-                          Some(colour) => {
-                            parsed_options = parsed_options.with_colour(colour)
-                            if key_token == "color" {
-                              parsed_label_colour = colour
-                            }
-                          }
-                          None => ()
-                        }
-                      } else if key_token == "start anchor" {
-                        if value_token == "center" {
-                          source_center_anchor = true
-                        }
-                      } else if key_token == "end anchor" {
-                        if value_token == "center" {
-                          target_center_anchor = true
-                        }
-                      } else if key_token == "text" {
-                        match tikz_parse_colour_option(value) {
-                          Some(colour) => parsed_label_colour = colour
-                          None => ()
-                        }
-                      }
-                      parsed_loop_options = tikz_apply_loop_key_value_option(
-                        parsed_loop_options,
-                        key,
-                        value,
-                      )
-                      parsed_options = tikz_apply_arrow_key_value_option(
-                        parsed_options,
-                        key,
-                        value,
-                      )
-                      parsed_label_options = tikz_apply_label_key_value_option(
-                        parsed_label_options,
-                        key,
-                        value,
-                      )
                     }
+                  } else if key_token == "to" {
+                    match tikz_parse_grid_reference(value) {
+                      Some((x, y)) => {
+                        to_x = Some(x)
+                        to_y = Some(y)
+                      }
+                      None =>
+                        match tikz_parse_reference_name(value) {
+                          Some(reference_name) => to_ref = Some(reference_name)
+                          None => ()
+                        }
+                    }
+                  } else {
+                    if key_token == "name" {
+                      match tikz_parse_reference_name(value) {
+                        Some(reference_name) => name = Some(reference_name)
+                        None => ()
+                      }
+                    }
+                    if key_token == "draw" || key_token == "color" {
+                      match tikz_parse_colour_option(value) {
+                        Some(colour) => {
+                          parsed_options = parsed_options.with_colour(colour)
+                          if key_token == "color" {
+                            parsed_label_colour = colour
+                          }
+                        }
+                        None => ()
+                      }
+                    } else if key_token == "start anchor" {
+                      if value_token == "center" {
+                        source_center_anchor = true
+                      }
+                    } else if key_token == "end anchor" {
+                      if value_token == "center" {
+                        target_center_anchor = true
+                      }
+                    } else if key_token == "text" {
+                      match tikz_parse_colour_option(value) {
+                        Some(colour) => parsed_label_colour = colour
+                        None => ()
+                      }
+                    }
+                    parsed_loop_options = tikz_apply_loop_key_value_option(
+                      parsed_loop_options, key, value,
+                    )
+                    parsed_options = tikz_apply_arrow_key_value_option(
+                      parsed_options, key, value,
+                    )
+                    parsed_label_options = tikz_apply_label_key_value_option(
+                      parsed_label_options, key, value,
+                    )
                   }
+                }
                 None => {
                   let direction_candidate = tikz_unwrap_braced_text(option)
-                  let option_token = tikz_strip_math_wrapper(direction_candidate)
+                  let option_token = tikz_strip_math_wrapper(
+                    direction_candidate,
+                  )
                   if option_token == "phantom" {
                     is_phantom = true
                     parsed_options = tikz_apply_empty_arrow_style(
@@ -2941,8 +2952,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       description: true,
                     }
                   }
-                  if direction is None &&
-                    tikz_is_direction_token(option_token) {
+                  if direction is None && tikz_is_direction_token(option_token) {
                     direction = Some(option_token)
                   }
                   if label == "" {
@@ -2956,16 +2966,13 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                     None => ()
                   }
                   parsed_options = tikz_apply_arrow_flag_option(
-                      parsed_options,
-                      option,
-                    )
+                    parsed_options, option,
+                  )
                   parsed_loop_options = tikz_apply_loop_flag_option(
-                    parsed_loop_options,
-                    option,
+                    parsed_loop_options, option,
                   )
                   parsed_label_options = tikz_apply_label_flag_option(
-                    parsed_label_options,
-                    option,
+                    parsed_label_options, option,
                   )
                 }
               }
@@ -2983,27 +2990,22 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
                       }
                     }
                     parsed_label_options = tikz_apply_label_key_value_option(
-                      parsed_label_options,
-                      key,
-                      value,
+                      parsed_label_options, key, value,
                     )
                   }
                   None =>
                     parsed_label_options = tikz_apply_label_flag_option(
-                      parsed_label_options,
-                      suffix_option,
+                      parsed_label_options, suffix_option,
                     )
                 }
               }
             }
 
             parsed_options = tikz_apply_label_options_to_edge_options(
-              parsed_options,
-              parsed_label_options,
+              parsed_options, parsed_label_options,
             )
             parsed_options = tikz_apply_loop_geometry_options(
-              parsed_options,
-              parsed_loop_options,
+              parsed_options, parsed_loop_options,
             )
             let label_colour = match parsed_label_options.colour {
               Some(colour) => colour
@@ -3059,7 +3061,7 @@ fn tikz_collect_cell_arrows(cell : String) -> Array[TikzParsedArrow] {
 }
 
 ///|
-fn tikz_direction_delta(direction : String) -> (Int, Int) {
+fn tikz_direction_delta(direction : String) -> (Int32, Int32) {
   let mut dx = 0
   let mut dy = 0
   for ch in direction {
@@ -3077,30 +3079,31 @@ fn tikz_direction_delta(direction : String) -> (Int, Int) {
 }
 
 ///|
-fn tikz_grid_key(x : Int, y : Int) -> String {
+fn tikz_grid_key(x : Int32, y : Int32) -> String {
   ["x=", x.to_string(), ",y=", y.to_string()].join("")
 }
 
 ///|
 fn tikz_resolve_pending_endpoint_id(
-  grid_x : Int?,
-  grid_y : Int?,
+  grid_x : Int32?,
+  grid_y : Int32?,
   reference_name : String?,
-  default_x : Int,
-  default_y : Int,
+  default_x : Int32,
+  default_y : Int32,
   use_default : Bool,
-  vertex_by_key : Map[String, Int],
+  vertex_by_key : Map[String, Int32],
   named_cell_ids : Map[String, TikzNamedCellRef],
 ) -> TikzResolvedEndpoint? {
   match reference_name {
     Some(name) =>
       match named_cell_ids.get(name) {
-        Some(named) => Some({ id: named.id, center_anchor: named.center_anchor })
+        Some(named) =>
+          Some({ id: named.id, center_anchor: named.center_anchor, })
         None =>
           match tikz_parse_grid_reference(name) {
             Some((x, y)) =>
               match vertex_by_key.get(tikz_grid_key(x, y)) {
-                Some(id) => Some({ id, center_anchor: false })
+                Some(id) => Some({ id, center_anchor: false, })
                 None => None
               }
             None => None
@@ -3109,17 +3112,12 @@ fn tikz_resolve_pending_endpoint_id(
     None => {
       let resolved_grid = match (grid_x, grid_y) {
         (Some(x), Some(y)) => Some((x, y))
-        _ =>
-          if use_default {
-            Some((default_x, default_y))
-          } else {
-            None
-          }
+        _ => if use_default { Some((default_x, default_y)) } else { None }
       }
       match resolved_grid {
         Some((x, y)) =>
           match vertex_by_key.get(tikz_grid_key(x, y)) {
-            Some(id) => Some({ id, center_anchor: false })
+            Some(id) => Some({ id, center_anchor: false, })
             None => None
           }
         None => None
@@ -3131,8 +3129,8 @@ fn tikz_resolve_pending_endpoint_id(
 ///|
 fn tikz_edge_matches_phantom_anchor(
   edge : Edge,
-  source_id : Int,
-  target_id : Int,
+  source_id : Int32,
+  target_id : Int32,
   options : EdgeOptions,
 ) -> Bool {
   edge.source == source_id &&
@@ -3144,11 +3142,11 @@ fn tikz_edge_matches_phantom_anchor(
 ///|
 fn tikz_find_phantom_anchor_edge_id(
   quiver : Quiver,
-  source_id : Int,
-  target_id : Int,
+  source_id : Int32,
+  target_id : Int32,
   options : EdgeOptions,
-) -> Int? {
-  let mut matched : Int? = None
+) -> Int32? {
+  let mut matched : Int32? = None
   for cell in quiver.all_cells() {
     match cell {
       CellData::Edge(edge) =>
@@ -3234,8 +3232,8 @@ fn tikz_is_share_reference_candidate(reference : String) -> Bool {
 ///|
 fn tikz_promote_imported_edge_level(
   quiver : Quiver,
-  edge_id : Int,
-  minimum_level : Int,
+  edge_id : Int32,
+  minimum_level : Int32,
 ) -> Unit {
   if minimum_level < 1 {
     return
@@ -3252,7 +3250,9 @@ fn tikz_promote_imported_edge_level(
       quiver.cells_by_level[minimum_level].set(edge_id, true)
       quiver.cells.set(
         edge_id,
-        CellData::Edge(edge.reconnected(edge.source, edge.target, minimum_level)),
+        CellData::Edge(
+          edge.reconnected(edge.source, edge.target, minimum_level),
+        ),
       )
     }
     _ => ()
@@ -3262,11 +3262,11 @@ fn tikz_promote_imported_edge_level(
 ///|
 fn tikz_ensure_implicit_vertex_at(
   quiver : Quiver,
-  vertex_by_key : Map[String, Int],
-  x : Int,
-  y : Int,
-  next_id : Int,
-) -> Int {
+  vertex_by_key : Map[String, Int32],
+  x : Int32,
+  y : Int32,
+  next_id : Int32,
+) -> Int32 {
   let key = tikz_grid_key(x, y)
   match vertex_by_key.get(key) {
     Some(_) => next_id
@@ -3283,10 +3283,10 @@ fn tikz_ensure_implicit_vertex_at(
 fn tikz_import_error(
   kind : String,
   message : String,
-  line? : Int = 0,
-  column? : Int = 0,
+  line~ : Int32 = 0,
+  column~ : Int32 = 0,
 ) -> TikzCdImportError {
-  { kind, message, line, column }
+  { kind, message, line, column, }
 }
 
 ///|
@@ -3329,12 +3329,7 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
   for option in tikz_split_arrow_options(options) {
     let trimmed = option.trim().to_string()
     if trimmed == "" {
-      return Some(
-        tikz_import_error(
-          "syntax",
-          "empty tikzcd diagram option",
-        ),
-      )
+      return Some(tikz_import_error("syntax", "empty tikzcd diagram option"))
     }
 
     match tikz_option_key_value(option) {
@@ -3351,8 +3346,7 @@ fn tikz_validate_diagram_options(options : String) -> TikzCdImportError? {
           if value_token == "" {
             return Some(
               tikz_import_error(
-                "option",
-                "ampersand replacement must not be empty",
+                "option", "ampersand replacement must not be empty",
               ),
             )
           }
@@ -3424,7 +3418,9 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
         let key_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(key))
           .trim()
           .to_string()
-        let value_token = tikz_strip_math_wrapper(tikz_unwrap_braced_text(value))
+        let value_token = tikz_strip_math_wrapper(
+            tikz_unwrap_braced_text(value),
+          )
           .trim()
           .to_string()
         if key_token == "name" {
@@ -3443,8 +3439,10 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
 
         if key_token == "text" {
           if value_token == "" ||
-            (tikz_parse_colour_option(value) is None &&
-              !tikz_is_background_colour_expression(value)) {
+            (
+              tikz_parse_colour_option(value) is None &&
+              !tikz_is_background_colour_expression(value)
+            ) {
             return Some("invalid text colour in label suffix")
           }
           continue
@@ -3466,9 +3464,7 @@ fn tikz_validate_label_suffix_option(option : String) -> String? {
         if suffix_trimmed == "'" || tikz_is_label_modifier(suffix_trimmed) {
           continue
         }
-        return Some(
-          ["unknown label suffix option: ", suffix_trimmed].join(""),
-        )
+        return Some(["unknown label suffix option: ", suffix_trimmed].join(""))
       }
     }
   }
@@ -3492,15 +3488,11 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "from" || key_token == "to" {
     if value_token.contains(" ") || value_token.contains("\t") {
-      return Some(
-        ["invalid ", key_token, " endpoint reference"].join(""),
-      )
+      return Some(["invalid ", key_token, " endpoint reference"].join(""))
     }
     if tikz_parse_grid_reference(value) is None &&
       tikz_parse_reference_name(value) is None {
-      return Some(
-        ["invalid ", key_token, " endpoint reference"].join(""),
-      )
+      return Some(["invalid ", key_token, " endpoint reference"].join(""))
     }
     return None
   }
@@ -3524,17 +3516,17 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "color" {
     if value_token == "" || tikz_parse_colour_option(value) is None {
-      return Some(
-        ["invalid ", key_token, " colour option"].join(""),
-      )
+      return Some(["invalid ", key_token, " colour option"].join(""))
     }
     return None
   }
 
   if key_token == "text" {
     if value_token == "" ||
-      (tikz_parse_colour_option(value) is None &&
-        !tikz_is_background_colour_expression(value)) {
+      (
+        tikz_parse_colour_option(value) is None &&
+        !tikz_is_background_colour_expression(value)
+      ) {
       return Some("invalid text colour option")
     }
     return None
@@ -3542,9 +3534,7 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "start anchor" || key_token == "end anchor" {
     if value_token == "" {
-      return Some(
-        ["invalid ", key_token, " value"].join(""),
-      )
+      return Some(["invalid ", key_token, " value"].join(""))
     }
     return None
   }
@@ -3558,9 +3548,7 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "shift right" || key_token == "shift left" {
     if tikz_parse_shift_magnitude(value) is None {
-      return Some(
-        ["invalid ", key_token, " value"].join(""),
-      )
+      return Some(["invalid ", key_token, " value"].join(""))
     }
     return None
   }
@@ -3574,9 +3562,7 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "bend left" || key_token == "bend right" {
     if tikz_parse_bend_curve_magnitude(value) is None {
-      return Some(
-        ["invalid ", key_token, " value"].join(""),
-      )
+      return Some(["invalid ", key_token, " value"].join(""))
     }
     return None
   }
@@ -3597,9 +3583,7 @@ fn tikz_validate_arrow_key_value_option(
 
   if key_token == "in" || key_token == "out" {
     if tikz_parse_angle_option(value) is None {
-      return Some(
-        ["invalid ", key_token, " loop angle"].join(""),
-      )
+      return Some(["invalid ", key_token, " loop angle"].join(""))
     }
     return None
   }
@@ -3670,20 +3654,16 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
           start=matched.options_start,
           end=rest.length(),
         )
-        match tikz_find_closing_delimiter(
-          after_arrow,
-          matched.open_delimiter,
-          matched.close_delimiter,
-        ) {
+        match
+          tikz_find_closing_delimiter(
+            after_arrow,
+            matched.open_delimiter,
+            matched.close_delimiter,
+          ) {
           Some(end) => {
             let raw_options = after_arrow.unsafe_substring(start=0, end~)
             if tikz_has_empty_arrow_option(raw_options) {
-              return Some(
-                tikz_import_error(
-                  "syntax",
-                  "empty arrow option",
-                ),
-              )
+              return Some(tikz_import_error("syntax", "empty arrow option"))
             }
             let options = tikz_split_arrow_options(raw_options)
             let bare_labels : Array[String] = []
@@ -3695,29 +3675,21 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
             for option in options {
               let trimmed = option.trim().to_string()
               if trimmed == "" {
-                return Some(
-                  tikz_import_error(
-                    "syntax",
-                    "empty arrow option",
-                  ),
-                )
+                return Some(tikz_import_error("syntax", "empty arrow option"))
               }
               if tikz_extract_first_quoted(trimmed) is Some(_) {
                 match tikz_validate_arrow_option(trimmed) {
                   Some(message) =>
-                    return Some(
-                      tikz_import_error("option", message),
-                    )
+                    return Some(tikz_import_error("option", message))
                   None => ()
                 }
-              } else if tikz_extract_bare_arrow_label_option(trimmed) is Some(token) {
+              } else if tikz_extract_bare_arrow_label_option(trimmed)
+                is Some(token) {
                 bare_labels.push(token)
               } else {
                 match tikz_validate_arrow_option(trimmed) {
                   Some(message) =>
-                    return Some(
-                      tikz_import_error("option", message),
-                    )
+                    return Some(tikz_import_error("option", message))
                   None => ()
                 }
               }
@@ -3725,8 +3697,8 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
               match tikz_option_key_value(trimmed) {
                 Some((key, _)) => {
                   let key_token = tikz_strip_math_wrapper(
-                    tikz_unwrap_braced_text(key),
-                  )
+                      tikz_unwrap_braced_text(key),
+                    )
                     .trim()
                     .to_string()
                   if key_token == "to" {
@@ -3742,8 +3714,8 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
                 }
                 None => {
                   let token = tikz_strip_math_wrapper(
-                    tikz_unwrap_braced_text(trimmed),
-                  )
+                      tikz_unwrap_braced_text(trimmed),
+                    )
                     .trim()
                     .to_string()
                   if tikz_is_direction_token(token) {
@@ -3778,8 +3750,7 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
             if !has_to && !has_direction && !is_loop {
               return Some(
                 tikz_import_error(
-                  "reference",
-                  "arrow is missing target (to=... or direction)",
+                  "reference", "arrow is missing target (to=... or direction)",
                 ),
               )
             }
@@ -3791,10 +3762,7 @@ fn tikz_validate_cell_arrow_options(cell : String) -> TikzCdImportError? {
           }
           None =>
             return Some(
-              tikz_import_error(
-                "syntax",
-                "unterminated arrow options",
-              ),
+              tikz_import_error("syntax", "unterminated arrow options"),
             )
         }
       }
@@ -3813,12 +3781,7 @@ fn tikz_validate_cell_vertex_label(cell : String) -> TikzCdImportError? {
 
   if tikz_looks_like_textcolor_vertex_label(label_raw) &&
     tikz_parse_textcolor_vertex_label(label_raw) is None {
-    return Some(
-      tikz_import_error(
-        "option",
-        "invalid textcolor vertex label",
-      ),
-    )
+    return Some(tikz_import_error("option", "invalid textcolor vertex label"))
   }
 
   None
@@ -3826,9 +3789,8 @@ fn tikz_validate_cell_vertex_label(cell : String) -> TikzCdImportError? {
 
 ///|
 fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
-  let (begin_index, begin_token, end_token) = match tikz_find_environment_tokens(
-    input,
-  ) {
+  let (begin_index, begin_token, end_token) = match
+    tikz_find_environment_tokens(input) {
     Some(found) => found
     None =>
       return Some(
@@ -3851,7 +3813,10 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
   let mut rest = if after_begin_trimmed == 0 {
     after_begin
   } else {
-    after_begin.unsafe_substring(start=after_begin_trimmed, end=after_begin.length())
+    after_begin.unsafe_substring(
+      start=after_begin_trimmed,
+      end=after_begin.length(),
+    )
   }
   let mut ampersand_replacement : String? = None
 
@@ -3863,7 +3828,9 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
         match tikz_validate_diagram_options(options) {
           Some(error) => {
             let (line, column) = tikz_line_column_from_index(input, rest_start)
-            return Some(tikz_error_with_position_if_missing(error, line, column))
+            return Some(
+              tikz_error_with_position_if_missing(error, line, column),
+            )
           }
           None => ()
         }
@@ -3880,8 +3847,8 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
           tikz_import_error(
             "syntax",
             "unterminated tikzcd diagram options",
-            line=line,
-            column=column,
+            line~,
+            column~,
           ),
         )
       }
@@ -3896,8 +3863,8 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
         tikz_import_error(
           "syntax",
           "missing tikzcd environment end token",
-          line=line,
-          column=column,
+          line~,
+          column~,
         ),
       )
     }
@@ -3922,8 +3889,8 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
       tikz_import_error(
         "syntax",
         "unexpected content after \\end{tikzcd}",
-        line=line,
-        column=column,
+        line~,
+        column~,
       ),
     )
   }
@@ -3934,13 +3901,17 @@ fn tikz_validate_environment_and_options(input : String) -> TikzCdImportError? {
     if row == "" {
       continue
     }
-    for cell_segment in tikz_split_cells_with_offsets(
-      row_segment.text,
-      ampersand_replacement,
-    ) {
+    for
+      cell_segment in tikz_split_cells_with_offsets(
+        row_segment.text,
+        ampersand_replacement,
+      ) {
       let cell = cell_segment.text.trim().to_string()
       let cell_offset = tikz_first_non_whitespace_offset(cell_segment.text)
-      let cell_absolute = rest_start + row_segment.start + cell_segment.start + cell_offset
+      let cell_absolute = rest_start +
+        row_segment.start +
+        cell_segment.start +
+        cell_offset
       let (line, column) = tikz_line_column_from_index(input, cell_absolute)
       match tikz_validate_cell_vertex_label(cell) {
         Some(error) =>
@@ -3964,18 +3935,13 @@ fn Quiver::import_tikz_cd_minimal(
   let environment = match tikz_extract_environment_body(input) {
     Some(value) => value
     None =>
-      return Err(
-        tikz_import_error(
-          "syntax",
-          "missing tikzcd environment",
-        ),
-      )
+      return Err(tikz_import_error("syntax", "missing tikzcd environment"))
   }
 
   let body_without_comments = tikz_strip_line_comments(environment.body)
   let rows = tikz_split_rows_with_offsets(body_without_comments)
   let quiver = Quiver::new()
-  let vertex_by_key : Map[String, Int] = Map::new()
+  let vertex_by_key : Map[String, Int32] = Map::new()
   let pending_arrows : Array[TikzPendingArrow] = []
   let mut next_id = 1
 
@@ -3997,7 +3963,9 @@ fn Quiver::import_tikz_cd_minimal(
         row_segment.start +
         cell_segment.start +
         cell_offset
-      let (cell_line, cell_column) = tikz_line_column_from_index(input, cell_absolute)
+      let (cell_line, cell_column) = tikz_line_column_from_index(
+        input, cell_absolute,
+      )
       let label_raw = tikz_cell_label_raw(cell)
       if label_raw != "" {
         let parsed_vertex = tikz_parse_vertex_label(label_raw)
@@ -4088,11 +4056,7 @@ fn Quiver::import_tikz_cd_minimal(
         _ => (pending.default_source_x, pending.default_source_y)
       }
       next_id = tikz_ensure_implicit_vertex_at(
-        quiver,
-        vertex_by_key,
-        source_x,
-        source_y,
-        next_id,
+        quiver, vertex_by_key, source_x, source_y, next_id,
       )
     }
 
@@ -4100,11 +4064,7 @@ fn Quiver::import_tikz_cd_minimal(
       match (pending.target_x, pending.target_y) {
         (Some(x), Some(y)) =>
           next_id = tikz_ensure_implicit_vertex_at(
-            quiver,
-            vertex_by_key,
-            x,
-            y,
-            next_id,
+            quiver, vertex_by_key, x, y, next_id,
           )
         _ => ()
       }
@@ -4215,7 +4175,7 @@ fn Quiver::import_tikz_cd_minimal(
                 named_cell_ids.set(reference_name, {
                   id: edge_id,
                   center_anchor: resolved_source_center_anchor ||
-                    resolved_target_center_anchor,
+                  resolved_target_center_anchor,
                 })
                 made_progress = true
               }
@@ -4325,7 +4285,7 @@ fn tikz_try_import_success(
   renderer : String?,
   embed : Bool,
 ) -> TikzCdTryImportResult {
-  { ok: true, quiver: Some(quiver), macro_url, renderer, embed, error: None }
+  { ok: true, quiver: Some(quiver), macro_url, renderer, embed, error: None, }
 }
 
 ///|
